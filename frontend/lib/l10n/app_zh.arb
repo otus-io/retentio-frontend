@@ -1,0 +1,22 @@
+{
+    "appTitle": "Wordupx",
+    "login": "登录",
+    "register": "注册",
+    "forgotPassword": "忘记密码？",
+    "username": "用户名",
+    "password": "密码",
+    "loginPageTitle": "登录",
+    "email": "邮箱",
+    "confirmPassword": "确认密码",
+    "pleaseFillAllFields": "请填写所有字段",
+    "passwordNotMatch": "两次密码输入不一致",
+    "registerSuccess": "注册成功",
+    "loginSuccess": "登录成功",
+    "loginFailed": "登录失败",
+    "backToLogin": "返回登录",
+    "resetPassword": "重置密码",
+    "resetPasswordSent": "重置密码邮件已发送",
+    "home": "首页",
+    "learn": "学习",
+    "profile": "我的"
+}

@@ -1,0 +1,22 @@
+{
+  "appTitle": "Wordupx",
+  "login": "Login",
+  "register": "Register",
+  "forgotPassword": "Forgot Password?",
+  "username": "Username",
+  "password": "Password",
+  "loginPageTitle": "Login",
+  "email": "Email",
+  "confirmPassword": "Confirm Password",
+  "pleaseFillAllFields": "Please fill all fields",
+  "passwordNotMatch": "Passwords do not match",
+  "registerSuccess": "Register Success",
+  "loginSuccess": "Login Success",
+  "loginFailed": "Login Failed",
+  "backToLogin": "Back to Login",
+  "resetPassword": "Reset Password",
+  "resetPasswordSent": "Reset Password Sent",
+  "home": "Home",
+  "learn": "Learn",
+  "profile": "Profile"
+}
