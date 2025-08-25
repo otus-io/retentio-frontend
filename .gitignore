@@ -32,6 +32,8 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+# ignore frontend build artifacts
+/frontend/build/
 
 # Symbolication related
 app.*.symbols
