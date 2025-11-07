@@ -25,9 +25,9 @@ class _ForgotPasswordSheetState extends State<ForgotPassword> {
     // TODO: 调用忘记密码接口
     await Future.delayed(const Duration(seconds: 1));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(loc.resetPasswordSent ?? '重置密码邮件已发送')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(loc.resetPasswordSent)));
     setState(() => _isLoading = false);
     Navigator.of(context).pop();
   }
@@ -64,7 +64,7 @@ class _ForgotPasswordSheetState extends State<ForgotPassword> {
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(loc.resetPassword ?? '重置密码'),
+                  : Text(loc.resetPassword),
             ),
           ),
         ],

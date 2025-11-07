@@ -67,4 +67,107 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get profile => '我的';
+
+  @override
+  String get noDecksAvailable => '暂无词本';
+
+  @override
+  String get retry => '重试';
+
+  @override
+  String get words => '单词';
+
+  @override
+  String get progress => '学习进度';
+
+  @override
+  String get cards => '卡片';
+
+  @override
+  String get newCards => '新卡片';
+
+  @override
+  String get review => '复习';
+
+  @override
+  String get facts => '知识点';
+
+  @override
+  String openDeck(String deckName) {
+    return '打开词本：$deckName';
+  }
+
+  @override
+  String get logout => '退出登录';
+
+  @override
+  String get logoutConfirmTitle => '退出登录';
+
+  @override
+  String get logoutConfirmMessage => '确定要退出登录吗？';
+
+  @override
+  String get cancel => '取消';
+
+  @override
+  String get changeLanguage => '更改语言';
+
+  @override
+  String get changeTheme => '更改主题';
+
+  @override
+  String get themeLight => '浅色';
+
+  @override
+  String get themeDark => '深色';
+
+  @override
+  String get themeSystem => '跟随系统';
+
+  @override
+  String get totalCards => '总计';
+
+  @override
+  String get dueCards => '待复习';
+
+  @override
+  String get learned => '已学习';
+
+  @override
+  String get noCardsInDeck => '词本中没有卡片';
+
+  @override
+  String get startLearning => '开始学习';
+
+  @override
+  String get allCaughtUp => '全部完成！';
+
+  @override
+  String startLearningDeck(String deckName) {
+    return '开始学习：$deckName';
+  }
+
+  @override
+  String get showAnswer => '显示答案';
+
+  @override
+  String get hard => '困难';
+
+  @override
+  String get good => '一般';
+
+  @override
+  String get easy => '简单';
+
+  @override
+  String get backToDeck => '返回词本';
+
+  @override
+  String get viewCards => '查看';
+
+  @override
+  String get learnButton => '学习';
+
+  @override
+  String get manage => '管理';
 }

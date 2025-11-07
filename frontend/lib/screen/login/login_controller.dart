@@ -30,7 +30,7 @@ class LoginController {
 
       if (isSuccess) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => const MainTabScreen()),
         );
       } else {
         showSnack(context, result['message']);

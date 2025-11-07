@@ -1,10 +1,25 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants.dart';
+import '../providers/auth_provider.dart';
 
 class ApiService {
   static String? _token;
+  static GlobalKey<NavigatorState>? navigatorKey;
+  static ProviderContainer? providerContainer;
+
+  /// 设置全局导航键
+  static void setNavigatorKey(GlobalKey<NavigatorState> key) {
+    navigatorKey = key;
+  }
+
+  /// 设置 Provider Container
+  static void setProviderContainer(ProviderContainer container) {
+    providerContainer = container;
+  }
 
   /// 初始化时加载 token
   static Future<void> init() async {
@@ -67,12 +82,41 @@ class ApiService {
 
   /// 统一处理响应
   static Map<String, dynamic> _handleResponse(http.Response response) {
+    // 处理 401 未授权
+    if (response.statusCode == 401) {
+      _handle401Unauthorized();
+      throw Exception('Unauthorized: Please login again');
+    }
+
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return response.body.isNotEmpty ? jsonDecode(response.body)['data'] : {};
     } else {
       throw Exception(
         'Request failed [${response.statusCode}]: ${response.body}',
       );
+    }
+  }
+
+  /// 处理 401 未授权，跳转到登录页
+  static void _handle401Unauthorized() async {
+    // 清除 token
+    await clearToken();
+
+    // 更新登录状态
+    if (providerContainer != null) {
+      try {
+        final authNotifier = providerContainer!.read(isLoginProvider.notifier);
+        await authNotifier.setLogin(false);
+      } catch (e) {
+        // 忽略错误
+      }
+    }
+
+    // 跳转到登录页
+    if (navigatorKey?.currentContext != null) {
+      final context = navigatorKey!.currentContext!;
+      // 清除所有路由并跳转到登录页
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
     }
   }
 }

@@ -62,7 +62,8 @@ import 'app_localizations_zh.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -70,7 +71,8 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -82,141 +84,341 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('zh')
+    Locale('zh'),
   ];
 
-  /// No description provided for @appTitle.
+  /// Application title
   ///
   /// In en, this message translates to:
   /// **'Wordupx'**
   String get appTitle;
 
-  /// No description provided for @login.
+  /// Login button text
   ///
   /// In en, this message translates to:
   /// **'Login'**
   String get login;
 
-  /// No description provided for @register.
+  /// Register button text
   ///
   /// In en, this message translates to:
   /// **'Register'**
   String get register;
 
-  /// No description provided for @forgotPassword.
+  /// Forgot password link text
   ///
   /// In en, this message translates to:
   /// **'Forgot Password?'**
   String get forgotPassword;
 
-  /// No description provided for @username.
+  /// Username input field label
   ///
   /// In en, this message translates to:
   /// **'Username'**
   String get username;
 
-  /// No description provided for @password.
+  /// Password input field label
   ///
   /// In en, this message translates to:
   /// **'Password'**
   String get password;
 
-  /// No description provided for @loginPageTitle.
+  /// Login page title
   ///
   /// In en, this message translates to:
   /// **'Login'**
   String get loginPageTitle;
 
-  /// No description provided for @email.
+  /// Email input field label
   ///
   /// In en, this message translates to:
   /// **'Email'**
   String get email;
 
-  /// No description provided for @confirmPassword.
+  /// Confirm password input field label
   ///
   /// In en, this message translates to:
   /// **'Confirm Password'**
   String get confirmPassword;
 
-  /// No description provided for @pleaseFillAllFields.
+  /// Validation error message when fields are empty
   ///
   /// In en, this message translates to:
   /// **'Please fill all fields'**
   String get pleaseFillAllFields;
 
-  /// No description provided for @passwordNotMatch.
+  /// Validation error message when passwords don't match
   ///
   /// In en, this message translates to:
   /// **'Passwords do not match'**
   String get passwordNotMatch;
 
-  /// No description provided for @registerSuccess.
+  /// Success message after successful registration
   ///
   /// In en, this message translates to:
   /// **'Register Success'**
   String get registerSuccess;
 
-  /// No description provided for @loginSuccess.
+  /// Success message after successful login
   ///
   /// In en, this message translates to:
   /// **'Login Success'**
   String get loginSuccess;
 
-  /// No description provided for @loginFailed.
+  /// Error message when login fails
   ///
   /// In en, this message translates to:
   /// **'Login Failed'**
   String get loginFailed;
 
-  /// No description provided for @backToLogin.
+  /// Link text to navigate back to login page
   ///
   /// In en, this message translates to:
   /// **'Back to Login'**
   String get backToLogin;
 
-  /// No description provided for @resetPassword.
+  /// Reset password button text
   ///
   /// In en, this message translates to:
   /// **'Reset Password'**
   String get resetPassword;
 
-  /// No description provided for @resetPasswordSent.
+  /// Confirmation message that password reset email was sent
   ///
   /// In en, this message translates to:
   /// **'Reset Password Sent'**
   String get resetPasswordSent;
 
-  /// No description provided for @home.
+  /// Home tab label in bottom navigation
   ///
   /// In en, this message translates to:
   /// **'Home'**
   String get home;
 
-  /// No description provided for @learn.
+  /// Learn tab label in bottom navigation
   ///
   /// In en, this message translates to:
   /// **'Learn'**
   String get learn;
 
-  /// No description provided for @profile.
+  /// Profile tab label in bottom navigation
   ///
   /// In en, this message translates to:
   /// **'Profile'**
   String get profile;
+
+  /// Message shown when there are no decks
+  ///
+  /// In en, this message translates to:
+  /// **'No decks available'**
+  String get noDecksAvailable;
+
+  /// Retry button text
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// Words label
+  ///
+  /// In en, this message translates to:
+  /// **'words'**
+  String get words;
+
+  /// Progress label
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get progress;
+
+  /// Cards label
+  ///
+  /// In en, this message translates to:
+  /// **'cards'**
+  String get cards;
+
+  /// New cards label
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get newCards;
+
+  /// Review cards label
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get review;
+
+  /// Facts label
+  ///
+  /// In en, this message translates to:
+  /// **'Facts'**
+  String get facts;
+
+  /// Message when opening a deck
+  ///
+  /// In en, this message translates to:
+  /// **'Open deck: {deckName}'**
+  String openDeck(String deckName);
+
+  /// Logout button text
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get logout;
+
+  /// Logout confirmation dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get logoutConfirmTitle;
+
+  /// Logout confirmation dialog message
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to logout?'**
+  String get logoutConfirmMessage;
+
+  /// Cancel button text
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// Change language setting
+  ///
+  /// In en, this message translates to:
+  /// **'Change Language'**
+  String get changeLanguage;
+
+  /// Change theme setting
+  ///
+  /// In en, this message translates to:
+  /// **'Change Theme'**
+  String get changeTheme;
+
+  /// Light theme
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// Dark theme
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// System theme
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get themeSystem;
+
+  /// Total cards count label
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get totalCards;
+
+  /// Due cards label
+  ///
+  /// In en, this message translates to:
+  /// **'Due'**
+  String get dueCards;
+
+  /// Learned cards label
+  ///
+  /// In en, this message translates to:
+  /// **'Learned'**
+  String get learned;
+
+  /// Message shown when deck has no cards
+  ///
+  /// In en, this message translates to:
+  /// **'No cards in this deck'**
+  String get noCardsInDeck;
+
+  /// Start learning button text
+  ///
+  /// In en, this message translates to:
+  /// **'Start Learning'**
+  String get startLearning;
+
+  /// Message when no cards to study
+  ///
+  /// In en, this message translates to:
+  /// **'All Caught Up!'**
+  String get allCaughtUp;
+
+  /// Message when starting to learn a deck
+  ///
+  /// In en, this message translates to:
+  /// **'Start learning: {deckName}'**
+  String startLearningDeck(String deckName);
+
+  /// Button text to show answer
+  ///
+  /// In en, this message translates to:
+  /// **'Show Answer'**
+  String get showAnswer;
+
+  /// Difficulty rating: Hard
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get hard;
+
+  /// Difficulty rating: Good
+  ///
+  /// In en, this message translates to:
+  /// **'Good'**
+  String get good;
+
+  /// Difficulty rating: Easy
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get easy;
+
+  /// Button to go back to deck
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Deck'**
+  String get backToDeck;
+
+  /// Button to view all cards
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get viewCards;
+
+  /// Button to start learning
+  ///
+  /// In en, this message translates to:
+  /// **'Learn'**
+  String get learnButton;
+
+  /// Button to manage deck
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get manage;
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -225,25 +427,26 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['en', 'zh'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['en', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
-
-
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'en': return AppLocalizationsEn();
-    case 'zh': return AppLocalizationsZh();
+    case 'en':
+      return AppLocalizationsEn();
+    case 'zh':
+      return AppLocalizationsZh();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.'
+    'that was used.',
   );
 }

@@ -9,16 +9,56 @@ import 'screen/login/login_screen.dart';
 import 'screen/home/home_screen.dart';
 import 'screen/learn/learn_screen.dart';
 import 'screen/profile/profile_screen.dart';
+import 'services/api_service.dart';
 
-void main() {
-  runApp(const ProviderScope(child: MyApp()));
+// 全局导航键
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+// 全局 ProviderContainer
+final providerContainer = ProviderContainer();
+
+void main() async {
+  // 确保 Flutter 绑定初始化
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 初始化 ApiService，加载 token
+  await ApiService.init();
+
+  // 设置全局导航键到 ApiService
+  ApiService.setNavigatorKey(navigatorKey);
+  ApiService.setProviderContainer(providerContainer);
+
+  runApp(ProviderScope(parent: providerContainer, child: const MyApp()));
 }
 
-class MyApp extends ConsumerWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    // 等待登录状态加载完成
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (mounted) {
+      setState(() {
+        _isInitialized = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
     final locale = ref.watch(localeProvider);
     final isLogin = ref.watch(isLoginProvider);
@@ -36,7 +76,15 @@ class MyApp extends ConsumerWidget {
         break;
     }
 
+    // 显示加载界面直到初始化完成
+    if (!_isInitialized) {
+      return MaterialApp(
+        home: Scaffold(body: Center(child: CircularProgressIndicator())),
+      );
+    }
+
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: '',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
@@ -59,6 +107,10 @@ class MyApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/home': (context) => const MainTabScreen(),
+      },
       home: isLogin ? const MainTabScreen() : const LoginScreen(),
     );
   }

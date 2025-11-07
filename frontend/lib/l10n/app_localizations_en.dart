@@ -67,4 +67,107 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profile => 'Profile';
+
+  @override
+  String get noDecksAvailable => 'No decks available';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get words => 'words';
+
+  @override
+  String get progress => 'Progress';
+
+  @override
+  String get cards => 'cards';
+
+  @override
+  String get newCards => 'New';
+
+  @override
+  String get review => 'Review';
+
+  @override
+  String get facts => 'Facts';
+
+  @override
+  String openDeck(String deckName) {
+    return 'Open deck: $deckName';
+  }
+
+  @override
+  String get logout => 'Logout';
+
+  @override
+  String get logoutConfirmTitle => 'Logout';
+
+  @override
+  String get logoutConfirmMessage => 'Are you sure you want to logout?';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get changeLanguage => 'Change Language';
+
+  @override
+  String get changeTheme => 'Change Theme';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get themeSystem => 'System';
+
+  @override
+  String get totalCards => 'Total';
+
+  @override
+  String get dueCards => 'Due';
+
+  @override
+  String get learned => 'Learned';
+
+  @override
+  String get noCardsInDeck => 'No cards in this deck';
+
+  @override
+  String get startLearning => 'Start Learning';
+
+  @override
+  String get allCaughtUp => 'All Caught Up!';
+
+  @override
+  String startLearningDeck(String deckName) {
+    return 'Start learning: $deckName';
+  }
+
+  @override
+  String get showAnswer => 'Show Answer';
+
+  @override
+  String get hard => 'Hard';
+
+  @override
+  String get good => 'Good';
+
+  @override
+  String get easy => 'Easy';
+
+  @override
+  String get backToDeck => 'Back to Deck';
+
+  @override
+  String get viewCards => 'View';
+
+  @override
+  String get learnButton => 'Learn';
+
+  @override
+  String get manage => 'Manage';
 }
