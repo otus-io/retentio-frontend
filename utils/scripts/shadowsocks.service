@@ -1,0 +1,12 @@
+[Unit]
+Description=Shadowsocks Server
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/root/.cargo/bin/ssserver -c /etc/shadowsocks-rust/config.json
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

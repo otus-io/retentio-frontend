@@ -1,0 +1,1 @@
+sudo dmesg -T | grep "DROPPED:" | less
