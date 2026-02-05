@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/deck.dart';
-import '../services/deck_service.dart';
+import '../services/apis/deck_service.dart';
 
 /// Deck 列表状态
 class DeckListState {
@@ -20,9 +20,12 @@ class DeckListState {
 }
 
 /// Deck 列表 Notifier
-class DeckListNotifier extends StateNotifier<DeckListState> {
-  DeckListNotifier() : super(DeckListState());
+class DeckListNotifier extends Notifier<DeckListState> {
 
+  @override
+  DeckListState build() {
+  return DeckListState();
+  }
   /// 加载 decks
   Future<void> loadDecks() async {
     state = state.copyWith(isLoading: true, error: null);
@@ -39,9 +42,11 @@ class DeckListNotifier extends StateNotifier<DeckListState> {
   Future<void> refresh() async {
     await loadDecks();
   }
+
+
 }
 
 /// Deck 列表 Provider
-final deckListProvider = StateNotifierProvider<DeckListNotifier, DeckListState>(
-  (ref) => DeckListNotifier(),
+final deckListProvider = NotifierProvider<DeckListNotifier, DeckListState>(
+    DeckListNotifier.new
 );

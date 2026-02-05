@@ -9,7 +9,7 @@ import 'screen/login/login_screen.dart';
 import 'screen/home/home_screen.dart';
 import 'screen/learn/learn_screen.dart';
 import 'screen/profile/profile_screen.dart';
-import 'services/api_service.dart';
+import 'services/apis/api_service.dart';
 
 // 全局导航键
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -18,17 +18,17 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final providerContainer = ProviderContainer();
 
 void main() async {
+
   // 确保 Flutter 绑定初始化
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 初始化 ApiService，加载 token
-  await ApiService.init();
 
-  // 设置全局导航键到 ApiService
-  ApiService.setNavigatorKey(navigatorKey);
-  ApiService.setProviderContainer(providerContainer);
-
-  runApp(ProviderScope(parent: providerContainer, child: const MyApp()));
+  runApp(
+    UncontrolledProviderScope(
+      container: providerContainer,
+      child: ProviderScope(child: const MyApp()),
+    ),
+  );
 }
 
 class MyApp extends ConsumerStatefulWidget {

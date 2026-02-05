@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../constants.dart';
-import '../providers/auth_provider.dart';
+import 'package:wordupx/models/res_base_model.dart';
+import 'package:wordupx/services/index.dart';
+import '../../constants.dart';
+import '../../providers/auth_provider.dart';
 
 class ApiService {
   static String? _token;
@@ -42,33 +44,24 @@ class ApiService {
   }
 
   /// 通用 POST 请求
-  static Future<Map<String, dynamic>> post(
+  static Future<ResBaseModel?> post(
     String endpoint, {
     Map<String, dynamic>? body,
-    Map<String, String>? headers,
   }) async {
-    final url = Uri.parse('$kApiBaseUrl$endpoint');
-    final mergedHeaders = _buildHeaders(headers);
 
-    final response = await http.post(
-      url,
-      headers: mergedHeaders,
-      body: body != null ? jsonEncode(body) : null,
-    );
+    final response = await dioClient.post(endpoint, params: body);
 
-    return _handleResponse(response);
+    return response;
   }
 
   /// 通用 GET 请求
-  static Future<Map<String, dynamic>> get(
+  static Future<ResBaseModel?> get(
     String endpoint, {
-    Map<String, String>? headers,
+    Map<String, String>? params,
   }) async {
-    final url = Uri.parse('$kApiBaseUrl$endpoint');
-    final mergedHeaders = _buildHeaders(headers);
 
-    final response = await http.get(url, headers: mergedHeaders);
-    return _handleResponse(response);
+    final response = await dioClient.get(endpoint,params: params);
+    return response;
   }
 
   /// 构建 headers（自动附加 Authorization）
@@ -80,25 +73,9 @@ class ApiService {
     return {...defaultHeaders, if (headers != null) ...headers};
   }
 
-  /// 统一处理响应
-  static Map<String, dynamic> _handleResponse(http.Response response) {
-    // 处理 401 未授权
-    if (response.statusCode == 401) {
-      _handle401Unauthorized();
-      throw Exception('Unauthorized: Please login again');
-    }
-
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return response.body.isNotEmpty ? jsonDecode(response.body)['data'] : {};
-    } else {
-      throw Exception(
-        'Request failed [${response.statusCode}]: ${response.body}',
-      );
-    }
-  }
 
   /// 处理 401 未授权，跳转到登录页
-  static void _handle401Unauthorized() async {
+  static void handle401Unauthorized() async {
     // 清除 token
     await clearToken();
 

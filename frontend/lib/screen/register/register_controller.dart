@@ -34,11 +34,11 @@ class RegisterController {
       );
       if (!context.mounted) return;
 
-      if (result['success'] == true || result['code'] == 0) {
+      if (result?.isSuccess==true) {
         showSnack(context, '${loc.registerSuccess}: $username');
         onSuccess(); // 通过回调通知 UI 层
       } else {
-        showSnack(context, result['message'] ?? '注册失败');
+        showSnack(context, result?.msg ?? '注册失败');
       }
     } catch (e) {
       showSnack(context, '注册失败: $e');

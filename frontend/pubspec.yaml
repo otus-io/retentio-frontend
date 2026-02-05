@@ -4,7 +4,8 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.8.1
+  sdk: '>=3.10.0 <4.0.0'
+  flutter: '>=3.24.3'
 
 dependencies:
   flutter:
@@ -13,9 +14,10 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
-  http: ^1.5.0
-  flutter_riverpod: ^2.6.1
-  shared_preferences: ^2.5.3
+  dio: ^5.9.1
+  flutter_riverpod: ^3.2.1
+  shared_preferences: ^2.5.4
+  logger: ^2.6.2
 
 dev_dependencies:
   flutter_test:

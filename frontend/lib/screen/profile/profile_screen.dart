@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
 import 'package:wordupx/providers/theme_provider.dart';
 import 'package:wordupx/providers/locale_provider.dart';
-import 'package:wordupx/services/auth_service.dart';
+
+import '../../services/apis/auth_service.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});

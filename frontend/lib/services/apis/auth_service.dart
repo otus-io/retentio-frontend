@@ -1,4 +1,5 @@
 // auth_service.dart
+import 'package:wordupx/models/res_base_model.dart';
 import 'package:wordupx/providers/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'api_service.dart';
@@ -8,7 +9,7 @@ final _container = ProviderContainer();
 
 class AuthService {
   /// 注册
-  static Future<Map<String, dynamic>> register({
+  static Future<ResBaseModel?> register({
     required String email,
     required String username,
     required String password,
@@ -25,13 +26,13 @@ class AuthService {
     required String username,
     required String password,
   }) async {
-    final data = await ApiService.post(
+    final res = await ApiService.post(
       '/auth/login',
       body: {'username': username, 'password': password},
     );
 
     // 若返回里有 token，则顺便保存，后续请求会自动带上
-    final token = data['token'];
+    final token = res?.data['token'];
 
     if (token is String && token.isNotEmpty) {
       ApiService.setToken(token);
@@ -39,7 +40,7 @@ class AuthService {
       _container.read(isLoginProvider.notifier).setLogin(true);
     }
 
-    return data;
+    return res?.data ?? {};
   }
 
   /// 登出（可选）
