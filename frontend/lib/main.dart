@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
 import 'package:wordupx/pre_config.dart';
+import 'package:wordupx/routers/app_pages.dart';
 import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
 import 'providers/auth_provider.dart';
@@ -24,7 +25,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
 // 初始化预配置
-  PreConfig.init();
+  await PreConfig.init();
   runApp(
     UncontrolledProviderScope(
       container: providerContainer,
@@ -63,7 +64,6 @@ class _MyAppState extends ConsumerState<MyApp> {
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
     final locale = ref.watch(localeProvider);
-    final isLogin = ref.watch(isLoginProvider);
 
     ThemeMode flutterThemeMode;
     switch (themeMode) {
@@ -85,9 +85,8 @@ class _MyAppState extends ConsumerState<MyApp> {
       );
     }
 
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      title: '',
+    return MaterialApp.router(
+      routerConfig: AppPages.routes,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.blue,
@@ -109,11 +108,6 @@ class _MyAppState extends ConsumerState<MyApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/home': (context) => const MainTabScreen(),
-      },
-      home: isLogin ? const MainTabScreen() : const LoginScreen(),
     );
   }
 }
