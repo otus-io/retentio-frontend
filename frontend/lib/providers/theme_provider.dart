@@ -1,56 +1,59 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-/// 应用主题模式枚举，定义了三种主题模式：系统默认、浅色和深色。
-enum AppThemeMode { system, light, dark }
+import '../services/storage/hydrated_notifier.dart';
 
-/// 提供一个 `NotifierProvider` 实例，用于管理应用的主题模式状态。
-/// 该 Provider 使用 `ThemeModeNotifier` 类来处理主题模式的逻辑。
-final themeModeProvider =
-    NotifierProvider<ThemeModeNotifier, AppThemeMode>(
-  ThemeModeNotifier.new,
-);
-
-/// 主题模式通知器类，继承自 `Notifier<AppThemeMode>`。
-/// 负责加载和保存用户的主题偏好设置，并提供切换主题的方法。
-class ThemeModeNotifier extends Notifier<AppThemeMode> {
-  /// 构建方法，在初始化时调用 `_load()` 方法从本地存储中读取用户保存的主题模式，
-  /// 并返回默认的主题模式（系统默认）。
+/// 一个用于管理应用主题模式的状态通知器。
+///
+/// 该类继承自 [HydratedNotifier]，支持持久化存储主题模式状态。
+/// 它提供了设置、切换主题模式以及序列化/反序列化功能。
+class ThemeModeNotifier extends HydratedNotifier<ThemeMode> {
+  /// 构建初始状态。
+  ///
+  /// 如果存在持久化数据，则从中恢复状态；否则默认使用系统主题模式。
   @override
-  AppThemeMode build() {
-    _load();
-    return AppThemeMode.system;
+  ThemeMode build() => hydrate() ?? ThemeMode.system;
+
+  /// 设置当前的主题模式。
+  ///
+  /// [mode] 指定要设置的主题模式（light、dark 或 system）。
+  void setThemeMode(ThemeMode mode) => state = mode;
+
+  /// 切换当前主题模式。
+  ///
+  /// 根据当前状态在 light、dark 和 system 之间循环切换。
+  void toggle() {
+    state = switch (state) {
+      ThemeMode.light => ThemeMode.dark,
+      ThemeMode.dark => ThemeMode.light,
+      ThemeMode.system => ThemeMode.dark,
+    };
   }
 
-  /// 异步加载用户保存的主题模式。
-  /// 从 `SharedPreferences` 中获取保存的主题模式字符串，并根据其值更新当前状态。
-  /// 如果没有找到对应的值或值无效，则使用系统默认主题。
-  Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final value = prefs.getString('themeMode');
-    switch (value) {
-      case 'light':
-        state = AppThemeMode.light;
-        break;
-      case 'dark':
-        state = AppThemeMode.dark;
-        break;
-      default:
-        state = AppThemeMode.system;
+  /// 将当前状态序列化为 JSON 格式。
+  ///
+  /// [state] 当前的主题模式状态。
+  /// 返回一个包含主题模式索引的 Map，格式为 {'mode': index}。
+  @override
+  Map<String, dynamic>? toJson(ThemeMode state) => {'mode': state.index};
+
+  /// 从 JSON 数据中反序列化主题模式状态。
+  ///
+  /// [json] 包含主题模式索引的 Map。
+  /// 返回对应的 [ThemeMode] 实例，如果数据无效则返回 null。
+  @override
+  ThemeMode? fromJson(Map<String, dynamic> json) {
+    final index = json['mode'] as int?;
+    if (index == null || index < 0 || index >= ThemeMode.values.length) {
+      return null;
     }
-  }
-
-  /// 设置并保存新的主题模式。
-  ///
-  /// 参数:
-  /// - [mode]: 新的主题模式，类型为 `AppThemeMode`。
-  ///
-  /// 功能:
-  /// 1. 更新当前的状态为指定的主题模式。
-  /// 2. 将新主题模式保存到 `SharedPreferences` 中，以便下次启动时恢复。
-  Future<void> setTheme(AppThemeMode mode) async {
-    state = mode;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('themeMode', mode.name);
+    return ThemeMode.values[index];
   }
 }
+
+/// 提供 [ThemeModeNotifier] 的 Riverpod 状态提供者。
+///
+/// 用于在应用中访问和管理主题模式状态。
+final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
+  ThemeModeNotifier.new,
+);

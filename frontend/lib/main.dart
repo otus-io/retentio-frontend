@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
+import 'package:wordupx/pre_config.dart';
 import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
 import 'providers/auth_provider.dart';
@@ -22,7 +23,8 @@ void main() async {
   // 确保 Flutter 绑定初始化
   WidgetsFlutterBinding.ensureInitialized();
 
-
+// 初始化预配置
+  PreConfig.init();
   runApp(
     UncontrolledProviderScope(
       container: providerContainer,
@@ -65,13 +67,13 @@ class _MyAppState extends ConsumerState<MyApp> {
 
     ThemeMode flutterThemeMode;
     switch (themeMode) {
-      case AppThemeMode.light:
+      case ThemeMode.light:
         flutterThemeMode = ThemeMode.light;
         break;
-      case AppThemeMode.dark:
+      case ThemeMode.dark:
         flutterThemeMode = ThemeMode.dark;
         break;
-      case AppThemeMode.system:
+      case ThemeMode.system:
         flutterThemeMode = ThemeMode.system;
         break;
     }
