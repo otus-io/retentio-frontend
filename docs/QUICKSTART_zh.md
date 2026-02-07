@@ -8,8 +8,9 @@
 
 ## 前提条件
 
-- 后端服务器运行在 `http://localhost:8080`
-- 打开 Swagger UI：http://localhost:8080/docs
+- 打开 Swagger UI：
+  - **本地**: http://localhost:8080/docs
+  - **生产环境**: https://api.wordupx.com/docs
 
 ---
 
@@ -281,21 +282,6 @@
   }
 }
 ```
-
----
-
-## 总结
-
-| 步骤 | 接口 | 说明 |
-|------|------|------|
-| 1 | `POST /auth/register` | 创建账号 |
-| 2 | `POST /auth/login` | 获取令牌 |
-| 3 | Authorize 按钮 | 在 Swagger 中设置令牌 |
-| 4 | `POST /api/decks` | 创建卡组 |
-| 5 | `POST /api/decks/{id}/facts/append` | 添加词条到卡组 |
-| 6 | `GET /api/decks/{id}/next-due-card` | 获取下一张待复习卡片 |
-| 7 | `PATCH /api/decks/{id}/cards/{cardIndex}/update-interval` | 复习卡片 |
-| 8 | `PATCH /api/decks/{id}/cards/{cardIndex}/update-visibility` | 隐藏/显示卡片 |
 
 ---
 

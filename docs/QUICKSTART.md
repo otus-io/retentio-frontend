@@ -8,8 +8,9 @@ This guide walks you through using the WordUpX API via Swagger UI.
 
 ## Prerequisites
 
-- Backend server running at `http://localhost:8080`
-- Open Swagger UI at: http://localhost:8080/docs
+- Open Swagger UI at:
+  - **Local**: http://localhost:8080/docs
+  - **Production**: https://api.wordupx.com/docs
 
 ---
 
@@ -281,21 +282,6 @@ If you want to temporarily hide a card from reviews:
   }
 }
 ```
-
----
-
-## Summary
-
-| Step | Endpoint | Description |
-|------|----------|-------------|
-| 1 | `POST /auth/register` | Create account |
-| 2 | `POST /auth/login` | Get token |
-| 3 | Authorize button | Set token in Swagger |
-| 4 | `POST /api/decks` | Create a deck |
-| 5 | `POST /api/decks/{id}/facts/append` | Add facts to deck |
-| 6 | `GET /api/decks/{id}/next-due-card` | Get next card to review |
-| 7 | `PATCH /api/decks/{id}/cards/{cardIndex}/update-interval` | Review card |
-| 8 | `PATCH /api/decks/{id}/cards/{cardIndex}/update-visibility` | Hide/unhide card |
 
 ---
 
