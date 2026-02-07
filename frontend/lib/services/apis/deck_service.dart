@@ -16,7 +16,6 @@ class DeckService {
 
       return [];
     } catch (e) {
-      print('Error in getDecks: $e');
       rethrow;
     }
   }
@@ -27,7 +26,6 @@ class DeckService {
       final res = await ApiService.get('/api/decks/$deckId');
       return Deck.fromJson(res?.data);
     } catch (e) {
-      print('Error in getDeckDetail: $e');
       rethrow;
     }
   }

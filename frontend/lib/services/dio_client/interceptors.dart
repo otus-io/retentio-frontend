@@ -1,5 +1,4 @@
-
-part of services;
+part of '../index.dart';
 
 /// 请求拦截器
 class HttpHeaderInterceptors extends InterceptorsWrapper {
@@ -8,10 +7,8 @@ class HttpHeaderInterceptors extends InterceptorsWrapper {
       RequestOptions options,
       RequestInterceptorHandler handler,
       ) {
-    //final cusToken = options.headers["user-token"] as String? ?? '';
-    // if (cusToken.isEmpty) {
-    //   options.headers['user-token'] = StorageService.of.getToken();
-    // }
+    options.headers= ApiService.buildHeaders(options.headers);
+    //     if (_token != null) 'Authorization': 'Bearer $_token',
     // options.headers['device-id'] = DevicesUtil.of.deviceID;
     // options.headers = {
     //   ...options.headers,
@@ -59,7 +56,6 @@ class LogInterceptors extends InterceptorsWrapper {
 
 /// 响应拦截器
 class ResponseInterceptors extends InterceptorsWrapper {
-  final _debounce = DebounceUtil(milliseconds: 300);
 
   @override
   void onResponse(
@@ -71,18 +67,19 @@ class ResponseInterceptors extends InterceptorsWrapper {
     if (data is String) {
       data = jsonDecode(data);
     }
-    if ((data is Map) &&
-        (response.statusCode == 200 || response.statusCode == 201)) {
-      final dynamic code = data['code'];
-      final String msg = data['msg'] ?? '';
 
-      if (code == 401) {
-        ApiService.handle401Unauthorized();
-      } else if (code != 0 && code != 60001001 && msg.isNotEmpty) {
-       // DialogUtil.showToast(msg);
-      }
-    }
     super.onResponse(response..data = data, handler);
+  }
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    logger.e({"onError":{"err_url": err.requestOptions.uri,"err_type": err.type,"err_message": err}});
+
+
+      if (err.response?.statusCode == 401) {
+        ApiService.handle401Unauthorized();
+      }
+
+    super.onError(err, handler);
   }
 }
 

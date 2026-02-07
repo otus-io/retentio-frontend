@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
 import 'package:wordupx/pre_config.dart';
 import 'package:wordupx/routers/app_pages.dart';
-import 'providers/theme_provider.dart';
+
 import 'providers/locale_provider.dart';
-import 'providers/auth_provider.dart';
-import 'screen/login/login_screen.dart';
+import 'providers/theme_provider.dart';
 import 'screen/home/home_screen.dart';
 import 'screen/learn/learn_screen.dart';
 import 'screen/profile/profile_screen.dart';
-import 'services/apis/api_service.dart';
 
 // 全局导航键
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -64,7 +62,6 @@ class _MyAppState extends ConsumerState<MyApp> {
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
     final locale = ref.watch(localeProvider);
-
     ThemeMode flutterThemeMode;
     switch (themeMode) {
       case ThemeMode.light:

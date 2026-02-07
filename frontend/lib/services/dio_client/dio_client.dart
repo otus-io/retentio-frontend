@@ -1,9 +1,7 @@
-part of services;
+part of '../index.dart';
 
-/**
- * Created on 2026/2/5
- * Description:
- */
+/// Created on 2026/2/5
+/// Description:
 
 DioClient dioClient = DioClient.of;
 

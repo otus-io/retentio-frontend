@@ -1,10 +1,8 @@
-part of services;
+part of 'index.dart';
 
 
-/**
- * Created on 2026/2/5
- * Description:
- */
+/// Created on 2026/2/5
+/// Description:
 
 ApiEnv _kApiEnv = ApiEnv.dev;
 
@@ -33,8 +31,6 @@ class Env {
         return 'https://api.wordupx.com';
       case ApiEnv.release:
         return 'https://api.wordupx.com';
-      default:
-        return 'https://api.wordupx.com';
-    }
+      }
   }
 }

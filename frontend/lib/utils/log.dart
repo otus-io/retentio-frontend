@@ -1,9 +1,7 @@
 import 'package:logger/logger.dart';
 import 'dart:developer' as developer;
-/**
- * Created on 2026/2/5
- * Description:
- */
+/// Created on 2026/2/5
+/// Description:
 Log logger = Log();
 
 class Log {

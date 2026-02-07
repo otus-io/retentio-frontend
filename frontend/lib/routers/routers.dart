@@ -1,7 +1,5 @@
-/**
- * Created on 2026/2/6
- * Description:
- */
+/// Created on 2026/2/6
+/// Description:
 enum AppRoutes {
   login('/login'),
   main('/'),

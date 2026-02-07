@@ -1,27 +1,11 @@
-import 'dart:convert';
-import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wordupx/models/res_base_model.dart';
 import 'package:wordupx/services/index.dart';
-import '../../constants.dart';
+import '../../main.dart';
 import '../../providers/auth_provider.dart';
 
 class ApiService {
   static String? _token;
-  static GlobalKey<NavigatorState>? navigatorKey;
-  static ProviderContainer? providerContainer;
-
-  /// 设置全局导航键
-  static void setNavigatorKey(GlobalKey<NavigatorState> key) {
-    navigatorKey = key;
-  }
-
-  /// 设置 Provider Container
-  static void setProviderContainer(ProviderContainer container) {
-    providerContainer = container;
-  }
 
   /// 初始化时加载 token
   static Future<void> init() async {
@@ -44,28 +28,24 @@ class ApiService {
   }
 
   /// 通用 POST 请求
-  static Future<ResBaseModel?> post(
-    String endpoint, {
+  static Future<ResBaseModel?> post(String endpoint, {
     Map<String, dynamic>? body,
   }) async {
-
     final response = await dioClient.post(endpoint, params: body);
 
     return response;
   }
 
   /// 通用 GET 请求
-  static Future<ResBaseModel?> get(
-    String endpoint, {
+  static Future<ResBaseModel?> get(String endpoint, {
     Map<String, String>? params,
   }) async {
-
-    final response = await dioClient.get(endpoint,params: params);
+    final response = await dioClient.get(endpoint, params: params);
     return response;
   }
 
   /// 构建 headers（自动附加 Authorization）
-  static Map<String, String> _buildHeaders(Map<String, String>? headers) {
+  static Map<String, dynamic> buildHeaders(Map<String, dynamic>? headers) {
     final defaultHeaders = {
       'Content-Type': 'application/json',
       if (_token != null) 'Authorization': 'Bearer $_token',
@@ -80,20 +60,13 @@ class ApiService {
     await clearToken();
 
     // 更新登录状态
-    if (providerContainer != null) {
-      try {
-        final authNotifier = providerContainer!.read(isLoginProvider.notifier);
-        await authNotifier.setLogin(false);
-      } catch (e) {
-        // 忽略错误
-      }
-    }
 
-    // 跳转到登录页
-    if (navigatorKey?.currentContext != null) {
-      final context = navigatorKey!.currentContext!;
-      // 清除所有路由并跳转到登录页
-      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    try {
+      final authNotifier = providerContainer.read(isLoginProvider.notifier);
+      await authNotifier.setLogin(false);
+    } catch (e) {
+      // 忽略错误
     }
+    AuthProvider.instance.logout();
   }
 }

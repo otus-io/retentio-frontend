@@ -27,7 +27,6 @@ class CardService {
 
       return Card.fromJson(res?.data);
     } catch (e) {
-      print('Error getting next due card: $e');
       return null;
     }
   }

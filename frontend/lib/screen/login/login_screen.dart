@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wordupx/constants.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
-import 'package:wordupx/main.dart';
 import 'package:wordupx/providers/theme_provider.dart';
 
 import 'package:wordupx/providers/locale_provider.dart';
@@ -12,6 +11,7 @@ import 'package:wordupx/utils/util.dart';
 import 'package:wordupx/widgets/bottom_popup.dart';
 import 'package:wordupx/screen/login/widgets/forgot_password.dart';
 
+import '../../providers/auth_provider.dart';
 import '../../services/apis/auth_service.dart';
 
 part 'login_controller.dart';

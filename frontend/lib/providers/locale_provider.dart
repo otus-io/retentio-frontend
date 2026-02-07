@@ -9,7 +9,7 @@ final localeProvider = NotifierProvider<LocaleNotifier, Locale>(
 );
 
 /// 负责管理应用本地化状态的 Notifier 类。
-/// 该类继承自 Notifier<Locale>，用于加载和设置应用的语言环境。
+/// 用于加载和设置应用的语言环境。
 class LocaleNotifier extends Notifier<Locale> {
 
   /// 构建并初始化本地化状态。

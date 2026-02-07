@@ -128,115 +128,123 @@ class ProfileScreen extends ConsumerWidget {
     }
   }
 
-  void _showLanguageDialog(
-    BuildContext context,
-    WidgetRef ref,
-    AppLocalizations loc,
-  ) {
+  void _showLanguageDialog(BuildContext context,
+      WidgetRef ref,
+      AppLocalizations loc,) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(loc.changeLanguage),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<Locale>(
-              title: const Text('English'),
-              value: const Locale('en'),
-              groupValue: ref.read(localeProvider),
-              onChanged: (value) {
-                if (value != null) {
-                  ref.read(localeProvider.notifier).setLocale(value);
-                  Navigator.of(context).pop();
-                }
-              },
+      builder: (context) =>
+          AlertDialog(
+            title: Text(loc.changeLanguage),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioGroup(
+                  onChanged: (value) {
+                    if (value != null) {
+                      ref.read(localeProvider.notifier).setLocale(value);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  groupValue: ref.read(localeProvider),
+                  child: RadioListTile<Locale>(
+                    title: const Text('English'),
+                    value: const Locale('en'),
+                  ),
+                ),
+                RadioGroup(
+                  groupValue: ref.read(localeProvider),
+                  onChanged: (value) {
+                    if (value != null) {
+                      ref.read(localeProvider.notifier).setLocale(value);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: RadioListTile<Locale>(
+                    title: const Text('简体中文'),
+                    value: const Locale('zh'),
+                  ),
+                ),
+              ],
             ),
-            RadioListTile<Locale>(
-              title: const Text('简体中文'),
-              value: const Locale('zh'),
-              groupValue: ref.read(localeProvider),
-              onChanged: (value) {
-                if (value != null) {
-                  ref.read(localeProvider.notifier).setLocale(value);
-                  Navigator.of(context).pop();
-                }
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
-  void _showThemeDialog(
-    BuildContext context,
-    WidgetRef ref,
-    AppLocalizations loc,
-  ) {
+  void _showThemeDialog(BuildContext context,
+      WidgetRef ref,
+      AppLocalizations loc,) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(loc.changeTheme),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<ThemeMode>(
-              title: Text(loc.themeLight),
-              value: ThemeMode.light,
-              groupValue: ref.read(themeModeProvider),
-              onChanged: (value) {
-                if (value != null) {
-                  ref.read(themeModeProvider.notifier).setThemeMode(value);
-                  Navigator.of(context).pop();
-                }
-              },
+      builder: (context) =>
+          AlertDialog(
+            title: Text(loc.changeTheme),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioGroup(groupValue: ref.read(themeModeProvider),
+                  onChanged: (value) {
+                    if (value != null) {
+                      ref.read(themeModeProvider.notifier).setThemeMode(value);
+                      Navigator.of(context).pop();
+                    }
+                  }, child: RadioListTile<ThemeMode>(
+                    title: Text(loc.themeLight),
+                    value: ThemeMode.light,
+
+                  ),),
+                RadioGroup(
+                  groupValue: ref.read(themeModeProvider),
+                  onChanged: (value) {
+                    if (value != null) {
+                      ref.read(themeModeProvider.notifier).setThemeMode(value);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: RadioListTile<ThemeMode>(
+                    title: Text(loc.themeDark),
+                    value: ThemeMode.dark,
+
+                  ),
+                ),
+                RadioGroup(groupValue: ref.read(themeModeProvider),
+                    onChanged: (value) {
+                      if (value != null) {
+                        ref.read(themeModeProvider.notifier).setThemeMode(
+                            value);
+                        Navigator.of(context).pop();
+                      }
+                    }, child: RadioListTile<ThemeMode>(
+                      title: Text(loc.themeSystem),
+                      value: ThemeMode.system,
+
+                    ) ,),
+
+              ],
             ),
-            RadioListTile<ThemeMode>(
-              title: Text(loc.themeDark),
-              value: ThemeMode.dark,
-              groupValue: ref.read(themeModeProvider),
-              onChanged: (value) {
-                if (value != null) {
-                  ref.read(themeModeProvider.notifier).setThemeMode(value);
-                  Navigator.of(context).pop();
-                }
-              },
-            ),
-            RadioListTile<ThemeMode>(
-              title: Text(loc.themeSystem),
-              value: ThemeMode.system,
-              groupValue: ref.read(themeModeProvider),
-              onChanged: (value) {
-                if (value != null) {
-                  ref.read(themeModeProvider.notifier).setThemeMode(value);
-                  Navigator.of(context).pop();
-                }
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
   void _showLogoutDialog(BuildContext context, AppLocalizations loc) async {
     final shouldLogout = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(loc.logoutConfirmTitle),
-        content: Text(loc.logoutConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(loc.cancel),
+      builder: (context) =>
+          AlertDialog(
+            title: Text(loc.logoutConfirmTitle),
+            content: Text(loc.logoutConfirmMessage),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text(loc.cancel),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: Text(loc.logout),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(loc.logout),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-          ),
-        ],
-      ),
     );
 
     if (shouldLogout == true && context.mounted) {

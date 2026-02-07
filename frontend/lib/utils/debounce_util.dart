@@ -1,10 +1,8 @@
-part of utils;
+part of 'index.dart';
 
 
-/**
- * Created on 2026/2/5
- * Description:
- */
+/// Created on 2026/2/5
+/// Description:
 class DebounceUtil {
   final int milliseconds;
   VoidCallback? action;

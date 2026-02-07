@@ -12,17 +12,14 @@ final Map<int, Map<String, Map<String, dynamic>>> _inMemoryCache = {};
 
 int _storageToken = 0;
 
-@internal
 Map<String, dynamic>? readFromCache(String key) =>
     _inMemoryCache[_storageToken]?[key];
 
-@internal
 void writeToCache(String key, Map<String, dynamic> value) {
   final scopedCache = _inMemoryCache.putIfAbsent(_storageToken, () => {});
   scopedCache[key] = value;
 }
 
-@internal
 void removeFromCache(String key) {
   final scopedCache = _inMemoryCache[_storageToken];
   if (scopedCache == null) return;
@@ -33,12 +30,11 @@ void removeFromCache(String key) {
   }
 }
 
-@internal
 void clearCache() {
   _inMemoryCache.remove(_storageToken);
 }
 
-@internal
+
 void clearAllCache() => _inMemoryCache.clear();
 
 /// Storage interface for persisting and retrieving state
