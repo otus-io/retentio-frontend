@@ -8,10 +8,24 @@ This document outlines the code quality standards and Pull Request (PR) conventi
 
 ## Table of Contents
 
+- [PR Submission Flow](#pr-submission-flow)
 - [Code Quality Standards](#code-quality-standards)
 - [Pull Request Guidelines](#pull-request-guidelines)
 - [Commit Guidelines](#commit-guidelines)
 - [PR Review Process](#pr-review-process)
+
+---
+
+## PR Submission Flow
+
+When submitting a PR, follow this process:
+
+1. **Create PR** - Submit your pull request to `main`
+2. **Claude Bot Review** - Wait for the automated Claude AI review comment
+3. **Teammate Review** - Request a second opinion from a teammate
+4. **Resolve Comments** - Address feedback from both Claude and your teammate
+   - ⚠️ **Do NOT resolve comments yourself** - Let the reviewer resolve them after verification
+5. **Merge** - Once approved and all comments resolved, merge the PR
 
 ---
 
