@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
+import 'package:wordupx/pre_config.dart';
+import 'package:wordupx/routers/app_pages.dart';
 import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
 import 'providers/auth_provider.dart';
@@ -22,7 +24,8 @@ void main() async {
   // 确保 Flutter 绑定初始化
   WidgetsFlutterBinding.ensureInitialized();
 
-
+// 初始化预配置
+  await PreConfig.init();
   runApp(
     UncontrolledProviderScope(
       container: providerContainer,
@@ -61,17 +64,16 @@ class _MyAppState extends ConsumerState<MyApp> {
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
     final locale = ref.watch(localeProvider);
-    final isLogin = ref.watch(isLoginProvider);
 
     ThemeMode flutterThemeMode;
     switch (themeMode) {
-      case AppThemeMode.light:
+      case ThemeMode.light:
         flutterThemeMode = ThemeMode.light;
         break;
-      case AppThemeMode.dark:
+      case ThemeMode.dark:
         flutterThemeMode = ThemeMode.dark;
         break;
-      case AppThemeMode.system:
+      case ThemeMode.system:
         flutterThemeMode = ThemeMode.system;
         break;
     }
@@ -83,9 +85,8 @@ class _MyAppState extends ConsumerState<MyApp> {
       );
     }
 
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      title: '',
+    return MaterialApp.router(
+      routerConfig: AppPages.routes,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.blue,
@@ -107,11 +108,6 @@ class _MyAppState extends ConsumerState<MyApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/home': (context) => const MainTabScreen(),
-      },
-      home: isLogin ? const MainTabScreen() : const LoginScreen(),
     );
   }
 }

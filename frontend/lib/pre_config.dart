@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart' show WidgetsFlutterBinding;
+import 'package:path_provider/path_provider.dart';
 import 'package:wordupx/services/apis/api_service.dart';
 import 'package:wordupx/services/index.dart';
+import 'package:wordupx/services/storage/hydrated_storage.dart';
 
 import 'main.dart';
 
@@ -24,6 +26,14 @@ class PreConfig {
   static Future<void> init() async {
     // 检查是否已初始化，避免重复执行
     if (!_didInit) {
+      // 获取应用文档目录，用于存储持久化数据
+      final appDir = await getApplicationDocumentsDirectory();
+      // 构建Hive持久化存储实例，指定存储路径
+      final storage = await HiveHydratedStorage.build(
+        storageDirectory: appDir.path,
+      );
+      // 设置全局HydratedStorage实例，供应用其他部分使用
+      HydratedStorage.instance = storage;
       // 初始化API服务
       await ApiService.init();
       ApiService.setNavigatorKey(navigatorKey);

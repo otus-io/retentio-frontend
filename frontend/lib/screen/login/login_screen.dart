@@ -36,8 +36,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     // 判断当前是否深色模式
     final isDark =
-        themeMode == AppThemeMode.dark ||
-        (themeMode == AppThemeMode.system &&
+        themeMode == .dark ||
+        (themeMode == .system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
 
     // 渐变色
@@ -227,7 +227,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               onPressed: () {
                 ref
                     .read(themeModeProvider.notifier)
-                    .setTheme(isDark ? AppThemeMode.light : AppThemeMode.dark);
+                    .setThemeMode(isDark ? .light : .dark);
               },
             ),
           ),

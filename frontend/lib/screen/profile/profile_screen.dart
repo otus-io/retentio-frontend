@@ -117,13 +117,13 @@ class ProfileScreen extends ConsumerWidget {
     }
   }
 
-  String _getThemeDisplayName(AppThemeMode theme, AppLocalizations loc) {
+  String _getThemeDisplayName(ThemeMode theme, AppLocalizations loc) {
     switch (theme) {
-      case AppThemeMode.light:
+      case ThemeMode.light:
         return loc.themeLight;
-      case AppThemeMode.dark:
+      case ThemeMode.dark:
         return loc.themeDark;
-      case AppThemeMode.system:
+      case ThemeMode.system:
         return loc.themeSystem;
     }
   }
@@ -180,35 +180,35 @@ class ProfileScreen extends ConsumerWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            RadioListTile<AppThemeMode>(
+            RadioListTile<ThemeMode>(
               title: Text(loc.themeLight),
-              value: AppThemeMode.light,
+              value: ThemeMode.light,
               groupValue: ref.read(themeModeProvider),
               onChanged: (value) {
                 if (value != null) {
-                  ref.read(themeModeProvider.notifier).setTheme(value);
+                  ref.read(themeModeProvider.notifier).setThemeMode(value);
                   Navigator.of(context).pop();
                 }
               },
             ),
-            RadioListTile<AppThemeMode>(
+            RadioListTile<ThemeMode>(
               title: Text(loc.themeDark),
-              value: AppThemeMode.dark,
+              value: ThemeMode.dark,
               groupValue: ref.read(themeModeProvider),
               onChanged: (value) {
                 if (value != null) {
-                  ref.read(themeModeProvider.notifier).setTheme(value);
+                  ref.read(themeModeProvider.notifier).setThemeMode(value);
                   Navigator.of(context).pop();
                 }
               },
             ),
-            RadioListTile<AppThemeMode>(
+            RadioListTile<ThemeMode>(
               title: Text(loc.themeSystem),
-              value: AppThemeMode.system,
+              value: ThemeMode.system,
               groupValue: ref.read(themeModeProvider),
               onChanged: (value) {
                 if (value != null) {
-                  ref.read(themeModeProvider.notifier).setTheme(value);
+                  ref.read(themeModeProvider.notifier).setThemeMode(value);
                   Navigator.of(context).pop();
                 }
               },
