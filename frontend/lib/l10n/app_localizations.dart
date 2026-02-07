@@ -254,7 +254,7 @@ abstract class AppLocalizations {
   /// **'New'**
   String get newCards;
 
-  /// Review cards label
+  /// Learn tab label in bottom navigation
   ///
   /// In en, this message translates to:
   /// **'Review'**

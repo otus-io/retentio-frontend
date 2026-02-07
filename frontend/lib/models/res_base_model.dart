@@ -1,7 +1,7 @@
-/**
- * Created on 2026/2/5
- * Description:
- */
+/// Created on 2026/2/5
+/// Description:
+library;
+
 import 'package:dio/dio.dart';
 
 class ResBaseModel {
@@ -32,12 +32,11 @@ class ResBaseModel {
     String? msg,
     dynamic data,
     DioException? exception,
-  }) =>
-      ResBaseModel(
-        code: code ?? this.code,
-        msg: msg ?? this.msg,
-        data: data ?? this.data,
-      )..exception = exception ?? this.exception;
+  }) => ResBaseModel(
+    code: code ?? this.code,
+    msg: msg ?? this.msg,
+    data: data ?? this.data,
+  )..exception = exception ?? this.exception;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};

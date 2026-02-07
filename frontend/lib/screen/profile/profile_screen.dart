@@ -140,20 +140,20 @@ class ProfileScreen extends ConsumerWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            RadioListTile<Locale>(
-              title: const Text('English'),
-              value: const Locale('en'),
-              groupValue: ref.read(localeProvider),
+            RadioGroup(
               onChanged: (value) {
                 if (value != null) {
                   ref.read(localeProvider.notifier).setLocale(value);
                   Navigator.of(context).pop();
                 }
               },
+              groupValue: ref.read(localeProvider),
+              child: RadioListTile<Locale>(
+                title: const Text('English'),
+                value: const Locale('en'),
+              ),
             ),
-            RadioListTile<Locale>(
-              title: const Text('简体中文'),
-              value: const Locale('zh'),
+            RadioGroup(
               groupValue: ref.read(localeProvider),
               onChanged: (value) {
                 if (value != null) {
@@ -161,6 +161,10 @@ class ProfileScreen extends ConsumerWidget {
                   Navigator.of(context).pop();
                 }
               },
+              child: RadioListTile<Locale>(
+                title: const Text('简体中文'),
+                value: const Locale('zh'),
+              ),
             ),
           ],
         ),
@@ -180,9 +184,7 @@ class ProfileScreen extends ConsumerWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            RadioListTile<ThemeMode>(
-              title: Text(loc.themeLight),
-              value: ThemeMode.light,
+            RadioGroup(
               groupValue: ref.read(themeModeProvider),
               onChanged: (value) {
                 if (value != null) {
@@ -190,10 +192,12 @@ class ProfileScreen extends ConsumerWidget {
                   Navigator.of(context).pop();
                 }
               },
+              child: RadioListTile<ThemeMode>(
+                title: Text(loc.themeLight),
+                value: ThemeMode.light,
+              ),
             ),
-            RadioListTile<ThemeMode>(
-              title: Text(loc.themeDark),
-              value: ThemeMode.dark,
+            RadioGroup(
               groupValue: ref.read(themeModeProvider),
               onChanged: (value) {
                 if (value != null) {
@@ -201,10 +205,12 @@ class ProfileScreen extends ConsumerWidget {
                   Navigator.of(context).pop();
                 }
               },
+              child: RadioListTile<ThemeMode>(
+                title: Text(loc.themeDark),
+                value: ThemeMode.dark,
+              ),
             ),
-            RadioListTile<ThemeMode>(
-              title: Text(loc.themeSystem),
-              value: ThemeMode.system,
+            RadioGroup(
               groupValue: ref.read(themeModeProvider),
               onChanged: (value) {
                 if (value != null) {
@@ -212,6 +218,10 @@ class ProfileScreen extends ConsumerWidget {
                   Navigator.of(context).pop();
                 }
               },
+              child: RadioListTile<ThemeMode>(
+                title: Text(loc.themeSystem),
+                value: ThemeMode.system,
+              ),
             ),
           ],
         ),
@@ -232,8 +242,8 @@ class ProfileScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(loc.logout),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(loc.logout),
           ),
         ],
       ),

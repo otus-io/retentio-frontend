@@ -12,6 +12,7 @@ import 'package:wordupx/utils/util.dart';
 import 'package:wordupx/widgets/bottom_popup.dart';
 import 'package:wordupx/screen/login/widgets/forgot_password.dart';
 
+import '../../providers/auth_provider.dart';
 import '../../services/apis/auth_service.dart';
 
 part 'login_controller.dart';

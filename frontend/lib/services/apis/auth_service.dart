@@ -1,11 +1,9 @@
 // auth_service.dart
+import 'package:wordupx/main.dart';
 import 'package:wordupx/models/res_base_model.dart';
 import 'package:wordupx/providers/auth_provider.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wordupx/services/index.dart';
 import 'api_service.dart';
-
-// 需要一个全局的 ProviderContainer 实例
-final _container = ProviderContainer();
 
 class AuthService {
   /// 注册
@@ -15,7 +13,7 @@ class AuthService {
     required String password,
   }) async {
     final data = await ApiService.post(
-      '/auth/register',
+      Api.register,
       body: {'email': email, 'username': username, 'password': password},
     );
     return data;
@@ -27,7 +25,7 @@ class AuthService {
     required String password,
   }) async {
     final res = await ApiService.post(
-      '/auth/login',
+      Api.login,
       body: {'username': username, 'password': password},
     );
 
@@ -37,7 +35,7 @@ class AuthService {
     if (token is String && token.isNotEmpty) {
       ApiService.setToken(token);
       // 登录成功后设置 isLogin 为 true
-      _container.read(isLoginProvider.notifier).setLogin(true);
+      providerContainer.read(isLoginProvider.notifier).setLogin(true);
     }
 
     return res?.data ?? {};
@@ -48,6 +46,6 @@ class AuthService {
     // 如果有后端登出接口，这里可调用：
     // await ApiService.post('/auth/logout');
     ApiService.clearToken();
-    _container.read(isLoginProvider.notifier).setLogin(false);
+    providerContainer.read(isLoginProvider.notifier).setLogin(false);
   }
 }

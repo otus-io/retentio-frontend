@@ -1,12 +1,10 @@
-/**
- * Created on 2026/2/6
- * Description:
- */
+/// Created on 2026/2/6
+/// Description:
 enum AppRoutes {
   login('/login'),
   main('/'),
-  register('/register'),
-  ;
+  register('/register');
+
   final String path;
   const AppRoutes(this.path);
 }

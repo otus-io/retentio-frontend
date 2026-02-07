@@ -38,7 +38,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.primaryColor.withOpacity(0.1),
+        color: theme.primaryColor.withValues(alpha: 0.1),
         border: Border(bottom: BorderSide(color: theme.dividerColor, width: 1)),
       ),
       child: Row(
@@ -87,7 +87,7 @@ class _DeckDetailScreenState extends State<DeckDetailScreen> {
         color: theme.scaffoldBackgroundColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),

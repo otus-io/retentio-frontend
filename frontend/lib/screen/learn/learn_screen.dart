@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
 import 'package:wordupx/providers/deck_provider.dart';
 import 'package:wordupx/models/deck.dart';
 import 'package:wordupx/screen/deck/deck_detail_screen.dart';
 import 'package:wordupx/screen/deck/deck_learn_screen.dart';
+import 'package:wordupx/widgets/common_refresher.dart';
 
 class LearnScreen extends ConsumerStatefulWidget {
   const LearnScreen({super.key});
@@ -17,8 +19,6 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
   @override
   void initState() {
     super.initState();
-    // 加载 decks
-    Future.microtask(() => ref.read(deckListProvider.notifier).loadDecks());
   }
 
   @override
@@ -31,9 +31,9 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
         title: Text(loc.learn),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(LucideIcons.squarePlus),
             onPressed: () {
-              ref.read(deckListProvider.notifier).refresh();
+              ///todo 添加deck
             },
           ),
         ],
@@ -62,7 +62,7 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                ref.read(deckListProvider.notifier).refresh();
+                ref.read(deckListProvider.notifier).onRefresh();
               },
               child: Text(loc.retry),
             ),
@@ -71,8 +71,11 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
       );
     }
 
-    if (state.decks.isEmpty) {
-      return Center(
+    return CommonRefresher(
+      controller: ref.read(deckListProvider.notifier).refreshController,
+      onRefresh: ref.read(deckListProvider.notifier).onRefresh,
+      isEmpty: state.decks.isEmpty,
+      emptyView: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -84,11 +87,7 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
             ),
           ],
         ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: () => ref.read(deckListProvider.notifier).refresh(),
+      ),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: state.decks.length,
@@ -136,7 +135,9 @@ class _DeckCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -374,7 +375,7 @@ class _InfoChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(

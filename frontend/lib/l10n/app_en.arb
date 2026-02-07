@@ -223,5 +223,9 @@
   "manage": "Manage",
   "@manage": {
     "description": "Button to manage deck"
+  },
+  "review": "Review",
+  "@review": {
+    "description": "Learn tab label in bottom navigation"
   }
 }

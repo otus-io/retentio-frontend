@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
 import 'package:wordupx/pre_config.dart';
+import 'package:wordupx/providers/auth_provider.dart';
 import 'package:wordupx/routers/app_pages.dart';
-import 'providers/theme_provider.dart';
+
+import 'extensions/context_extension.dart';
 import 'providers/locale_provider.dart';
-import 'providers/auth_provider.dart';
-import 'screen/login/login_screen.dart';
+import 'providers/theme_provider.dart';
 import 'screen/home/home_screen.dart';
 import 'screen/learn/learn_screen.dart';
 import 'screen/profile/profile_screen.dart';
-import 'services/apis/api_service.dart';
 
 // 全局导航键
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -20,11 +21,10 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final providerContainer = ProviderContainer();
 
 void main() async {
-
   // 确保 Flutter 绑定初始化
   WidgetsFlutterBinding.ensureInitialized();
 
-// 初始化预配置
+  // 初始化预配置
   await PreConfig.init();
   runApp(
     UncontrolledProviderScope(
@@ -64,7 +64,7 @@ class _MyAppState extends ConsumerState<MyApp> {
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
     final locale = ref.watch(localeProvider);
-
+    ref.watch(isLoginProvider);
     ThemeMode flutterThemeMode;
     switch (themeMode) {
       case ThemeMode.light:
@@ -123,23 +123,32 @@ class _MainTabScreenState extends State<MainTabScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
-    const HomeScreen(),
     const LearnScreen(),
+    const HomeScreen(),
     const ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
     return Scaffold(
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: loc.home),
-          BottomNavigationBarItem(icon: Icon(Icons.school), label: loc.learn),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: loc.profile),
+          BottomNavigationBarItem(
+            icon: Icon(LucideIcons.library),
+            label: context.loc.learn,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(LucideIcons.scanEye),
+            label: context.loc.review,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(LucideIcons.user),
+            label: context.loc.profile,
+          ),
         ],
+
         onTap: (index) {
           setState(() {
             _currentIndex = index;

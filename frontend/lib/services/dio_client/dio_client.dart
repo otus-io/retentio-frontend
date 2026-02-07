@@ -1,16 +1,14 @@
-part of services;
+part of '../index.dart';
 
-/**
- * Created on 2026/2/5
- * Description:
- */
+/// Created on 2026/2/5
+/// Description:
 
 DioClient dioClient = DioClient.of;
 
 class DioClient {
   static final DioClient of = DioClient._();
   bool _didConfig = false;
-  Dio get dio =>_dio;
+  Dio get dio => _dio;
   final Dio _dio = Dio();
 
   final _connectTimeout = const Duration(minutes: 1);
@@ -20,11 +18,11 @@ class DioClient {
   DioClient._();
 
   void config(
-      String baseUrl, {
-        List<Interceptor>? interceptors,
-        BaseOptions? options,
-        HttpClient Function()? proxyInterceptor,
-      }) {
+    String baseUrl, {
+    List<Interceptor>? interceptors,
+    BaseOptions? options,
+    HttpClient Function()? proxyInterceptor,
+  }) {
     if (options != null) {
       _dio.options = options;
     } else {
@@ -53,14 +51,11 @@ class DioClient {
 
   /// GET 请求
   Future<ResBaseModel?> get(
-      String url, {
-        Map<String, dynamic>? params,
-        Options? options,
-      }) async {
-    assert(
-    _didConfig,
-    'Please call Dioclient.config(...) first.',
-    );
+    String url, {
+    Map<String, dynamic>? params,
+    Options? options,
+  }) async {
+    assert(_didConfig, 'Please call Dioclient.config(...) first.');
     Response response;
     try {
       response = params == null
@@ -75,16 +70,11 @@ class DioClient {
 
   /// GET 请求
   Future<Uint8List?> getImageUint8ListFrom(String url) async {
-    assert(
-    _didConfig,
-    'Please call Dioclient.config(...) first.',
-    );
+    assert(_didConfig, 'Please call Dioclient.config(...) first.');
     try {
       final response = await _dio.get<Uint8List?>(
         url,
-        options: Options(
-          responseType: ResponseType.bytes,
-        ),
+        options: Options(responseType: ResponseType.bytes),
       );
       return response.data;
     } on DioException {
@@ -94,14 +84,11 @@ class DioClient {
 
   /// POST 请求
   Future<ResBaseModel?> post(
-      String url, {
-        Map<String, dynamic>? params,
-        Options? options,
-      }) async {
-    assert(
-    _didConfig,
-    'Please call Dioclient.config(...) first.',
-    );
+    String url, {
+    Map<String, dynamic>? params,
+    Options? options,
+  }) async {
+    assert(_didConfig, 'Please call Dioclient.config(...) first.');
     Response response;
     try {
       response = await _dio.post(url, data: params, options: options);
@@ -116,13 +103,10 @@ class DioClient {
 
   /// POST 请求
   Future<Map<String, dynamic>?> postGame(
-      String url, {
-        Map<String, dynamic>? params,
-      }) async {
-    assert(
-    _didConfig,
-    'Please call Dioclient.config(...) first.',
-    );
+    String url, {
+    Map<String, dynamic>? params,
+  }) async {
+    assert(_didConfig, 'Please call Dioclient.config(...) first.');
     Response response;
     try {
       response = await _dio.post(url, data: params);
@@ -137,14 +121,8 @@ class DioClient {
   }
 
   /// POST 请求
-  Future<ResBaseModel?> postObj(
-      String url, {
-        dynamic params,
-      }) async {
-    assert(
-    _didConfig,
-    'Please call Dioclient.config(...) first.',
-    );
+  Future<ResBaseModel?> postObj(String url, {dynamic params}) async {
+    assert(_didConfig, 'Please call Dioclient.config(...) first.');
     Response response;
     try {
       response = await _dio.post(url, data: params);
@@ -159,14 +137,11 @@ class DioClient {
 
   /// POST Form
   Future<ResBaseModel?> postForm(
-      String url, {
-        Map<String, dynamic>? params,
-        Options? options,
-      }) async {
-    assert(
-    _didConfig,
-    'Please call Dioclient.config(...) first.',
-    );
+    String url, {
+    Map<String, dynamic>? params,
+    Options? options,
+  }) async {
+    assert(_didConfig, 'Please call Dioclient.config(...) first.');
     Response response;
     try {
       response = await _dio.post(
@@ -187,28 +162,23 @@ class DioClient {
 
   /// POST 请求
   Future<ResBaseModel?> uploadFile(
-      String url, {
-        required String filePath,
-        String? fileName,
-        String? contentType,
-        void Function(int count, int total)? onSendProgress,
-      }) async {
-    assert(
-    _didConfig,
-    'Please call Dioclient.config(...) first.',
-    );
+    String url, {
+    required String filePath,
+    String? fileName,
+    String? contentType,
+    void Function(int count, int total)? onSendProgress,
+  }) async {
+    assert(_didConfig, 'Please call Dioclient.config(...) first.');
     Response response;
-    final formData = FormData.fromMap(
-      {
-        'file': await MultipartFile.fromFile(
-          filePath,
-          filename: fileName,
-          contentType: (contentType == null || contentType.isEmpty)
-              ? null
-              : DioMediaType.parse(contentType),
-        ),
-      },
-    );
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(
+        filePath,
+        filename: fileName,
+        contentType: (contentType == null || contentType.isEmpty)
+            ? null
+            : DioMediaType.parse(contentType),
+      ),
+    });
     try {
       response = await _dio.post(
         url,
@@ -229,23 +199,18 @@ class DioClient {
 
   /// POST 请求
   Future<ResBaseModel?> uploadBytes(
-      String url, {
-        required Uint8List bytes,
-        required String fileName,
-        required String moduleName,
-        void Function(int count, int total)? onSendProgress,
-      }) async {
-    assert(
-    _didConfig,
-    'Please call Dioclient.config(...) first.',
-    );
+    String url, {
+    required Uint8List bytes,
+    required String fileName,
+    required String moduleName,
+    void Function(int count, int total)? onSendProgress,
+  }) async {
+    assert(_didConfig, 'Please call Dioclient.config(...) first.');
     Response response;
-    final formData = FormData.fromMap(
-      {
-        'module': moduleName,
-        'file': MultipartFile.fromBytes(bytes, filename: fileName),
-      },
-    );
+    final formData = FormData.fromMap({
+      'module': moduleName,
+      'file': MultipartFile.fromBytes(bytes, filename: fileName),
+    });
     try {
       response = await _dio.post(
         url,
@@ -262,16 +227,13 @@ class DioClient {
 
   /// 下载资源
   Future<String> downLoadFile(
-      String downloadURL,
-      String downloadPath,
-      ValueChanged<double> onProgress,
-      Function() onError, {
-        CancelToken? cancelToken,
-      }) async {
-    assert(
-    _didConfig,
-    'Please call Dioclient.config(...) first.',
-    );
+    String downloadURL,
+    String downloadPath,
+    ValueChanged<double> onProgress,
+    Function() onError, {
+    CancelToken? cancelToken,
+  }) async {
+    assert(_didConfig, 'Please call Dioclient.config(...) first.');
 
     final Completer<String> downLoadFileFuture = Completer<String>();
     final File filePr = File(downloadPath);
@@ -288,10 +250,7 @@ class DioClient {
         downloadURL,
         downloadPath,
         cancelToken: cancelToken,
-        onReceiveProgress: (
-            received,
-            total,
-            ) {
+        onReceiveProgress: (received, total) {
           if (total > 0) {
             final percent = received / total;
             onProgress(percent);
@@ -340,6 +299,6 @@ class DioClient {
     return HttpClient()
       ..badCertificateCallback =
           (X509Certificate cert, String host, int port) =>
-      Env.useBadCertificate;
+              Env.useBadCertificate;
   }
 }

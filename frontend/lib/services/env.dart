@@ -1,19 +1,13 @@
-part of services;
+part of 'index.dart';
 
-
-/**
- * Created on 2026/2/5
- * Description:
- */
+/// Created on 2026/2/5
+/// Description:
 
 ApiEnv _kApiEnv = ApiEnv.dev;
 
 ApiEnv get kAPiEnv => _kApiEnv;
-enum ApiEnv {
-  debug,
-  dev,
-  release,
-}
+
+enum ApiEnv { debug, dev, release }
 
 class Env {
   static bool get isDistribute => kReleaseMode && _kApiEnv == ApiEnv.release;
@@ -29,11 +23,8 @@ class Env {
       case ApiEnv.debug:
         return 'https://api.wordupx.com';
       case ApiEnv.dev:
-
         return 'https://api.wordupx.com';
       case ApiEnv.release:
-        return 'https://api.wordupx.com';
-      default:
         return 'https://api.wordupx.com';
     }
   }

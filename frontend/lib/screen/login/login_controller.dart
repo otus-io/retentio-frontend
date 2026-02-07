@@ -29,9 +29,7 @@ class LoginController {
       final isSuccess = result['token'] != null;
 
       if (isSuccess) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const MainTabScreen()),
-        );
+        providerContainer.read(isLoginProvider.notifier).setLogin(true);
       } else {
         showSnack(context, result['message']);
       }
