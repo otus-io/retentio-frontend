@@ -13,6 +13,22 @@ This guide walks you through using the WordUpX API via Swagger UI.
 
 ---
 
+## API Reference
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/auth/register` | POST | Register user |
+| `/auth/login` | POST | Login |
+| `/api/decks` | POST | Create deck |
+| `/api/decks` | GET | List all decks |
+| `/api/decks/{id}` | GET | Get deck details |
+| `/api/decks/{id}/facts/{operation}` | POST | Add facts (operation: `append`) |
+| `/api/decks/{id}/facts` | GET | Get all facts |
+| `/api/decks/{id}/next-due-card` | GET | Get next due card |
+| `/api/decks/{id}/cards/{cardIndex}/{operation}` | PATCH | Update card (`update-interval`, `update-visibility`) |
+
+---
+
 ## 1. Authentication
 
 ### Create a User
@@ -63,7 +79,7 @@ Now all subsequent requests will include your authentication token.
 
 ## 2. Create a Deck
 
-**Endpoint:** `POST /deck`
+**Endpoint:** `POST /api/decks`
 
 ```json
 {
@@ -98,10 +114,10 @@ Now all subsequent requests will include your authentication token.
 
 ## 3. Add Facts
 
-**Endpoint:** `POST /fact`
+**Endpoint:** `POST /api/decks/{id}/facts/{operation}`
 
 **Parameters:**
-- `deck_id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05` (your deck ID)
+- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05` (your deck ID)
 - `operation`: `append`
 
 **Request Body:**
@@ -150,10 +166,10 @@ Now all subsequent requests will include your authentication token.
 
 ## 4. Get Next Due Card
 
-**Endpoint:** `GET /card/next`
+**Endpoint:** `GET /api/decks/{id}/next-due-card`
 
 **Parameters:**
-- `deck_id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`
+- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05` (your deck ID)
 
 **Response:**
 
@@ -275,9 +291,9 @@ If you want to temporarily hide a card from reviews:
 | 1 | `POST /auth/register` | Create account |
 | 2 | `POST /auth/login` | Get token |
 | 3 | Authorize button | Set token in Swagger |
-| 4 | `POST /deck` | Create a deck |
-| 5 | `POST /fact` | Add facts to deck |
-| 6 | `GET /card/next` | Get next card to review |
+| 4 | `POST /api/decks` | Create a deck |
+| 5 | `POST /api/decks/{id}/facts/append` | Add facts to deck |
+| 6 | `GET /api/decks/{id}/next-due-card` | Get next card to review |
 | 7 | `PATCH /api/decks/{id}/cards/{cardIndex}/update-interval` | Review card |
 | 8 | `PATCH /api/decks/{id}/cards/{cardIndex}/update-visibility` | Hide/unhide card |
 

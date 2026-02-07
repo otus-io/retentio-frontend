@@ -13,6 +13,22 @@
 
 ---
 
+## API 接口参考
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/auth/register` | POST | 注册用户 |
+| `/auth/login` | POST | 登录 |
+| `/api/decks` | POST | 创建卡组 |
+| `/api/decks` | GET | 获取所有卡组 |
+| `/api/decks/{id}` | GET | 获取卡组详情 |
+| `/api/decks/{id}/facts/{operation}` | POST | 添加词条 (operation: `append`) |
+| `/api/decks/{id}/facts` | GET | 获取所有词条 |
+| `/api/decks/{id}/next-due-card` | GET | 获取下一张待复习卡片 |
+| `/api/decks/{id}/cards/{cardIndex}/{operation}` | PATCH | 更新卡片 (`update-interval`, `update-visibility`) |
+
+---
+
 ## 1. 身份验证
 
 ### 创建用户
@@ -63,7 +79,7 @@
 
 ## 2. 创建卡组
 
-**接口:** `POST /deck`
+**接口:** `POST /api/decks`
 
 ```json
 {
@@ -98,10 +114,10 @@
 
 ## 3. 添加词条
 
-**接口:** `POST /fact`
+**接口:** `POST /api/decks/{id}/facts/{operation}`
 
 **参数:**
-- `deck_id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
+- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
 - `operation`: `append`
 
 **请求体:**
@@ -150,10 +166,10 @@
 
 ## 4. 获取下一张待复习卡片
 
-**接口:** `GET /card/next`
+**接口:** `GET /api/decks/{id}/next-due-card`
 
 **参数:**
-- `deck_id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`
+- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
 
 **响应:**
 
@@ -275,9 +291,9 @@
 | 1 | `POST /auth/register` | 创建账号 |
 | 2 | `POST /auth/login` | 获取令牌 |
 | 3 | Authorize 按钮 | 在 Swagger 中设置令牌 |
-| 4 | `POST /deck` | 创建卡组 |
-| 5 | `POST /fact` | 添加词条到卡组 |
-| 6 | `GET /card/next` | 获取下一张待复习卡片 |
+| 4 | `POST /api/decks` | 创建卡组 |
+| 5 | `POST /api/decks/{id}/facts/append` | 添加词条到卡组 |
+| 6 | `GET /api/decks/{id}/next-due-card` | 获取下一张待复习卡片 |
 | 7 | `PATCH /api/decks/{id}/cards/{cardIndex}/update-interval` | 复习卡片 |
 | 8 | `PATCH /api/decks/{id}/cards/{cardIndex}/update-visibility` | 隐藏/显示卡片 |
 
