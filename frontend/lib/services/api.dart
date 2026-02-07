@@ -1,4 +1,5 @@
 part of 'index.dart';
+
 class Api {
   /// 登录页面的路由路径。
   static const String login = '/auth/login';

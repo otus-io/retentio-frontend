@@ -28,7 +28,8 @@ class ApiService {
   }
 
   /// 通用 POST 请求
-  static Future<ResBaseModel?> post(String endpoint, {
+  static Future<ResBaseModel?> post(
+    String endpoint, {
     Map<String, dynamic>? body,
   }) async {
     final response = await dioClient.post(endpoint, params: body);
@@ -37,7 +38,8 @@ class ApiService {
   }
 
   /// 通用 GET 请求
-  static Future<ResBaseModel?> get(String endpoint, {
+  static Future<ResBaseModel?> get(
+    String endpoint, {
     Map<String, String>? params,
   }) async {
     final response = await dioClient.get(endpoint, params: params);
@@ -52,7 +54,6 @@ class ApiService {
     };
     return {...defaultHeaders, if (headers != null) ...headers};
   }
-
 
   /// 处理 401 未授权，跳转到登录页
   static void handle401Unauthorized() async {

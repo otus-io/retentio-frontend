@@ -34,7 +34,7 @@ class RegisterController {
       );
       if (!context.mounted) return;
 
-      if (result?.isSuccess==true) {
+      if (result?.isSuccess == true) {
         showSnack(context, '${loc.registerSuccess}: $username');
         onSuccess(); // 通过回调通知 UI 层
       } else {

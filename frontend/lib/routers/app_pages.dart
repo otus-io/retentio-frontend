@@ -10,6 +10,7 @@ import '../providers/auth_provider.dart';
 /// Created on 2026/2/6
 /// Description:
 final GlobalKey<NavigatorState> shellNavigatorKey = GlobalKey<NavigatorState>();
+
 class AppPages {
   AppPages._();
 
@@ -29,9 +30,7 @@ class AppPages {
       GoRoute(
         path: AppRoutes.main.path,
         builder: (context, state) => const MainTabScreen(),
-
       ),
-
     ],
     redirect: (context, state) {
       final isLoggedIn = providerContainer.read(isLoginProvider);
@@ -42,6 +41,8 @@ class AppPages {
       }
       return null;
     },
-    refreshListenable: providerContainer.read(isLoginProvider.notifier).authProvider,
+    refreshListenable: providerContainer
+        .read(isLoginProvider.notifier)
+        .authProvider,
   );
 }

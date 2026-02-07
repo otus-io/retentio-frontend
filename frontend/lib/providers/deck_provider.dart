@@ -21,7 +21,8 @@ class DeckListState {
 }
 
 /// Deck 列表 Notifier
-class DeckListNotifier extends Notifier<DeckListState> with RefreshControllerMixin{
+class DeckListNotifier extends Notifier<DeckListState>
+    with RefreshControllerMixin {
   @override
   DeckListState build() {
     refreshBuild();
@@ -32,15 +33,14 @@ class DeckListNotifier extends Notifier<DeckListState> with RefreshControllerMix
   Future<void> loadDecks() async {
     try {
       final decks = await DeckService.getDecks();
-      state = state.copyWith( isLoading: false,decks: decks);
+      state = state.copyWith(isLoading: false, decks: decks);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
-
   @override
-  Future<List<dynamic>?> loadData() async{
+  Future<List<dynamic>?> loadData() async {
     await loadDecks();
     return state.decks;
   }

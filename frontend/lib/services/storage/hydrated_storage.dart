@@ -34,7 +34,6 @@ void clearCache() {
   _inMemoryCache.remove(_storageToken);
 }
 
-
 void clearAllCache() => _inMemoryCache.clear();
 
 /// Storage interface for persisting and retrieving state
@@ -108,10 +107,7 @@ class HiveHydratedStorage implements HydratedStorage {
     }
 
     final cipher = encrypted ? HiveAesCipher(encryptionKey!) : null;
-    final box = await Hive.openBox<dynamic>(
-      boxName,
-      encryptionCipher: cipher,
-    );
+    final box = await Hive.openBox<dynamic>(boxName, encryptionCipher: cipher);
     return HiveHydratedStorage(box);
   }
 

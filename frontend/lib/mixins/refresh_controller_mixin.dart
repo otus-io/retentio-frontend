@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
-mixin RefreshControllerMixin<R> on Notifier<R>{
 
+mixin RefreshControllerMixin<R> on Notifier<R> {
   void refreshBuild() {
     refreshController = RefreshController();
     ref.onDispose(() {
       refreshController.dispose();
-    },);
+    });
     onRefresh();
   }
+
   late final RefreshController refreshController;
 
   bool isLoading = true;

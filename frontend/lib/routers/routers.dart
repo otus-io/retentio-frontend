@@ -3,8 +3,8 @@
 enum AppRoutes {
   login('/login'),
   main('/'),
-  register('/register'),
-  ;
+  register('/register');
+
   final String path;
   const AppRoutes(this.path);
 }

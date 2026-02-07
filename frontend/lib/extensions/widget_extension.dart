@@ -2,9 +2,8 @@
 import 'package:flutter/material.dart';
 
 class _KeepAliveWrapper extends StatefulWidget {
-  const _KeepAliveWrapper({
-    required this.child,
-  });
+  const _KeepAliveWrapper({required this.child});
+
   final Widget child;
 
   @override
@@ -38,26 +37,13 @@ extension WidgetKeepAlive on Widget {
   }
 }
 
-
 extension WidgetExpanded on Widget {
   Widget expanded({int flex = 1}) {
-    return Expanded(
-      flex: flex,
-      child: this,
-    );
+    return Expanded(flex: flex, child: this);
   }
 
-  Widget flexible({
-    Key? key,
-    FlexFit fit = FlexFit.loose,
-    int flex = 1,
-  }) {
-    return Flexible(
-      key: key,
-      flex: flex,
-      fit: fit,
-      child: this,
-    );
+  Widget flexible({Key? key, FlexFit fit = FlexFit.loose, int flex = 1}) {
+    return Flexible(key: key, flex: flex, fit: fit, child: this);
   }
 
   Widget fittedBox({
@@ -81,13 +67,12 @@ extension WidgetClip on Widget {
     Key? key,
     CustomClipper<Rect>? clipper,
     Clip clipBehavior = Clip.antiAlias,
-  }) =>
-      ClipOval(
-        key: key,
-        clipper: clipper,
-        clipBehavior: clipBehavior,
-        child: this,
-      );
+  }) => ClipOval(
+    key: key,
+    clipper: clipper,
+    clipBehavior: clipBehavior,
+    child: this,
+  );
 }
 
 extension WidgetCenter on Widget {
@@ -95,15 +80,13 @@ extension WidgetCenter on Widget {
 }
 
 extension WidgetWithColum on Widget {
-  Widget colum({
-    Widget? child,
-  }) {
+  Widget colum({Widget? child}) {
     return child == null
         ? this
         : Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [this, child],
-    );
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [this, child],
+          );
   }
 }
 
@@ -116,32 +99,29 @@ extension SafeAreaWrapper on Widget {
     bool bottom = true,
     EdgeInsets minimum = EdgeInsets.zero,
     bool maintainBottomViewPadding = false,
-  }) =>
-      SafeArea(
-        key: key,
-        left: left,
-        top: top,
-        right: right,
-        bottom: bottom,
-        minimum: minimum,
-        maintainBottomViewPadding: maintainBottomViewPadding,
-        child: this,
-      );
+  }) => SafeArea(
+    key: key,
+    left: left,
+    top: top,
+    right: right,
+    bottom: bottom,
+    minimum: minimum,
+    maintainBottomViewPadding: maintainBottomViewPadding,
+    child: this,
+  );
 }
 
 extension CusBadge on Widget {
   Widget badgeWith(
-      int count, {
-        int maxCount = 99,
-        TextStyle? textStyle,
-        Color? backgroundColor,
-        Color? textColor,
-      }) {
+    int count, {
+    int maxCount = 99,
+    TextStyle? textStyle,
+    Color? backgroundColor,
+    Color? textColor,
+  }) {
     if (count <= 0) return this;
     return Badge(
-      label: Text(
-        count > maxCount ? '$maxCount+' : '$count',
-      ),
+      label: Text(count > maxCount ? '$maxCount+' : '$count'),
       textStyle: textStyle,
       textColor: textColor,
       backgroundColor: backgroundColor,

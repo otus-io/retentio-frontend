@@ -29,13 +29,12 @@ class PreConfig {
       // 初始化API服务
       await ApiService.init();
 
-
       // 配置网络客户端（Dio）
       DioClient.of.config(
         Env.host,
         interceptors: [
-          HttpHeaderInterceptors(),       // HTTP头部拦截器
-          ResponseInterceptors(),         // 响应拦截器
+          HttpHeaderInterceptors(), // HTTP头部拦截器
+          ResponseInterceptors(), // 响应拦截器
           if (!Env.isDistribute) LogInterceptors(), // 日志拦截器（仅在非分发环境下启用）
         ],
         proxyInterceptor: ProxyInterceptor.interceptor, // 代理拦截器
@@ -47,4 +46,3 @@ class PreConfig {
     }
   }
 }
-

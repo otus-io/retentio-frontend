@@ -33,7 +33,7 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
           IconButton(
             icon: const Icon(LucideIcons.squarePlus),
             onPressed: () {
-             ///todo 添加deck
+              ///todo 添加deck
             },
           ),
         ],
@@ -74,7 +74,7 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
     return CommonRefresher(
       controller: ref.read(deckListProvider.notifier).refreshController,
       onRefresh: ref.read(deckListProvider.notifier).onRefresh,
-      isEmpty:state.decks.isEmpty ,
+      isEmpty: state.decks.isEmpty,
       emptyView: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -135,7 +135,9 @@ class _DeckCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(

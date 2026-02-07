@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final isLoginProvider = NotifierProvider<AuthNotifier, bool>(
-  AuthNotifier.new,
-);
+final isLoginProvider = NotifierProvider<AuthNotifier, bool>(AuthNotifier.new);
 
 class AuthNotifier extends Notifier<bool> {
   @override
@@ -12,6 +10,7 @@ class AuthNotifier extends Notifier<bool> {
     _load();
     return false;
   }
+
   AuthProvider authProvider = AuthProvider();
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -29,8 +28,8 @@ class AuthNotifier extends Notifier<bool> {
     authProvider.logout();
   }
 }
-class AuthProvider extends ChangeNotifier {
 
+class AuthProvider extends ChangeNotifier {
   bool _isLoggedIn = false;
   bool get isLoggedIn => _isLoggedIn;
 

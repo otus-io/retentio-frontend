@@ -1,5 +1,6 @@
 import 'package:logger/logger.dart';
 import 'dart:developer' as developer;
+
 /// Created on 2026/2/5
 /// Description:
 Log logger = Log();
@@ -9,11 +10,17 @@ class Log {
   static final Log _instance = Log._internal();
 
   Log._internal()
-      : _logger = Logger(
-      printer: PrefixPrinter(
-        PrettyPrinter(stackTraceBeginIndex: 1, methodCount: 3,errorMethodCount: 20,colors: false),
-      ),
-      level: level);
+    : _logger = Logger(
+        printer: PrefixPrinter(
+          PrettyPrinter(
+            stackTraceBeginIndex: 1,
+            methodCount: 3,
+            errorMethodCount: 20,
+            colors: false,
+          ),
+        ),
+        level: level,
+      );
   Logger _logger;
 
   factory Log() {
@@ -47,15 +54,17 @@ class Log {
   void severe(dynamic message) {
     e(message);
   }
-  void m(dynamic message){
+
+  void m(dynamic message) {
     developer.log('[MESSAGE]$message');
   }
 
-  void rtc(dynamic message){
+  void rtc(dynamic message) {
     developer.log('[RTC] $message');
   }
+
   void e(dynamic message, {StackTrace? stackTrace}) {
-    _logger.e(message, stackTrace:stackTrace);
+    _logger.e(message, stackTrace: stackTrace);
   }
 
   void wtf(dynamic message) {

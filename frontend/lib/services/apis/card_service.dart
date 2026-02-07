@@ -6,8 +6,7 @@ class CardService {
   static Future<List<Card>> getDeckCards(String deckId) async {
     final res = await ApiService.get('/api/decks/$deckId/cards/all-cards');
 
-
-    if (res?.isSuccess==true) {
+    if (res?.isSuccess == true) {
       return (res?.data['cards'])
           .map((cardJson) => Card.fromJson(cardJson as Map<String, dynamic>))
           .toList();
