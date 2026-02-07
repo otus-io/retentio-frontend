@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
 import 'package:wordupx/providers/deck_provider.dart';
 import 'package:wordupx/models/deck.dart';
@@ -30,9 +31,9 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
         title: Text(loc.learn),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(LucideIcons.squarePlus),
             onPressed: () {
-              ref.read(deckListProvider.notifier).onRefresh();
+             ///todo 添加deck
             },
           ),
         ],
