@@ -1,4 +1,3 @@
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -6,10 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 import '../extensions/widget_extension.dart';
-/**
- * Created on 2026/2/7
- * Description:
- */
 
 class CommonRefresher extends StatelessWidget {
   const CommonRefresher({
@@ -142,30 +137,31 @@ class _ClassicFooterState extends LoadIndicatorState<CustomClassicFooter> {
   Widget _buildText(LoadStatus? mode) {
     RefreshString strings =
         RefreshLocalizations.of(context)?.currentLocalization ??
-            EnRefreshString();
+        EnRefreshString();
     return Text(
-        mode == LoadStatus.loading
-            ? widget.loadingText ?? strings.loadingText!
-            : LoadStatus.noMore == mode
-            ? widget.noDataText ?? strings.noMoreText!
-            : LoadStatus.failed == mode
-            ? widget.failedText ?? strings.loadFailedText!
-            : LoadStatus.canLoading == mode
-            ? widget.canLoadingText ?? strings.canLoadingText!
-            : widget.idleText ?? strings.idleLoadingText!,
-        style: widget.textStyle);
+      mode == LoadStatus.loading
+          ? widget.loadingText ?? strings.loadingText!
+          : LoadStatus.noMore == mode
+          ? widget.noDataText ?? strings.noMoreText!
+          : LoadStatus.failed == mode
+          ? widget.failedText ?? strings.loadFailedText!
+          : LoadStatus.canLoading == mode
+          ? widget.canLoadingText ?? strings.canLoadingText!
+          : widget.idleText ?? strings.idleLoadingText!,
+      style: widget.textStyle,
+    );
   }
 
   Widget _buildIcon(LoadStatus? mode) {
     Widget? icon = mode == LoadStatus.loading
         ? widget.loadingIcon ??
-        SizedBox(
-          width: 25.0,
-          height: 25.0,
-          child: defaultTargetPlatform == TargetPlatform.iOS
-              ? const CupertinoActivityIndicator()
-              : const CircularProgressIndicator(strokeWidth: 2.0),
-        )
+              SizedBox(
+                width: 25.0,
+                height: 25.0,
+                child: defaultTargetPlatform == TargetPlatform.iOS
+                    ? const CupertinoActivityIndicator()
+                    : const CircularProgressIndicator(strokeWidth: 2.0),
+              )
         : mode == LoadStatus.noMore
         ? widget.noMoreIcon
         : mode == LoadStatus.failed
@@ -191,8 +187,9 @@ class _ClassicFooterState extends LoadIndicatorState<CustomClassicFooter> {
       textDirection: widget.iconPos == IconPosition.left
           ? TextDirection.ltr
           : TextDirection.rtl,
-      direction: widget.iconPos == IconPosition.bottom ||
-          widget.iconPos == IconPosition.top
+      direction:
+          widget.iconPos == IconPosition.bottom ||
+              widget.iconPos == IconPosition.top
           ? Axis.vertical
           : Axis.horizontal,
       crossAxisAlignment: WrapCrossAlignment.center,
@@ -204,11 +201,9 @@ class _ClassicFooterState extends LoadIndicatorState<CustomClassicFooter> {
     );
     return widget.outerBuilder != null
         ? widget.outerBuilder!(container)
-        : Container(
-      height: widget.height,
-      child: Center(
-        child: container,
-      ),
-    );
+        : SizedBox(
+            height: widget.height,
+            child: Center(child: container),
+          );
   }
 }

@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
-
-/**
- * Created on 2026/2/7
- * Description:
- */
 mixin RefreshControllerMixin<R> on Notifier<R>{
 
   void refreshBuild() {

@@ -1,12 +1,8 @@
 // ignore_for_file: unused_element
 import 'package:flutter/material.dart';
-/**
- * Created on 2026/2/7
- * Description:
- */
+
 class _KeepAliveWrapper extends StatefulWidget {
   const _KeepAliveWrapper({
-    super.key,
     required this.child,
   });
   final Widget child;
