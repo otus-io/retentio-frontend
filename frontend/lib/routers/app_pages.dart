@@ -34,7 +34,7 @@ class AppPages {
 
     ],
     redirect: (context, state) {
-      final isLoggedIn = AuthProvider.instance.isLoggedIn;
+      final isLoggedIn = providerContainer.read(isLoginProvider);
       final loggingIn = state.matchedLocation == AppRoutes.login.path;
       if (!isLoggedIn && !loggingIn) return AppRoutes.login.path;
       if (isLoggedIn && loggingIn) {
@@ -42,6 +42,6 @@ class AppPages {
       }
       return null;
     },
-    refreshListenable: AuthProvider.instance,
+    refreshListenable: providerContainer.read(isLoginProvider.notifier).authProvider,
   );
 }

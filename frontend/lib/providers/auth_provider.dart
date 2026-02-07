@@ -12,6 +12,7 @@ class AuthNotifier extends Notifier<bool> {
     _load();
     return false;
   }
+  AuthProvider authProvider = AuthProvider();
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     state = prefs.getBool('isLogin') ?? false;
@@ -21,14 +22,14 @@ class AuthNotifier extends Notifier<bool> {
     state = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLogin', value);
+    authProvider.setLoginStatus(value);
   }
 
-
+  void logout() {
+    authProvider.logout();
+  }
 }
 class AuthProvider extends ChangeNotifier {
-  // 单例，方便在 Dio 中调用
-  static final AuthProvider instance = AuthProvider._();
-  AuthProvider._();
 
   bool _isLoggedIn = false;
   bool get isLoggedIn => _isLoggedIn;
@@ -41,7 +42,6 @@ class AuthProvider extends ChangeNotifier {
   // 401 时调用这个
   void logout() {
     _isLoggedIn = false;
-    // 清除 SP/Token 等缓存...
     notifyListeners(); // ★★★ 关键：这一步会触发 GoRouter 的 redirect
   }
 }

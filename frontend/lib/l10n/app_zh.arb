@@ -52,5 +52,6 @@
     "backToDeck": "返回词本",
     "viewCards": "查看",
     "learnButton": "学习",
-    "manage": "管理"
+    "manage": "管理"，
+    “review”: "复习",
 }

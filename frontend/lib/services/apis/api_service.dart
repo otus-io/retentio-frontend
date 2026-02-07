@@ -67,6 +67,6 @@ class ApiService {
     } catch (e) {
       // 忽略错误
     }
-    AuthProvider.instance.logout();
+    providerContainer.read(isLoginProvider.notifier);
   }
 }

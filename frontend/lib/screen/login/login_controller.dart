@@ -29,7 +29,7 @@ class LoginController {
       final isSuccess = result['token'] != null;
 
       if (isSuccess) {
-        AuthProvider.instance.setLoginStatus(true);
+        providerContainer.read(isLoginProvider.notifier).setLogin(true);
       } else {
         showSnack(context, result['message']);
       }

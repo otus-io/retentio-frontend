@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wordupx/constants.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
+import 'package:wordupx/main.dart';
 import 'package:wordupx/providers/theme_provider.dart';
 
 import 'package:wordupx/providers/locale_provider.dart';
