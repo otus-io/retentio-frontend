@@ -5,6 +5,7 @@ import 'package:wordupx/providers/deck_provider.dart';
 import 'package:wordupx/models/deck.dart';
 import 'package:wordupx/screen/deck/deck_detail_screen.dart';
 import 'package:wordupx/screen/deck/deck_learn_screen.dart';
+import 'package:wordupx/widgets/common_refresher.dart';
 
 class LearnScreen extends ConsumerStatefulWidget {
   const LearnScreen({super.key});
@@ -17,8 +18,6 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
   @override
   void initState() {
     super.initState();
-    // 加载 decks
-    Future.microtask(() => ref.read(deckListProvider.notifier).loadDecks());
   }
 
   @override
@@ -33,7 +32,7 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              ref.read(deckListProvider.notifier).refresh();
+              ref.read(deckListProvider.notifier).onRefresh();
             },
           ),
         ],
@@ -62,7 +61,7 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                ref.read(deckListProvider.notifier).refresh();
+                ref.read(deckListProvider.notifier).onRefresh();
               },
               child: Text(loc.retry),
             ),
@@ -71,8 +70,11 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
       );
     }
 
-    if (state.decks.isEmpty) {
-      return Center(
+    return CommonRefresher(
+      controller: ref.read(deckListProvider.notifier).refreshController,
+      onRefresh: ref.read(deckListProvider.notifier).onRefresh,
+      isEmpty:state.decks.isEmpty ,
+      emptyView: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -84,11 +86,7 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
             ),
           ],
         ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: () => ref.read(deckListProvider.notifier).refresh(),
+      ),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: state.decks.length,

@@ -14,3 +14,4 @@ import 'apis/api_service.dart';
 part 'dio_client/dio_client.dart';
 part 'dio_client/interceptors.dart';
 part 'env.dart';
+part 'api.dart';

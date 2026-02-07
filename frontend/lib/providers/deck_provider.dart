@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../mixins/refresh_controller_mixin.dart';
 import '../models/deck.dart';
 import '../services/apis/deck_service.dart';
 
@@ -20,33 +21,32 @@ class DeckListState {
 }
 
 /// Deck 列表 Notifier
-class DeckListNotifier extends Notifier<DeckListState> {
-
+class DeckListNotifier extends Notifier<DeckListState> with RefreshControllerMixin{
   @override
   DeckListState build() {
-  return DeckListState();
+    refreshBuild();
+    return DeckListState(isLoading: true);
   }
+
   /// 加载 decks
   Future<void> loadDecks() async {
-    state = state.copyWith(isLoading: true, error: null);
-
     try {
       final decks = await DeckService.getDecks();
-      state = state.copyWith(decks: decks, isLoading: false);
+      state = state.copyWith( isLoading: false,decks: decks);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
-  /// 刷新 decks
-  Future<void> refresh() async {
+
+  @override
+  Future<List<dynamic>?> loadData() async{
     await loadDecks();
+    return state.decks;
   }
-
-
 }
 
 /// Deck 列表 Provider
 final deckListProvider = NotifierProvider<DeckListNotifier, DeckListState>(
-    DeckListNotifier.new
+  DeckListNotifier.new,
 );
