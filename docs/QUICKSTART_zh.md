@@ -23,10 +23,17 @@
 | `/api/decks` | POST | 创建卡组 |
 | `/api/decks` | GET | 获取所有卡组 |
 | `/api/decks/{id}` | GET | 获取卡组详情 |
-| `/api/decks/{id}/facts/{operation}` | POST | 添加词条 (operation: `append`) |
+| `/api/decks/{id}` | PATCH | 更新卡组 |
+| `/api/decks/{id}` | DELETE | 删除卡组 |
+| `/api/decks/{id}/facts/{operation}` | POST | 添加词条 (operation: `append`, `prepend`, `shuffle`, `spread`) |
 | `/api/decks/{id}/facts` | GET | 获取所有词条 |
+| `/api/decks/{id}/facts/{factIndex}` | GET | 获取单个词条 |
+| `/api/decks/{id}/facts/{factIndex}` | PATCH | 更新词条 |
+| `/api/decks/{id}/facts/{factIndex}` | DELETE | 删除词条 |
 | `/api/decks/{id}/next-due-card` | GET | 获取下一张待复习卡片 |
+| `/api/decks/{id}/cards/{operation}` | GET | 获取卡片 (`all-cards`, `hidden-cards`) |
 | `/api/decks/{id}/cards/{cardIndex}/{operation}` | PATCH | 更新卡片 (`update-interval`, `update-visibility`) |
+| `/api/decks/{id}/hidden-cards` | GET | 获取已隐藏卡片详情 |
 
 ---
 
@@ -144,7 +151,165 @@
 
 ---
 
-## 3. 添加词条
+## 3. 查看卡组详情
+
+您可以查看单个卡组或列出所有卡组。两个接口的响应都包含一个 `stats` 对象，提供卡片统计信息。
+
+### 获取单个卡组
+
+**接口:** `GET /api/decks/{id}`
+
+**参数:**
+- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
+
+**响应:**
+
+```json
+{
+  "data": {
+    "id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05",
+    "name": "English Japanese IELTS Deck",
+    "owner": "swagger",
+    "field": ["English", "Japanese"],
+    "templates": [[0, 1]],
+    "facts": [],
+    "rate": 20,
+    "stats": {
+      "cards_count": 0,
+      "facts_count": 0,
+      "unseen_cards": 0,
+      "reviewed_cards": 0,
+      "due_cards": 0,
+      "hidden_cards": 0
+    }
+  },
+  "meta": {
+    "created_at": "2026-02-08T12:00:00Z",
+    "updated_at": "2026-02-08T12:00:00Z"
+  }
+}
+```
+
+### 获取所有卡组
+
+**接口:** `GET /api/decks`
+
+**响应:**
+
+```json
+{
+  "data": {
+    "decks": [
+      {
+        "id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05",
+        "name": "English Japanese IELTS Deck",
+        "owner": "swagger",
+        "field": ["English", "Japanese"],
+        "templates": [[0, 1]],
+        "rate": 20,
+        "stats": {
+          "cards_count": 0,
+          "facts_count": 0,
+          "unseen_cards": 0,
+          "reviewed_cards": 0,
+          "due_cards": 0,
+          "hidden_cards": 0
+        },
+        "created_at": "2026-02-08T12:00:00Z",
+        "updated_at": "2026-02-08T12:00:00Z"
+      }
+    ]
+  },
+  "meta": {
+    "total": "1",
+    "msg": "All Decks associated with this user retrieved successfully"
+  }
+}
+```
+
+> **理解 `meta`（元数据）：**
+>
+> | 字段 | 说明 |
+> |------|------|
+> | `total`（总数） | 当前用户拥有的卡组总数 |
+> | `msg`（消息） | 状态信息 |
+
+> **理解 `stats`（统计信息）：**
+>
+> | 字段 | 说明 |
+> |------|------|
+> | `cards_count`（卡片总数） | 卡组中的卡片总数 |
+> | `facts_count`（词条总数） | 卡组中的词条总数 |
+> | `unseen_cards`（未学习卡片） | 从未复习过的新卡片数量 |
+> | `reviewed_cards`（已学习卡片） | 已学习过至少一次的卡片数量 |
+> | `due_cards`（待复习卡片） | 当前待复习的卡片数量（due_date <= 当前时间） |
+> | `hidden_cards`（已隐藏卡片） | 被用户隐藏的卡片数量 |
+>
+> 统计信息是实时计算的。对于刚创建的空卡组，所有值都为 `0`。添加词条后，`cards_count` 和 `unseen_cards` 会增加。随着复习的进行，`reviewed_cards` 会增长，`unseen_cards` 会减少。
+>
+> 卡片总数取决于词条数和模板数：`cards_count = facts_count × 模板数量`。例如，20 个词条搭配 2 个模板（`[0,1]` 和 `[1,0]`）会生成 40 张卡片。
+>
+> 客户端计算学习进度百分比：`reviewed_cards / cards_count * 100`。
+
+### 更新卡组
+
+**接口:** `PATCH /api/decks/{id}`
+
+**参数:**
+- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
+
+**请求体:**
+
+```json
+{
+  "name": "更新后的卡组名称",
+  "fields": ["English", "Japanese"],
+  "templates": [[0, 1], [1, 0]],
+  "rate": 30
+}
+```
+
+> 除 `name` 外，所有字段都是可选的。如果提供了 `fields`，数量必须与现有字段数匹配。`rate` 必须在 1 到 1000 之间。
+
+**响应:**
+
+```json
+{
+  "data": {
+    "deck_id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05"
+  },
+  "meta": {
+    "msg": "Deck updated successfully",
+    "updated_at": "2026-02-08T13:00:00Z"
+  }
+}
+```
+
+### 删除卡组
+
+**接口:** `DELETE /api/decks/{id}`
+
+**参数:**
+- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
+
+> 此操作会永久删除卡组及其所有关联的词条、卡片和模板。
+
+**响应:**
+
+```json
+{
+  "data": {
+    "deck_id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05"
+  },
+  "meta": {
+    "msg": "Deck deleted successfully"
+  }
+}
+```
+
+---
+
+## 4. 添加词条
 
 **接口:** `POST /api/decks/{id}/facts/{operation}`
 
@@ -196,7 +361,7 @@
 
 ---
 
-## 4. 获取下一张待复习卡片
+## 5. 获取下一张待复习卡片
 
 **接口:** `GET /api/decks/{id}/next-due-card`
 
@@ -236,7 +401,7 @@
 
 ---
 
-## 5. 复习卡片
+## 6. 复习卡片
 
 查看卡片后，您需要根据记忆程度更新复习间隔。
 
@@ -347,7 +512,7 @@
 
 ---
 
-## 6. 隐藏卡片（可选）
+## 7. 隐藏卡片（可选）
 
 如果您想暂时从复习中隐藏某张卡片：
 
@@ -383,6 +548,6 @@
 
 ## 后续步骤
 
-- 重复步骤 6-7 继续复习卡片
+- 重复步骤 5-6 继续复习卡片
 - 创建更多不同字段配置的卡组
 - 在 Swagger UI 中探索其他接口
