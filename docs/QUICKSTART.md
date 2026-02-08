@@ -23,10 +23,17 @@ This guide walks you through using the WordUpX API via Swagger UI.
 | `/api/decks` | POST | Create deck |
 | `/api/decks` | GET | List all decks |
 | `/api/decks/{id}` | GET | Get deck details |
-| `/api/decks/{id}/facts/{operation}` | POST | Add facts (operation: `append`) |
+| `/api/decks/{id}` | PATCH | Update deck |
+| `/api/decks/{id}` | DELETE | Delete deck |
+| `/api/decks/{id}/facts/{operation}` | POST | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`) |
 | `/api/decks/{id}/facts` | GET | Get all facts |
+| `/api/decks/{id}/facts/{factIndex}` | GET | Get a specific fact |
+| `/api/decks/{id}/facts/{factIndex}` | PATCH | Update a fact |
+| `/api/decks/{id}/facts/{factIndex}` | DELETE | Delete a fact |
 | `/api/decks/{id}/next-due-card` | GET | Get next due card |
+| `/api/decks/{id}/cards/{operation}` | GET | Get cards (`all-cards`, `hidden-cards`) |
 | `/api/decks/{id}/cards/{cardIndex}/{operation}` | PATCH | Update card (`update-interval`, `update-visibility`) |
+| `/api/decks/{id}/hidden-cards` | GET | Get hidden cards with details |
 
 ---
 
@@ -144,7 +151,165 @@ Now all subsequent requests will include your authentication token.
 
 ---
 
-## 3. Add Facts
+## 3. View Deck Details
+
+You can view a single deck or list all your decks. Both responses include a `stats` object with card statistics.
+
+### Get a Single Deck
+
+**Endpoint:** `GET /api/decks/{id}`
+
+**Parameters:**
+- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05` (your deck ID)
+
+**Response:**
+
+```json
+{
+  "data": {
+    "id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05",
+    "name": "English Japanese IELTS Deck",
+    "owner": "swagger",
+    "field": ["English", "Japanese"],
+    "templates": [[0, 1]],
+    "facts": [],
+    "rate": 20,
+    "stats": {
+      "cards_count": 0,
+      "facts_count": 0,
+      "unseen_cards": 0,
+      "reviewed_cards": 0,
+      "due_cards": 0,
+      "hidden_cards": 0
+    }
+  },
+  "meta": {
+    "created_at": "2026-02-08T12:00:00Z",
+    "updated_at": "2026-02-08T12:00:00Z"
+  }
+}
+```
+
+### List All Decks
+
+**Endpoint:** `GET /api/decks`
+
+**Response:**
+
+```json
+{
+  "data": {
+    "decks": [
+      {
+        "id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05",
+        "name": "English Japanese IELTS Deck",
+        "owner": "swagger",
+        "field": ["English", "Japanese"],
+        "templates": [[0, 1]],
+        "rate": 20,
+        "stats": {
+          "cards_count": 0,
+          "facts_count": 0,
+          "unseen_cards": 0,
+          "reviewed_cards": 0,
+          "due_cards": 0,
+          "hidden_cards": 0
+        },
+        "created_at": "2026-02-08T12:00:00Z",
+        "updated_at": "2026-02-08T12:00:00Z"
+      }
+    ]
+  },
+  "meta": {
+    "total": "1",
+    "msg": "All Decks associated with this user retrieved successfully"
+  }
+}
+```
+
+> **Understanding `meta` in GetDecks:**
+>
+> | Field | Description |
+> |-------|-------------|
+> | `total` | Total number of decks owned by the current user |
+> | `msg` | Status message |
+
+> **Understanding `stats`:**
+>
+> | Field | Description |
+> |-------|-------------|
+> | `cards_count` | Total number of cards in the deck |
+> | `facts_count` | Total number of facts in the deck |
+> | `unseen_cards` | New cards that have never been reviewed |
+> | `reviewed_cards` | Cards that have been studied at least once |
+> | `due_cards` | Cards currently due for review (due_date <= now) |
+> | `hidden_cards` | Cards hidden from review by the user |
+>
+> Stats are computed on-the-fly. For a freshly created empty deck, all values are `0`. After adding facts, `cards_count` and `unseen_cards` will increase. As you review cards, `reviewed_cards` grows and `unseen_cards` decreases.
+>
+> The total cards in a deck depends on the number of facts and templates: `cards_count = facts_count × number_of_templates`. For example, 20 facts with 2 templates (`[0,1]` and `[1,0]`) produces 40 cards.
+>
+> To calculate a progress percentage on the client side: `reviewed_cards / cards_count * 100`.
+
+### Update a Deck
+
+**Endpoint:** `PATCH /api/decks/{id}`
+
+**Parameters:**
+- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05` (your deck ID)
+
+**Request Body:**
+
+```json
+{
+  "name": "Updated Deck Name",
+  "fields": ["English", "Japanese"],
+  "templates": [[0, 1], [1, 0]],
+  "rate": 30
+}
+```
+
+> All fields are optional except `name`. If `fields` is provided, the count must match the existing number of fields. `rate` must be between 1 and 1000.
+
+**Response:**
+
+```json
+{
+  "data": {
+    "deck_id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05"
+  },
+  "meta": {
+    "msg": "Deck updated successfully",
+    "updated_at": "2026-02-08T13:00:00Z"
+  }
+}
+```
+
+### Delete a Deck
+
+**Endpoint:** `DELETE /api/decks/{id}`
+
+**Parameters:**
+- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05` (your deck ID)
+
+> This permanently deletes the deck and all its associated facts, cards, and templates.
+
+**Response:**
+
+```json
+{
+  "data": {
+    "deck_id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05"
+  },
+  "meta": {
+    "msg": "Deck deleted successfully"
+  }
+}
+```
+
+---
+
+## 4. Add Facts
 
 **Endpoint:** `POST /api/decks/{id}/facts/{operation}`
 
@@ -196,7 +361,7 @@ Now all subsequent requests will include your authentication token.
 
 ---
 
-## 4. Get Next Due Card
+## 5. Get Next Due Card
 
 **Endpoint:** `GET /api/decks/{id}/next-due-card`
 
@@ -236,7 +401,7 @@ Now all subsequent requests will include your authentication token.
 
 ---
 
-## 5. Review a Card
+## 6. Review a Card
 
 After viewing a card, you need to update its interval based on how well you remembered it.
 
@@ -347,7 +512,7 @@ After viewing a card, you need to update its interval based on how well you reme
 
 ---
 
-## 6. Hide a Card (Optional)
+## 7. Hide a Card (Optional)
 
 If you want to temporarily hide a card from reviews:
 
@@ -383,6 +548,6 @@ If you want to temporarily hide a card from reviews:
 
 ## Next Steps
 
-- Keep reviewing cards by repeating steps 6-7
+- Keep reviewing cards by repeating steps 5-6
 - Create more decks with different field configurations
 - Explore other endpoints in Swagger UI
