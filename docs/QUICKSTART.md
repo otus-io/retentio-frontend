@@ -180,7 +180,8 @@ You can view a single deck or list all your decks. Both responses include a `sta
       "unseen_cards": 0,
       "reviewed_cards": 0,
       "due_cards": 0,
-      "hidden_cards": 0
+      "hidden_cards": 0,
+      "new_cards_today": 0
     }
   },
   "meta": {
@@ -213,7 +214,8 @@ You can view a single deck or list all your decks. Both responses include a `sta
           "unseen_cards": 0,
           "reviewed_cards": 0,
           "due_cards": 0,
-          "hidden_cards": 0
+          "hidden_cards": 0,
+          "new_cards_today": 0
         },
         "created_at": "2026-02-08T12:00:00Z",
         "updated_at": "2026-02-08T12:00:00Z"
@@ -244,6 +246,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 > | `reviewed_cards` | Cards that have been studied at least once |
 > | `due_cards` | Cards currently due for review (due_date <= now) |
 > | `hidden_cards` | Cards hidden from review by the user |
+> | `new_cards_today` | Cards that were added today (since midnight) |
 >
 > Stats are computed on-the-fly. For a freshly created empty deck, all values are `0`. After adding facts, `cards_count` and `unseen_cards` will increase. As you review cards, `reviewed_cards` grows and `unseen_cards` decreases.
 >
@@ -380,7 +383,8 @@ You can view a single deck or list all your decks. Both responses include a `sta
       "due_date": 1763269702,
       "hidden": false,
       "min_calculation": 150,
-      "max_calculation": 1200
+      "max_calculation": 1200,
+      "created_at": 1763269700
     },
     "card_index": 0,
     "def_interval": 600,
