@@ -96,6 +96,37 @@ Now all subsequent requests will include your authentication token.
 }
 ```
 
+> **Understanding `templates`:**
+>
+> Templates define how facts are turned into cards. Each template is an array of field indices that determines which fields appear on the front and back of a card.
+>
+> - `fields` defines the available columns: index `0` = "English", index `1` = "Japanese"
+> - `[0, 1]` means: show **English** (front) → **Japanese** (back)
+>
+> You can add multiple templates to create cards in both directions:
+>
+> ```json
+> "templates": [
+>   [0, 1],
+>   [1, 0]
+> ]
+> ```
+>
+> - `[0, 1]` → English → Japanese (reading the English word, recall the Japanese)
+> - `[1, 0]` → Japanese → English (reading the Japanese word, recall the English)
+>
+> With 2 templates, each fact generates **2 cards** — one for each direction.
+
+> **Understanding `rate`:**
+>
+> Rate controls how many **new cards are introduced per day**. The system spaces out new cards evenly throughout the day:
+>
+> - `gap = 86400 seconds (1 day) / rate`
+> - Example: `rate: 20` → new card every **72 minutes** (86400 / 20 = 4320 seconds)
+> - Example: `rate: 10` → new card every **144 minutes** (86400 / 10 = 8640 seconds)
+>
+> A higher rate means more new cards per day; a lower rate provides a gentler learning pace.
+
 **Response:**
 
 ```json
@@ -232,6 +263,71 @@ After viewing a card, you need to update its interval based on how well you reme
 > - **Middle** = `def_interval` (e.g., `600` seconds) → Card was okay
 >
 > The interval value is in seconds.
+> The submitted interval **must** be within the range `[min_interval, max_interval]`, or the API will reject it.
+
+> 📖 **How the spaced repetition algorithm works:**
+>
+> The system uses an **urgency-based spaced repetition** algorithm. Here's the full flow:
+>
+> **1. Urgency — which card to show next**
+>
+> Every card has `last_review` and `due_date` timestamps. Urgency is calculated as:
+>
+> ```
+> urgency = (now - last_review) / (due_date - last_review)
+> ```
+>
+> - `urgency >= 1.0` → the card is **overdue** (past its due date)
+> - `urgency < 1.0` → the card is **not yet due** but may still be shown
+>
+> The card with the **highest urgency** (that isn't hidden) is served as the next due card.
+>
+> **2. Interval calculation — how min/max/def are determined**
+>
+> The current interval is `due_date - last_review` (minimum 300 seconds). Three factors determine the next review range:
+>
+> | Factor | Value | Meaning |
+> |--------|-------|---------|
+> | `minFactor` | 0.5 | Hard — halve the interval |
+> | `defFactor` | 2.0 | Okay — double the interval |
+> | `maxFactor` | 4.0 | Easy — quadruple the interval |
+>
+> **When the card is overdue** (`urgency >= 1`):
+>
+> ```
+> min_interval = current_interval × 0.5
+> def_interval = current_interval × 2.0
+> max_interval = current_interval × 4.0
+> ```
+>
+> **When the card is not yet due** (`urgency < 1`), the factors are scaled down proportionally by urgency so that reviewing early yields a smaller growth:
+>
+> ```
+> min_interval = current_interval × ((0.5 - 1) × urgency + 1)
+> def_interval = current_interval × ((2.0 - 1) × urgency + 1)
+> max_interval = current_interval × ((4.0 - 1) × urgency + 1)
+> ```
+>
+> **3. Update — what happens when you submit an interval**
+>
+> When you send `{ "interval": 600 }`:
+>
+> ```
+> last_review = now
+> due_date    = now + interval
+> ```
+>
+> The next time this card appears, the new interval range will be based on this updated interval. This means intervals **grow over time** — the better you know a card, the longer until you see it again.
+>
+> **4. Example walkthrough**
+>
+> | Step | Current interval | You choose | Next interval range |
+> |------|-----------------|------------|---------------------|
+> | 1st review | 300s (5 min) | 600s (default) | 300s – 2400s |
+> | 2nd review | 600s (10 min) | 1200s (default) | 600s – 4800s |
+> | 3rd review | 1200s (20 min) | 2400s (default) | 1200s – 9600s |
+>
+> Each time you pick the default, the interval **doubles**. Picking closer to the max makes it grow even faster (up to 4×), while picking closer to the min **shrinks** it (down to 0.5×).
 
 **Response:**
 
