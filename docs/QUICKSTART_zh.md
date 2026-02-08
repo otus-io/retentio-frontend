@@ -180,7 +180,8 @@
       "unseen_cards": 0,
       "reviewed_cards": 0,
       "due_cards": 0,
-      "hidden_cards": 0
+      "hidden_cards": 0,
+      "new_cards_today": 0
     }
   },
   "meta": {
@@ -213,7 +214,8 @@
           "unseen_cards": 0,
           "reviewed_cards": 0,
           "due_cards": 0,
-          "hidden_cards": 0
+          "hidden_cards": 0,
+          "new_cards_today": 0
         },
         "created_at": "2026-02-08T12:00:00Z",
         "updated_at": "2026-02-08T12:00:00Z"
@@ -244,6 +246,7 @@
 > | `reviewed_cards`（已学习卡片） | 已学习过至少一次的卡片数量 |
 > | `due_cards`（待复习卡片） | 当前待复习的卡片数量（due_date <= 当前时间） |
 > | `hidden_cards`（已隐藏卡片） | 被用户隐藏的卡片数量 |
+> | `new_cards_today`（今日新增卡片） | 今天添加的卡片数量（从午夜开始计算） |
 >
 > 统计信息是实时计算的。对于刚创建的空卡组，所有值都为 `0`。添加词条后，`cards_count` 和 `unseen_cards` 会增加。随着复习的进行，`reviewed_cards` 会增长，`unseen_cards` 会减少。
 >
@@ -380,7 +383,8 @@
       "due_date": 1763269702,
       "hidden": false,
       "min_calculation": 150,
-      "max_calculation": 1200
+      "max_calculation": 1200,
+      "created_at": 1763269700
     },
     "card_index": 0,
     "def_interval": 600,
