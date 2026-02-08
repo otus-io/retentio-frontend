@@ -170,4 +170,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get manage => 'Manage';
+
+  @override
+  String get createDeck => 'Create Deck';
+
+  @override
+  String get createInputDeckName => 'Name';
+
+  @override
+  String get createInputDeckNameHint => 'Set a name for your deck';
 }

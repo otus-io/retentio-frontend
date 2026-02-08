@@ -53,5 +53,8 @@
     "viewCards": "查看",
     "learnButton": "学习",
     "manage": "管理",
-    "review": "复习"
+    "review": "复习",
+    "createDeck": "创建词本",
+    "createInputDeckName": "名称",
+    "createInputDeckNameHint": "为你的deck设置name"
 }

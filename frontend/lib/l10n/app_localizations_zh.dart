@@ -170,4 +170,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get manage => '管理';
+
+  @override
+  String get createDeck => '创建词本';
+
+  @override
+  String get createInputDeckName => '名称';
+
+  @override
+  String get createInputDeckNameHint => '为你的deck设置name';
 }

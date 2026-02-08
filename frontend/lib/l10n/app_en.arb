@@ -227,5 +227,17 @@
   "review": "Review",
   "@review": {
     "description": "Learn tab label in bottom navigation"
+  },
+  "createDeck": "Create Deck",
+  "@createDeck": {
+    "description": "Create a deck"
+  },
+  "createInputDeckName": "Name",
+  "@createInputDeckName": {
+    "description": "Label for deck name input field"
+  },
+  "createInputDeckNameHint": "Set a name for your deck",
+  "@createInputDeckNameHint": {
+    "description": "Hint text for deck name input field"
   }
 }

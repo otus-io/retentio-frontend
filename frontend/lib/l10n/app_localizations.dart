@@ -415,6 +415,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manage'**
   String get manage;
+
+  /// Create a deck
+  ///
+  /// In en, this message translates to:
+  /// **'Create Deck'**
+  String get createDeck;
+
+  /// Label for deck name input field
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get createInputDeckName;
+
+  /// Hint text for deck name input field
+  ///
+  /// In en, this message translates to:
+  /// **'Set a name for your deck'**
+  String get createInputDeckNameHint;
 }
 
 class _AppLocalizationsDelegate
