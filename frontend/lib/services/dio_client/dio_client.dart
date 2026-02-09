@@ -8,6 +8,7 @@ DioClient dioClient = DioClient.of;
 class DioClient {
   static final DioClient of = DioClient._();
   bool _didConfig = false;
+
   Dio get dio => _dio;
   final Dio _dio = Dio();
 
@@ -53,10 +54,13 @@ class DioClient {
   Future<ResBaseModel?> get(
     String url, {
     Map<String, dynamic>? params,
+    Map<String, dynamic>? pathParams,
     Options? options,
   }) async {
     assert(_didConfig, 'Please call Dioclient.config(...) first.');
     Response response;
+    url = _buildFinalUrl(url, pathParams);
+    print('GET request to: $url');
     try {
       response = params == null
           ? await _dio.get(url, options: options)
@@ -66,6 +70,56 @@ class DioClient {
     } on DioException catch (e) {
       return _handleError(e);
     }
+  }
+
+  /// 构建最终的URL（处理RESTful参数）
+  String _buildFinalUrl(String path, Map<String, dynamic>? pathParams) {
+    // 如果路径包含占位符，自动进行RESTful替换
+    if (pathParams != null && _hasRestfulPlaceholders(path)) {
+      final pathParamsCopy = Map<String, dynamic>.from(pathParams);
+      path = _restfulUrl(path, pathParamsCopy);
+    }
+
+    return path;
+  }
+
+  /// restful处理 - Retrofit style
+  String _restfulUrl(String url, Map<String, dynamic> params) {
+    String resultUrl = url;
+    List<String> keysToRemove = [];
+
+    params.forEach((key, value) {
+      String placeholder = "{$key}";
+      if (resultUrl.contains(placeholder)) {
+        resultUrl = resultUrl.replaceAll(
+          placeholder,
+          Uri.encodeComponent(value.toString()),
+        );
+        keysToRemove.add(key);
+      }
+    });
+
+    /// 从 params Map 中移除已用于路径替换的键
+    for (String key in keysToRemove) {
+      params.remove(key);
+    }
+    ///在替换后规范化斜杠，避免将http://转换为http:/
+    int schemeEndIndex = resultUrl.indexOf("://");
+    String scheme = "";
+    String rest = resultUrl;
+
+    if (schemeEndIndex != -1) {
+      scheme = resultUrl.substring(0, schemeEndIndex + 3);
+      rest = resultUrl.substring(schemeEndIndex + 3);
+    }
+
+    rest = rest.replaceAll(RegExp(r'/+'), '/');
+    return scheme + rest;
+  }
+
+  /// 检测路径是否包含RESTful占位符
+  bool _hasRestfulPlaceholders(String path) {
+    return path.contains(RegExp(r'\{[^}]+\}')) ?? false;
   }
 
   /// GET 请求
@@ -86,10 +140,12 @@ class DioClient {
   Future<ResBaseModel?> post(
     String url, {
     Map<String, dynamic>? params,
+    Map<String, dynamic>? pathParams,
     Options? options,
   }) async {
     assert(_didConfig, 'Please call Dioclient.config(...) first.');
     Response response;
+    url = _buildFinalUrl(url, pathParams);
     try {
       response = await _dio.post(url, data: params, options: options);
 

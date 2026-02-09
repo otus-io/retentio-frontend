@@ -25,7 +25,7 @@ class DeckService {
   /// 获取单个 deck 的详细信息（包含 facts）
   static Future<Deck> getDeckDetail(String deckId) async {
     try {
-      final res = await ApiService.get('${Api.decks}/}$deckId');
+      final res = await ApiService.get(Api.deck, pathParams: {'id': deckId});
       return Deck.fromJson(res?.data);
     } catch (e) {
       rethrow;
