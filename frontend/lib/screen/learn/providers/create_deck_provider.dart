@@ -66,8 +66,7 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
         'name': nameController.text,
         'templates': [
           [0, 1],
-          if(state.templates==1)
-            ...[1,0]
+          if (state.templates == 1) ...[1, 0],
         ],
         'rate': state.rate.value,
       },
