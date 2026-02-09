@@ -60,7 +60,6 @@ class DioClient {
     assert(_didConfig, 'Please call Dioclient.config(...) first.');
     Response response;
     url = _buildFinalUrl(url, pathParams);
-    print('GET request to: $url');
     try {
       response = params == null
           ? await _dio.get(url, options: options)
@@ -103,6 +102,7 @@ class DioClient {
     for (String key in keysToRemove) {
       params.remove(key);
     }
+
     ///在替换后规范化斜杠，避免将http://转换为http:/
     int schemeEndIndex = resultUrl.indexOf("://");
     String scheme = "";
@@ -119,7 +119,7 @@ class DioClient {
 
   /// 检测路径是否包含RESTful占位符
   bool _hasRestfulPlaceholders(String path) {
-    return path.contains(RegExp(r'\{[^}]+\}')) ?? false;
+    return path.contains(RegExp(r'\{[^}]+\}'));
   }
 
   /// GET 请求

@@ -7,10 +7,6 @@ import '../../../main.dart';
 import '../../../services/apis/api_service.dart';
 import 'deck_provider.dart';
 
-/**
- * Created on 2026/2/8
- * Description:
- */
 final createDeckProvider = NotifierProvider.autoDispose(CreateDeckNotifier.new);
 
 enum Rate {
@@ -57,17 +53,20 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
       ],
     );
   }
+
   void changeTemplate(int index) {
     state = state.copyWith(templates: index);
   }
 
   Future<void> createDeck() async {
-   await ApiService.post(
+    await ApiService.post(
       Api.decks,
       body: {
         'fields': state.fields,
         'name': nameController.text,
-        'templates': [state.templates==0?[0,1]:[1,0]],
+        'templates': [
+          state.templates == 0 ? [0, 1] : [1, 0],
+        ],
         'rate': state.rate.value,
       },
     );

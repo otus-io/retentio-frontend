@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:wordupx/extensions/context_extension.dart';
 import 'package:wordupx/extensions/widget_extension.dart';
-import 'package:wordupx/main.dart';
 import 'package:wordupx/screen/learn/providers/create_deck_provider.dart';
 
 class CreateDeckWidget extends ConsumerStatefulWidget {
@@ -212,7 +210,6 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget> {
           width: double.infinity,
           child: FilledButton.icon(
             onPressed: () {
-
               ref.read(createDeckProvider.notifier).createDeck();
             },
             icon: Icon(LucideIcons.save),

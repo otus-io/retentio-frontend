@@ -4,10 +4,11 @@ import 'api_service.dart';
 import '../../models/deck.dart';
 
 class DeckService {
-  static final DeckService of= DeckService._();
+  static final DeckService of = DeckService._();
   DeckService._();
+
   /// 获取所有 decks
-   Future<List<Deck>> getDecks() async {
+  Future<List<Deck>> getDecks() async {
     try {
       final res = await ApiService.get(Api.decks);
       // 如果返回的 data 包含 decks 字段
@@ -25,7 +26,7 @@ class DeckService {
   }
 
   /// 获取单个 deck 的详细信息（包含 facts）
-   Future<Deck> getDeckDetail(String deckId) async {
+  Future<Deck> getDeckDetail(String deckId) async {
     try {
       final res = await ApiService.get(Api.deck, pathParams: {'id': deckId});
       return Deck.fromJson(res?.data);
@@ -35,8 +36,5 @@ class DeckService {
   }
 
   /// 创建 deck
-  Future<void> createDeck(dynamic params)  async {
-
-  }
-
+  Future<void> createDeck(dynamic params) async {}
 }
