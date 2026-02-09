@@ -179,4 +179,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get createInputDeckNameHint => 'Set a name for your deck';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get rate => 'Rate';
+
+  @override
+  String get slow => 'Slow';
+
+  @override
+  String get fast => 'Fast';
+
+  @override
+  String get unidirectional => 'Unidirectional';
+
+  @override
+  String get bidirectional => 'Bidirectional';
 }

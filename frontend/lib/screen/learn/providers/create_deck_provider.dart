@@ -1,5 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:wordupx/services/index.dart';
+
+import '../../../main.dart';
+import '../../../services/apis/api_service.dart';
 
 /**
  * Created on 2026/2/8
@@ -7,8 +12,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
  */
 final createDeckProvider = NotifierProvider.autoDispose(CreateDeckNotifier.new);
 
+enum Rate {
+  slow(10),
+  fast(20);
+
+  final int value;
+
+  const Rate(this.value);
+}
+
 class CreateDeckNotifier extends Notifier<CreateDeckState> {
- final List<String> languages = [
+  final List<String> languages = [
     'English',
     'Chinese',
     'Spanish',
@@ -20,17 +34,18 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
     'Japanese',
   ];
   final TextEditingController nameController = TextEditingController();
+
   @override
   CreateDeckState build() {
     return CreateDeckState(
       fields: ['English', 'Chinese'],
       name: '',
-      templates: [0],
+      templates: 0,
     );
   }
 
-  void changeName(String name) {
-    state = state.copyWith(name: name);
+  void changeRate(Rate rate) {
+    state = state.copyWith(rate: rate);
   }
 
   void changeField(int index, String field) {
@@ -41,37 +56,46 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
       ],
     );
   }
-
-  void changeTemplate(int index, int template) {
-    state = state.copyWith(
-      templates: [
-        for (int i = 0; i < state.templates.length; i++)
-          if (i == index) template else state.templates[i],
-      ],
-    );
+  void changeTemplate(int index) {
+    state = state.copyWith(templates: index);
   }
 
-  void createDeck() {}
+  void createDeck() {
+    ApiService.post(
+      Api.decks,
+      body: {
+        'fields': state.fields,
+        'name': nameController.text,
+        'templates': [state.templates==0?[0,1]:[1,0]],
+        'rate': state.rate.value,
+      },
+    );
+    navigatorKey.currentContext?.pop();
+  }
 }
 
 class CreateDeckState {
   final List<String> fields;
   final String name;
-  final List<int> templates;
+  final int templates;
+  final Rate rate;
 
   CreateDeckState({
     this.fields = const [],
     this.name = '',
-    this.templates = const [],
+    this.templates = 0,
+    this.rate = Rate.slow,
   });
 
   CreateDeckState copyWith({
     List<String>? fields,
     String? name,
-    List<int>? templates,
+    int? templates,
+    Rate? rate,
   }) => CreateDeckState(
     fields: fields ?? this.fields,
     name: name ?? this.name,
     templates: templates ?? this.templates,
+    rate: rate ?? this.rate,
   );
 }

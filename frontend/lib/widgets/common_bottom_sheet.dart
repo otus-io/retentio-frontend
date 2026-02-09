@@ -13,7 +13,7 @@ Future<T?> showCommonBottomSheet<T>({
   Clip? clipBehavior,
   BoxConstraints? constraints,
   Color? barrierColor,
-  bool isScrollControlled = false,
+  bool isScrollControlled = true,
   bool useRootNavigator = false,
   bool isDismissible = true,
   bool enableDrag = true,
@@ -25,9 +25,9 @@ Future<T?> showCommonBottomSheet<T>({
   AnimationStyle? sheetAnimationStyle,
   bool? requestFocus,
   String? title,
-  double initialChildSize = 0.6,
-  double minChildSize = 0.25,
-  double maxChildSize = 1,
+  double initialChildSize = 0.7,
+  double minChildSize = 0.6,
+  double maxChildSize = 0.8,
 }) {
   return showModalBottomSheet<T>(
     context: context,

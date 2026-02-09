@@ -179,4 +179,22 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get createInputDeckNameHint => '为你的deck设置name';
+
+  @override
+  String get language => '语言';
+
+  @override
+  String get rate => '速率';
+
+  @override
+  String get slow => '慢';
+
+  @override
+  String get fast => '快';
+
+  @override
+  String get unidirectional => '单向';
+
+  @override
+  String get bidirectional => '双向';
 }

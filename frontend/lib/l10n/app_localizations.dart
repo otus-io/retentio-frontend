@@ -433,6 +433,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set a name for your deck'**
   String get createInputDeckNameHint;
+
+  /// Language label
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// Rate label
+  ///
+  /// In en, this message translates to:
+  /// **'Rate'**
+  String get rate;
+
+  /// Slow speed label
+  ///
+  /// In en, this message translates to:
+  /// **'Slow'**
+  String get slow;
+
+  /// Fast speed label
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get fast;
+
+  /// Unidirectional label
+  ///
+  /// In en, this message translates to:
+  /// **'Unidirectional'**
+  String get unidirectional;
+
+  /// Bidirectional label
+  ///
+  /// In en, this message translates to:
+  /// **'Bidirectional'**
+  String get bidirectional;
 }
 
 class _AppLocalizationsDelegate
