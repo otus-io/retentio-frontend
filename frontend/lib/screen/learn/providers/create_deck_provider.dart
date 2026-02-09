@@ -5,6 +5,7 @@ import 'package:wordupx/services/index.dart';
 
 import '../../../main.dart';
 import '../../../services/apis/api_service.dart';
+import 'deck_provider.dart';
 
 /**
  * Created on 2026/2/8
@@ -60,8 +61,8 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
     state = state.copyWith(templates: index);
   }
 
-  void createDeck() {
-    ApiService.post(
+  Future<void> createDeck() async {
+   await ApiService.post(
       Api.decks,
       body: {
         'fields': state.fields,
@@ -70,6 +71,7 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
         'rate': state.rate.value,
       },
     );
+    await ref.read(deckListProvider.notifier).onRefresh();
     navigatorKey.currentContext?.pop();
   }
 }
