@@ -40,9 +40,9 @@ class ApiService {
   /// 通用 GET 请求
   static Future<ResBaseModel?> get(
     String endpoint, {
-    Map<String, String>? params,
+    Map<String, String>? pathParams,
   }) async {
-    final response = await dioClient.get(endpoint, params: params);
+    final response = await dioClient.get(endpoint, pathParams: pathParams);
     return response;
   }
 
