@@ -1,13 +1,48 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:wordupx/services/index.dart';
 
 import '../../../main.dart';
-import '../../../services/apis/api_service.dart';
+import '../../../mixins/notifier_mixin.dart';
+import '../../../services/apis/deck_service.dart';
 import 'deck_provider.dart';
 
 final createDeckProvider = NotifierProvider.autoDispose(CreateDeckNotifier.new);
+final createDeckParamsProvider =
+    NotifierProvider.autoDispose<DeckParamsNotifier, CreateDeckParams>(
+      DeckParamsNotifier.new,
+    );
+
+class DeckParamsNotifier extends Notifier<CreateDeckParams> with NotifierMixin {
+  @override
+  CreateDeckParams build() {
+    return CreateDeckParams(
+      fields: ['English', 'Chinese'],
+      name: '',
+      rate: 10,
+      templates: [
+        [0, 1],
+      ],
+      type: DeckCardType.add,
+    );
+  }
+}
+
+class CreateDeckParams {
+  final List<String> fields;
+  final String name;
+  final int rate;
+  final List<List<int>> templates;
+  final DeckCardType type;
+
+  CreateDeckParams({
+    required this.fields,
+    required this.name,
+    required this.templates,
+    required this.rate,
+    required this.type,
+  });
+}
 
 enum Rate {
   slow(10),
@@ -16,7 +51,13 @@ enum Rate {
   final int value;
 
   const Rate(this.value);
+
+  static Rate fromValue(int value) {
+    return Rate.values.firstWhere((element) => element.value == value);
+  }
 }
+
+enum DeckCardType { add, edit }
 
 class CreateDeckNotifier extends Notifier<CreateDeckState> {
   final List<String> languages = [
@@ -31,13 +72,29 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
     'Japanese',
   ];
   final TextEditingController nameController = TextEditingController();
+  DeckCardType cardType = DeckCardType.add;
 
   @override
   CreateDeckState build() {
+    final params = ref.read(createDeckParamsProvider);
+    var fields = params.fields;
+    var name = params.name;
+    var template = 0;
+    var rate = Rate.fromValue(params.rate);
+    nameController.text = name;
+
+    if (params.templates.length == 1) {
+      template = 0;
+    } else {
+      template = 1;
+    }
+    cardType = params.type;
+
     return CreateDeckState(
-      fields: ['English', 'Chinese'],
-      name: '',
-      templates: 0,
+      fields: fields,
+      name: name,
+      rate: rate,
+      templates: template,
     );
   }
 
@@ -61,18 +118,16 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
   }
 
   Future<void> createDeck() async {
-    await ApiService.post(
-      Api.decks,
-      body: {
-        'fields': state.fields,
-        'name': nameController.text,
-        'templates': [
-          [0, 1],
-          if (state.templates == 1) ...[1, 0],
-        ],
-        'rate': state.rate.value,
-      },
-    );
+    final params = {
+      'fields': state.fields,
+      'name': nameController.text,
+      'templates': [
+        [0, 1],
+        if (state.templates == 1) ...[1, 0],
+      ],
+      'rate': state.rate.value,
+    };
+    await DeckService.of.createDeck(params);
     await ref.read(deckListProvider.notifier).onRefresh();
     navigatorKey.currentContext?.pop();
   }

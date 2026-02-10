@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
+import 'package:wordupx/screen/learn/providers/create_deck_provider.dart';
 import 'package:wordupx/screen/learn/providers/deck_provider.dart';
 import 'package:wordupx/models/deck.dart';
 import 'package:wordupx/screen/deck/deck_detail_screen.dart';
@@ -107,13 +109,13 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
   }
 }
 
-class _DeckCard extends StatelessWidget {
+class _DeckCard extends ConsumerWidget {
   final Deck deck;
 
   const _DeckCard({required this.deck});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, ref) {
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -262,7 +264,7 @@ class _DeckCard extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      _showManageBottomSheet(context, deck, loc);
+                      _showManageBottomSheet(ref, deck, loc);
                     },
                     icon: const Icon(Icons.settings, size: 18),
                     label: Text(loc.manage),
@@ -279,13 +281,9 @@ class _DeckCard extends StatelessWidget {
     );
   }
 
-  void _showManageBottomSheet(
-    BuildContext context,
-    Deck deck,
-    AppLocalizations loc,
-  ) {
+  void _showManageBottomSheet(WidgetRef ref, Deck deck, AppLocalizations loc) {
     showCommonBottomSheet(
-      context: context,
+      context: ref.context,
       isScrollControlled: true,
       title: deck.name,
       child: Column(
@@ -295,8 +293,23 @@ class _DeckCard extends StatelessWidget {
             title: const Text('Edit Deck'),
             subtitle: const Text('Modify deck settings'),
             onTap: () {
-              Navigator.pop(context);
-              // TODO: 导航到编辑页面
+              ref.context.pop();
+              ref
+                  .read(createDeckParamsProvider.notifier)
+                  .update(
+                    (state) => CreateDeckParams(
+                      fields: deck.fields,
+                      name: deck.name,
+                      templates: deck.templates,
+                      rate: deck.rate,
+                      type: DeckCardType.edit,
+                    ),
+                  );
+              showCommonBottomSheet(
+                context: ref.context,
+                title: loc.createDeck,
+                child: CreateDeckWidget(),
+              );
             },
           ),
           ListTile(
@@ -304,7 +317,7 @@ class _DeckCard extends StatelessWidget {
             title: const Text('Add Cards'),
             subtitle: const Text('Add new cards to this deck'),
             onTap: () {
-              Navigator.pop(context);
+              ref.context.pop();
               // TODO: 导航到添加卡片页面
             },
           ),
@@ -315,9 +328,11 @@ class _DeckCard extends StatelessWidget {
               style: TextStyle(color: Colors.red),
             ),
             subtitle: const Text('Permanently delete this deck'),
-            onTap: () {
-              Navigator.pop(context);
-              // TODO: 显示删除确认对话框
+            onTap: () async {
+              await ref.read(deckListProvider.notifier).deleteDeck(deck);
+              if (ref.context.mounted) {
+                ref.context.pop();
+              }
             },
           ),
         ],

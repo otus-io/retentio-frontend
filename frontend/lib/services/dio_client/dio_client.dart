@@ -157,6 +157,45 @@ class DioClient {
     }
   }
 
+  ///Delete 删除请求
+  Future<ResBaseModel?> delete(
+    String url, {
+    Map<String, dynamic>? params,
+    Map<String, dynamic>? pathParams,
+  }) async {
+    assert(_didConfig, 'Please call Dioclient.config(...) first.');
+    Response response;
+    url = _buildFinalUrl(url, pathParams);
+    try {
+      response = await _dio.delete(url, queryParameters: params);
+
+      final res = response.data as Map<String, dynamic>?;
+      if (res == null) return null;
+      return ResBaseModel.fromJson(res);
+    } on DioException catch (e) {
+      return _handleError(e);
+    }
+  }
+
+  ///Patch 请求
+  Future<ResBaseModel?> patch(
+    String url, {
+    Map<String, dynamic>? params,
+    Map<String, dynamic>? pathParams,
+  }) async {
+    assert(_didConfig, 'Please call Dioclient.config(...) first.');
+    Response response;
+    url = _buildFinalUrl(url, pathParams);
+    try {
+      response = await _dio.patch(url, data: params);
+      final res = response.data as Map<String, dynamic>?;
+      if (res == null) return null;
+      return ResBaseModel.fromJson(res);
+    } on DioException catch (e) {
+      return _handleError(e);
+    }
+  }
+
   /// POST 请求
   Future<Map<String, dynamic>?> postGame(
     String url, {

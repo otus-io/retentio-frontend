@@ -39,6 +39,12 @@ class DeckListNotifier extends Notifier<DeckListState>
     }
   }
 
+  /// 删除 deck
+  Future<void> deleteDeck(Deck deck) async {
+    await DeckService.of.deleteDeck(deck.id);
+    await onRefresh();
+  }
+
   @override
   Future<List<dynamic>?> loadData() async {
     await loadDecks();
