@@ -263,5 +263,9 @@
   "bidirectional": "Bidirectional",
   "@bidirectional": {
     "description": "Bidirectional label"
+  },
+  "template": "Template",
+  "@template": {
+    "description": "Template label"
   }
 }

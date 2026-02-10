@@ -46,12 +46,14 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
   }
 
   void changeField(int index, String field) {
-    state = state.copyWith(
-      fields: [
-        for (int i = 0; i < state.fields.length; i++)
-          if (i == index) field else state.fields[i],
-      ],
-    );
+    final fields = [
+      for (int i = 0; i < state.fields.length; i++)
+        if (i == index) field else state.fields[i],
+    ];
+    if (fields.first == fields.last) {
+      return;
+    }
+    state = state.copyWith(fields: fields);
   }
 
   void changeTemplate(int index) {

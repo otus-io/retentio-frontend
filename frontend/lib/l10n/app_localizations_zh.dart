@@ -197,4 +197,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get bidirectional => '双向';
+
+  @override
+  String get template => '模版';
 }

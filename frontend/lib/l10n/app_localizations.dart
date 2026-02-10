@@ -469,6 +469,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bidirectional'**
   String get bidirectional;
+
+  /// Template label
+  ///
+  /// In en, this message translates to:
+  /// **'Template'**
+  String get template;
 }
 
 class _AppLocalizationsDelegate

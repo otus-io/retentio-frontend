@@ -197,4 +197,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bidirectional => 'Bidirectional';
+
+  @override
+  String get template => 'Template';
 }

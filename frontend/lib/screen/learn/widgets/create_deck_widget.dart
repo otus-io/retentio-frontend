@@ -30,7 +30,6 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget> {
                 value: desk.fields.first,
                 icon: const Icon(Icons.arrow_drop_down),
                 padding: .zero,
-                style: Theme.of(context).textTheme.titleMedium,
                 borderRadius: BorderRadius.circular(4),
 
                 items: languages
@@ -57,7 +56,6 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget> {
                 value: desk.fields.last,
                 padding: .symmetric(horizontal: 5),
                 icon: const Icon(Icons.arrow_drop_down),
-                style: Theme.of(context).textTheme.titleMedium,
                 borderRadius: BorderRadius.circular(4),
                 items: languages
                     .map(
@@ -73,7 +71,7 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget> {
                   if (newLocale != null) {
                     ref
                         .read(createDeckProvider.notifier)
-                        .changeField(0, newLocale);
+                        .changeField(1, newLocale);
                   }
                 },
               ),
@@ -139,7 +137,7 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget> {
           mainAxisAlignment: .spaceAround,
           children: [
             Icon(LucideIcons.sendToBack),
-            Text('${context.loc.rate}:'),
+            Text('${context.loc.template}:'),
             Spacer(),
             Column(
               children: [

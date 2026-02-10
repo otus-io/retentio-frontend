@@ -62,5 +62,6 @@
     "slow": "慢",
     "fast": "快",
     "unidirectional": "单向",
-    "bidirectional": "双向"
+    "bidirectional": "双向",
+    "template": "模版"
 }
