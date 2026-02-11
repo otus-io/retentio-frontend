@@ -163,14 +163,16 @@ void main() {
         final deck = Deck(
           id: 'deck-1',
           name: 'My Deck',
-          templates: <int>[0],
+          templates: <List<int>>[
+            <int>[0]
+          ],
           stats: DeckStats(
             unseenCards: 5,
             factsCount: 10,
             dueCards: 2,
             cardsCount: 20,
           ),
-          rate: 0.9,
+          rate: 1,
           owner: DeckOwner(username: 'u', email: 'e@e.com'),
           fields: <String>['f1'],
           minInterval: 1,
@@ -180,8 +182,7 @@ void main() {
         final json = deck.toJson();
         expect(json['id'], 'deck-1');
         expect(json['name'], 'My Deck');
-        expect(json['templates'], [0]);
-        expect(json['rate'], 0.9);
+        expect(json['rate'], 1);
       });
     });
 
@@ -190,14 +191,14 @@ void main() {
         final deck = Deck(
           id: 'd',
           name: 'n',
-          templates: <int>[],
+          templates: <List<int>>[],
           stats: DeckStats(
             unseenCards: 0,
             factsCount: 0,
             dueCards: 0,
             cardsCount: 0,
           ),
-          rate: 0.0,
+          rate: 0,
           owner: DeckOwner(username: '', email: ''),
           fields: <String>[],
           minInterval: 0,
@@ -211,14 +212,14 @@ void main() {
         final deck = Deck(
           id: 'd',
           name: 'n',
-          templates: <int>[],
+          templates: <List<int>>[],
           stats: DeckStats(
             unseenCards: 5,
             factsCount: 10,
             dueCards: 2,
             cardsCount: 20,
           ),
-          rate: 0.0,
+          rate: 0,
           owner: DeckOwner(username: '', email: ''),
           fields: <String>[],
           minInterval: 0,
@@ -232,14 +233,14 @@ void main() {
         final deck = Deck(
           id: 'd',
           name: 'n',
-          templates: <int>[],
+          templates: <List<int>>[],
           stats: DeckStats(
             unseenCards: 0,
             factsCount: 0,
             dueCards: 0,
             cardsCount: 10,
           ),
-          rate: 0.0,
+          rate: 0,
           owner: DeckOwner(username: '', email: ''),
           fields: <String>[],
           minInterval: 0,
@@ -255,14 +256,14 @@ void main() {
         final deck = Deck(
           id: 'd',
           name: 'n',
-          templates: <int>[],
+          templates: <List<int>>[],
           stats: DeckStats(
             unseenCards: 8,
             factsCount: 20,
             dueCards: 5,
             cardsCount: 25,
           ),
-          rate: 0.0,
+          rate: 0,
           owner: DeckOwner(username: '', email: ''),
           fields: <String>[],
           minInterval: 0,

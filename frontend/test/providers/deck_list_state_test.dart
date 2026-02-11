@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordupx/providers/deck_provider.dart';
+import 'package:wordupx/screen/learn/providers/deck_provider.dart';
 
 void main() {
   group('DeckListState', () {
