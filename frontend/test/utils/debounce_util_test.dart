@@ -16,17 +16,20 @@ void main() {
       expect(called, true);
     });
 
-    test('run cancels previous callback when called again before delay', () async {
-      var callCount = 0;
-      final debounce = DebounceUtil(milliseconds: 100);
+    test(
+      'run cancels previous callback when called again before delay',
+      () async {
+        var callCount = 0;
+        final debounce = DebounceUtil(milliseconds: 100);
 
-      debounce.run(() => callCount++);
-      await Future.delayed(const Duration(milliseconds: 20));
-      debounce.run(() => callCount++);
-      await Future.delayed(const Duration(milliseconds: 120));
+        debounce.run(() => callCount++);
+        await Future.delayed(const Duration(milliseconds: 20));
+        debounce.run(() => callCount++);
+        await Future.delayed(const Duration(milliseconds: 120));
 
-      expect(callCount, 1);
-    });
+        expect(callCount, 1);
+      },
+    );
 
     test('run with different millisecond values', () async {
       var called = false;

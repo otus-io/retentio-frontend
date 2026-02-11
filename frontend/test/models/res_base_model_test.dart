@@ -48,10 +48,7 @@ void main() {
       });
 
       test('converts message to string when not string', () {
-        final model = ResBaseModel.fromJson({
-          'code': 1,
-          'message': 404,
-        });
+        final model = ResBaseModel.fromJson({'code': 1, 'message': 404});
         expect(model.msg, '404');
       });
     });

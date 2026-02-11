@@ -219,8 +219,15 @@ void main() {
       });
 
       test('uses empty list for missing fact and template', () {
-        final json = {'fact_index': 0, 'template_index': 0, 'last_review': 0,
-          'due_date': 0, 'hidden': false, 'min_calculation': 0, 'max_calculation': 0};
+        final json = {
+          'fact_index': 0,
+          'template_index': 0,
+          'last_review': 0,
+          'due_date': 0,
+          'hidden': false,
+          'min_calculation': 0,
+          'max_calculation': 0,
+        };
         final card = Card.fromJson(json);
         expect(card.fact, isEmpty);
         expect(card.template, isEmpty);
@@ -228,8 +235,13 @@ void main() {
 
       test('handles fact with non-string elements by converting to string', () {
         final json = {
-          'fact_index': 0, 'template_index': 0, 'last_review': 0,
-          'due_date': 0, 'hidden': false, 'min_calculation': 0, 'max_calculation': 0,
+          'fact_index': 0,
+          'template_index': 0,
+          'last_review': 0,
+          'due_date': 0,
+          'hidden': false,
+          'min_calculation': 0,
+          'max_calculation': 0,
           'fact': [123, 456],
         };
         final card = Card.fromJson(json);
@@ -324,39 +336,72 @@ void main() {
       test('isDue delegates to card.isDue', () {
         final pastTime = (DateTime.now().millisecondsSinceEpoch ~/ 1000) - 3600;
         final dueDetail = CardDetail(
-          factIndex: 0, templateIndex: 0, lastReview: 0, dueDate: pastTime,
-          hidden: false, minCalculation: 0, maxCalculation: 0,
+          factIndex: 0,
+          templateIndex: 0,
+          lastReview: 0,
+          dueDate: pastTime,
+          hidden: false,
+          minCalculation: 0,
+          maxCalculation: 0,
         );
         final card = Card(
           card: dueDetail,
-          cardIndex: 0, defInterval: 1, fact: [], hiddenCards: 0,
-          maxInterval: 365, minInterval: 1, template: [0], urgency: 1.0,
+          cardIndex: 0,
+          defInterval: 1,
+          fact: [],
+          hiddenCards: 0,
+          maxInterval: 365,
+          minInterval: 1,
+          template: [0],
+          urgency: 1.0,
         );
         expect(card.isDue, true);
       });
 
       test('isNew delegates to card.isNew', () {
         final newDetail = CardDetail(
-          factIndex: 0, templateIndex: 0, lastReview: 0, dueDate: 0,
-          hidden: false, minCalculation: 0, maxCalculation: 0,
+          factIndex: 0,
+          templateIndex: 0,
+          lastReview: 0,
+          dueDate: 0,
+          hidden: false,
+          minCalculation: 0,
+          maxCalculation: 0,
         );
         final card = Card(
           card: newDetail,
-          cardIndex: 0, defInterval: 1, fact: [], hiddenCards: 0,
-          maxInterval: 365, minInterval: 1, template: [0], urgency: 1.0,
+          cardIndex: 0,
+          defInterval: 1,
+          fact: [],
+          hiddenCards: 0,
+          maxInterval: 365,
+          minInterval: 1,
+          template: [0],
+          urgency: 1.0,
         );
         expect(card.isNew, true);
       });
 
       test('isHidden delegates to card.hidden', () {
         final hiddenDetail = CardDetail(
-          factIndex: 0, templateIndex: 0, lastReview: 0, dueDate: 0,
-          hidden: true, minCalculation: 0, maxCalculation: 0,
+          factIndex: 0,
+          templateIndex: 0,
+          lastReview: 0,
+          dueDate: 0,
+          hidden: true,
+          minCalculation: 0,
+          maxCalculation: 0,
         );
         final card = Card(
           card: hiddenDetail,
-          cardIndex: 0, defInterval: 1, fact: [], hiddenCards: 0,
-          maxInterval: 365, minInterval: 1, template: [0], urgency: 1.0,
+          cardIndex: 0,
+          defInterval: 1,
+          fact: [],
+          hiddenCards: 0,
+          maxInterval: 365,
+          minInterval: 1,
+          template: [0],
+          urgency: 1.0,
         );
         expect(card.isHidden, true);
       });

@@ -4,16 +4,12 @@ import 'package:wordupx/extensions/widget_extension.dart';
 
 void main() {
   group('WidgetExpanded', () {
-    testWidgets('expanded wraps widget in Expanded with default flex', (tester) async {
+    testWidgets('expanded wraps widget in Expanded with default flex', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: Row(
-              children: [
-                const Text('test').expanded(),
-              ],
-            ),
-          ),
+          home: Scaffold(body: Row(children: [const Text('test').expanded()])),
         ),
       );
       expect(find.byType(Expanded), findsOneWidget);
@@ -24,11 +20,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: Row(
-              children: [
-                const Text('test').expanded(flex: 2),
-              ],
-            ),
+            body: Row(children: [const Text('test').expanded(flex: 2)]),
           ),
         ),
       );
@@ -39,13 +31,7 @@ void main() {
     testWidgets('flexible wraps widget in Flexible', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: Row(
-              children: [
-                const Text('test').flexible(),
-              ],
-            ),
-          ),
+          home: Scaffold(body: Row(children: [const Text('test').flexible()])),
         ),
       );
       expect(find.byType(Flexible), findsOneWidget);
@@ -53,11 +39,7 @@ void main() {
 
     testWidgets('fittedBox wraps widget in FittedBox', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: const Text('test').fittedBox(),
-          ),
-        ),
+        MaterialApp(home: Scaffold(body: const Text('test').fittedBox())),
       );
       expect(find.byType(FittedBox), findsOneWidget);
     });
@@ -67,9 +49,7 @@ void main() {
     testWidgets('oval wraps widget in ClipOval', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: const SizedBox(width: 50, height: 50).oval(),
-          ),
+          home: Scaffold(body: const SizedBox(width: 50, height: 50).oval()),
         ),
       );
       expect(find.byType(ClipOval), findsOneWidget);
@@ -79,11 +59,7 @@ void main() {
   group('WidgetCenter', () {
     testWidgets('center wraps widget in Center', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: const Text('test').center,
-          ),
-        ),
+        MaterialApp(home: Scaffold(body: const Text('test').center)),
       );
       expect(find.byType(Center), findsOneWidget);
       expect(find.text('test'), findsOneWidget);
@@ -91,7 +67,9 @@ void main() {
   });
 
   group('WidgetWithColum', () {
-    testWidgets('colum with child creates Column with both widgets', (tester) async {
+    testWidgets('colum with child creates Column with both widgets', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -106,11 +84,7 @@ void main() {
 
     testWidgets('colum without child returns original widget', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: const Text('alone').colum(),
-          ),
-        ),
+        MaterialApp(home: Scaffold(body: const Text('alone').colum())),
       );
       expect(find.byType(Column), findsNothing);
       expect(find.text('alone'), findsOneWidget);
@@ -120,11 +94,7 @@ void main() {
   group('SafeAreaWrapper', () {
     testWidgets('safeArea wraps widget in SafeArea', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: const Text('test').safeArea(),
-          ),
-        ),
+        MaterialApp(home: Scaffold(body: const Text('test').safeArea())),
       );
       expect(find.byType(SafeArea), findsOneWidget);
     });
@@ -134,28 +104,28 @@ void main() {
     testWidgets('badgeWith shows badge when count > 0', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: const Icon(Icons.notifications).badgeWith(5),
-          ),
+          home: Scaffold(body: const Icon(Icons.notifications).badgeWith(5)),
         ),
       );
       expect(find.byType(Badge), findsOneWidget);
       expect(find.text('5'), findsOneWidget);
     });
 
-    testWidgets('badgeWith returns original widget when count <= 0', (tester) async {
+    testWidgets('badgeWith returns original widget when count <= 0', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: const Icon(Icons.notifications).badgeWith(0),
-          ),
+          home: Scaffold(body: const Icon(Icons.notifications).badgeWith(0)),
         ),
       );
       expect(find.byType(Badge), findsNothing);
       expect(find.byIcon(Icons.notifications), findsOneWidget);
     });
 
-    testWidgets('badgeWith shows maxCount+ when count exceeds maxCount', (tester) async {
+    testWidgets('badgeWith shows maxCount+ when count exceeds maxCount', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -170,11 +140,7 @@ void main() {
   group('WidgetKeepAlive', () {
     testWidgets('keepAlive wraps widget in KeepAlive wrapper', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: const Text('keep').keepAlive,
-          ),
-        ),
+        MaterialApp(home: Scaffold(body: const Text('keep').keepAlive)),
       );
       expect(find.text('keep'), findsOneWidget);
     });

@@ -1,7 +1,7 @@
 # 测试报告摘要
 
 **日期：** 2026-02-11
-**结果：** 89 通过，1 失败（共 90 项）
+**结果：** 166 通过，1 失败（共 167 项）
 
 ---
 
@@ -38,7 +38,9 @@ await tester.pumpWidget(
 
 ---
 
-## 通过的测试套件（89 项）
+## 通过的测试套件（166 项）
+
+### 单元测试（89 项）
 
 | 测试文件 | 测试数 | 状态 |
 |---|---|---|
@@ -54,3 +56,18 @@ await tester.pumpWidget(
 | `test/services/storage/storage_exception_test.dart` | 4 | 通过 |
 | `test/utils/debounce_util_test.dart` | 3 | 通过 |
 | `test/constants_test.dart` | 1 | 通过 |
+
+### Widget 测试（77 项）
+
+| 测试文件 | 测试数 | 状态 |
+|---|---|---|
+| `test/screen/home/home_screen_test.dart` | 7 | 通过 |
+| `test/screen/login/login_screen_test.dart` | 11 | 通过 |
+| `test/screen/login/widgets/forgot_password_test.dart` | 7 | 通过 |
+| `test/screen/register/register_screen_test.dart` | 9 | 通过 |
+| `test/screen/profile/profile_screen_test.dart` | 10 | 通过 |
+| `test/screen/deck/deck_detail_screen_test.dart` | 11 | 通过 |
+| `test/screen/deck/deck_learn_screen_test.dart` | 4 | 通过 |
+| `test/screen/learn/learn_screen_test.dart` | 5 | 通过 |
+| `test/widgets/bottom_popup_test.dart` | 6 | 通过 |
+| `test/widgets/common_refresher_test.dart` | 7 | 通过 |

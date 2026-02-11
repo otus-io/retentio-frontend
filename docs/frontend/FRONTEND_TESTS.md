@@ -35,13 +35,26 @@ flutter test test/utils/debounce_util_test.dart
 
 All tests are under `frontend/test/`:
 
+### Unit Tests
 - **models/** - Model parsing (fromJson, toJson) and getters
 - **utils/** - Utility classes (DebounceUtil, etc.)
 - **extensions/** - Widget and context extensions
 - **services/** - API constants, storage exceptions
 - **routers/** - Route definitions
 - **providers/** - State classes and notifiers
-- **helpers/** - Test helpers (e.g., InMemoryHydratedStorage)
+
+### Widget Tests
+- **screen/home/** - HomeScreen rendering, text, icons, locale
+- **screen/login/** - LoginScreen form fields, buttons, theme toggle, language dropdown
+- **screen/login/widgets/** - ForgotPassword form, validation, email input
+- **screen/register/** - RegisterScreen form fields, keyboard types, obscured passwords
+- **screen/profile/** - ProfileScreen user info, settings items, logout dialog
+- **screen/deck/** - DeckDetailScreen stats display, button states; DeckLearnScreen async states
+- **screen/learn/** - LearnScreen loading/error state, AppBar
+- **widgets/** - BottomPopup show/dismiss, CommonRefresher loading/empty/child states
+
+### Helpers & Reports
+- **helpers/** - Test helpers (InMemoryHydratedStorage, test widget wrappers)
 - **reports/** - Generated test reports (gitignored)
 
 ## Test Philosophy
