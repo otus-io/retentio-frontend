@@ -110,7 +110,10 @@ void main() {
           'fields': [],
         };
         final deck = Deck.fromJson(json);
-        expect(deck.templates, [0, 1]);
+        expect(deck.templates, [
+          [0],
+          [1],
+        ]);
       });
 
       test('parses templates as flat list [0, 1]', () {
@@ -182,6 +185,9 @@ void main() {
         final json = deck.toJson();
         expect(json['id'], 'deck-1');
         expect(json['name'], 'My Deck');
+        expect(json['templates'], [
+          [0]
+        ]);
         expect(json['rate'], 1);
       });
     });
