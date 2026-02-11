@@ -51,9 +51,9 @@ class DeckStats {
 class Deck {
   final String id;
   final String name;
-  final List<int> templates;
+  final List<List<int>> templates;
   final DeckStats stats;
-  final double rate;
+  final int rate;
   final DeckOwner owner;
   final List<String> fields;
   final int minInterval;
@@ -79,21 +79,6 @@ class Deck {
 
   /// 从 JSON 创建 Deck 对象
   factory Deck.fromJson(Map<String, dynamic> json) {
-    // 兼容处理 templates, API可能返回 [[0]] 或 [0]
-    List<int> parsedTemplates = [];
-    if (json['templates'] != null && json['templates'] is List) {
-      var templatesList = json['templates'] as List;
-      if (templatesList.isNotEmpty && templatesList.first is List) {
-        // 处理 [[0], [1]] 这种情况
-        parsedTemplates = templatesList
-            .map((e) => (e as List).isNotEmpty ? e.first as int : 0)
-            .toList();
-      } else {
-        // 处理 [0, 1] 这种情况
-        parsedTemplates = templatesList.map((e) => e as int).toList();
-      }
-    }
-
     // 兼容处理 owner, API可能返回 "username" 或 { "username": "...", "email": "..." }
     DeckOwner parsedOwner;
     if (json['owner'] is String) {
@@ -112,9 +97,11 @@ class Deck {
     return Deck(
       id: json['id'] as String,
       name: json['name'] as String,
-      templates: parsedTemplates,
+      templates: List<List<int>>.from(
+        json["templates"].map((x) => List<int>.from(x.map((x) => x))),
+      ),
       stats: DeckStats.fromJson(json['stats'] as Map<String, dynamic>? ?? {}),
-      rate: (json['rate'] as num?)?.toDouble() ?? 0.0,
+      rate: json['rate'],
       owner: parsedOwner,
       fields:
           (fieldsData as List<dynamic>?)?.map((e) => e as String).toList() ??
@@ -136,7 +123,9 @@ class Deck {
     return {
       'id': id,
       'name': name,
-      'templates': templates,
+      "templates": List<dynamic>.from(
+        templates.map((x) => List<dynamic>.from(x.map((x) => x))),
+      ),
       'stats': stats.toJson(),
       'rate': rate,
       'owner': owner.toJson(),

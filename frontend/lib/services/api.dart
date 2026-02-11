@@ -9,4 +9,7 @@ class Api {
 
   /// 获取卡牌组列表的API端点路径。
   static const String decks = '/api/decks';
+
+  /// 获取卡牌组列表的API端点路径。
+  static const String deck = '/api/decks/{id}';
 }

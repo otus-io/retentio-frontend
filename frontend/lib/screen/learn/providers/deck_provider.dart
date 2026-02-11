@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../mixins/refresh_controller_mixin.dart';
-import '../models/deck.dart';
-import '../services/apis/deck_service.dart';
+import '../../../mixins/refresh_controller_mixin.dart';
+import '../../../models/deck.dart';
+import '../../../services/apis/deck_service.dart';
 
 /// Deck 列表状态
 class DeckListState {
@@ -32,11 +32,17 @@ class DeckListNotifier extends Notifier<DeckListState>
   /// 加载 decks
   Future<void> loadDecks() async {
     try {
-      final decks = await DeckService.getDecks();
+      final decks = await DeckService.of.getDecks();
       state = state.copyWith(isLoading: false, decks: decks);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
+  }
+
+  /// 删除 deck
+  Future<void> deleteDeck(Deck deck) async {
+    await DeckService.of.deleteDeck(deck.id);
+    await onRefresh();
   }
 
   @override

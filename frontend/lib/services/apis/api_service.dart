@@ -37,13 +37,30 @@ class ApiService {
     return response;
   }
 
+  /// 通用 Delete请求
+  static Future<ResBaseModel?> delete(
+    String endpoint, {
+    Map<String, String>? pathParams,
+  }) {
+    return dioClient.delete(endpoint, pathParams: pathParams);
+  }
+
   /// 通用 GET 请求
   static Future<ResBaseModel?> get(
     String endpoint, {
-    Map<String, String>? params,
+    Map<String, String>? pathParams,
   }) async {
-    final response = await dioClient.get(endpoint, params: params);
+    final response = await dioClient.get(endpoint, pathParams: pathParams);
     return response;
+  }
+
+  /// 通用 Patch 请求
+  static Future<ResBaseModel?> patch(
+    String endpoint, {
+    Map<String, String>? pathParams,
+    Map<String, dynamic>? params,
+  }) {
+    return dioClient.patch(endpoint, pathParams: pathParams, params: params);
   }
 
   /// 构建 headers（自动附加 Authorization）

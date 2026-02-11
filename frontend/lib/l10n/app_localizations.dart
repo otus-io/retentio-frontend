@@ -415,6 +415,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manage'**
   String get manage;
+
+  /// Create a deck
+  ///
+  /// In en, this message translates to:
+  /// **'Create Deck'**
+  String get createDeck;
+
+  /// Label for deck name input field
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get createInputDeckName;
+
+  /// Hint text for deck name input field
+  ///
+  /// In en, this message translates to:
+  /// **'Set a name for your deck'**
+  String get createInputDeckNameHint;
+
+  /// Language label
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// Rate label
+  ///
+  /// In en, this message translates to:
+  /// **'Rate'**
+  String get rate;
+
+  /// Slow speed label
+  ///
+  /// In en, this message translates to:
+  /// **'Slow'**
+  String get slow;
+
+  /// Fast speed label
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get fast;
+
+  /// Unidirectional label
+  ///
+  /// In en, this message translates to:
+  /// **'Unidirectional'**
+  String get unidirectional;
+
+  /// Bidirectional label
+  ///
+  /// In en, this message translates to:
+  /// **'Bidirectional'**
+  String get bidirectional;
+
+  /// Template label
+  ///
+  /// In en, this message translates to:
+  /// **'Template'**
+  String get template;
 }
 
 class _AppLocalizationsDelegate

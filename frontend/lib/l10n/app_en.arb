@@ -227,5 +227,45 @@
   "review": "Review",
   "@review": {
     "description": "Learn tab label in bottom navigation"
+  },
+  "createDeck": "Create Deck",
+  "@createDeck": {
+    "description": "Create a deck"
+  },
+  "createInputDeckName": "Name",
+  "@createInputDeckName": {
+    "description": "Label for deck name input field"
+  },
+  "createInputDeckNameHint": "Set a name for your deck",
+  "@createInputDeckNameHint": {
+    "description": "Hint text for deck name input field"
+  },
+  "language": "Language",
+  "@language": {
+    "description": "Language label"
+  },
+  "rate": "Rate",
+  "@rate": {
+    "description": "Rate label"
+  },
+  "slow": "Slow",
+  "@slow": {
+    "description": "Slow speed label"
+  },
+  "fast": "Fast",
+  "@fast": {
+    "description": "Fast speed label"
+  },
+  "unidirectional": "Unidirectional",
+  "@unidirectional": {
+    "description": "Unidirectional label"
+  },
+  "bidirectional": "Bidirectional",
+  "@bidirectional": {
+    "description": "Bidirectional label"
+  },
+  "template": "Template",
+  "@template": {
+    "description": "Template label"
   }
 }

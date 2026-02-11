@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
-import 'package:wordupx/providers/deck_provider.dart';
+import 'package:wordupx/screen/learn/providers/create_deck_provider.dart';
+import 'package:wordupx/screen/learn/providers/deck_provider.dart';
 import 'package:wordupx/models/deck.dart';
 import 'package:wordupx/screen/deck/deck_detail_screen.dart';
 import 'package:wordupx/screen/deck/deck_learn_screen.dart';
+import 'package:wordupx/screen/learn/widgets/create_deck_widget.dart';
 import 'package:wordupx/widgets/common_refresher.dart';
+
+import '../../widgets/common_bottom_sheet.dart';
 
 class LearnScreen extends ConsumerStatefulWidget {
   const LearnScreen({super.key});
@@ -33,7 +38,25 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
           IconButton(
             icon: const Icon(LucideIcons.squarePlus),
             onPressed: () {
-              ///todo 添加deck
+              ref
+                  .read(createDeckParamsProvider.notifier)
+                  .update(
+                    (state) => CreateDeckParams(
+                      fields: ['English', 'Chinese'],
+                      name: '',
+                      rate: 10,
+                      templates: [
+                        [0, 1],
+                      ],
+                      type: DeckCardType.add,
+                      id: '',
+                    ),
+                  );
+              showCommonBottomSheet(
+                context: context,
+                title: loc.createDeck,
+                child: CreateDeckWidget(),
+              );
             },
           ),
         ],
@@ -100,13 +123,13 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
   }
 }
 
-class _DeckCard extends StatelessWidget {
+class _DeckCard extends ConsumerWidget {
   final Deck deck;
 
   const _DeckCard({required this.deck});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, ref) {
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -255,7 +278,7 @@ class _DeckCard extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      _showManageBottomSheet(context, deck, loc);
+                      _showManageBottomSheet(ref, deck, loc);
                     },
                     icon: const Icon(Icons.settings, size: 18),
                     label: Text(loc.manage),
@@ -272,85 +295,64 @@ class _DeckCard extends StatelessWidget {
     );
   }
 
-  void _showManageBottomSheet(
-    BuildContext context,
-    Deck deck,
-    AppLocalizations loc,
-  ) {
-    showModalBottomSheet(
-      context: context,
+  void _showManageBottomSheet(WidgetRef ref, Deck deck, AppLocalizations loc) {
+    showCommonBottomSheet(
+      context: ref.context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
-        minChildSize: 0.3,
-        maxChildSize: 0.5,
-        expand: false,
-        builder: (context, scrollController) {
-          return SingleChildScrollView(
-            controller: scrollController,
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 拖动指示器
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 20),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+      title: deck.name,
+      initialChildSize: 0.4,
+      minChildSize: 0.35,
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.edit),
+            title: const Text('Edit Deck'),
+            subtitle: const Text('Modify deck settings'),
+            onTap: () {
+              ref.context.pop();
+              ref
+                  .read(createDeckParamsProvider.notifier)
+                  .update(
+                    (state) => CreateDeckParams(
+                      fields: deck.fields,
+                      name: deck.name,
+                      templates: deck.templates,
+                      rate: deck.rate,
+                      type: DeckCardType.edit,
+                      id: deck.id,
                     ),
-                  ),
-                  Text(
-                    '${loc.manage} - ${deck.name}',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ListTile(
-                    leading: const Icon(Icons.edit),
-                    title: const Text('Edit Deck'),
-                    subtitle: const Text('Modify deck settings'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      // TODO: 导航到编辑页面
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.add),
-                    title: const Text('Add Cards'),
-                    subtitle: const Text('Add new cards to this deck'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      // TODO: 导航到添加卡片页面
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.delete, color: Colors.red),
-                    title: const Text(
-                      'Delete Deck',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                    subtitle: const Text('Permanently delete this deck'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      // TODO: 显示删除确认对话框
-                    },
-                  ),
-                ],
-              ),
+                  );
+              showCommonBottomSheet(
+                context: ref.context,
+                title: 'Edit Deck',
+                child: CreateDeckWidget(),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.add),
+            title: const Text('Add Cards'),
+            subtitle: const Text('Add new cards to this deck'),
+            onTap: () {
+              ref.context.pop();
+              // TODO: 导航到添加卡片页面
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete, color: Colors.red),
+            title: const Text(
+              'Delete Deck',
+              style: TextStyle(color: Colors.red),
             ),
-          );
-        },
+            subtitle: const Text('Permanently delete this deck'),
+            onTap: () async {
+              await ref.read(deckListProvider.notifier).deleteDeck(deck);
+              if (ref.context.mounted) {
+                ref.context.pop();
+              }
+            },
+          ),
+        ],
       ),
     );
   }

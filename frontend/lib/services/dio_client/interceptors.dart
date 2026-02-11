@@ -22,6 +22,7 @@ class LogInterceptors extends InterceptorsWrapper {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     logger.d({
+      "oRequest method": options.method,
       "oRequest url": options.uri,
       "oRequest header": options.headers,
       "onRequest params": options.queryParameters,
