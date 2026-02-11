@@ -9,7 +9,7 @@ import 'deck_provider.dart';
 
 final createDeckProvider = NotifierProvider.autoDispose(CreateDeckNotifier.new);
 final createDeckParamsProvider =
-    NotifierProvider.autoDispose<DeckParamsNotifier, CreateDeckParams>(
+    NotifierProvider<DeckParamsNotifier, CreateDeckParams>(
       DeckParamsNotifier.new,
     );
 
@@ -24,6 +24,7 @@ class DeckParamsNotifier extends Notifier<CreateDeckParams> with NotifierMixin {
         [0, 1],
       ],
       type: DeckCardType.add,
+      id: '',
     );
   }
 }
@@ -32,6 +33,7 @@ class CreateDeckParams {
   final List<String> fields;
   final String name;
   final int rate;
+  final String id;
   final List<List<int>> templates;
   final DeckCardType type;
 
@@ -41,6 +43,7 @@ class CreateDeckParams {
     required this.templates,
     required this.rate,
     required this.type,
+    required this.id,
   });
 }
 
@@ -73,6 +76,7 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
   ];
   final TextEditingController nameController = TextEditingController();
   DeckCardType cardType = DeckCardType.add;
+  String deckId = '';
 
   @override
   CreateDeckState build() {
@@ -82,7 +86,7 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
     var template = 0;
     var rate = Rate.fromValue(params.rate);
     nameController.text = name;
-
+    deckId = params.id;
     if (params.templates.length == 1) {
       template = 0;
     } else {
@@ -127,7 +131,11 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
       ],
       'rate': state.rate.value,
     };
-    await DeckService.of.createDeck(params);
+    if (cardType == DeckCardType.add) {
+      await DeckService.of.createDeck(params);
+    } else {
+      await DeckService.of.updateDeck(deckId: deckId, params: params);
+    }
     await ref.read(deckListProvider.notifier).onRefresh();
     navigatorKey.currentContext?.pop();
   }

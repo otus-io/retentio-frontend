@@ -45,4 +45,15 @@ class DeckService {
   Future<ResBaseModel?> deleteDeck(String deckId) async {
     return ApiService.delete(Api.deck, pathParams: {'id': deckId});
   }
+
+  Future<ResBaseModel?> updateDeck({
+    required String deckId,
+    required Map<String, dynamic> params,
+  }) async {
+    return ApiService.patch(
+      Api.deck,
+      pathParams: {'id': deckId},
+      params: params,
+    );
+  }
 }

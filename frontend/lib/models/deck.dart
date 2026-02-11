@@ -97,7 +97,9 @@ class Deck {
     return Deck(
       id: json['id'] as String,
       name: json['name'] as String,
-      templates: json['templates'] as List<List<int>>? ?? [],
+      templates: List<List<int>>.from(
+        json["templates"].map((x) => List<int>.from(x.map((x) => x))),
+      ),
       stats: DeckStats.fromJson(json['stats'] as Map<String, dynamic>? ?? {}),
       rate: json['rate'],
       owner: parsedOwner,
@@ -121,7 +123,9 @@ class Deck {
     return {
       'id': id,
       'name': name,
-      'templates': templates,
+      "templates": List<dynamic>.from(
+        templates.map((x) => List<dynamic>.from(x.map((x) => x))),
+      ),
       'stats': stats.toJson(),
       'rate': rate,
       'owner': owner.toJson(),

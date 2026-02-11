@@ -38,6 +38,20 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
           IconButton(
             icon: const Icon(LucideIcons.squarePlus),
             onPressed: () {
+              ref
+                  .read(createDeckParamsProvider.notifier)
+                  .update(
+                    (state) => CreateDeckParams(
+                      fields: ['English', 'Chinese'],
+                      name: '',
+                      rate: 10,
+                      templates: [
+                        [0, 1],
+                      ],
+                      type: DeckCardType.add,
+                      id: '',
+                    ),
+                  );
               showCommonBottomSheet(
                 context: context,
                 title: loc.createDeck,
@@ -286,6 +300,8 @@ class _DeckCard extends ConsumerWidget {
       context: ref.context,
       isScrollControlled: true,
       title: deck.name,
+      initialChildSize: 0.4,
+      minChildSize: 0.35,
       child: Column(
         children: [
           ListTile(
@@ -303,11 +319,12 @@ class _DeckCard extends ConsumerWidget {
                       templates: deck.templates,
                       rate: deck.rate,
                       type: DeckCardType.edit,
+                      id: deck.id,
                     ),
                   );
               showCommonBottomSheet(
                 context: ref.context,
-                title: loc.createDeck,
+                title: 'Edit Deck',
                 child: CreateDeckWidget(),
               );
             },
