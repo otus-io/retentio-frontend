@@ -14,7 +14,9 @@ Deck _createTestDeck({
   return Deck.fromJson(<String, dynamic>{
     'id': 'test-deck-1',
     'name': name,
-    'templates':[[0,1]],
+    'templates': [
+      [0, 1],
+    ],
     'stats': <String, dynamic>{
       'unseen_cards': unseenCards,
       'facts_count': 15,

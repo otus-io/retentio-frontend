@@ -93,7 +93,8 @@ class Deck {
 
     // 兼容处理 field/fields
     final fieldsData = json['fields'] ?? json['field'];
-    final templates = (json['templates'] as List<dynamic>?)
+    final templates =
+        (json['templates'] as List<dynamic>?)
             ?.map((x) => List<int>.from(x.map((x) => x as int)))
             .toList() ??
         [];

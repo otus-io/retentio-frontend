@@ -13,13 +13,13 @@ Deck _createTestDeck({
   int dueCards = 3,
   int factsCount = 15,
   List<List<int>> templates = const [
-    [0, 1]
+    [0, 1],
   ],
 }) {
   return Deck.fromJson(<String, dynamic>{
     'id': id,
     'name': name,
-    'templates':templates,
+    'templates': templates,
     'stats': <String, dynamic>{
       'unseen_cards': unseenCards,
       'facts_count': factsCount,

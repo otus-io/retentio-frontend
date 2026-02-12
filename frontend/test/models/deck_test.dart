@@ -62,7 +62,9 @@ void main() {
         final json = {
           'id': 'deck-1',
           'name': 'Test Deck',
-          'templates':[[0, 1]],
+          'templates': [
+            [0, 1],
+          ],
           'stats': {
             'unseen_cards': 5,
             'facts_count': 10,
@@ -76,7 +78,9 @@ void main() {
         final deck = Deck.fromJson(json);
         expect(deck.id, 'deck-1');
         expect(deck.name, 'Test Deck');
-        expect(deck.templates, [[0, 1]]);
+        expect(deck.templates, [
+          [0, 1],
+        ]);
         expect(deck.rate, 10);
         expect(deck.owner.username, 'owner1');
         expect(deck.owner.email, 'owner@test.com');
@@ -87,7 +91,7 @@ void main() {
         final json = {
           'id': 'deck-2',
           'name': 'Deck 2',
-          'templates':[],
+          'templates': [],
           'stats': <String, dynamic>{},
           'owner': 'string_owner',
           'fields': [],
@@ -102,7 +106,7 @@ void main() {
           'id': 'd',
           'name': 'n',
           'templates': [
-            [0,1],
+            [0, 1],
           ],
           'stats': <String, dynamic>{},
           'owner': 'o',
@@ -110,7 +114,7 @@ void main() {
         };
         final deck = Deck.fromJson(json);
         expect(deck.templates, [
-          [0,1],
+          [0, 1],
         ]);
       });
 
@@ -118,13 +122,19 @@ void main() {
         final json = {
           'id': 'd',
           'name': 'n',
-          'templates': [[0,1],[1,0]],
+          'templates': [
+            [0, 1],
+            [1, 0],
+          ],
           'stats': <String, dynamic>{},
           'owner': 'o',
           'fields': [],
         };
         final deck = Deck.fromJson(json);
-        expect(deck.templates, [[0,1],[1,0]]);
+        expect(deck.templates, [
+          [0, 1],
+          [1, 0],
+        ]);
       });
 
       test('uses field when fields is missing', () {
@@ -165,7 +175,7 @@ void main() {
           id: 'deck-1',
           name: 'My Deck',
           templates: <List<int>>[
-            <int>[0]
+            <int>[0],
           ],
           stats: DeckStats(
             unseenCards: 5,
@@ -184,7 +194,7 @@ void main() {
         expect(json['id'], 'deck-1');
         expect(json['name'], 'My Deck');
         expect(json['templates'], [
-          [0]
+          [0],
         ]);
         expect(json['rate'], 1);
       });
