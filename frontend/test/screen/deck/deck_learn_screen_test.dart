@@ -14,14 +14,14 @@ Deck _createTestDeck({
   return Deck.fromJson(<String, dynamic>{
     'id': 'test-deck-1',
     'name': name,
-    'templates': <int>[0],
+    'templates':[[0,1]],
     'stats': <String, dynamic>{
       'unseen_cards': unseenCards,
       'facts_count': 15,
       'due_cards': dueCards,
       'cards_count': cardsCount,
     },
-    'rate': 2.5,
+    'rate': 10,
     'owner': <String, dynamic>{
       'username': 'testuser',
       'email': 'test@example.com',
