@@ -5,6 +5,8 @@ import 'package:wordupx/extensions/context_extension.dart';
 import 'package:wordupx/extensions/widget_extension.dart';
 import 'package:wordupx/screen/learn/providers/create_deck_provider.dart';
 
+import 'loading_state_widget.dart';
+
 class CreateDeckWidget extends ConsumerStatefulWidget {
   const CreateDeckWidget({super.key});
 
@@ -206,12 +208,19 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget> {
 
         SizedBox(
           width: double.infinity,
-          child: FilledButton.icon(
+          child: FilledButton(
             onPressed: () {
-              ref.read(createDeckProvider.notifier).createDeck();
+              ref.read(createDeckProvider.notifier).createDeck(context);
             },
-            icon: Icon(LucideIcons.save),
-            label: Text('Save'),
+            child: Row(
+              spacing: 5,
+              mainAxisAlignment: .center,
+              crossAxisAlignment: .center,
+              children: [
+                LoadingStateWidget(child: Icon(LucideIcons.save)),
+                Text('Save'),
+              ],
+            ),
           ),
         ),
       ],

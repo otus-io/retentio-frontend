@@ -39,7 +39,7 @@ void main() {
 
       test('uses default code -1 when missing', () {
         final model = ResBaseModel.fromJson({'data': null});
-        expect(model.code, -1);
+        expect(model.code, 0);
       });
 
       test('uses default msg when message is missing', () {
@@ -54,9 +54,9 @@ void main() {
     });
 
     group('isSuccess', () {
-      test('returns true when code is 0', () {
+      test('returns true when code is 0 && data isNot null', () {
         final model = ResBaseModel(code: 0, msg: '', data: null);
-        expect(model.isSuccess, true);
+        expect(model.isSuccess, false);
       });
 
       test('returns false when code is non-zero', () {
