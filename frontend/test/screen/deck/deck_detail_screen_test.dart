@@ -12,18 +12,21 @@ Deck _createTestDeck({
   int unseenCards = 5,
   int dueCards = 3,
   int factsCount = 15,
+  List<List<int>> templates = const [
+    [0, 1],
+  ],
 }) {
   return Deck.fromJson(<String, dynamic>{
     'id': id,
     'name': name,
-    'templates': <int>[0],
+    'templates': templates,
     'stats': <String, dynamic>{
       'unseen_cards': unseenCards,
       'facts_count': factsCount,
       'due_cards': dueCards,
       'cards_count': cardsCount,
     },
-    'rate': 2.5,
+    'rate': 10,
     'owner': <String, dynamic>{
       'username': 'testuser',
       'email': 'test@example.com',
