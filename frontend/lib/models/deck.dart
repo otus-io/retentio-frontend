@@ -93,15 +93,17 @@ class Deck {
 
     // 兼容处理 field/fields
     final fieldsData = json['fields'] ?? json['field'];
-
+    final templates =
+        (json['templates'] as List<dynamic>?)
+            ?.map((x) => List<int>.from(x.map((x) => x as int)))
+            .toList() ??
+        [];
     return Deck(
       id: json['id'] as String,
       name: json['name'] as String,
-      templates: List<List<int>>.from(
-        json["templates"].map((x) => List<int>.from(x.map((x) => x))),
-      ),
+      templates: templates,
       stats: DeckStats.fromJson(json['stats'] as Map<String, dynamic>? ?? {}),
-      rate: json['rate'],
+      rate: json['rate'] as int? ?? 0,
       owner: parsedOwner,
       fields:
           (fieldsData as List<dynamic>?)?.map((e) => e as String).toList() ??
