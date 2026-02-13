@@ -1,0 +1,140 @@
+#!/bin/bash
+
+# =============================================================================
+# Pre-commit hook for WordUpX
+# Runs format checks and tests for changed files before allowing commits.
+# Only checks backend or frontend if relevant files were modified.
+# =============================================================================
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo "🔍 Running pre-commit checks..."
+echo ""
+
+# Detect which areas have staged changes
+BACKEND_CHANGED=$(git diff --cached --name-only -- 'backend-api/' | head -1)
+FRONTEND_CHANGED=$(git diff --cached --name-only -- 'frontend/' | head -1)
+
+FAILED=0
+
+# =============================================================================
+# Backend checks (only if backend files changed)
+# =============================================================================
+if [ -n "$BACKEND_CHANGED" ]; then
+    echo -e "${YELLOW}━━━ Backend Checks ━━━${NC}"
+
+    # --- Swagger docs generation ---
+    echo "📝 Generating Swagger docs..."
+    cd backend-api || exit 1
+    if make swagger-prod; then
+        git add docs/
+        git add main.go
+        echo -e "${GREEN}  ✓ Swagger docs updated and staged${NC}"
+    else
+        echo -e "${RED}  ✗ Swagger doc generation failed${NC}"
+        FAILED=1
+    fi
+    cd ..
+
+    # --- gofmt check ---
+    echo "🔧 Checking Go formatting..."
+    UNFORMATTED=$(gofmt -l backend-api/)
+    if [ -z "$UNFORMATTED" ]; then
+        echo -e "${GREEN}  ✓ Go formatting OK${NC}"
+    else
+        echo -e "${RED}  ✗ Go formatting issues found:${NC}"
+        echo "$UNFORMATTED"
+        echo "  Run: gofmt -w backend-api/"
+        FAILED=1
+    fi
+
+    # --- go vet ---
+    echo "🔎 Running go vet..."
+    if (cd backend-api && go vet ./...); then
+        echo -e "${GREEN}  ✓ go vet OK${NC}"
+    else
+        echo -e "${RED}  ✗ go vet found issues${NC}"
+        FAILED=1
+    fi
+
+    # --- go build ---
+    echo "🔨 Checking Go build..."
+    if (cd backend-api && go build ./...); then
+        echo -e "${GREEN}  ✓ Go build OK${NC}"
+    else
+        echo -e "${RED}  ✗ Go build failed${NC}"
+        FAILED=1
+    fi
+
+    # --- go test ---
+    echo "🧪 Running Go unit tests..."
+    if (cd backend-api && go test ./tests/unit/... 2>&1); then
+        echo -e "${GREEN}  ✓ Go unit tests passed${NC}"
+    else
+        echo -e "${RED}  ✗ Go unit tests failed${NC}"
+        FAILED=1
+    fi
+
+    echo ""
+fi
+
+# =============================================================================
+# Frontend checks (only if frontend files changed)
+# =============================================================================
+if [ -n "$FRONTEND_CHANGED" ]; then
+    echo -e "${YELLOW}━━━ Frontend Checks ━━━${NC}"
+
+    # --- dart format check ---
+    echo "🔧 Checking Dart formatting..."
+    if (cd frontend && dart format --set-exit-if-changed .); then
+        echo -e "${GREEN}  ✓ Dart formatting OK${NC}"
+    else
+        echo -e "${RED}  ✗ Dart formatting issues found${NC}"
+        echo "  Run: cd frontend && dart format ."
+        FAILED=1
+    fi
+
+    # --- flutter analyze ---
+    echo "🔎 Running flutter analyze..."
+    if (cd frontend && flutter analyze --no-pub); then
+        echo -e "${GREEN}  ✓ Flutter analysis OK${NC}"
+    else
+        echo -e "${RED}  ✗ Flutter analysis found issues${NC}"
+        FAILED=1
+    fi
+
+    # --- flutter test ---
+    echo "🧪 Running Flutter tests..."
+    if (cd frontend && flutter test); then
+        echo -e "${GREEN}  ✓ Flutter tests passed${NC}"
+    else
+        echo -e "${RED}  ✗ Flutter tests failed${NC}"
+        FAILED=1
+    fi
+
+    echo ""
+fi
+
+# =============================================================================
+# Final result
+# =============================================================================
+if [ -z "$BACKEND_CHANGED" ] && [ -z "$FRONTEND_CHANGED" ]; then
+    echo -e "${GREEN}No backend or frontend changes — skipping checks.${NC}"
+fi
+
+if [ $FAILED -ne 0 ]; then
+    echo ""
+    echo -e "${RED}━━━ Pre-commit checks FAILED ━━━${NC}"
+    echo -e "${RED}Fix the issues above before committing.${NC}"
+    echo -e "Tip: Use ${YELLOW}git commit --no-verify${NC} to skip (not recommended)."
+    exit 1
+fi
+
+echo -e "${GREEN}━━━ All pre-commit checks passed ✓ ━━━${NC}"
+exit 0

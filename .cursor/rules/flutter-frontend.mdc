@@ -1,0 +1,58 @@
+---
+description: Flutter/Dart frontend conventions for the WordUpX mobile app
+globs: frontend/lib/**/*.dart
+alwaysApply: false
+---
+
+# Flutter Frontend Conventions
+
+## Architecture
+- State management: Riverpod (flutter_riverpod) — wrap app in ProviderScope
+- Routing: go_router with GoRouter config in `routers/app_pages.dart`
+- HTTP: Dio client with interceptors in `services/dio_client/`
+- Storage: SharedPreferences for auth tokens, Hive for local data
+- i18n: flutter_localizations + intl (en, zh)
+
+## File Organization
+```
+lib/
+├── models/          # Data models with fromJson/toJson
+├── providers/       # Global Riverpod providers (auth, theme, locale)
+├── routers/         # Route definitions and GoRouter config
+├── screen/          # Feature screens, each with own providers/ and widgets/
+├── services/        # API clients, Dio config, storage
+├── widgets/         # Shared reusable widgets
+├── utils/           # Utility functions
+├── extensions/      # Dart extensions
+└── mixins/          # Reusable mixins
+```
+
+## Coding Patterns
+
+### Models
+```dart
+// Always handle null and type conversion in fromJson
+factory Deck.fromJson(Map<String, dynamic> json) {
+  // Handle null values with defaults
+  // Handle type mismatches (e.g., double → int)
+}
+```
+
+### Riverpod Providers
+- Screen-specific providers go in `screen/<feature>/providers/`
+- Global providers go in `providers/`
+- Use StateNotifier or ChangeNotifier patterns
+
+### Screens
+- Each screen is a StatelessWidget or ConsumerWidget
+- Screen-specific widgets go in `screen/<feature>/widgets/`
+- Use `ref.watch()` for reactive state, `ref.read()` for one-time actions
+
+### API Calls
+- All API calls go through Dio client in `services/apis/`
+- Handle errors at the service layer, surface user-friendly messages
+
+## Checks Before Commit
+- `dart format .` — must pass with no changes
+- `flutter analyze` — must have zero errors
+- `flutter test` — all tests must pass
