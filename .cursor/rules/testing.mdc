@@ -1,0 +1,64 @@
+---
+description: Blackbox testing principles and Flutter test conventions
+globs: frontend/test/**/*.dart
+alwaysApply: false
+---
+
+# Testing Conventions
+
+## Blackbox Testing Principle
+- Tests are written to **expose bugs**, not to pass
+- NEVER modify test data to work around production code bugs
+- NEVER modify production code to make tests pass
+- If a test fails, it means the **production code has a bug** — document it for developers to fix
+- Only modify tests to fix compile errors from API/type changes (e.g., after a model refactor)
+
+## Test File Organization
+```
+frontend/test/
+├── models/        # Unit tests for data models (fromJson, toJson, edge cases)
+├── providers/     # Unit tests for Riverpod state classes
+├── screen/        # Widget tests for screens and components
+│   ├── deck/
+│   ├── home/
+│   ├── login/
+│   └── profile/
+└── widget_test.dart  # Default Flutter test (known failure — needs ProviderScope)
+```
+
+## Widget Test Pattern
+```dart
+testWidgets('description', (WidgetTester tester) async {
+  await tester.pumpWidget(
+    ProviderScope(          // Always wrap in ProviderScope for Riverpod
+      child: MaterialApp(
+        home: MyWidget(),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+  expect(find.text('Expected'), findsOneWidget);
+});
+```
+
+## Model Test Pattern
+```dart
+test('fromJson handles null values gracefully', () {
+  final json = {'name': 'Test'};  // Deliberately missing fields
+  // This should NOT throw — if it does, the model has a bug
+  final model = Model.fromJson(json);
+  expect(model.name, 'Test');
+});
+```
+
+## Test Reports
+- Failed tests are documented in `docs/frontend/test-reports/`
+- Format: `YYYY-MM-DD-test-summary.md` with root cause analysis and fix suggestions
+- Reports include both English and Chinese content
+
+## Running Tests
+```bash
+cd frontend && flutter test                    # All tests
+cd frontend && flutter test test/models/       # Model tests only
+cd frontend && flutter test --reporter expanded # Verbose output
+```
