@@ -1,0 +1,31 @@
+---
+description: CI/CD workflow conventions for GitHub Actions
+globs: .github/workflows/**
+alwaysApply: false
+---
+
+# CI/CD Workflow Conventions
+
+## Existing Workflows
+| File | Trigger | Purpose |
+|------|---------|---------|
+| `backend.yml` | Push/PR to main, `backend-api/**` | Go build, vet, gofmt, unit + integration tests |
+| `frontend.yml` | Push/PR to main, `frontend/**` | Flutter format, analyze, test |
+| `pr-review.yml` | PR opened/synchronized | Claude AI auto-review + PR description |
+| `deploy.yml` | Push to main, `backend-api/**` | SSH deploy, systemctl restart |
+
+## Backend CI Requirements
+- Go 1.23 with Redis service container
+- Must pass: `go build`, `go vet`, `gofmt` check, `go test`
+- Integration tests require Redis on port 6379
+
+## Frontend CI Requirements
+- Flutter stable channel
+- Must pass: `dart format --set-exit-if-changed`, `flutter analyze`, `flutter test`
+- Test failures should be documented, not hidden
+
+## Rules
+- Never skip CI checks or add `[skip ci]` without team agreement
+- All new endpoints need corresponding test coverage
+- Swagger docs auto-regenerate via pre-commit hook — don't manually edit `docs/`
+- Deploy workflow only triggers on `main` branch pushes to `backend-api/`
