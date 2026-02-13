@@ -20,6 +20,9 @@ This guide walks you through using the WordUpX API via Swagger UI.
 |----------|--------|-------------|
 | `/auth/register` | POST | Register user |
 | `/auth/login` | POST | Login |
+| `/auth/logout` | POST | Logout (invalidate token) |
+| `/auth/forgot-password` | POST | Request password reset token |
+| `/auth/reset-password` | POST | Reset password with token |
 | `/api/decks` | POST | Create deck |
 | `/api/decks` | GET | List all decks |
 | `/api/decks/{id}` | GET | Get deck details |
@@ -82,6 +85,72 @@ This guide walks you through using the WordUpX API via Swagger UI.
 3. Click **"Authorize"** to save
 
 Now all subsequent requests will include your authentication token.
+
+### Logout
+
+**Endpoint:** `POST /auth/logout`
+
+Requires the `Authorization: Bearer <token>` header. Invalidates the token so it can no longer be used.
+
+**Response:**
+
+```json
+{
+  "data": {
+    "msg": "Logged out successfully"
+  },
+  "meta": null
+}
+```
+
+### Forgot Password
+
+**Endpoint:** `POST /auth/forgot-password`
+
+```json
+{
+  "email": "swagger@example.com"
+}
+```
+
+**Response:**
+
+```json
+{
+  "data": {
+    "reset_token": "a3f8b2c1d4e5f6..."
+  },
+  "meta": {
+    "expires_in": "15m0s"
+  }
+}
+```
+
+> The reset token expires after 15 minutes. In production, this token would be sent via email instead of in the response.
+
+### Reset Password
+
+**Endpoint:** `POST /auth/reset-password`
+
+```json
+{
+  "token": "a3f8b2c1d4e5f6...",
+  "new_password": "mynewpassword"
+}
+```
+
+**Response:**
+
+```json
+{
+  "data": {
+    "msg": "Password reset successfully"
+  },
+  "meta": null
+}
+```
+
+> After resetting, log in with your new password. The reset token is single-use and cannot be reused.
 
 ---
 
