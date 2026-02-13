@@ -13,7 +13,8 @@
 | `POST /auth/register` | 注册用户 | ✅ | ✅ |
 | `POST /auth/login` | 用户登录 | ✅ | ✅ |
 | `POST /auth/logout` | 用户登出 | ❌ | ✅ |
-| `POST /auth/forgot-password` | 忘记密码 / 重置密码 | ❌ | ❌ |
+| `POST /auth/forgot-password` | 请求密码重置令牌 | ❌ | ✅ |
+| `POST /auth/reset-password` | 使用令牌重置密码 | ❌ | ✅ |
 
 ### 管理员
 
