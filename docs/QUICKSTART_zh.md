@@ -20,6 +20,9 @@
 |------|------|------|
 | `/auth/register` | POST | 注册用户 |
 | `/auth/login` | POST | 登录 |
+| `/auth/logout` | POST | 登出（使令牌失效） |
+| `/auth/forgot-password` | POST | 请求密码重置令牌 |
+| `/auth/reset-password` | POST | 使用令牌重置密码 |
 | `/api/decks` | POST | 创建卡组 |
 | `/api/decks` | GET | 获取所有卡组 |
 | `/api/decks/{id}` | GET | 获取卡组详情 |
@@ -82,6 +85,72 @@
 3. 点击 **"Authorize"** 保存
 
 现在所有后续请求都会自动包含您的身份验证令牌。
+
+### 登出
+
+**接口:** `POST /auth/logout`
+
+需要 `Authorization: Bearer <token>` 请求头。使令牌失效，之后无法再使用。
+
+**响应:**
+
+```json
+{
+  "data": {
+    "msg": "Logged out successfully"
+  },
+  "meta": null
+}
+```
+
+### 忘记密码
+
+**接口:** `POST /auth/forgot-password`
+
+```json
+{
+  "email": "swagger@example.com"
+}
+```
+
+**响应:**
+
+```json
+{
+  "data": {
+    "reset_token": "a3f8b2c1d4e5f6..."
+  },
+  "meta": {
+    "expires_in": "15m0s"
+  }
+}
+```
+
+> 重置令牌在 15 分钟后过期。在生产环境中，此令牌将通过电子邮件发送，而不是在响应中返回。
+
+### 重置密码
+
+**接口:** `POST /auth/reset-password`
+
+```json
+{
+  "token": "a3f8b2c1d4e5f6...",
+  "new_password": "mynewpassword"
+}
+```
+
+**响应:**
+
+```json
+{
+  "data": {
+    "msg": "Password reset successfully"
+  },
+  "meta": null
+}
+```
+
+> 重置后，请使用新密码登录。重置令牌为一次性使用，不能重复使用。
 
 ---
 
