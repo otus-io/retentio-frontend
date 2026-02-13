@@ -20,8 +20,38 @@ echo ""
 # Detect which areas have staged changes
 BACKEND_CHANGED=$(git diff --cached --name-only -- 'backend-api/' | head -1)
 FRONTEND_CHANGED=$(git diff --cached --name-only -- 'frontend/' | head -1)
+YAML_FILES=$(git diff --cached --name-only --diff-filter=ACM -- '*.yml' '*.yaml')
 
 FAILED=0
+
+# =============================================================================
+# YAML lint (only if .yml/.yaml files changed)
+# =============================================================================
+if [ -n "$YAML_FILES" ]; then
+    echo -e "${YELLOW}━━━ YAML Checks ━━━${NC}"
+    echo "📋 Linting YAML files..."
+
+    if command -v yamllint &> /dev/null; then
+        YAML_FAILED=0
+        for file in $YAML_FILES; do
+            if yamllint -d "{extends: default, rules: {line-length: {max: 200}, truthy: disable}}" "$file" 2>&1; then
+                echo -e "${GREEN}  ✓ $file${NC}"
+            else
+                YAML_FAILED=1
+            fi
+        done
+        if [ $YAML_FAILED -ne 0 ]; then
+            echo -e "${RED}  ✗ YAML lint issues found${NC}"
+            FAILED=1
+        else
+            echo -e "${GREEN}  ✓ All YAML files OK${NC}"
+        fi
+    else
+        echo -e "${YELLOW}  ⚠ yamllint not found — skipping (install: pip install yamllint)${NC}"
+    fi
+
+    echo ""
+fi
 
 # =============================================================================
 # Backend checks (only if backend files changed)
@@ -124,8 +154,8 @@ fi
 # =============================================================================
 # Final result
 # =============================================================================
-if [ -z "$BACKEND_CHANGED" ] && [ -z "$FRONTEND_CHANGED" ]; then
-    echo -e "${GREEN}No backend or frontend changes — skipping checks.${NC}"
+if [ -z "$BACKEND_CHANGED" ] && [ -z "$FRONTEND_CHANGED" ] && [ -z "$YAML_FILES" ]; then
+    echo -e "${GREEN}No backend, frontend, or YAML changes — skipping checks.${NC}"
 fi
 
 if [ $FAILED -ne 0 ]; then

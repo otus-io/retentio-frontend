@@ -10,6 +10,14 @@ This project includes a pre-commit hook that runs format checks and tests before
 
 The hook only runs checks relevant to the files you're committing:
 
+### YAML (`.yml` / `.yaml` files changed)
+
+| Check | Command | Purpose |
+|-------|---------|---------|
+| YAML lint | `yamllint` | Validate YAML syntax and formatting |
+
+> If `yamllint` is not installed, the check is skipped with a warning. Install with: `pip install yamllint`
+
 ### Backend (`backend-api/` files changed)
 
 | Check | Command | Purpose |
