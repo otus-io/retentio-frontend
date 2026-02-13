@@ -115,9 +115,11 @@ for ep in sorted(all_endpoints):
     if i_fe != m_fe or i_be != m_be:
         changes.append(f"  ISSUE  {ep}: frontend {i_fe}->{m_fe}, backend {i_be}->{m_be}")
 
-# Apply
+# Apply merged statuses to the local file (source of truth for structure).
+# Use the local file as the template for BOTH outputs, so new rows in the
+# local file automatically appear in the issue body.
 merged_local = apply_merged(local_text, merged)
-merged_issue = apply_merged(issue_body, merged)
+merged_issue = merged_local  # issue mirrors local structure with merged statuses
 
 # Output as JSON so the shell script can parse it
 output = {
