@@ -65,7 +65,8 @@
 | `GET /api/decks/{id}/cards/hidden-cards` | 获取已隐藏卡片 | ❌ | ✅ |
 | `PATCH /api/decks/{id}/cards/{cardIndex}/update-interval` | 更新卡片间隔 | ❌ | ✅ |
 | `PATCH /api/decks/{id}/cards/{cardIndex}/update-visibility` | 隐藏/显示卡片（已掌握的单词） | ❌ | ✅ |
-| `POST /api/decks/{id}/reschedule` | 自动重排卡片复习计划 | ❌ | ❌ |
+| `POST /api/decks/{id}/reschedule` | 假期模式：按天数平移卡片复习计划 | ❌ | ✅ |
+| `POST /api/reschedule` | 假期模式：按天数平移所有卡组的复习计划 | ❌ | ✅ |
 | `PATCH /api/decks/{id}/reschedule-due` | 批量调整到期日期（考试前集中复习） | ❌ | ❌ |
 
 ### 媒体文件

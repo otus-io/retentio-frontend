@@ -1,4 +1,4 @@
-🌐 [English](DESIGN_DECISIONS.md) | [中文](DESIGN_DECISIONS_zh.md)
+🌐 [English](restful-api-design.md) | [中文](restful-api-design_zh.md)
 
 ---
 

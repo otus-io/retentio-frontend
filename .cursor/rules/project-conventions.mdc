@@ -26,5 +26,5 @@ WordUpX is a vocabulary learning app with a Go backend (gorilla/mux, Redis, JWT)
 
 ## Key Principles
 - Never modify production code to make tests pass — tests expose bugs for developers to fix
-- RESTful API design (no RPC-style endpoints) — see `docs/DESIGN_DECISIONS.md`
+- RESTful API design (no RPC-style endpoints) — see `docs/design-doc/restful-api-design.md`
 - CI must pass before merge: `gofmt`, `go vet`, `go test`, `dart format`, `flutter analyze`, `flutter test`
