@@ -2,18 +2,17 @@
 
 ## Design
 
-Shift **all cards** in a deck by N days (adding `N * 86400` seconds to both `DueDate` and `LastReview`). Shifting both fields preserves the interval (`DueDate - LastReview`) and keeps urgency calculations consistent. Two endpoints:
+Shift **all cards** in a deck by N days (adding `N * 86400` seconds to both `DueDate` and `LastReview`). Shifting both fields preserves the interval (`DueDate - LastReview`) and keeps urgency calculations consistent. One endpoint:
 
 - `POST /api/decks/{id}/reschedule` -- reschedule a single deck
-- `POST /api/reschedule` -- reschedule all user decks at once
 
-Both accept the same request body:
+Request body:
 
 ```json
 { "days": 5 }
 ```
 
-Both return the number of cards shifted and a summary.
+Returns the number of cards shifted and a summary.
 
 ### Why shift all cards (not just overdue)?
 
@@ -29,9 +28,13 @@ type RescheduleRequest struct {
 
 Validation: `days` must be >= 1 and <= 365, **and** must not exceed the detected absence (see Max Shift Validation below).
 
+## Why per-deck only (no global reschedule)
+
+A user may be active on some decks but absent from others. A global `POST /api/reschedule` that shifts all decks by the same N days would incorrectly shift decks the user is still actively studying. Per-deck rescheduling lets the user (or frontend) decide which decks need shifting and by how many days independently. If multiple decks need rescheduling, the frontend calls the per-deck endpoint once for each, potentially with different `days` values.
+
 ## Max Shift Validation
 
-Both handlers enforce that the user cannot shift by more days than they have actually been away. The absence is computed from the **earliest overdue card** (`DueDate <= now`):
+The handler enforces that the user cannot shift by more days than they have actually been away. The absence is computed from the **earliest overdue card** (`DueDate <= now`):
 
 ```
 maxDaysAway = (now - min(DueDate where DueDate <= now)) / 86400
@@ -42,7 +45,7 @@ Rules:
 - If `maxDaysAway < 1`, clamp to 1
 - If `days > maxDaysAway`, return 400: "Cannot shift by N days — you have only been away for M days"
 
-Both responses include `max_days_away` in the data payload so the frontend can display the cap to the user.
+The response includes `max_days_away` in the data payload so the frontend can display the cap to the user.
 
 ## Handler: `RescheduleDeck`
 
@@ -53,14 +56,6 @@ Both responses include `max_days_away` in the data payload so the frontend can d
 - For every card: `card.DueDate += shift`, `card.LastReview += shift`
 - Save cards back to Redis
 - Respond with `{ "data": { "cards_shifted": N, "days": D, "max_days_away": M }, "meta": { "msg": "..." } }`
-
-## Handler: `RescheduleAllDecks`
-
-- Parse `days` from request body
-- Load all deck IDs for the user (`user:{username}:decks`)
-- **First pass**: load all cards across all decks, find the global earliest overdue card, validate `days <= maxDaysAway`
-- **Second pass**: apply the shift to all cards, save back via Redis pipeline
-- Respond with `{ "data": { "decks_rescheduled": M, "total_cards_shifted": N, "days": D, "max_days_away": X }, "meta": { "msg": "..." } }`
 
 ## Holiday Detection
 
@@ -117,7 +112,7 @@ When the frontend detects `reschedule_suggested: true`, it presents a prompt wit
 
 1. **Reschedule** -- *"Shift my schedule back N days"*
    - Pre-fills with `suggested_reschedule_days`, user can adjust
-   - Calls `POST /api/decks/{id}/reschedule` (or `/api/reschedule` for all decks)
+   - Calls `POST /api/decks/{id}/reschedule`
    - Cards spread back out over time, manageable daily load
 
 2. **Catch up** -- *"I'll study through them"*
@@ -133,7 +128,6 @@ The choice is per-session and non-blocking -- if the user dismisses, they can al
 
 ```go
 apiRouter.HandleFunc("/decks/{id}/reschedule", deck.RescheduleDeck).Methods("POST", "OPTIONS")
-apiRouter.HandleFunc("/reschedule", deck.RescheduleAllDecks).Methods("POST", "OPTIONS")
 ```
 
 ## Tests
@@ -141,7 +135,6 @@ apiRouter.HandleFunc("/reschedule", deck.RescheduleAllDecks).Methods("POST", "OP
 ### Reschedule handlers
 - `TestRescheduleDeck`: verify all cards shifted by correct amount, both DueDate and LastReview
 - `TestRescheduleDeck` sub-tests: invalid days (0, -1, 366), unauthorized access, non-existent deck, shift exceeds days away
-- `TestRescheduleAllDecks`: create 2 decks, reschedule all, verify both shifted
 - Verify unseen invariant is preserved (`DueDate - LastReview` stays the same after shift)
 
 ### Holiday detection in GetNextDueCard

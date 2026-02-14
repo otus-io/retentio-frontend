@@ -41,7 +41,7 @@
 | `GET /api/decks/{id}` | 获取卡组详情 | ❌ | ✅ |
 | `PATCH /api/decks/{id}` | 更新卡组 | ✅ | ✅ |
 | `DELETE /api/decks/{id}` | 删除卡组 | ✅ | ✅ |
-| `GET /api/decks/{id}/holiday-check` | 检测用户是否长时间未学习并自动调整 | ❌ | ❌ |
+| `GET /api/decks/{id}/next-due-card` (meta) | 假期检测：通过 next-due-card 元数据返回 | ❌ | ✅ |
 | `POST /api/decks/{id}/split` | 拆分卡组为子卡组（按章节） | ❌ | ❌ |
 | `GET /api/decks/public/{id}` | 下载公开卡组 | ❌ | ❌ |
 
@@ -49,7 +49,7 @@
 
 | 接口 | 说明 | 前端 | 后端 |
 |---|---|---|---|
-| `POST /api/decks/{id}/facts/{operation}` | 添加词条 (append/prepend/shuffle/spread) 🔧 | ❌ | ❌ |
+| `POST /api/decks/{id}/facts/{operation}` | 添加词条 (append/prepend/shuffle/spread) | ❌ | ✅ |
 | `GET /api/decks/{id}/facts` | 获取所有词条 | ❌ | ✅ |
 | `GET /api/decks/{id}/facts/{factIndex}` | 获取单个词条 | ❌ | ✅ |
 | `PATCH /api/decks/{id}/facts/{factIndex}` | 更新词条 | ❌ | ✅ |
@@ -66,8 +66,6 @@
 | `PATCH /api/decks/{id}/cards/{cardIndex}/update-interval` | 更新卡片间隔 | ❌ | ✅ |
 | `PATCH /api/decks/{id}/cards/{cardIndex}/update-visibility` | 隐藏/显示卡片（已掌握的单词） | ❌ | ✅ |
 | `POST /api/decks/{id}/reschedule` | 假期模式：按天数平移卡片复习计划 | ❌ | ✅ |
-| `POST /api/reschedule` | 假期模式：按天数平移所有卡组的复习计划 | ❌ | ✅ |
-| `PATCH /api/decks/{id}/reschedule-due` | 批量调整到期日期（考试前集中复习） | ❌ | ❌ |
 
 ### 媒体文件
 
