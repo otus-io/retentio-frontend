@@ -20,7 +20,8 @@ echo ""
 # Detect which areas have staged changes
 BACKEND_CHANGED=$(git diff --cached --name-only -- 'backend-api/' | head -1)
 FRONTEND_CHANGED=$(git diff --cached --name-only -- 'frontend/' | head -1)
-YAML_FILES=$(git diff --cached --name-only --diff-filter=ACM -- '*.yml' '*.yaml')
+# Exclude auto-generated swagger.yaml from YAML lint
+YAML_FILES=$(git diff --cached --name-only --diff-filter=ACM -- '*.yml' '*.yaml' | grep -v 'backend-api/docs/swagger.yaml')
 
 FAILED=0
 
