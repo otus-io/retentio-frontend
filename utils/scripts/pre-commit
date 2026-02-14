@@ -102,12 +102,21 @@ if [ -n "$BACKEND_CHANGED" ]; then
         FAILED=1
     fi
 
-    # --- go test ---
+    # --- go test (unit) ---
     echo "🧪 Running Go unit tests..."
     if (cd backend-api && go test ./tests/unit/... 2>&1); then
         echo -e "${GREEN}  ✓ Go unit tests passed${NC}"
     else
         echo -e "${RED}  ✗ Go unit tests failed${NC}"
+        FAILED=1
+    fi
+
+    # --- go test (integration) ---
+    echo "🧪 Running Go integration tests..."
+    if (cd backend-api && go test ./tests/integration/... 2>&1); then
+        echo -e "${GREEN}  ✓ Go integration tests passed${NC}"
+    else
+        echo -e "${RED}  ✗ Go integration tests failed${NC}"
         FAILED=1
     fi
 

@@ -1,0 +1,58 @@
+---
+description: Go backend test placement and structure rules
+globs: backend-api/**/*.go
+alwaysApply: false
+---
+
+# Go Backend Test Placement
+
+## Rule: All tests go in `backend-api/tests/`
+
+NEVER place `_test.go` files in production packages (`deck/`, `auth/`, `common/`, `media/`).
+Tests always go in the `tests/` directory:
+
+```
+backend-api/tests/
+├── unit/            # Pure logic tests, no Redis or HTTP
+│   ├── stats_test.go
+│   └── spread_test.go
+└── integration/     # Full HTTP handler tests with Redis
+    ├── helpers_test.go
+    ├── deck_test.go
+    ├── fact_test.go
+    └── card_test.go
+```
+
+## When to use unit vs integration
+
+| Type | Package | Uses Redis? | Uses HTTP? | Example |
+|------|---------|-------------|------------|---------|
+| Unit | `package unit` | No | No | `deck.SpreadCards()`, `deck.ComputeStats()` |
+| Integration | `package integration` | Yes (DB 1) | Yes (`httptest`) | `deck.AddFact` handler, `deck.CreateDeck` handler |
+
+## Exporting for testability
+
+If a function needs unit testing from `tests/unit/`, it must be exported (uppercase).
+Unexported helpers that only need integration-level testing can stay lowercase.
+
+```go
+// Needs unit test → export it
+func SpreadCards(existing []Card, new []Card) []Card { ... }
+
+// Only tested via handler integration tests → keep unexported
+func someInternalHelper() { ... }
+```
+
+## Integration test pattern
+
+- Use `setupTestRedis(t)` and `createTestUser(t, ...)` from `helpers_test.go`
+- Build a `mux.Router` with `auth.JwtAuthMiddleware` per test
+- Use `httptest.NewRequest` / `httptest.NewRecorder`
+- Prefer table-driven tests with `checkResponse` and `checkRedis` callbacks
+
+## Running tests
+
+```bash
+go test ./tests/unit/...         # Unit tests (no Redis needed)
+go test ./tests/integration/...  # Integration tests (requires Redis on :6379)
+```
