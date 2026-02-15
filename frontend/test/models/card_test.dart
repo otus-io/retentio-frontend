@@ -6,7 +6,7 @@ void main() {
     group('fromJson', () {
       test('parses full JSON with all fields', () {
         final json = {
-          'fact_index': 1,
+          'fact_id': 'abc1234',
           'template_index': 2,
           'last_review': 1000,
           'due_date': 2000,
@@ -15,7 +15,7 @@ void main() {
           'max_calculation': 10,
         };
         final detail = CardDetail.fromJson(json);
-        expect(detail.factIndex, 1);
+        expect(detail.factId, 'abc1234');
         expect(detail.templateIndex, 2);
         expect(detail.lastReview, 1000);
         expect(detail.dueDate, 2000);
@@ -26,7 +26,7 @@ void main() {
 
       test('uses default values for missing fields', () {
         final detail = CardDetail.fromJson({});
-        expect(detail.factIndex, 0);
+        expect(detail.factId, '');
         expect(detail.templateIndex, 0);
         expect(detail.lastReview, 0);
         expect(detail.dueDate, 0);
@@ -37,7 +37,7 @@ void main() {
 
       test('uses null coalescing for null values', () {
         final json = {
-          'fact_index': null,
+          'fact_id': null,
           'template_index': null,
           'last_review': null,
           'due_date': null,
@@ -46,7 +46,7 @@ void main() {
           'max_calculation': null,
         };
         final detail = CardDetail.fromJson(json);
-        expect(detail.factIndex, 0);
+        expect(detail.factId, '');
         expect(detail.templateIndex, 0);
         expect(detail.lastReview, 0);
         expect(detail.dueDate, 0);
@@ -59,7 +59,7 @@ void main() {
     group('toJson', () {
       test('serializes to correct format', () {
         final detail = CardDetail(
-          factIndex: 1,
+          factId: 'abc1234',
           templateIndex: 2,
           lastReview: 1000,
           dueDate: 2000,
@@ -68,7 +68,7 @@ void main() {
           maxCalculation: 10,
         );
         final json = detail.toJson();
-        expect(json['fact_index'], 1);
+        expect(json['fact_id'], 'abc1234');
         expect(json['template_index'], 2);
         expect(json['last_review'], 1000);
         expect(json['due_date'], 2000);
@@ -82,7 +82,7 @@ void main() {
       test('returns true when dueDate is in the past and not hidden', () {
         final pastTime = (DateTime.now().millisecondsSinceEpoch ~/ 1000) - 3600;
         final detail = CardDetail(
-          factIndex: 0,
+          factId: 'a',
           templateIndex: 0,
           lastReview: 0,
           dueDate: pastTime,
@@ -96,7 +96,7 @@ void main() {
       test('returns false when hidden even if dueDate is in the past', () {
         final pastTime = (DateTime.now().millisecondsSinceEpoch ~/ 1000) - 3600;
         final detail = CardDetail(
-          factIndex: 0,
+          factId: 'a',
           templateIndex: 0,
           lastReview: 0,
           dueDate: pastTime,
@@ -111,7 +111,7 @@ void main() {
         final futureTime =
             (DateTime.now().millisecondsSinceEpoch ~/ 1000) + 3600;
         final detail = CardDetail(
-          factIndex: 0,
+          factId: 'a',
           templateIndex: 0,
           lastReview: 0,
           dueDate: futureTime,
@@ -126,7 +126,7 @@ void main() {
     group('isNew', () {
       test('returns true when lastReview is 0', () {
         final detail = CardDetail(
-          factIndex: 0,
+          factId: 'a',
           templateIndex: 0,
           lastReview: 0,
           dueDate: 0,
@@ -139,7 +139,7 @@ void main() {
 
       test('returns false when lastReview is non-zero', () {
         final detail = CardDetail(
-          factIndex: 0,
+          factId: 'a',
           templateIndex: 0,
           lastReview: 1000,
           dueDate: 0,
@@ -154,7 +154,7 @@ void main() {
 
   group('Card', () {
     final cardDetail = CardDetail(
-      factIndex: 0,
+      factId: 'a',
       templateIndex: 0,
       lastReview: 0,
       dueDate: 0,
@@ -166,7 +166,7 @@ void main() {
     group('fromJson', () {
       test('parses simplified JSON (flat CardDetail fields)', () {
         final json = {
-          'fact_index': 1,
+          'fact_id': 'abc1234',
           'template_index': 0,
           'last_review': 0,
           'due_date': 0,
@@ -175,7 +175,10 @@ void main() {
           'max_calculation': 0,
           'card_index': 5,
           'def_interval': 1,
-          'fact': ['front', 'back'],
+          'fact': {
+            'id': 'abc1234',
+            'fields': ['front', 'back'],
+          },
           'hidden_cards': 0,
           'max_interval': 365,
           'min_interval': 1,
@@ -183,16 +186,15 @@ void main() {
           'urgency': 1.5,
         };
         final card = Card.fromJson(json);
-        expect(card.card.factIndex, 1);
+        expect(card.card.factId, 'abc1234');
         expect(card.cardIndex, 5);
-        expect(card.fact, ['front', 'back']);
         expect(card.urgency, 1.5);
       });
 
       test('parses full JSON with nested card object', () {
         final json = {
           'card': {
-            'fact_index': 2,
+            'fact_id': 'def5678',
             'template_index': 1,
             'last_review': 500,
             'due_date': 1000,
@@ -202,7 +204,10 @@ void main() {
           },
           'card_index': 10,
           'def_interval': 1,
-          'fact': ['question', 'answer'],
+          'fact': {
+            'id': 'def5678',
+            'fields': ['question', 'answer'],
+          },
           'hidden_cards': 2,
           'max_interval': 365,
           'min_interval': 1,
@@ -210,17 +215,16 @@ void main() {
           'urgency': 2.0,
         };
         final card = Card.fromJson(json);
-        expect(card.card.factIndex, 2);
+        expect(card.card.factId, 'def5678');
         expect(card.card.lastReview, 500);
         expect(card.cardIndex, 10);
-        expect(card.fact, ['question', 'answer']);
         expect(card.hiddenCards, 2);
         expect(card.urgency, 2.0);
       });
 
       test('uses empty list for missing fact and template', () {
         final json = {
-          'fact_index': 0,
+          'fact_id': 'a',
           'template_index': 0,
           'last_review': 0,
           'due_date': 0,
@@ -231,21 +235,6 @@ void main() {
         final card = Card.fromJson(json);
         expect(card.fact, isEmpty);
         expect(card.template, isEmpty);
-      });
-
-      test('handles fact with non-string elements by converting to string', () {
-        final json = {
-          'fact_index': 0,
-          'template_index': 0,
-          'last_review': 0,
-          'due_date': 0,
-          'hidden': false,
-          'min_calculation': 0,
-          'max_calculation': 0,
-          'fact': [123, 456],
-        };
-        final card = Card.fromJson(json);
-        expect(card.fact, ['123', '456']);
       });
     });
 
@@ -336,7 +325,7 @@ void main() {
       test('isDue delegates to card.isDue', () {
         final pastTime = (DateTime.now().millisecondsSinceEpoch ~/ 1000) - 3600;
         final dueDetail = CardDetail(
-          factIndex: 0,
+          factId: 'a',
           templateIndex: 0,
           lastReview: 0,
           dueDate: pastTime,
@@ -360,7 +349,7 @@ void main() {
 
       test('isNew delegates to card.isNew', () {
         final newDetail = CardDetail(
-          factIndex: 0,
+          factId: 'a',
           templateIndex: 0,
           lastReview: 0,
           dueDate: 0,
@@ -384,7 +373,7 @@ void main() {
 
       test('isHidden delegates to card.hidden', () {
         final hiddenDetail = CardDetail(
-          factIndex: 0,
+          factId: 'a',
           templateIndex: 0,
           lastReview: 0,
           dueDate: 0,
