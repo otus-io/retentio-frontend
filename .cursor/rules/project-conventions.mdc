@@ -21,7 +21,7 @@ WordUpX is a vocabulary learning app with a Go backend (gorilla/mux, Redis, JWT)
 - Prefer clear naming over comments; add comments only for complex logic
 
 ## Documentation
-- All user-facing docs must have English and Chinese versions (e.g., `FOO.md` + `FOO_zh.md`)
+- All user-facing docs must have English and Chinese versions (e.g., `FOO.md` + `FOO_zh.md`), **except** design docs (`docs/design-doc/`) which are English only
 - Keep `docs/API_PROGRESS_TRACKER.md` updated when adding/changing endpoints
 
 ## Key Principles
