@@ -51,9 +51,9 @@
 |---|---|---|---|
 | `POST /api/decks/{id}/facts/{operation}` | 添加词条 (append/prepend/shuffle/spread) | ❌ | ✅ |
 | `GET /api/decks/{id}/facts` | 获取所有词条 | ❌ | ✅ |
-| `GET /api/decks/{id}/facts/{factIndex}` | 获取单个词条 | ❌ | ✅ |
-| `PATCH /api/decks/{id}/facts/{factIndex}` | 更新词条 | ❌ | ✅ |
-| `DELETE /api/decks/{id}/facts/{factIndex}` | 删除词条 | ❌ | ✅ |
+| `GET /api/decks/{id}/facts/{factId}` | 获取单个词条 | ❌ | ✅ |
+| `PATCH /api/decks/{id}/facts/{factId}` | 更新词条 | ❌ | ✅ |
+| `DELETE /api/decks/{id}/facts/{factId}` | 删除词条 | ❌ | ✅ |
 | `GET /api/decks/{id}/facts/search` | 模糊搜索词条（提前复习特定单词） | ❌ | ❌ |
 
 ### 卡片
