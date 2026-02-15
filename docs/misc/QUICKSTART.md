@@ -30,9 +30,9 @@ This guide walks you through using the WordUpX API via Swagger UI.
 | `/api/decks/{id}` | DELETE | Delete deck |
 | `/api/decks/{id}/facts/{operation}` | POST | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`) |
 | `/api/decks/{id}/facts` | GET | Get all facts |
-| `/api/decks/{id}/facts/{factIndex}` | GET | Get a specific fact |
-| `/api/decks/{id}/facts/{factIndex}` | PATCH | Update a fact |
-| `/api/decks/{id}/facts/{factIndex}` | DELETE | Delete a fact |
+| `/api/decks/{id}/facts/{factId}` | GET | Get a specific fact |
+| `/api/decks/{id}/facts/{factId}` | PATCH | Update a fact |
+| `/api/decks/{id}/facts/{factId}` | DELETE | Delete a fact |
 | `/api/decks/{id}/next-due-card` | GET | Get next due card |
 | `/api/decks/{id}/cards/{operation}` | GET | Get cards (`all-cards`, `hidden-cards`) |
 | `/api/decks/{id}/cards/{cardIndex}/{operation}` | PATCH | Update card (`update-interval`, `update-visibility`) |
@@ -208,7 +208,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 ```json
 {
   "data": {
-    "deck_id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05"
+    "deck_id": "a1b2c3"
   },
   "meta": {
     "msg": "Deck created successfully"
@@ -229,14 +229,14 @@ You can view a single deck or list all your decks. Both responses include a `sta
 **Endpoint:** `GET /api/decks/{id}`
 
 **Parameters:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05` (your deck ID)
+- `id`: `a1b2c3` (your deck ID)
 
 **Response:**
 
 ```json
 {
   "data": {
-    "id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05",
+    "id": "a1b2c3",
     "name": "English Japanese IELTS Deck",
     "owner": "swagger",
     "field": ["English", "Japanese"],
@@ -271,7 +271,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
   "data": {
     "decks": [
       {
-        "id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05",
+        "id": "a1b2c3",
         "name": "English Japanese IELTS Deck",
         "owner": "swagger",
         "field": ["English", "Japanese"],
@@ -328,7 +328,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 **Endpoint:** `PATCH /api/decks/{id}`
 
 **Parameters:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05` (your deck ID)
+- `id`: `a1b2c3` (your deck ID)
 
 **Request Body:**
 
@@ -348,7 +348,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 ```json
 {
   "data": {
-    "deck_id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05"
+    "deck_id": "a1b2c3"
   },
   "meta": {
     "msg": "Deck updated successfully",
@@ -362,7 +362,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 **Endpoint:** `DELETE /api/decks/{id}`
 
 **Parameters:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05` (your deck ID)
+- `id`: `a1b2c3` (your deck ID)
 
 > This permanently deletes the deck and all its associated facts, cards, and templates.
 
@@ -371,7 +371,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 ```json
 {
   "data": {
-    "deck_id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05"
+    "deck_id": "a1b2c3"
   },
   "meta": {
     "msg": "Deck deleted successfully"
@@ -386,7 +386,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 **Endpoint:** `POST /api/decks/{id}/facts/{operation}`
 
 **Parameters:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05` (your deck ID)
+- `id`: `a1b2c3` (your deck ID)
 - `operation`: `append`
 
 **Request Body:**
@@ -438,7 +438,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 **Endpoint:** `GET /api/decks/{id}/next-due-card`
 
 **Parameters:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05` (your deck ID)
+- `id`: `a1b2c3` (your deck ID)
 
 **Response:**
 
@@ -446,7 +446,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 {
   "data": {
     "card": {
-      "fact_index": 0,
+      "fact_id": "x9k2m4np",
       "template_index": 0,
       "last_review": 1763269701,
       "due_date": 1763269702,
@@ -458,7 +458,10 @@ You can view a single deck or list all your decks. Both responses include a `sta
     "card_index": 0,
     "def_interval": 600,
     "due_cards": 1,
-    "fact": ["Apple", "りんご"],
+    "fact": {
+      "id": "x9k2m4np",
+      "fields": ["Apple", "りんご"]
+    },
     "hidden_cards": 0,
     "max_interval": 1200,
     "min_interval": 150,
@@ -481,7 +484,7 @@ After viewing a card, you need to update its interval based on how well you reme
 **Endpoint:** `PATCH /api/decks/{id}/cards/{cardIndex}/update-interval`
 
 **Parameters:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05` (your deck ID)
+- `id`: `a1b2c3` (your deck ID)
 - `cardIndex`: `0` (from the `card_index` in step 4)
 - `operation`: `update-interval`
 
@@ -592,7 +595,7 @@ If you want to temporarily hide a card from reviews:
 **Endpoint:** `PATCH /api/decks/{id}/cards/{cardIndex}/update-visibility`
 
 **Parameters:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`
+- `id`: `a1b2c3`
 - `cardIndex`: `0`
 - `operation`: `update-visibility`
 

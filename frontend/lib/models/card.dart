@@ -1,5 +1,5 @@
 class CardDetail {
-  final int factIndex;
+  final String factId;
   final int templateIndex;
   final int lastReview;
   final int dueDate;
@@ -8,7 +8,7 @@ class CardDetail {
   final int maxCalculation;
 
   CardDetail({
-    required this.factIndex,
+    required this.factId,
     required this.templateIndex,
     required this.lastReview,
     required this.dueDate,
@@ -19,7 +19,7 @@ class CardDetail {
 
   factory CardDetail.fromJson(Map<String, dynamic> json) {
     return CardDetail(
-      factIndex: json['fact_index'] as int? ?? 0,
+      factId: json['fact_id'] as String? ?? '',
       templateIndex: json['template_index'] as int? ?? 0,
       lastReview: json['last_review'] as int? ?? 0,
       dueDate: json['due_date'] as int? ?? 0,
@@ -31,7 +31,7 @@ class CardDetail {
 
   Map<String, dynamic> toJson() {
     return {
-      'fact_index': factIndex,
+      'fact_id': factId,
       'template_index': templateIndex,
       'last_review': lastReview,
       'due_date': dueDate,
@@ -49,6 +49,20 @@ class CardDetail {
 
   /// 是否是新卡片（从未复习过）
   bool get isNew => lastReview == 0;
+}
+
+/// Parse fact from response: handles both new format {"id":"...","fields":["a","b"]}
+/// and legacy format ["a","b"]
+List<String> _parseFactFields(dynamic factData) {
+  if (factData == null) return [];
+  if (factData is Map) {
+    final fields = factData['fields'] as List<dynamic>?;
+    return fields?.map((e) => e.toString()).toList() ?? [];
+  }
+  if (factData is List) {
+    return factData.map((e) => e.toString()).toList();
+  }
+  return [];
 }
 
 class Card {
@@ -77,7 +91,7 @@ class Card {
   factory Card.fromJson(Map<String, dynamic> json) {
     // 检查是否是简化版（直接包含 CardDetail 字段）还是完整版（嵌套 card 对象）
     final bool isSimplified =
-        json.containsKey('fact_index') && !json.containsKey('card');
+        json.containsKey('fact_id') && !json.containsKey('card');
 
     if (isSimplified) {
       // 简化版：直接使用顶层的 CardDetail 字段
@@ -85,11 +99,7 @@ class Card {
         card: CardDetail.fromJson(json),
         cardIndex: json['card_index'] as int? ?? 0,
         defInterval: json['def_interval'] as int? ?? 0,
-        fact:
-            (json['fact'] as List<dynamic>?)
-                ?.map((e) => e.toString())
-                .toList() ??
-            [],
+        fact: _parseFactFields(json['fact']),
         hiddenCards: json['hidden_cards'] as int? ?? 0,
         maxInterval: json['max_interval'] as int? ?? 0,
         minInterval: json['min_interval'] as int? ?? 0,
@@ -106,11 +116,7 @@ class Card {
         card: CardDetail.fromJson(json['card'] as Map<String, dynamic>),
         cardIndex: json['card_index'] as int? ?? 0,
         defInterval: json['def_interval'] as int? ?? 0,
-        fact:
-            (json['fact'] as List<dynamic>?)
-                ?.map((e) => e.toString())
-                .toList() ??
-            [],
+        fact: _parseFactFields(json['fact']),
         hiddenCards: json['hidden_cards'] as int? ?? 0,
         maxInterval: json['max_interval'] as int? ?? 0,
         minInterval: json['min_interval'] as int? ?? 0,

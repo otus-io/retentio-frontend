@@ -30,9 +30,9 @@
 | `/api/decks/{id}` | DELETE | 删除卡组 |
 | `/api/decks/{id}/facts/{operation}` | POST | 添加词条 (operation: `append`, `prepend`, `shuffle`, `spread`) |
 | `/api/decks/{id}/facts` | GET | 获取所有词条 |
-| `/api/decks/{id}/facts/{factIndex}` | GET | 获取单个词条 |
-| `/api/decks/{id}/facts/{factIndex}` | PATCH | 更新词条 |
-| `/api/decks/{id}/facts/{factIndex}` | DELETE | 删除词条 |
+| `/api/decks/{id}/facts/{factId}` | GET | 获取单个词条 |
+| `/api/decks/{id}/facts/{factId}` | PATCH | 更新词条 |
+| `/api/decks/{id}/facts/{factId}` | DELETE | 删除词条 |
 | `/api/decks/{id}/next-due-card` | GET | 获取下一张待复习卡片 |
 | `/api/decks/{id}/cards/{operation}` | GET | 获取卡片 (`all-cards`, `hidden-cards`) |
 | `/api/decks/{id}/cards/{cardIndex}/{operation}` | PATCH | 更新卡片 (`update-interval`, `update-visibility`) |
@@ -208,7 +208,7 @@
 ```json
 {
   "data": {
-    "deck_id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05"
+    "deck_id": "a1b2c3"
   },
   "meta": {
     "msg": "Deck created successfully"
@@ -229,14 +229,14 @@
 **接口:** `GET /api/decks/{id}`
 
 **参数:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
+- `id`: `a1b2c3`（您的卡组 ID）
 
 **响应:**
 
 ```json
 {
   "data": {
-    "id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05",
+    "id": "a1b2c3",
     "name": "English Japanese IELTS Deck",
     "owner": "swagger",
     "field": ["English", "Japanese"],
@@ -271,7 +271,7 @@
   "data": {
     "decks": [
       {
-        "id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05",
+        "id": "a1b2c3",
         "name": "English Japanese IELTS Deck",
         "owner": "swagger",
         "field": ["English", "Japanese"],
@@ -328,7 +328,7 @@
 **接口:** `PATCH /api/decks/{id}`
 
 **参数:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
+- `id`: `a1b2c3`（您的卡组 ID）
 
 **请求体:**
 
@@ -348,7 +348,7 @@
 ```json
 {
   "data": {
-    "deck_id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05"
+    "deck_id": "a1b2c3"
   },
   "meta": {
     "msg": "Deck updated successfully",
@@ -362,7 +362,7 @@
 **接口:** `DELETE /api/decks/{id}`
 
 **参数:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
+- `id`: `a1b2c3`（您的卡组 ID）
 
 > 此操作会永久删除卡组及其所有关联的词条、卡片和模板。
 
@@ -371,7 +371,7 @@
 ```json
 {
   "data": {
-    "deck_id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05"
+    "deck_id": "a1b2c3"
   },
   "meta": {
     "msg": "Deck deleted successfully"
@@ -386,7 +386,7 @@
 **接口:** `POST /api/decks/{id}/facts/{operation}`
 
 **参数:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
+- `id`: `a1b2c3`（您的卡组 ID）
 - `operation`: `append`
 
 **请求体:**
@@ -438,7 +438,7 @@
 **接口:** `GET /api/decks/{id}/next-due-card`
 
 **参数:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
+- `id`: `a1b2c3`（您的卡组 ID）
 
 **响应:**
 
@@ -446,7 +446,7 @@
 {
   "data": {
     "card": {
-      "fact_index": 0,
+      "fact_id": "x9k2m4np",
       "template_index": 0,
       "last_review": 1763269701,
       "due_date": 1763269702,
@@ -458,7 +458,10 @@
     "card_index": 0,
     "def_interval": 600,
     "due_cards": 1,
-    "fact": ["Apple", "りんご"],
+    "fact": {
+      "id": "x9k2m4np",
+      "fields": ["Apple", "りんご"]
+    },
     "hidden_cards": 0,
     "max_interval": 1200,
     "min_interval": 150,
@@ -481,7 +484,7 @@
 **接口:** `PATCH /api/decks/{id}/cards/{cardIndex}/update-interval`
 
 **参数:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
+- `id`: `a1b2c3`（您的卡组 ID）
 - `cardIndex`: `0`（来自第 4 步的 `card_index`）
 - `operation`: `update-interval`
 
@@ -592,7 +595,7 @@
 **接口:** `PATCH /api/decks/{id}/cards/{cardIndex}/update-visibility`
 
 **参数:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`
+- `id`: `a1b2c3`
 - `cardIndex`: `0`
 - `operation`: `update-visibility`
 
