@@ -35,8 +35,7 @@
 | `/api/decks/{id}/facts/{factId}` | DELETE | 删除词条 |
 | `/api/decks/{id}/urgent-card` | GET | 获取最紧急卡片 |
 | `/api/decks/{id}/urgent-card` | PATCH | 更新卡片间隔或可见性（按 fact_id 查找） |
-| `/api/decks/{id}/cards/{operation}` | GET | 获取卡片 (`all-cards`, `hidden-cards`) |
-| `/api/decks/{id}/hidden-cards` | GET | 获取已隐藏卡片详情 |
+| `/api/decks/{id}/cards` | GET | 获取卡片统计（总数、隐藏数量、隐藏事实） |
 
 ---
 

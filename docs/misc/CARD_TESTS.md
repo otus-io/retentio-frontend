@@ -45,26 +45,21 @@ Run: `go test ./tests/integration/... -v`
 | Unknown fact_id returns not found | 404 |
 | Missing fact_id returns error | 400 |
 
-## GetCards (`GET /api/decks/{id}/cards/{operation}`)
+## GetCards (`GET /api/decks/{id}/cards`)
 
 ### TestGetCards
 | Case | Status |
 |---|---|
-| Get all cards successfully | 200 |
-| Empty array for deck with no cards | 200 |
+| Returns card stats successfully | 200 |
+| Returns zeros for deck with no cards | 200 |
 | Unauthorized access | 403 |
 | Missing auth token | 401 |
 | Non-existent deck | 404 |
 
-### TestGetCardsInvalidOperation
-| Case | Status |
-|---|---|
-| Invalid operation returns error | 400 |
-
 ### TestGetCardsHiddenFilter
 | Case | Validates |
 |---|---|
-| hidden-cards operation returns only hidden cards | Correct count and fact IDs |
+| Returns correct hidden stats and facts | total_cards, hidden_count, hidden_facts |
 
 ## GetUrgentCard (`GET /api/decks/{id}/urgent-card`)
 
@@ -90,14 +85,6 @@ Run: `go test ./tests/integration/... -v`
 | Suggest rescheduling (overdue > 1 day) | `reschedule_suggested: true` in meta |
 | No reschedule suggestion (overdue < 1 day) | Field absent from meta |
 | No reschedule fields (no overdue cards) | Field absent from meta |
-
-## GetHiddenCards (`GET /api/decks/{id}/hidden-cards`)
-
-### TestGetHiddenCards
-| Case | Validates |
-|---|---|
-| Returns hidden cards with stats | Correct count, percentage, fact fields |
-| Unauthorized access | 403 |
 
 ## Review Cycle (GetUrgentCard + UpdateUrgentCard)
 

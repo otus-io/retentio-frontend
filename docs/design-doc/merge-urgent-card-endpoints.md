@@ -107,8 +107,6 @@ final res = await ApiService.get('/api/decks/$deckId/urgent-card');
 
 ## What stays the same
 
-- `GET /api/decks/{id}/cards/all-cards` -- unchanged
-- `GET /api/decks/{id}/cards/hidden-cards` -- unchanged
-- `GET /api/decks/{id}/hidden-cards` -- unchanged
+- `GET /api/decks/{id}/cards` -- card stats endpoint (consolidated from former operation-based endpoints)
 - `POST /api/decks/{id}/reschedule` -- unchanged
 - The `Card` struct, `CardDetail` model, urgency calculation logic -- all unchanged

@@ -35,8 +35,7 @@ This guide walks you through using the WordUpX API via Swagger UI.
 | `/api/decks/{id}/facts/{factId}` | DELETE | Delete a fact |
 | `/api/decks/{id}/urgent-card` | GET | Get most urgent card |
 | `/api/decks/{id}/urgent-card` | PATCH | Update card interval or visibility (by fact_id) |
-| `/api/decks/{id}/cards/{operation}` | GET | Get cards (`all-cards`, `hidden-cards`) |
-| `/api/decks/{id}/hidden-cards` | GET | Get hidden cards with details |
+| `/api/decks/{id}/cards` | GET | Get card stats (total, hidden count, hidden facts) |
 
 ---
 
