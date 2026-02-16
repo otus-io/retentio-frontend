@@ -41,7 +41,7 @@
 | `GET /api/decks/{id}` | 获取卡组详情 | ❌ | ✅ |
 | `PATCH /api/decks/{id}` | 更新卡组 | ✅ | ✅ |
 | `DELETE /api/decks/{id}` | 删除卡组 | ✅ | ✅ |
-| `GET /api/decks/{id}/next-urgent-card` (meta) | 假期检测：通过 next-urgent-card 元数据返回 | ❌ | ✅ |
+| `GET /api/decks/{id}/urgent-card` (meta) | 假期检测：通过 urgent-card 元数据返回 | ❌ | ✅ |
 | `POST /api/decks/{id}/split` | 拆分卡组为子卡组（按章节） | ❌ | ❌ |
 | `GET /api/decks/public/{id}` | 下载公开卡组 | ❌ | ❌ |
 
@@ -60,11 +60,10 @@
 
 | 接口 | 说明 | 前端 | 后端 |
 |---|---|---|---|
-| `GET /api/decks/{id}/next-urgent-card` | 获取下一张最紧急卡片 | ❌ | ✅ |
+| `GET /api/decks/{id}/urgent-card` | 获取最紧急卡片 | ❌ | ✅ |
+| `PATCH /api/decks/{id}/urgent-card` | 更新卡片间隔或可见性（按 fact_id 查找） | ❌ | ✅ |
 | `GET /api/decks/{id}/cards/all-cards` | 获取所有卡片 | ❌ | ✅ |
 | `GET /api/decks/{id}/cards/hidden-cards` | 获取已隐藏卡片 | ❌ | ✅ |
-| `PATCH /api/decks/{id}/cards/{cardIndex}/update-interval` | 更新卡片间隔 | ❌ | ✅ |
-| `PATCH /api/decks/{id}/cards/{cardIndex}/update-visibility` | 隐藏/显示卡片（已掌握的单词） | ❌ | ✅ |
 | `POST /api/decks/{id}/reschedule` | 假期模式：按天数平移卡片复习计划 | ❌ | ✅ |
 
 ### 媒体文件

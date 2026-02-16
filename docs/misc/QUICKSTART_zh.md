@@ -33,9 +33,9 @@
 | `/api/decks/{id}/facts/{factId}` | GET | 获取单个词条 |
 | `/api/decks/{id}/facts/{factId}` | PATCH | 更新词条 |
 | `/api/decks/{id}/facts/{factId}` | DELETE | 删除词条 |
-| `/api/decks/{id}/next-urgent-card` | GET | 获取下一张最紧急卡片 |
+| `/api/decks/{id}/urgent-card` | GET | 获取最紧急卡片 |
+| `/api/decks/{id}/urgent-card` | PATCH | 更新卡片间隔或可见性（按 fact_id 查找） |
 | `/api/decks/{id}/cards/{operation}` | GET | 获取卡片 (`all-cards`, `hidden-cards`) |
-| `/api/decks/{id}/cards/{cardIndex}` | PATCH | 更新卡片间隔或可见性 |
 | `/api/decks/{id}/hidden-cards` | GET | 获取已隐藏卡片详情 |
 
 ---
@@ -435,7 +435,7 @@
 
 ## 5. 获取下一张最紧急卡片
 
-**接口:** `GET /api/decks/{id}/next-urgent-card`
+**接口:** `GET /api/decks/{id}/urgent-card`
 
 **参数:**
 - `id`: `a1b2c3`（您的卡组 ID）
@@ -470,16 +470,16 @@
 
 查看卡片后，您需要根据记忆程度更新复习间隔。
 
-**接口:** `PATCH /api/decks/{id}/cards/{cardIndex}`
+**接口:** `PATCH /api/decks/{id}/urgent-card`
 
 **参数:**
 - `id`: `a1b2c3`（您的卡组 ID）
-- `cardIndex`: `0`（来自第 5 步的 `card_index`）
 
 **请求体:**
 
 ```json
 {
+  "fact_id": "x9k2m4np",
   "interval": 600
 }
 ```
@@ -575,16 +575,16 @@
 
 如果您想暂时从复习中隐藏某张卡片：
 
-**接口:** `PATCH /api/decks/{id}/cards/{cardIndex}`
+**接口:** `PATCH /api/decks/{id}/urgent-card`
 
 **参数:**
 - `id`: `a1b2c3`
-- `cardIndex`: `0`
 
 **请求体:**
 
 ```json
 {
+  "fact_id": "x9k2m4np",
   "hidden": true
 }
 ```
