@@ -214,9 +214,8 @@ Every handler that reads or writes facts/cards needs modification. Here is the c
 | Handler | Change |
 |---------|--------|
 | `GetNextUrgentCard` | Build `factMap`, look up `factMap[card.FactID]` instead of `facts[card.FactIndex]`. Return `fact_id` instead of `fact_index` in response. |
-| `GetCards` | No logic change, but serialized JSON now has `fact_id` instead of `fact_index`. |
-| `GetHiddenCards` | Build `factMap`, look up hidden card facts by ID instead of index. |
-| `UpdateCard` | No change (doesn't reference facts). |
+| `GetCards` | Returns card stats with hidden facts looked up via `factMap`. |
+| `UpdateUrgentCard` | No change (doesn't reference facts). |
 | `RescheduleDeck` | No change (only modifies timestamps, doesn't reference facts). |
 
 ### [`backend-api/deck/stats.go`](backend-api/deck/stats.go)

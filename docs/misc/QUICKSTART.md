@@ -33,10 +33,9 @@ This guide walks you through using the WordUpX API via Swagger UI.
 | `/api/decks/{id}/facts/{factId}` | GET | Get a specific fact |
 | `/api/decks/{id}/facts/{factId}` | PATCH | Update a fact |
 | `/api/decks/{id}/facts/{factId}` | DELETE | Delete a fact |
-| `/api/decks/{id}/next-urgent-card` | GET | Get next urgent card |
-| `/api/decks/{id}/cards/{operation}` | GET | Get cards (`all-cards`, `hidden-cards`) |
-| `/api/decks/{id}/cards/{cardIndex}` | PATCH | Update card interval or visibility |
-| `/api/decks/{id}/hidden-cards` | GET | Get hidden cards with details |
+| `/api/decks/{id}/urgent-card` | GET | Get most urgent card |
+| `/api/decks/{id}/urgent-card` | PATCH | Update card interval or visibility (by fact_id) |
+| `/api/decks/{id}/cards` | GET | Get card stats (total, hidden count, hidden facts) |
 
 ---
 
@@ -435,7 +434,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 
 ## 5. Get Next Urgent Card
 
-**Endpoint:** `GET /api/decks/{id}/next-urgent-card`
+**Endpoint:** `GET /api/decks/{id}/urgent-card`
 
 **Parameters:**
 - `id`: `a1b2c3` (your deck ID)
@@ -470,16 +469,16 @@ You can view a single deck or list all your decks. Both responses include a `sta
 
 After viewing a card, you need to update its interval based on how well you remembered it.
 
-**Endpoint:** `PATCH /api/decks/{id}/cards/{cardIndex}`
+**Endpoint:** `PATCH /api/decks/{id}/urgent-card`
 
 **Parameters:**
 - `id`: `a1b2c3` (your deck ID)
-- `cardIndex`: `0` (from the `card_index` in step 5)
 
 **Request Body:**
 
 ```json
 {
+  "fact_id": "x9k2m4np",
   "interval": 600
 }
 ```
@@ -575,16 +574,16 @@ After viewing a card, you need to update its interval based on how well you reme
 
 If you want to temporarily hide a card from reviews:
 
-**Endpoint:** `PATCH /api/decks/{id}/cards/{cardIndex}`
+**Endpoint:** `PATCH /api/decks/{id}/urgent-card`
 
 **Parameters:**
 - `id`: `a1b2c3`
-- `cardIndex`: `0`
 
 **Request Body:**
 
 ```json
 {
+  "fact_id": "x9k2m4np",
   "hidden": true
 }
 ```
