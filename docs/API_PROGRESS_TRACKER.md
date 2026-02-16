@@ -56,17 +56,6 @@
 | `GET /api/decks/{id}/cards` | 获取卡片统计（总数、隐藏数量、隐藏事实） | ❌ | ✅ |
 | `POST /api/decks/{id}/reschedule` | 假期模式：按天数平移卡片复习计划 | ❌ | ✅ |
 
-### 媒体文件
-
-| 接口 | 说明 | 前端 | 后端 |
-|---|---|---|---|
-| `POST /api/media/upload` | 上传文件（支持 apkg 导入卡组） | ❌ | 🔧 |
-| `GET /api/media/files` | 获取用户所有文件 | ❌ | 🔧 |
-| `GET /api/media/files/{file_id}/metadata` | 获取文件元数据 | ❌ | 🔧 |
-| `DELETE /api/media/files/{file_id}` | 删除文件 | ❌ | 🔧 |
-| `GET /api/media/audio/{file_id}` | 播放音频 | ❌ | 🔧 |
-| `GET /api/media/image/{file_id}` | 显示图片 | ❌ | 🔧 |
-
 ### 排行榜 / 游戏化
 
 | 接口 | 说明 | 前端 | 后端 |

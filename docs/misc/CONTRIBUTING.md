@@ -86,7 +86,6 @@ The scope should indicate the affected module or component:
 - `auth` - Authentication related changes
 - `deck` - Deck management
 - `card` - Card operations
-- `media` - Media handling
 - `api` - General API changes
 - `frontend` - Frontend/mobile app changes
 - `ci` - CI/CD pipeline changes
