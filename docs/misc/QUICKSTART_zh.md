@@ -35,7 +35,7 @@
 | `/api/decks/{id}/facts/{factId}` | DELETE | 删除词条 |
 | `/api/decks/{id}/next-urgent-card` | GET | 获取下一张最紧急卡片 |
 | `/api/decks/{id}/cards/{operation}` | GET | 获取卡片 (`all-cards`, `hidden-cards`) |
-| `/api/decks/{id}/cards/{cardIndex}/{operation}` | PATCH | 更新卡片 (`update-interval`, `update-visibility`) |
+| `/api/decks/{id}/cards/{cardIndex}` | PATCH | 更新卡片间隔或可见性 |
 | `/api/decks/{id}/hidden-cards` | GET | 获取已隐藏卡片详情 |
 
 ---
@@ -470,12 +470,11 @@
 
 查看卡片后，您需要根据记忆程度更新复习间隔。
 
-**接口:** `PATCH /api/decks/{id}/cards/{cardIndex}/update-interval`
+**接口:** `PATCH /api/decks/{id}/cards/{cardIndex}`
 
 **参数:**
 - `id`: `a1b2c3`（您的卡组 ID）
-- `cardIndex`: `0`（来自第 4 步的 `card_index`）
-- `operation`: `update-interval`
+- `cardIndex`: `0`（来自第 5 步的 `card_index`）
 
 **请求体:**
 
@@ -490,7 +489,6 @@
 > 在应用中，用户通过滑动条选择复习间隔：
 > - **左端** = `min_interval`（如 `150` 秒）→ 卡片较难，较快复习
 > - **右端** = `max_interval`（如 `1200` 秒）→ 卡片较简单，稍后复习
-> - **中间** = `def_interval`（如 `600` 秒）→ 卡片难度适中
 >
 > 间隔值的单位是秒。
 > 提交的间隔**必须**在 `[min_interval, max_interval]` 范围内，否则 API 会拒绝请求。
@@ -512,21 +510,19 @@
 >
 > 系统会将**紧迫度最高**的未隐藏卡片作为下一张最紧急卡片。
 >
-> **2. 间隔计算 — min/max/def 是如何确定的**
+> **2. 间隔计算 — min/max 是如何确定的**
 >
-> 当前间隔为 `due_date - last_review`（最小 300 秒）。三个因子决定下次复习的范围：
+> 当前间隔为 `due_date - last_review`（最小 60 秒）。两个因子决定下次复习的范围：
 >
 > | 因子 | 值 | 含义 |
 > |------|-----|------|
 > | `minFactor` | 0.5 | 较难 — 间隔减半 |
-> | `defFactor` | 2.0 | 适中 — 间隔翻倍 |
 > | `maxFactor` | 4.0 | 简单 — 间隔翻四倍 |
 >
 > **当卡片已逾期**（`urgency >= 1`）：
 >
 > ```
 > min_interval = 当前间隔 × 0.5
-> def_interval = 当前间隔 × 2.0
 > max_interval = 当前间隔 × 4.0
 > ```
 >
@@ -534,7 +530,6 @@
 >
 > ```
 > min_interval = 当前间隔 × ((0.5 - 1) × urgency + 1)
-> def_interval = 当前间隔 × ((2.0 - 1) × urgency + 1)
 > max_interval = 当前间隔 × ((4.0 - 1) × urgency + 1)
 > ```
 >
@@ -553,11 +548,11 @@
 >
 > | 步骤 | 当前间隔 | 您的选择 | 下次间隔范围 |
 > |------|---------|---------|-------------|
-> | 第 1 次复习 | 300 秒（5 分钟） | 600 秒（默认） | 300 秒 – 2400 秒 |
-> | 第 2 次复习 | 600 秒（10 分钟） | 1200 秒（默认） | 600 秒 – 4800 秒 |
-> | 第 3 次复习 | 1200 秒（20 分钟） | 2400 秒（默认） | 1200 秒 – 9600 秒 |
+> | 第 1 次复习 | 60 秒（1 分钟） | 120 秒（中间值） | 60 秒 – 480 秒 |
+> | 第 2 次复习 | 120 秒（2 分钟） | 240 秒（中间值） | 120 秒 – 960 秒 |
+> | 第 3 次复习 | 240 秒（4 分钟） | 480 秒（中间值） | 240 秒 – 1920 秒 |
 >
-> 每次选择默认值，间隔就会**翻倍**。选择接近最大值会使增长更快（最多 4 倍），而选择接近最小值则会**缩短**间隔（最低 0.5 倍）。
+> 选择接近最大值会使增长更快（最多 4 倍），而选择接近最小值则会**缩短**间隔（最低 0.5 倍）。
 
 **响应:**
 
@@ -566,11 +561,10 @@
   "data": {
     "last_review": 1763272400,
     "due_date": 1763273000,
-    "new_interval": 600,
-    "hidden_status": false
+    "new_interval": 600
   },
   "meta": {
-    "msg": "Card updated successfully"
+    "msg": "Card interval updated successfully"
   }
 }
 ```
@@ -581,12 +575,11 @@
 
 如果您想暂时从复习中隐藏某张卡片：
 
-**接口:** `PATCH /api/decks/{id}/cards/{cardIndex}/update-visibility`
+**接口:** `PATCH /api/decks/{id}/cards/{cardIndex}`
 
 **参数:**
 - `id`: `a1b2c3`
 - `cardIndex`: `0`
-- `operation`: `update-visibility`
 
 **请求体:**
 
@@ -604,7 +597,7 @@
     "hidden_status": true
   },
   "meta": {
-    "msg": "Card updated successfully"
+    "msg": "Card visibility updated successfully"
   }
 }
 ```

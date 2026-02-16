@@ -83,8 +83,9 @@ class Card {
       );
     } else {
       // 完整版：使用嵌套的 card 对象
-      final cardDetail =
-          CardDetail.fromJson(json['card'] as Map<String, dynamic>);
+      final cardDetail = CardDetail.fromJson(
+        json['card'] as Map<String, dynamic>,
+      );
       return Card(
         card: cardDetail,
         cardIndex: json['card_index'] as int? ?? 0,
@@ -96,11 +97,7 @@ class Card {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'card': card.toJson(),
-      'card_index': cardIndex,
-      'urgency': urgency,
-    };
+    return {'card': card.toJson(), 'card_index': cardIndex, 'urgency': urgency};
   }
 
   /// 是否需要复习

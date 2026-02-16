@@ -470,12 +470,11 @@ You can view a single deck or list all your decks. Both responses include a `sta
 
 After viewing a card, you need to update its interval based on how well you remembered it.
 
-**Endpoint:** `PATCH /api/decks/{id}/cards/{cardIndex}/update-interval`
+**Endpoint:** `PATCH /api/decks/{id}/cards/{cardIndex}`
 
 **Parameters:**
 - `id`: `a1b2c3` (your deck ID)
-- `cardIndex`: `0` (from the `card_index` in step 4)
-- `operation`: `update-interval`
+- `cardIndex`: `0` (from the `card_index` in step 5)
 
 **Request Body:**
 
@@ -490,7 +489,6 @@ After viewing a card, you need to update its interval based on how well you reme
 > In the app, users select an interval using a slider:
 > - **Left end** = `min_interval` (e.g., `150` seconds) → Card was difficult, review sooner
 > - **Right end** = `max_interval` (e.g., `1200` seconds) → Card was easy, review later
-> - **Middle** = `def_interval` (e.g., `600` seconds) → Card was okay
 >
 > The interval value is in seconds.
 > The submitted interval **must** be within the range `[min_interval, max_interval]`, or the API will reject it.
@@ -512,21 +510,19 @@ After viewing a card, you need to update its interval based on how well you reme
 >
 > The card with the **highest urgency** (that isn't hidden) is served as the next urgent card.
 >
-> **2. Interval calculation — how min/max/def are determined**
+> **2. Interval calculation — how min/max are determined**
 >
-> The current interval is `due_date - last_review` (minimum 300 seconds). Three factors determine the next review range:
+> The current interval is `due_date - last_review` (minimum 60 seconds). Two factors determine the next review range:
 >
 > | Factor | Value | Meaning |
 > |--------|-------|---------|
 > | `minFactor` | 0.5 | Hard — halve the interval |
-> | `defFactor` | 2.0 | Okay — double the interval |
 > | `maxFactor` | 4.0 | Easy — quadruple the interval |
 >
 > **When the card is overdue** (`urgency >= 1`):
 >
 > ```
 > min_interval = current_interval × 0.5
-> def_interval = current_interval × 2.0
 > max_interval = current_interval × 4.0
 > ```
 >
@@ -534,7 +530,6 @@ After viewing a card, you need to update its interval based on how well you reme
 >
 > ```
 > min_interval = current_interval × ((0.5 - 1) × urgency + 1)
-> def_interval = current_interval × ((2.0 - 1) × urgency + 1)
 > max_interval = current_interval × ((4.0 - 1) × urgency + 1)
 > ```
 >
@@ -553,11 +548,11 @@ After viewing a card, you need to update its interval based on how well you reme
 >
 > | Step | Current interval | You choose | Next interval range |
 > |------|-----------------|------------|---------------------|
-> | 1st review | 300s (5 min) | 600s (default) | 300s – 2400s |
-> | 2nd review | 600s (10 min) | 1200s (default) | 600s – 4800s |
-> | 3rd review | 1200s (20 min) | 2400s (default) | 1200s – 9600s |
+> | 1st review | 60s (1 min) | 120s (midpoint) | 60s – 480s |
+> | 2nd review | 120s (2 min) | 240s (midpoint) | 120s – 960s |
+> | 3rd review | 240s (4 min) | 480s (midpoint) | 240s – 1920s |
 >
-> Each time you pick the default, the interval **doubles**. Picking closer to the max makes it grow even faster (up to 4×), while picking closer to the min **shrinks** it (down to 0.5×).
+> Picking closer to the max makes intervals grow faster (up to 4×), while picking closer to the min **shrinks** them (down to 0.5×).
 
 **Response:**
 
@@ -566,11 +561,10 @@ After viewing a card, you need to update its interval based on how well you reme
   "data": {
     "last_review": 1763272400,
     "due_date": 1763273000,
-    "new_interval": 600,
-    "hidden_status": false
+    "new_interval": 600
   },
   "meta": {
-    "msg": "Card updated successfully"
+    "msg": "Card interval updated successfully"
   }
 }
 ```
@@ -581,12 +575,11 @@ After viewing a card, you need to update its interval based on how well you reme
 
 If you want to temporarily hide a card from reviews:
 
-**Endpoint:** `PATCH /api/decks/{id}/cards/{cardIndex}/update-visibility`
+**Endpoint:** `PATCH /api/decks/{id}/cards/{cardIndex}`
 
 **Parameters:**
 - `id`: `a1b2c3`
 - `cardIndex`: `0`
-- `operation`: `update-visibility`
 
 **Request Body:**
 
@@ -604,7 +597,7 @@ If you want to temporarily hide a card from reviews:
     "hidden_status": true
   },
   "meta": {
-    "msg": "Card updated successfully"
+    "msg": "Card visibility updated successfully"
   }
 }
 ```
