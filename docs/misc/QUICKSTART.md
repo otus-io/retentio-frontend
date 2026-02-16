@@ -33,9 +33,9 @@ This guide walks you through using the WordUpX API via Swagger UI.
 | `/api/decks/{id}/facts/{factId}` | GET | Get a specific fact |
 | `/api/decks/{id}/facts/{factId}` | PATCH | Update a fact |
 | `/api/decks/{id}/facts/{factId}` | DELETE | Delete a fact |
-| `/api/decks/{id}/next-due-card` | GET | Get next due card |
+| `/api/decks/{id}/next-urgent-card` | GET | Get next urgent card |
 | `/api/decks/{id}/cards/{operation}` | GET | Get cards (`all-cards`, `hidden-cards`) |
-| `/api/decks/{id}/cards/{cardIndex}/{operation}` | PATCH | Update card (`update-interval`, `update-visibility`) |
+| `/api/decks/{id}/cards/{cardIndex}` | PATCH | Update card interval or visibility |
 | `/api/decks/{id}/hidden-cards` | GET | Get hidden cards with details |
 
 ---
@@ -433,9 +433,9 @@ You can view a single deck or list all your decks. Both responses include a `sta
 
 ---
 
-## 5. Get Next Due Card
+## 5. Get Next Urgent Card
 
-**Endpoint:** `GET /api/decks/{id}/next-due-card`
+**Endpoint:** `GET /api/decks/{id}/next-urgent-card`
 
 **Parameters:**
 - `id`: `a1b2c3` (your deck ID)
@@ -451,26 +451,15 @@ You can view a single deck or list all your decks. Both responses include a `sta
       "last_review": 1763269701,
       "due_date": 1763269702,
       "hidden": false,
-      "min_calculation": 150,
-      "max_calculation": 1200,
+      "min_interval": 150,
+      "max_interval": 1200,
       "created_at": 1763269700
     },
     "card_index": 0,
-    "def_interval": 600,
-    "due_cards": 1,
-    "fact": {
-      "id": "x9k2m4np",
-      "fields": ["Apple", "りんご"]
-    },
-    "hidden_cards": 0,
-    "max_interval": 1200,
-    "min_interval": 150,
-    "template": [0, 1],
-    "total_cards": 20,
     "urgency": 2598
   },
   "meta": {
-    "now": "1763272299"
+    "msg": "Next urgent card retrieved successfully"
   }
 }
 ```
@@ -521,7 +510,7 @@ After viewing a card, you need to update its interval based on how well you reme
 > - `urgency >= 1.0` → the card is **overdue** (past its due date)
 > - `urgency < 1.0` → the card is **not yet due** but may still be shown
 >
-> The card with the **highest urgency** (that isn't hidden) is served as the next due card.
+> The card with the **highest urgency** (that isn't hidden) is served as the next urgent card.
 >
 > **2. Interval calculation — how min/max/def are determined**
 >

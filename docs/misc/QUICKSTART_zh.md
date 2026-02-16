@@ -33,7 +33,7 @@
 | `/api/decks/{id}/facts/{factId}` | GET | 获取单个词条 |
 | `/api/decks/{id}/facts/{factId}` | PATCH | 更新词条 |
 | `/api/decks/{id}/facts/{factId}` | DELETE | 删除词条 |
-| `/api/decks/{id}/next-due-card` | GET | 获取下一张待复习卡片 |
+| `/api/decks/{id}/next-urgent-card` | GET | 获取下一张最紧急卡片 |
 | `/api/decks/{id}/cards/{operation}` | GET | 获取卡片 (`all-cards`, `hidden-cards`) |
 | `/api/decks/{id}/cards/{cardIndex}/{operation}` | PATCH | 更新卡片 (`update-interval`, `update-visibility`) |
 | `/api/decks/{id}/hidden-cards` | GET | 获取已隐藏卡片详情 |
@@ -433,9 +433,9 @@
 
 ---
 
-## 5. 获取下一张待复习卡片
+## 5. 获取下一张最紧急卡片
 
-**接口:** `GET /api/decks/{id}/next-due-card`
+**接口:** `GET /api/decks/{id}/next-urgent-card`
 
 **参数:**
 - `id`: `a1b2c3`（您的卡组 ID）
@@ -451,26 +451,15 @@
       "last_review": 1763269701,
       "due_date": 1763269702,
       "hidden": false,
-      "min_calculation": 150,
-      "max_calculation": 1200,
+      "min_interval": 150,
+      "max_interval": 1200,
       "created_at": 1763269700
     },
     "card_index": 0,
-    "def_interval": 600,
-    "due_cards": 1,
-    "fact": {
-      "id": "x9k2m4np",
-      "fields": ["Apple", "りんご"]
-    },
-    "hidden_cards": 0,
-    "max_interval": 1200,
-    "min_interval": 150,
-    "template": [0, 1],
-    "total_cards": 20,
     "urgency": 2598
   },
   "meta": {
-    "now": "1763272299"
+    "msg": "Next urgent card retrieved successfully"
   }
 }
 ```
@@ -521,7 +510,7 @@
 > - `urgency >= 1.0` → 卡片已**逾期**（已过到期时间）
 > - `urgency < 1.0` → 卡片**尚未到期**，但仍可能被显示
 >
-> 系统会将**紧迫度最高**的未隐藏卡片作为下一张待复习卡片。
+> 系统会将**紧迫度最高**的未隐藏卡片作为下一张最紧急卡片。
 >
 > **2. 间隔计算 — min/max/def 是如何确定的**
 >

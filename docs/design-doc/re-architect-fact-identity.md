@@ -2,6 +2,9 @@
 
 Replace the fragile array-index-based fact references with stable UUIDs. This is a standalone architectural improvement that eliminates error-prone index-shifting on deletion and unblocks future features that need stable pointers to facts (tagging, bookmarks, sharing, cross-deck references).
 
+- Consider using hash keys for the UUID
+- Think about public decks, UUID might need to be longer
+
 ---
 
 ## Current Architecture
@@ -21,8 +24,8 @@ type Card struct {
     LastReview    int64   `json:"last_review"`
     DueDate       int64   `json:"due_date"`
     Hidden        bool    `json:"hidden"`
-    CalculatedMin float64 `json:"min_calculation"`
-    CalculatedMax float64 `json:"max_calculation"`
+    MinInterval   float64 `json:"min_interval"`
+    MaxInterval   float64 `json:"max_interval"`
     CreatedAt     int64   `json:"created_at"`
 }
 ```
@@ -101,8 +104,8 @@ type Card struct {
     LastReview    int64   `json:"last_review"`
     DueDate       int64   `json:"due_date"`
     Hidden        bool    `json:"hidden"`
-    CalculatedMin float64 `json:"min_calculation"`
-    CalculatedMax float64 `json:"max_calculation"`
+    MinInterval   float64 `json:"min_interval"`
+    MaxInterval   float64 `json:"max_interval"`
     CreatedAt     int64   `json:"created_at"`
 }
 ```
@@ -210,7 +213,7 @@ Every handler that reads or writes facts/cards needs modification. Here is the c
 
 | Handler | Change |
 |---------|--------|
-| `GetNextDueCard` | Build `factMap`, look up `factMap[card.FactID]` instead of `facts[card.FactIndex]`. Return `fact_id` instead of `fact_index` in response. |
+| `GetNextUrgentCard` | Build `factMap`, look up `factMap[card.FactID]` instead of `facts[card.FactIndex]`. Return `fact_id` instead of `fact_index` in response. |
 | `GetCards` | No logic change, but serialized JSON now has `fact_id` instead of `fact_index`. |
 | `GetHiddenCards` | Build `factMap`, look up hidden card facts by ID instead of index. |
 | `UpdateCard` | No change (doesn't reference facts). |
@@ -352,7 +355,7 @@ func MigrateFactsToUUID() error {
 | Test file | Change |
 |-----------|--------|
 | `fact_test.go` | All fact operations: assert on `fact_id` (UUID string) instead of integer indices. `DeleteFact` tests no longer need to verify index shifting. |
-| `card_test.go` | Card responses: assert `fact_id` field. `GetNextDueCard` returns `fact_id`. |
+| `card_test.go` | Card responses: assert `fact_id` field. `GetNextUrgentCard` returns `fact_id`. |
 | `deck_test.go` | `GetDeck` response: facts are objects with `id` + `fields`, not raw arrays. |
 
 ### New tests

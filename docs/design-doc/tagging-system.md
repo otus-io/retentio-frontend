@@ -57,8 +57,8 @@ type Card struct {
     LastReview    int64   `json:"last_review"`     // unix timestamp
     DueDate       int64   `json:"due_date"`        // unix timestamp
     Hidden        bool    `json:"hidden"`          // user can hide mastered cards
-    CalculatedMin float64 `json:"min_calculation"` // min interval for next review
-    CalculatedMax float64 `json:"max_calculation"` // max interval for next review
+    MinInterval   float64 `json:"min_interval"` // min interval for next review
+    MaxInterval   float64 `json:"max_interval"` // max interval for next review
     CreatedAt     int64   `json:"created_at"`      // unix timestamp
 }
 ```
@@ -88,7 +88,7 @@ Each fact generates one card per template. A deck with 100 facts and 2 templates
 4. Schedule the unseen cards with staggered `DueDate` values based on `Deck.Rate`
 5. Save facts and cards atomically via Redis transaction
 
-**Getting the next due card** (`GET /api/decks/{id}/next-due-card`):
+**Getting the next urgent card** (`GET /api/decks/{id}/next-urgent-card`):
 
 1. Load all cards, compute urgency for each: `urgency = (now - LastReview) / (DueDate - LastReview)`
 2. Pick the non-hidden card with the highest urgency
@@ -109,7 +109,7 @@ This index-shifting on deletion is the key fragility that the Fact ID migration 
 **Reviewing a card** (`PATCH /api/decks/{id}/cards/{cardIndex}/update-interval`):
 
 1. User sees the card, decides how well they know it, frontend sends an interval
-2. Validate the interval is within the card's `[CalculatedMin, CalculatedMax]` range
+2. Validate the interval is within the card's `[MinInterval, MaxInterval]` range
 3. Set `card.DueDate = now + interval` and `card.LastReview = now`
 4. Save cards back to Redis
 
@@ -459,8 +459,8 @@ type Card struct {
     LastReview    int64   `json:"last_review"`
     DueDate       int64   `json:"due_date"`
     Hidden        bool    `json:"hidden"`
-    CalculatedMin float64 `json:"min_calculation"`
-    CalculatedMax float64 `json:"max_calculation"`
+    MinInterval   float64 `json:"min_interval"`
+    MaxInterval   float64 `json:"max_interval"`
     CreatedAt     int64   `json:"created_at"`
 }
 ```
@@ -474,7 +474,7 @@ type Card struct {
 | Fact lookup in handlers | `facts[card.FactIndex]` | Build `map[string]Fact` from array, then `factMap[card.FactID]` |
 | Fact deletion | Remove from array + loop all cards to decrement shifted indices | Remove from array + delete cards with matching FactID, no shifting |
 | AddFact handler | Append to array, derive index from `len(facts)-1` | Append with `uuid.New().String()` as ID |
-| GetNextDueCard | `facts[card.FactIndex]` | Map lookup by FactID |
+| GetNextUrgentCard | `facts[card.FactIndex]` | Map lookup by FactID |
 | Frontend Card model | `factIndex` field | `factId` field |
 | Integration tests | Assert on array indices | Assert on UUIDs |
 
