@@ -11,8 +11,8 @@ void main() {
           'last_review': 1000,
           'due_date': 2000,
           'hidden': true,
-          'min_calculation': 5,
-          'max_calculation': 10,
+          'min_interval': 5,
+          'max_interval': 10,
         };
         final detail = CardDetail.fromJson(json);
         expect(detail.factId, 'abc1234');
@@ -20,8 +20,8 @@ void main() {
         expect(detail.lastReview, 1000);
         expect(detail.dueDate, 2000);
         expect(detail.hidden, true);
-        expect(detail.minCalculation, 5);
-        expect(detail.maxCalculation, 10);
+        expect(detail.minInterval, 5);
+        expect(detail.maxInterval, 10);
       });
 
       test('uses default values for missing fields', () {
@@ -31,8 +31,8 @@ void main() {
         expect(detail.lastReview, 0);
         expect(detail.dueDate, 0);
         expect(detail.hidden, false);
-        expect(detail.minCalculation, 0);
-        expect(detail.maxCalculation, 0);
+        expect(detail.minInterval, 0);
+        expect(detail.maxInterval, 0);
       });
 
       test('uses null coalescing for null values', () {
@@ -42,8 +42,8 @@ void main() {
           'last_review': null,
           'due_date': null,
           'hidden': null,
-          'min_calculation': null,
-          'max_calculation': null,
+          'min_interval': null,
+          'max_interval': null,
         };
         final detail = CardDetail.fromJson(json);
         expect(detail.factId, '');
@@ -51,8 +51,8 @@ void main() {
         expect(detail.lastReview, 0);
         expect(detail.dueDate, 0);
         expect(detail.hidden, false);
-        expect(detail.minCalculation, 0);
-        expect(detail.maxCalculation, 0);
+        expect(detail.minInterval, 0);
+        expect(detail.maxInterval, 0);
       });
     });
 
@@ -64,8 +64,8 @@ void main() {
           lastReview: 1000,
           dueDate: 2000,
           hidden: true,
-          minCalculation: 5,
-          maxCalculation: 10,
+          minInterval: 5,
+          maxInterval: 10,
         );
         final json = detail.toJson();
         expect(json['fact_id'], 'abc1234');
@@ -73,8 +73,8 @@ void main() {
         expect(json['last_review'], 1000);
         expect(json['due_date'], 2000);
         expect(json['hidden'], true);
-        expect(json['min_calculation'], 5);
-        expect(json['max_calculation'], 10);
+        expect(json['min_interval'], 5);
+        expect(json['max_interval'], 10);
       });
     });
 
@@ -87,8 +87,8 @@ void main() {
           lastReview: 0,
           dueDate: pastTime,
           hidden: false,
-          minCalculation: 0,
-          maxCalculation: 0,
+          minInterval: 0,
+          maxInterval: 0,
         );
         expect(detail.isDue, true);
       });
@@ -101,8 +101,8 @@ void main() {
           lastReview: 0,
           dueDate: pastTime,
           hidden: true,
-          minCalculation: 0,
-          maxCalculation: 0,
+          minInterval: 0,
+          maxInterval: 0,
         );
         expect(detail.isDue, false);
       });
@@ -116,8 +116,8 @@ void main() {
           lastReview: 0,
           dueDate: futureTime,
           hidden: false,
-          minCalculation: 0,
-          maxCalculation: 0,
+          minInterval: 0,
+          maxInterval: 0,
         );
         expect(detail.isDue, false);
       });
@@ -131,8 +131,8 @@ void main() {
           lastReview: 0,
           dueDate: 0,
           hidden: false,
-          minCalculation: 0,
-          maxCalculation: 0,
+          minInterval: 0,
+          maxInterval: 0,
         );
         expect(detail.isNew, true);
       });
@@ -144,8 +144,8 @@ void main() {
           lastReview: 1000,
           dueDate: 0,
           hidden: false,
-          minCalculation: 0,
-          maxCalculation: 0,
+          minInterval: 0,
+          maxInterval: 0,
         );
         expect(detail.isNew, false);
       });
@@ -159,8 +159,8 @@ void main() {
       lastReview: 0,
       dueDate: 0,
       hidden: false,
-      minCalculation: 0,
-      maxCalculation: 0,
+      minInterval: 0,
+      maxInterval: 0,
     );
 
     group('fromJson', () {
@@ -171,24 +171,17 @@ void main() {
           'last_review': 0,
           'due_date': 0,
           'hidden': false,
-          'min_calculation': 0,
-          'max_calculation': 0,
-          'card_index': 5,
-          'def_interval': 1,
-          'fact': {
-            'id': 'abc1234',
-            'fields': ['front', 'back'],
-          },
-          'hidden_cards': 0,
+          'min_interval': 10,
           'max_interval': 365,
-          'min_interval': 1,
-          'template': [0, 1],
+          'card_index': 5,
           'urgency': 1.5,
         };
         final card = Card.fromJson(json);
         expect(card.card.factId, 'abc1234');
         expect(card.cardIndex, 5);
         expect(card.urgency, 1.5);
+        expect(card.minInterval, 10);
+        expect(card.maxInterval, 365);
       });
 
       test('parses full JSON with nested card object', () {
@@ -199,42 +192,35 @@ void main() {
             'last_review': 500,
             'due_date': 1000,
             'hidden': false,
-            'min_calculation': 0,
-            'max_calculation': 0,
+            'min_interval': 20,
+            'max_interval': 500,
           },
           'card_index': 10,
-          'def_interval': 1,
-          'fact': {
-            'id': 'def5678',
-            'fields': ['question', 'answer'],
-          },
-          'hidden_cards': 2,
-          'max_interval': 365,
-          'min_interval': 1,
-          'template': [0],
           'urgency': 2.0,
         };
         final card = Card.fromJson(json);
         expect(card.card.factId, 'def5678');
         expect(card.card.lastReview, 500);
         expect(card.cardIndex, 10);
-        expect(card.hiddenCards, 2);
         expect(card.urgency, 2.0);
+        expect(card.minInterval, 20);
+        expect(card.maxInterval, 500);
       });
 
-      test('uses empty list for missing fact and template', () {
+      test('uses defaults for missing fields', () {
         final json = {
           'fact_id': 'a',
           'template_index': 0,
           'last_review': 0,
           'due_date': 0,
           'hidden': false,
-          'min_calculation': 0,
-          'max_calculation': 0,
+          'min_interval': 0,
+          'max_interval': 0,
         };
         final card = Card.fromJson(json);
-        expect(card.fact, isEmpty);
-        expect(card.template, isEmpty);
+        expect(card.minInterval, 0);
+        expect(card.maxInterval, 0);
+        expect(card.urgency, 0.0);
       });
     });
 
@@ -243,81 +229,14 @@ void main() {
         final card = Card(
           card: cardDetail,
           cardIndex: 5,
-          defInterval: 1,
-          fact: ['a', 'b'],
-          hiddenCards: 0,
           maxInterval: 365,
           minInterval: 1,
-          template: [0, 1],
           urgency: 1.0,
         );
         final json = card.toJson();
         expect(json.containsKey('card'), true);
         expect(json['card_index'], 5);
-        expect(json['fact'], ['a', 'b']);
         expect(json['urgency'], 1.0);
-      });
-    });
-
-    group('front and back getters', () {
-      test('front returns first fact when fact is not empty', () {
-        final card = Card(
-          card: cardDetail,
-          cardIndex: 0,
-          defInterval: 1,
-          fact: ['front text', 'back text'],
-          hiddenCards: 0,
-          maxInterval: 365,
-          minInterval: 1,
-          template: [0],
-          urgency: 1.0,
-        );
-        expect(card.front, 'front text');
-      });
-
-      test('front returns empty string when fact is empty', () {
-        final card = Card(
-          card: cardDetail,
-          cardIndex: 0,
-          defInterval: 1,
-          fact: [],
-          hiddenCards: 0,
-          maxInterval: 365,
-          minInterval: 1,
-          template: [0],
-          urgency: 1.0,
-        );
-        expect(card.front, '');
-      });
-
-      test('back returns second fact when fact has more than one element', () {
-        final card = Card(
-          card: cardDetail,
-          cardIndex: 0,
-          defInterval: 1,
-          fact: ['front', 'back'],
-          hiddenCards: 0,
-          maxInterval: 365,
-          minInterval: 1,
-          template: [0],
-          urgency: 1.0,
-        );
-        expect(card.back, 'back');
-      });
-
-      test('back returns empty string when fact has only one element', () {
-        final card = Card(
-          card: cardDetail,
-          cardIndex: 0,
-          defInterval: 1,
-          fact: ['only one'],
-          hiddenCards: 0,
-          maxInterval: 365,
-          minInterval: 1,
-          template: [0],
-          urgency: 1.0,
-        );
-        expect(card.back, '');
       });
     });
 
@@ -330,18 +249,14 @@ void main() {
           lastReview: 0,
           dueDate: pastTime,
           hidden: false,
-          minCalculation: 0,
-          maxCalculation: 0,
+          minInterval: 0,
+          maxInterval: 0,
         );
         final card = Card(
           card: dueDetail,
           cardIndex: 0,
-          defInterval: 1,
-          fact: [],
-          hiddenCards: 0,
           maxInterval: 365,
           minInterval: 1,
-          template: [0],
           urgency: 1.0,
         );
         expect(card.isDue, true);
@@ -354,18 +269,14 @@ void main() {
           lastReview: 0,
           dueDate: 0,
           hidden: false,
-          minCalculation: 0,
-          maxCalculation: 0,
+          minInterval: 0,
+          maxInterval: 0,
         );
         final card = Card(
           card: newDetail,
           cardIndex: 0,
-          defInterval: 1,
-          fact: [],
-          hiddenCards: 0,
           maxInterval: 365,
           minInterval: 1,
-          template: [0],
           urgency: 1.0,
         );
         expect(card.isNew, true);
@@ -378,18 +289,14 @@ void main() {
           lastReview: 0,
           dueDate: 0,
           hidden: true,
-          minCalculation: 0,
-          maxCalculation: 0,
+          minInterval: 0,
+          maxInterval: 0,
         );
         final card = Card(
           card: hiddenDetail,
           cardIndex: 0,
-          defInterval: 1,
-          fact: [],
-          hiddenCards: 0,
           maxInterval: 365,
           minInterval: 1,
-          template: [0],
           urgency: 1.0,
         );
         expect(card.isHidden, true);

@@ -18,6 +18,8 @@ Returns the number of cards shifted and a summary.
 
 Shifting only overdue cards breaks the relative ordering between shifted and non-shifted cards. For example, a card due on day 3 (shifted to day 8) would end up scheduled after a card due on day 7 (unshifted), even though the day-3 card was originally first. Shifting all cards preserves the relative spacing -- it's equivalent to "pausing time" during the holiday.
 
+*We need to think about difference between preserving the review order ? * 
+
 ## Request Struct
 
 ```go
@@ -91,7 +93,7 @@ awayDays = (now - lastActivity) / 86400
 
 ### Delivery approach
 
-Detection is **per-deck**, embedded in the `GetNextDueCard` response metadata. The handler already iterates all cards in the deck to find the highest-urgency card; we piggyback on that same loop to track `earliestOverdue` at zero additional cost. The frontend already calls this endpoint when opening a deck, so it gets holiday detection for free without an extra API round-trip. Include:
+Detection is **per-deck**, embedded in the `GetNextUrgentCard` response metadata. The handler already iterates all cards in the deck to find the highest-urgency card; we piggyback on that same loop to track `earliestOverdue` at zero additional cost. The frontend already calls this endpoint when opening a deck, so it gets holiday detection for free without an extra API round-trip. Include:
 
 ```json
 {
@@ -137,7 +139,7 @@ apiRouter.HandleFunc("/decks/{id}/reschedule", deck.RescheduleDeck).Methods("POS
 - `TestRescheduleDeck` sub-tests: invalid days (0, -1, 366), unauthorized access, non-existent deck, shift exceeds days away
 - Verify unseen invariant is preserved (`DueDate - LastReview` stays the same after shift)
 
-### Holiday detection in GetNextDueCard
+### Holiday detection in GetNextUrgentCard
 - `should suggest rescheduling when earliest overdue > 1 day`: cards overdue by 3 days, verify `reschedule_suggested: true`, `suggested_reschedule_days: 3`
 - `should not suggest rescheduling when overdue by less than 1 day`: card overdue by seconds, verify `reschedule_suggested: false`
 - `should not include reschedule fields when no cards are overdue`: all cards in the future, verify `reschedule_suggested` is absent from meta

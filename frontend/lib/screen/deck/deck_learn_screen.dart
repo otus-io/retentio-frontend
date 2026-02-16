@@ -39,7 +39,7 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
     });
 
     try {
-      final card = await CardService.getNextDueCard(widget.deck.id);
+      final card = await CardService.getNextUrgentCard(widget.deck.id);
       setState(() {
         _currentCard = card;
         _isLoading = false;
@@ -135,20 +135,19 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // 问题卡片
+                  // TODO: fetch fact by _currentCard!.card.factId and display front/back
                   _buildCardFace(
                     context,
-                    _currentCard!.front,
+                    _currentCard!.card.factId,
                     'Question',
                     Colors.blue,
                   ),
 
                   if (_showAnswer) ...[
                     const SizedBox(height: 24),
-                    // 答案卡片
                     _buildCardFace(
                       context,
-                      _currentCard!.back,
+                      _currentCard!.card.factId,
                       'Answer',
                       Colors.green,
                     ),

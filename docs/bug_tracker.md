@@ -16,7 +16,7 @@ When a user updates a deck's templates (e.g., from `[[0,1],[1,0]]` to `[[0,1]]`)
 
 ### Impact
 
-- `GetNextDueCard` can pick an orphaned card as the highest-urgency card, then access `deckObj.Templates[card.TemplateIndex]` with an out-of-bounds index -- **runtime panic** (or garbage data if the index happens to be in range of a different template)
+- `GetNextUrgentCard` can pick an orphaned card as the highest-urgency card, then access `deckObj.Templates[card.TemplateIndex]` with an out-of-bounds index -- **runtime panic** (or garbage data if the index happens to be in range of a different template)
 - Orphaned cards inflate `due_cards`, `unseen_cards`, and `cards_count` in stats
 - Orphaned cards are included in `GetCards` responses, confusing the frontend
 - `RescheduleDeck` shifts orphaned cards along with valid ones
@@ -26,7 +26,7 @@ When a user updates a deck's templates (e.g., from `[[0,1],[1,0]]` to `[[0,1]]`)
 1. Create a deck with `templates: [[0,1],[1,0]]`
 2. Add facts -- this creates 2 cards per fact (one per template)
 3. Update the deck with `templates: [[0,1]]`
-4. Call `GET /api/decks/{id}/next-due-card`
+4. Call `GET /api/decks/{id}/next-urgent-card`
 5. If an orphaned card (template_index=1) has the highest urgency, the handler panics or returns wrong data
 
 ### Root cause
