@@ -18,7 +18,7 @@ class CardService {
   /// 获取下一张需要学习的卡片
   static Future<Card?> getNextUrgentCard(String deckId) async {
     try {
-      final res = await ApiService.get('/api/decks/$deckId/next-urgent-card');
+      final res = await ApiService.get('/api/decks/$deckId/urgent-card');
 
       if (res?.data.isEmpty) {
         return null; // 没有需要学习的卡片
