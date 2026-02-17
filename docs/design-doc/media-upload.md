@@ -2,6 +2,23 @@
 
 A per-user media storage system for WordUpX that allows users to attach audio and images to vocabulary facts. Media is a standalone resource with its own identity -- facts reference media by ID using inline markers. This decouples the media lifecycle from the fact lifecycle, enabling reuse across facts/decks and efficient sync between the phone and server.
 
+## Table of Contents
+
+- [Current Architecture: How Facts Reference Content](#current-architecture-how-facts-reference-content)
+- [Design Principles](#design-principles)
+- [Data Model](#data-model)
+- [Storage Layer: Interface Pattern](#storage-layer-interface-pattern)
+- [API Endpoints](#api-endpoints)
+- [Sync Strategy](#sync-strategy)
+- [Shared Media Pool](#shared-media-pool)
+- [Validation and Limits](#validation-and-limits)
+- [File Organization](#file-organization)
+- [End-to-End Example](#end-to-end-example)
+- [Tests](#tests)
+- [Storage Cost Summary](#storage-cost-summary)
+- [Implementation Phases](#implementation-phases)
+- [What This Design Does NOT Include](#what-this-design-does-not-include)
+
 ---
 
 ## Current Architecture: How Facts Reference Content
@@ -293,6 +310,102 @@ Media is immutable once uploaded -- there is no "update" endpoint. If a user wan
 
 ---
 
+## Shared Media Pool
+
+Pronunciation audio and common word images are highly duplicated across users -- every learner studying "apple" needs the same audio clip. A shared media pool stores these files once, centrally, so users reference them instead of each uploading their own copy.
+
+### Two tiers of media
+
+| Tier | Owner | Referenced by | Example marker |
+|------|-------|---------------|----------------|
+| User media (existing) | Individual user | nanoid | `[audio:a1b2c3d4e5]` |
+| Shared media (new) | Admin-curated | nanoid + word lookup | `[audio:shared:b2c3d4e5f6]` |
+
+User media is unchanged -- private, per-user, referenced by nanoid. Shared media is read-only for regular users, uploaded by admins, and stored once regardless of how many users reference it.
+
+### Why nanoid, not the word itself
+
+Using the word as the primary key (e.g., `apple/en/us`) causes problems:
+
+- **Homographs**: "read" (present, /riːd/) vs "read" (past, /rɛd/) have the same spelling but different pronunciations -- the key can't distinguish them without increasingly ad-hoc suffixes
+- **Unicode in URLs and file paths**: words like `苹果`, `café`, `naïve` need URL encoding and create filesystem complications
+- **Normalization**: is `Apple` the same as `apple`? Is `café` the same as `cafe`? Every client must apply identical normalization rules
+- **Multi-word phrases**: "good morning", "kick the bucket" -- slashes and spaces in keys are messy for URLs and file paths
+
+Instead, shared media uses nanoid as the primary key (same as user media) with a **word-based lookup index** on top. The word is how humans *find* shared media; the nanoid is how the system *stores and references* it.
+
+### Marker format
+
+The existing marker syntax is extended with a `shared:` prefix, but the reference is still a nanoid:
+
+```
+[type:shared:nanoid]
+```
+
+Examples in a fact field:
+
+```json
+{"fields": ["Apple [audio:shared:b2c3d4e5f6]", "苹果 [image:shared:c3d4e5f6g7]"]}
+```
+
+The frontend parses the `shared:` prefix and resolves via the shared media endpoint. User markers (`[audio:a1b2c3d4e5]`) continue to work as before. Both marker types use nanoid references, keeping parsing uniform.
+
+### Data model
+
+```go
+type SharedMedia struct {
+    ID        string `json:"id"`         // nanoid, 10 chars
+    Word      string `json:"word"`       // e.g. "apple"
+    Lang      string `json:"lang"`       // e.g. "en"
+    Variant   string `json:"variant"`    // e.g. "us", "uk", "default"
+    Mime      string `json:"mime"`       // "audio/mpeg"
+    Size      int64  `json:"size"`       // file size in bytes
+    Checksum  string `json:"checksum"`   // "sha256:{hex}"
+    CreatedAt int64  `json:"created_at"` // unix timestamp
+}
+```
+
+### Redis storage
+
+| Key | Type | Content |
+|-----|------|---------|
+| `shared_media:{id}` | String (JSON) | SharedMedia metadata |
+| `shared_media:index` | Set | Set of all shared media nanoids |
+| `shared_media:lookup:{word}:{lang}:{variant}` | String | nanoid (lookup index) |
+
+The lookup key enables finding shared media by word: given "apple", "en", "us", Redis returns the nanoid. The nanoid is then used for all storage and API operations.
+
+### Binary file storage
+
+Shared media files are stored alongside user media but in a dedicated `shared/` directory, keyed by nanoid:
+
+```
+{DATA_DIR}/media/shared/{id}{ext}
+```
+
+Example: `/data/wordupx/media/shared/b2c3d4e5f6.mp3`
+
+### API endpoints
+
+Upload and deletion are admin-only. Download and lookup are available to any authenticated user.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/admin/media/shared` | Admin JWT | Upload shared media (with word, lang, variant metadata) |
+| `GET` | `/api/media/shared/{id}` | Any JWT | Download shared media file by nanoid |
+| `GET` | `/api/media/shared?word=apple&lang=en&variant=us` | Any JWT | Look up shared media by word (returns metadata with nanoid) |
+| `DELETE` | `/api/admin/media/shared/{id}` | Admin JWT | Delete shared media |
+
+The lookup endpoint lets the frontend (or an admin tool) discover shared media by word. Once the nanoid is known, it goes into the fact marker and all subsequent access is by nanoid -- no word-based lookups on the hot path.
+
+### What this does NOT include (deferred)
+
+- **Crowdsourced contributions** -- users cannot promote their own uploads to the shared pool (future consideration)
+- **Automatic TTS generation** -- no pipeline to auto-generate pronunciations; admins upload manually or via a script
+- **Shared media versioning** -- immutable once uploaded, same as user media; upload a new file and update the lookup index for a new version
+
+---
+
 ## Validation and Limits
 
 ### Allowed MIME types
@@ -475,13 +588,54 @@ This means no existing backend handler (`AddFact`, `UpdateFact`, `GetFacts`, `Ge
 
 ---
 
+## Storage Cost Summary
+
+Projected ceiling: **100 TB** (200K users at the 500 MB cap, or 2M users at ~50 MB avg with shared pool). Per-user cost: ~2 cents/month on S3, ~0.5 cents on Hetzner. Storage provider decisions are deferred -- the `Storage` interface (see "Storage Layer" above) makes this swappable without changing any handler or API.
+
+| Scale | Storage | Est. cost/month |
+|-------|---------|----------------|
+| 0-10K users | Local filesystem on server disk | ~$0 (included with server) |
+| 10K-100K users | Hetzner Storage Box / Volumes (~$3.50-$4.40/TB) | ~$35-$175 |
+| 100K+ users | S3 + CloudFront (if ops burden justifies it, ~$23/TB) | ~$500-$2,280 |
+
+---
+
+## Implementation Phases
+
+### Phase 1: Core user media (current)
+
+The foundation everything else builds on:
+
+- `Storage` interface + `LocalStorage` implementation
+- User media handlers: Upload, Download, List, GetMeta, Delete
+- MIME validation, size limits, SHA-256 checksums
+- Routes under `/api/media`
+
+### Phase 2: Shared media pool
+
+Admin-curated centralized media for common pronunciations and images:
+
+- `SharedMedia` struct with nanoid + word-based lookup index
+- Admin upload/delete endpoints (separate admin route with its own auth)
+- User download and word lookup endpoints
+- `[audio:shared:nanoid]` marker format
+
+### Phase 3: Export/import
+
+Data portability and backup without third-party cloud sync complexity:
+
+- `GET /api/media/export` -- ZIP archive of all user media with manifest JSON
+- `POST /api/media/import` -- accepts ZIP, uploads media, returns old-to-new ID mapping
+
+---
+
 ## What This Design Does NOT Include
 
-These are explicitly deferred to keep the initial implementation simple:
+These are explicitly deferred:
 
-- **Video support** -- video adds significant complexity (large files, streaming, range requests) for minimal value on a flashcard. Audio and images cover the vocabulary learning use case.
-- **Media transcoding** (e.g. converting audio formats, compressing images) -- store as-is
+- **Video support** -- large files, streaming, range requests add significant complexity for minimal flashcard value
+- **Media transcoding** -- store as-is; no format conversion or image compression
 - **CDN or reverse proxy** -- serve files through Go directly; add nginx or CDN when scale demands it
 - **Thumbnail generation** -- can be added as a background job later
-- **Shared/public media** -- all media is user-scoped; public deck media sharing is a separate design
-- **Media search** -- no full-text search on filenames or tags; users find media through the facts that reference it
+- **Media search** -- users find media through the facts that reference it
+- **Third-party cloud sync** (Google Drive, Dropbox) -- OAuth, token management, and conflict resolution is months of work per provider; export/import (Phase 3) covers the real user need
