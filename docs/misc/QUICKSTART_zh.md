@@ -33,8 +33,8 @@
 | `/api/decks/{id}/facts/{factId}` | GET | 获取单个词条 |
 | `/api/decks/{id}/facts/{factId}` | PATCH | 更新词条 |
 | `/api/decks/{id}/facts/{factId}` | DELETE | 删除词条 |
-| `/api/decks/{id}/urgent-card` | GET | 获取最紧急卡片 |
-| `/api/decks/{id}/urgent-card` | PATCH | 更新卡片间隔或可见性（按 fact_id 查找） |
+| `/api/decks/{id}/card` | GET | 获取最紧急卡片 |
+| `/api/decks/{id}/card` | PATCH | 更新卡片间隔或可见性（按 card_id 查找） |
 | `/api/decks/{id}/cards` | GET | 获取卡片统计（总数、隐藏数量、隐藏事实） |
 
 ---
@@ -437,7 +437,7 @@
 
 ## 5. 获取下一张最紧急卡片
 
-**接口:** `GET /api/decks/{id}/urgent-card`
+**接口:** `GET /api/decks/{id}/card`
 
 **参数:**
 - `id`: `a1b2c3`（您的卡组 ID）
@@ -448,6 +448,7 @@
 {
   "data": {
     "card": {
+      "id": "xyz12345",
       "fact_id": "x9k2m4np",
       "template_index": 0,
       "last_review": 1763269701,
@@ -457,7 +458,6 @@
       "max_interval": 1200,
       "created_at": 1763269700
     },
-    "card_index": 0,
     "urgency": 2598
   },
   "meta": {
@@ -466,13 +466,15 @@
 }
 ```
 
+> 请保存 `card.id` — 更新卡片时（步骤 6）需要用到。
+
 ---
 
 ## 6. 复习卡片
 
 查看卡片后，您需要根据记忆程度更新复习间隔。
 
-**接口:** `PATCH /api/decks/{id}/urgent-card`
+**接口:** `PATCH /api/decks/{id}/card`
 
 **参数:**
 - `id`: `a1b2c3`（您的卡组 ID）
@@ -481,10 +483,13 @@
 
 ```json
 {
-  "fact_id": "x9k2m4np",
-  "interval": 600
+  "card_id": "xyz12345",
+  "interval": 600,
+  "last_review": 1763272400
 }
 ```
+
+> 使用 GET 响应中的 `card.id` 作为 `card_id`。`last_review` 为 Unix 时间戳（秒）— 客户端通常使用 `Math.floor(Date.now() / 1000)`。
 
 > 💡 **滑动条选择间隔：**
 >
@@ -493,7 +498,7 @@
 > - **右端** = `max_interval`（如 `1200` 秒）→ 卡片较简单，稍后复习
 >
 > 间隔值的单位是秒。
-> 提交的间隔**必须**在 `[min_interval, max_interval]` 范围内，否则 API 会拒绝请求。
+> 提交的间隔**必须**在 `[min_interval, max_interval]` 范围内，否则 API 会拒绝请求。同一请求中不能同时发送 `interval` 和 `hidden`。
 
 > 📖 **间隔复习算法详解：**
 >
@@ -537,7 +542,7 @@
 >
 > **3. 更新 — 提交间隔后会发生什么**
 >
-> 当您发送 `{ "interval": 600 }` 时：
+> 当您发送 `{ "card_id": "xyz12345", "interval": 600, "last_review": 1763272400 }` 时：
 >
 > ```
 > last_review = now（当前时间）
@@ -577,7 +582,7 @@
 
 如果您想暂时从复习中隐藏某张卡片：
 
-**接口:** `PATCH /api/decks/{id}/urgent-card`
+**接口:** `PATCH /api/decks/{id}/card`
 
 **参数:**
 - `id`: `a1b2c3`
@@ -586,7 +591,7 @@
 
 ```json
 {
-  "fact_id": "x9k2m4np",
+  "card_id": "xyz12345",
   "hidden": true
 }
 ```

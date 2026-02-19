@@ -33,8 +33,8 @@ This guide walks you through using the WordUpX API via Swagger UI.
 | `/api/decks/{id}/facts/{factId}` | GET | Get a specific fact |
 | `/api/decks/{id}/facts/{factId}` | PATCH | Update a fact |
 | `/api/decks/{id}/facts/{factId}` | DELETE | Delete a fact |
-| `/api/decks/{id}/urgent-card` | GET | Get most urgent card |
-| `/api/decks/{id}/urgent-card` | PATCH | Update card interval or visibility (by fact_id) |
+| `/api/decks/{id}/card` | GET | Get most urgent card |
+| `/api/decks/{id}/card` | PATCH | Update card interval or visibility (by card_id) |
 | `/api/decks/{id}/cards` | GET | Get card stats (total, hidden count, hidden facts) |
 
 ---
@@ -434,7 +434,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 
 ## 5. Get Next Urgent Card
 
-**Endpoint:** `GET /api/decks/{id}/urgent-card`
+**Endpoint:** `GET /api/decks/{id}/card`
 
 **Parameters:**
 - `id`: `a1b2c3` (your deck ID)
@@ -445,6 +445,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 {
   "data": {
     "card": {
+      "id": "xyz12345",
       "fact_id": "x9k2m4np",
       "template_index": 0,
       "last_review": 1763269701,
@@ -454,7 +455,6 @@ You can view a single deck or list all your decks. Both responses include a `sta
       "max_interval": 1200,
       "created_at": 1763269700
     },
-    "card_index": 0,
     "urgency": 2598
   },
   "meta": {
@@ -463,13 +463,15 @@ You can view a single deck or list all your decks. Both responses include a `sta
 }
 ```
 
+> Save the `card.id` — you'll need it when updating the card (step 6).
+
 ---
 
 ## 6. Review a Card
 
 After viewing a card, you need to update its interval based on how well you remembered it.
 
-**Endpoint:** `PATCH /api/decks/{id}/urgent-card`
+**Endpoint:** `PATCH /api/decks/{id}/card`
 
 **Parameters:**
 - `id`: `a1b2c3` (your deck ID)
@@ -478,10 +480,13 @@ After viewing a card, you need to update its interval based on how well you reme
 
 ```json
 {
-  "fact_id": "x9k2m4np",
-  "interval": 600
+  "card_id": "xyz12345",
+  "interval": 600,
+  "last_review": 1763272400
 }
 ```
+
+> Use `card.id` from the GET response as `card_id`. `last_review` is a Unix timestamp (seconds) — typically `Math.floor(Date.now() / 1000)` on the client.
 
 > 💡 **How the interval slider works:**
 >
@@ -490,7 +495,7 @@ After viewing a card, you need to update its interval based on how well you reme
 > - **Right end** = `max_interval` (e.g., `1200` seconds) → Card was easy, review later
 >
 > The interval value is in seconds.
-> The submitted interval **must** be within the range `[min_interval, max_interval]`, or the API will reject it.
+> The submitted interval **must** be within the range `[min_interval, max_interval]`, or the API will reject it. Do not send both `interval` and `hidden` in the same request.
 
 > 📖 **How the spaced repetition algorithm works:**
 >
@@ -534,7 +539,7 @@ After viewing a card, you need to update its interval based on how well you reme
 >
 > **3. Update — what happens when you submit an interval**
 >
-> When you send `{ "interval": 600 }`:
+> When you send `{ "card_id": "xyz12345", "interval": 600, "last_review": 1763272400 }`:
 >
 > ```
 > last_review = now
@@ -574,7 +579,7 @@ After viewing a card, you need to update its interval based on how well you reme
 
 If you want to temporarily hide a card from reviews:
 
-**Endpoint:** `PATCH /api/decks/{id}/urgent-card`
+**Endpoint:** `PATCH /api/decks/{id}/card`
 
 **Parameters:**
 - `id`: `a1b2c3`
@@ -583,7 +588,7 @@ If you want to temporarily hide a card from reviews:
 
 ```json
 {
-  "fact_id": "x9k2m4np",
+  "card_id": "xyz12345",
   "hidden": true
 }
 ```
