@@ -48,11 +48,7 @@ class Card {
   final int cardIndex;
   final double urgency;
 
-  Card({
-    required this.card,
-    required this.cardIndex,
-    required this.urgency,
-  });
+  Card({required this.card, required this.cardIndex, required this.urgency});
 
   factory Card.fromJson(Map<String, dynamic> json) {
     final bool isSimplified =

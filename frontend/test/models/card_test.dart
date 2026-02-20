@@ -188,11 +188,7 @@ void main() {
 
     group('toJson', () {
       test('serializes to correct format with nested card', () {
-        final card = Card(
-          card: cardDetail,
-          cardIndex: 5,
-          urgency: 1.0,
-        );
+        final card = Card(card: cardDetail, cardIndex: 5, urgency: 1.0);
         final json = card.toJson();
         expect(json.containsKey('card'), true);
         expect(json['card_index'], 5);
@@ -210,11 +206,7 @@ void main() {
           dueDate: pastTime,
           hidden: false,
         );
-        final card = Card(
-          card: dueDetail,
-          cardIndex: 0,
-          urgency: 1.0,
-        );
+        final card = Card(card: dueDetail, cardIndex: 0, urgency: 1.0);
         expect(card.isDue, true);
       });
 
@@ -226,11 +218,7 @@ void main() {
           dueDate: 0,
           hidden: false,
         );
-        final card = Card(
-          card: newDetail,
-          cardIndex: 0,
-          urgency: 1.0,
-        );
+        final card = Card(card: newDetail, cardIndex: 0, urgency: 1.0);
         expect(card.isNew, true);
       });
 
@@ -242,11 +230,7 @@ void main() {
           dueDate: 0,
           hidden: true,
         );
-        final card = Card(
-          card: hiddenDetail,
-          cardIndex: 0,
-          urgency: 1.0,
-        );
+        final card = Card(card: hiddenDetail, cardIndex: 0, urgency: 1.0);
         expect(card.isHidden, true);
       });
     });
