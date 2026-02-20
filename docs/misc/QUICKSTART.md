@@ -9,15 +9,21 @@ This guide walks you through using the WordUpX API via Swagger UI.
 ## Prerequisites
 
 - Open Swagger UI at:
-  - **Local**: http://localhost:8080/docs
-  - **Production**: https://api.wordupx.com/docs
+  - **Local**: <http://localhost:8080/docs>
+  - **Production**: <https://api.wordupx.com/docs>
+
+> **Timestamp convention:** All timestamps in the API use **UTC**.
+> ISO 8601 strings use the `Z` suffix (e.g., `2026-02-08T12:00:00Z`).
+> Unix timestamps are seconds since the Unix epoch
+> (1970-01-01T00:00:00Z). Clients must convert to/from local time
+> on their side.
 
 ---
 
 ## API Reference
 
 | Endpoint | Method | Description |
-|----------|--------|-------------|
+| ---------- | -------- | ------------- |
 | `/auth/register` | POST | Register user |
 | `/auth/login` | POST | Login |
 | `/auth/logout` | POST | Logout (invalidate token) |
@@ -72,7 +78,7 @@ This guide walks you through using the WordUpX API via Swagger UI.
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
   },
   "meta": {
-    "expires": "2026-02-14T14:05:20.826883808+09:00"
+    "expires": "2026-02-14T05:05:20Z"
   }
 }
 ```
@@ -173,7 +179,9 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 
 > **Understanding `templates`:**
 >
-> Templates define how facts are turned into cards. Each template is an array of field indices that determines which fields appear on the front and back of a card.
+> Templates define how facts are turned into cards. Each template
+> is an array of field indices that determines which fields appear
+> on the front and back of a card.
 >
 > - `fields` defines the available columns: index `0` = "English", index `1` = "Japanese"
 > - `[0, 1]` means: show **English** (front) → **Japanese** (back)
@@ -191,6 +199,8 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 > - `[1, 0]` → Japanese → English (reading the Japanese word, recall the English)
 >
 > With 2 templates, each fact generates **2 cards** — one for each direction.
+
+<!-- -->
 
 > **Understanding `rate`:**
 >
@@ -228,6 +238,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 **Endpoint:** `GET /api/decks/{id}`
 
 **Parameters:**
+
 - `id`: `a1b2c3` (your deck ID)
 
 **Response:**
@@ -302,14 +313,16 @@ You can view a single deck or list all your decks. Both responses include a `sta
 > **Understanding `meta` in GetDecks:**
 >
 > | Field | Description |
-> |-------|-------------|
+> | ------- | ------------- |
 > | `total` | Total number of decks owned by the current user |
 > | `msg` | Status message |
+
+<!-- -->
 
 > **Understanding `stats`:**
 >
 > | Field | Description |
-> |-------|-------------|
+> | ------- | ------------- |
 > | `cards_count` | Total number of cards in the deck |
 > | `facts_count` | Total number of facts in the deck |
 > | `unseen_cards` | New cards that have never been reviewed |
@@ -319,9 +332,15 @@ You can view a single deck or list all your decks. Both responses include a `sta
 > | `new_cards_today` | Cards that were added today (since midnight) |
 > | `last_reviewed_at` | Unix timestamp of the most recent review (`0` if never reviewed) |
 >
-> Stats are computed on-the-fly. For a freshly created empty deck, all values are `0`. After adding facts, `cards_count` and `unseen_cards` will increase. As you review cards, `reviewed_cards` grows and `unseen_cards` decreases.
+> Stats are computed on-the-fly. For a freshly created empty deck,
+> all values are `0`. After adding facts, `cards_count` and
+> `unseen_cards` will increase. As you review cards,
+> `reviewed_cards` grows and `unseen_cards` decreases.
 >
-> The total cards in a deck depends on the number of facts and templates: `cards_count = facts_count × number_of_templates`. For example, 20 facts with 2 templates (`[0,1]` and `[1,0]`) produces 40 cards.
+> The total cards in a deck depends on the number of facts and
+> templates: `cards_count = facts_count × number_of_templates`.
+> For example, 20 facts with 2 templates (`[0,1]` and `[1,0]`)
+> produces 40 cards.
 >
 > To calculate a progress percentage on the client side: `reviewed_cards / cards_count * 100`.
 
@@ -330,6 +349,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 **Endpoint:** `PATCH /api/decks/{id}`
 
 **Parameters:**
+
 - `id`: `a1b2c3` (your deck ID)
 
 **Request Body:**
@@ -343,7 +363,9 @@ You can view a single deck or list all your decks. Both responses include a `sta
 }
 ```
 
-> All fields are optional except `name`. If `fields` is provided, the count must match the existing number of fields. `rate` must be between 1 and 1000.
+> All fields are optional except `name`. If `fields` is provided,
+> the count must match the existing number of fields.
+> `rate` must be between 1 and 1000.
 
 **Response:**
 
@@ -364,6 +386,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 **Endpoint:** `DELETE /api/decks/{id}`
 
 **Parameters:**
+
 - `id`: `a1b2c3` (your deck ID)
 
 > This permanently deletes the deck and all its associated facts, cards, and templates.
@@ -388,6 +411,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 **Endpoint:** `POST /api/decks/{id}/facts/{operation}`
 
 **Parameters:**
+
 - `id`: `a1b2c3` (your deck ID)
 - `operation`: `append`
 
@@ -440,6 +464,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 **Endpoint:** `GET /api/decks/{id}/card`
 
 **Parameters:**
+
 - `id`: `a1b2c3` (your deck ID)
 
 **Response:**
@@ -454,8 +479,6 @@ You can view a single deck or list all your decks. Both responses include a `sta
       "last_review": 1763269701,
       "due_date": 1763269702,
       "hidden": false,
-      "min_interval": 150,
-      "max_interval": 1200,
       "created_at": 1763269700
     },
     "urgency": 2598
@@ -477,6 +500,7 @@ After viewing a card, you need to update its interval based on how well you reme
 **Endpoint:** `PATCH /api/decks/{id}/card`
 
 **Parameters:**
+
 - `id`: `a1b2c3` (your deck ID)
 
 **Request Body:**
@@ -489,77 +513,54 @@ After viewing a card, you need to update its interval based on how well you reme
 }
 ```
 
-> Use `card.id` from the GET response as `card_id`. `last_review` is a Unix timestamp (seconds) — typically `Math.floor(Date.now() / 1000)` on the client.
+> Use `card.id` from the GET response as `card_id`.
+> `last_review` is a UTC Unix timestamp in seconds — typically
+> `Math.floor(Date.now() / 1000)` on the client.
 
-> 💡 **How the interval slider works:**
->
-> In the app, users select an interval using a slider:
-> - **Left end** = `min_interval` (e.g., `150` seconds) → Card was difficult, review sooner
-> - **Right end** = `max_interval` (e.g., `1200` seconds) → Card was easy, review later
->
-> The interval value is in seconds.
-> The submitted interval **must** be within the range `[min_interval, max_interval]`, or the API will reject it. Do not send both `interval` and `hidden` in the same request.
+<!-- -->
 
-> 📖 **How the spaced repetition algorithm works:**
+> 💡 **Calculating min and max interval (client-side):**
 >
-> The system uses an **urgency-based spaced repetition** algorithm. Here's the full flow:
+> The server stores only `last_review` and `due_date` on each
+> card. The frontend must derive the current interval and compute
+> the allowed range before submitting. Do not send both `interval`
+> and `hidden` in the same request.
 >
-> **1. Urgency — which card to show next**
+> **Step 1 — Derive the current interval:**
 >
-> Every card has `last_review` and `due_date` timestamps. Urgency is calculated as:
->
+> ```text
+> current_interval = due_date - last_review    (minimum 60 seconds)
 > ```
+>
+> For a brand-new card (`last_review = 0`), treat `current_interval` as 60 seconds.
+>
+> **Step 2 — Compute urgency:**
+>
+> ```text
 > urgency = (now - last_review) / (due_date - last_review)
 > ```
 >
-> - `urgency >= 1.0` → the card is **overdue** (past its due date)
-> - `urgency < 1.0` → the card is **not yet due** but may still be shown
+> **Step 3 — Compute min and max interval:**
 >
-> The card with the **highest urgency** (that isn't hidden) is served as the next urgent card.
+> When the card is overdue (`urgency >= 1`):
 >
-> **2. Interval calculation — how min/max are determined**
->
-> The current interval is `due_date - last_review` (minimum 60 seconds). Two factors determine the next review range:
->
-> | Factor | Value | Meaning |
-> |--------|-------|---------|
-> | `minFactor` | 0.5 | Hard — halve the interval |
-> | `maxFactor` | 4.0 | Easy — quadruple the interval |
->
-> **When the card is overdue** (`urgency >= 1`):
->
-> ```
+> ```text
 > min_interval = current_interval × 0.5
 > max_interval = current_interval × 4.0
 > ```
 >
-> **When the card is not yet due** (`urgency < 1`), the factors are scaled down proportionally by urgency so that reviewing early yields a smaller growth:
+> When the card is not yet due (`urgency < 1`):
 >
-> ```
+> ```text
 > min_interval = current_interval × ((0.5 - 1) × urgency + 1)
 > max_interval = current_interval × ((4.0 - 1) × urgency + 1)
 > ```
 >
-> **3. Update — what happens when you submit an interval**
+> **Step 4 — Validate before sending:**
 >
-> When you send `{ "card_id": "xyz12345", "interval": 600, "last_review": 1763272400 }`:
->
-> ```
-> last_review = now
-> due_date    = now + interval
-> ```
->
-> The next time this card appears, the new interval range will be based on this updated interval. This means intervals **grow over time** — the better you know a card, the longer until you see it again.
->
-> **4. Example walkthrough**
->
-> | Step | Current interval | You choose | Next interval range |
-> |------|-----------------|------------|---------------------|
-> | 1st review | 60s (1 min) | 120s (midpoint) | 60s – 480s |
-> | 2nd review | 120s (2 min) | 240s (midpoint) | 120s – 960s |
-> | 3rd review | 240s (4 min) | 480s (midpoint) | 240s – 1920s |
->
-> Picking closer to the max makes intervals grow faster (up to 4×), while picking closer to the min **shrinks** them (down to 0.5×).
+> The frontend must verify that the chosen `interval` satisfies
+> `min_interval <= interval <= max_interval` before sending
+> the PATCH request.
 
 **Response:**
 
@@ -585,6 +586,7 @@ If you want to temporarily hide a card from reviews:
 **Endpoint:** `PATCH /api/decks/{id}/card`
 
 **Parameters:**
+
 - `id`: `a1b2c3`
 
 **Request Body:**

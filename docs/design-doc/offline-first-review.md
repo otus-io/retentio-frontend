@@ -5,7 +5,7 @@
 - **Frontend review is incomplete**: no card update API call, no fact content display, `Card` model missing `id`, endpoint path mismatch (`/urgent-card` vs `/card`)
 - **Hive exists** but only stores theme state in a single `hydrated_box`
 - **No connectivity detection**, no sync queue, no local card/fact/deck cache
-- **All scheduling logic** (urgency, next card, min/max interval, spread) lives in Go on the server
+- **All scheduling logic** (urgency, next card, interval bounds, spread) lives in Go on the server
 
 ## Two Sources of Decks
 
@@ -57,9 +57,9 @@ flowchart LR
 
 This avoids duplication (shared facts are stored once), avoids merge conflicts (user can't edit shared facts), and gives automatic corrections for free.
 
-### Backend: catalog endpoints
+### Backend: catalog endpoints (new — to be built)
 
-New endpoints for the catalog:
+These endpoints do not exist yet and will be added as part of the catalog feature:
 
 - `GET /api/catalog` — list available pre-made decks (public, not tied to any user)
 - `GET /api/catalog/{id}` — get catalog deck details (shared facts, templates, etc.)
@@ -67,6 +67,28 @@ New endpoints for the catalog:
 - `POST /api/catalog/{id}/update` — pull new facts added since last install/update, create cards for them
 
 Catalog data is stored separately in Redis (e.g., `catalog:{id}`, `catalog:{id}:facts`, `catalog_fact:{id}`) and managed by admins. When a user installs a catalog deck, their `deck:{id}` entry includes a `catalogId` field. Loading facts for such a deck means: `SMEMBERS catalog:{catalogId}:facts` UNION `SMEMBERS deck:{deckId}:facts`.
+
+### Install response and frontend flow
+
+`POST /api/catalog/{id}/install` returns the newly created user deck (with `catalogId` set), the generated per-user cards, and the list of catalog fact IDs:
+
+```json
+{
+  "data": {
+    "deck": {"id": "dk_abc", "name": "HSK 1", "catalogId": "cat_01", ...},
+    "cards": [{"id": "cd_1", "fact_id": "cf_1", ...}, ...],
+    "catalog_fact_ids": ["cf_1", "cf_2", ...]
+  }
+}
+```
+
+After receiving the response, the frontend:
+
+1. Writes the deck to Hive `decks` box (read-only, since it's catalog-owned)
+2. Fetches catalog fact content for each ID (or receives them inline) and caches in Hive `facts` box (read-only)
+3. Writes the generated cards to Hive `cards` box (read-write — scheduling is per-user)
+
+For `POST /api/catalog/{id}/update`, the user's deck entry stores a `lastUpdated` timestamp. The endpoint returns only facts added since that timestamp and generates cards for them. The frontend appends the new facts and cards to its Hive boxes and updates `lastUpdated`.
 
 ### Hive: local storage by deck type
 
@@ -78,7 +100,23 @@ For **pre-made decks**:
 For **user-created decks**:
 - Store everything (deck, facts, cards) in Hive as read-write — all synced
 
+Hive stores only **metadata** (JSON). Media **binaries** (audio, images) are stored on the phone's filesystem, keyed by media ID (e.g., `media/a1b2c3.mp3`) — not in Hive boxes. This mirrors the backend pattern where Redis holds metadata and the filesystem holds binaries (see `media-upload.md`).
+
 The Local Repository and scheduling logic treat both types identically for review — a card points to a fact (shared or user-owned), and the scheduling math is the same either way.
+
+### Media caching for catalog decks
+
+Catalog facts reference shared media via markers like `[audio:shared:b2c3d4e5f6]` and `[image:shared:c3d4e5f6g7]` (see `media-upload.md` for marker format and shared media endpoints).
+
+After installing a catalog deck, the frontend must download the referenced media binaries for offline use:
+
+1. Parse all catalog fact fields, extract `[audio:shared:id]` / `[image:shared:id]` markers
+2. Filter out media IDs already present on the local filesystem
+3. Download each missing file via `GET /api/media/shared/{id}` and save to the phone filesystem (e.g., `media/b2c3d4e5f6.mp3`)
+
+This can be done **lazily** (download on first render — simpler, but first review has a loading delay) or **eagerly** (background download after install — better UX, but requires a download progress indicator). Either way, the frontend resolves markers to local file paths during review with no network dependency.
+
+The same flow applies after `POST /api/catalog/{id}/update` — any newly added facts may reference media not yet cached locally.
 
 ## Architecture: Offline-First with Background Sync
 
@@ -108,7 +146,7 @@ Before offline work, fix the incomplete online flow:
 - Create a `Fact` model (`id`, `fields`)
 - Fix endpoint path: `/urgent-card` -> `/card` to match backend routes
 - Implement the PATCH call in `CardService` to submit reviews (`card_id`, `interval`, `last_review`)
-- Wire up Hard/Good/Easy buttons in `DeckLearnScreen` to map to intervals within `[minInterval, maxInterval]` and call the PATCH endpoint
+- Wire up Hard/Good/Easy buttons in `DeckLearnScreen` to map to intervals within the computed `[minInterval, maxInterval]` bounds (returned by GetNextCard, not stored on the card) and call the PATCH endpoint
 - Display fact content (fetch fact by `factId`, use `templateIndex` + deck `templates` to show front/back)
 
 ## Redis Data Structure
@@ -120,7 +158,7 @@ The backend stores all data in Redis using two types of keys:
 - `user:{username}` — user profile
 - `deck:{deckID}` — deck metadata (name, fields, templates, rate, owner, etc.)
 - `fact:{factID}` — fact content (id, fields)
-- `card:{cardID}` — card scheduling data (id, fact_id, template_index, last_review, due_date, hidden, min_interval, max_interval, created_at)
+- `card:{cardID}` — card scheduling data (id, fact_id, template_index, last_review, due_date, hidden, created_at)
 
 **Membership sets** (indices linking entities):
 
@@ -155,13 +193,13 @@ Set up dedicated Hive boxes for offline data. Hive boxes are flat key-value stor
 Hive boxes:
 
 - **`decks` box** — keyed by deck ID, stores full deck metadata (name, fields, templates, rate, etc.)
-- **`cards` box** — keyed by card ID, stores card scheduling data (id, deck_id, fact_id, template_index, due_date, interval, min_interval, max_interval, hidden, created_at)
+- **`cards` box** — keyed by card ID, stores card scheduling data (id, deck_id, fact_id, template_index, due_date, last_review, hidden, created_at)
 - **`facts` box** — keyed by fact ID, stores fact content (id, deck_id, fields)
-- **`sync_queue` box** — ordered list of pending operations to push to server
+- **`sync_queue` box** — pending operations to push to server, keyed by auto-incrementing integer (0, 1, 2, ...) to preserve insertion order
 
 Key difference from Redis: add a `deckId` field to Card and Fact on the client side. This replaces the Redis membership sets — "get all cards for deck X" becomes a filter by `deckId` instead of an SMEMBERS call. This field can be client-only or added to the backend Card/Fact structs for consistency.
 
-Consider storing `interval` + `due_date` on the card (instead of `last_review` + `due_date`) — this simplifies urgency to `(now - due) / interval` and avoids reconstructing the interval everywhere.
+The interval is derived as `due_date - last_review` whenever needed — no need to store it separately.
 
 Each box should use a Hive `TypeAdapter` for type-safe serialization with `hive_ce`.
 
@@ -169,9 +207,9 @@ Each box should use a Hive `TypeAdapter` for type-safe serialization with `hive_
 
 Replicate these algorithms from `backend-api/deck/card.go` and `backend-api/deck/fact.go` in a new Dart directory (e.g., `frontend/lib/services/scheduling/`):
 
-- **Get next card**: iterate all non-hidden cards, compute `urgency = (now - dueDate) / interval`, pick max urgency (~15 lines of logic, card.go lines 234-269)
-- **Min/Max interval**: `minFactor=0.5`, `maxFactor=4.0`, scale by urgency when card is not yet due (~15 lines, card.go lines 286-304)
-- **Update card**: `dueDate = lastReview + chosenInterval`, validate interval in `[min, max]` (~5 lines, card.go lines 509-521)
+- **Get next card**: iterate all non-hidden cards, compute `interval = dueDate - lastReview`, then `urgency = (now - lastReview) / interval`, pick max urgency (~15 lines of logic, card.go lines 234-269)
+- **Compute interval bounds**: `minFactor=0.5`, `maxFactor=4.0`, scale by urgency when card is not yet due (~15 lines, card.go lines 286-304). These are computed on the fly and returned in the response — not stored on the Card struct
+- **Update card**: `dueDate = lastReview + chosenInterval`, validate interval in `[min, max]` computed at request time (~5 lines, card.go lines 509-521). Since min/max are recomputed (not read from stored card state), there is no stale-validation problem during offline sync
 - **SpreadCards**: slot-based interleaving of new cards into unseen queue (~35 lines, fact.go lines 100-135)
 - **New card scheduling**: gap = 86400 / rate, assign `dueDate` = startTime + i * gap (~10 lines, fact.go lines 339-342)
 - **ComputeStats**: unseen/due/hidden/reviewed counts (stats.go)
@@ -182,9 +220,10 @@ All of these are pure functions (no I/O) and should be unit-testable in Dart.
 
 A `LocalRepository` class that wraps Hive and the scheduling logic:
 
-- `getNextCard(deckId)` — reads cards from Hive, runs urgency algorithm, returns card + fact content
+- `getNextCard(deckId)` — reads cards from Hive, runs urgency algorithm, computes interval bounds on the fly, returns card + fact content + min/max interval
 - `submitReview(cardId, interval, lastReview)` — updates card in Hive, enqueues sync operation
-- `addFact(deckId, fields, placement)` — creates fact + cards in Hive, runs spread algorithm, enqueues sync
+- `addFact(deckId, fields, placement)` — creates fact + cards in Hive, runs spread algorithm, enqueues sync. If fact fields contain media markers, also enqueues `media_upload` for any locally-created media not yet synced.
+- `deleteFact(deckId, factId)` — deletes fact from Hive **and** cascade-deletes all cards with matching `factId` (mirrors backend `DeleteFact` behavior), enqueues sync
 - `createDeck(name, fields, templates, rate)` — creates deck in Hive with a temp ID, enqueues sync
 - `getDeckStats(deckId)` — computes stats locally from Hive data
 - `rescheduleDeck(deckId, days)` — shifts all cards locally, enqueues sync
@@ -268,18 +307,20 @@ sequenceDiagram
     loop each deck
         App->>API: GET /api/decks/{id}/facts
         API-->>App: facts for this deck
-        Note over App: (need a cards list endpoint too)
+        App->>API: GET /api/decks/{id}/cards
+        API-->>App: cards for this deck
     end
     App->>Hive: upsert all decks, facts, cards
     App->>Hive: delete local entities not present on server
 ```
 
-Note: `GET /api/decks/{id}` returns only deck metadata + stats (no facts, no cards). Facts come from `GET /api/decks/{id}/facts`. A card list endpoint does not currently exist — either add one, or skip the full pull for cards and trust the push was successful.
+Note: `GET /api/decks/{id}` returns only deck metadata + stats (no facts, no cards). Facts come from `GET /api/decks/{id}/facts`. Cards come from `GET /api/decks/{id}/cards` (already exists).
 
 ### Sync queue format
 
 ```json
 [
+  { "type": "media_upload",   "tempId": "tmp_m1", "payload": {"localPath": "media/tmp_m1.mp3"}, "timestamp": 1700000000 },
   { "type": "deck_create",    "tempId": "tmp_abc", "payload": {...}, "timestamp": 1700000001 },
   { "type": "fact_add",       "deckId": "tmp_abc", "payload": {...}, "timestamp": 1700000002 },
   { "type": "card_update",    "deckId": "tmp_abc", "cardId": "tmp_cd1", "payload": {...}, "timestamp": 1700000003 },
@@ -287,10 +328,13 @@ Note: `GET /api/decks/{id}` returns only deck metadata + stats (no facts, no car
 ]
 ```
 
+Queue entries are stored in the `sync_queue` Hive box using auto-incrementing integer keys (0, 1, 2, ...) to preserve insertion order. Processed entries are deleted by key after successful sync.
+
 ### Operation mapping to existing endpoints
 
 Each queue entry maps to an existing REST endpoint — no new backend routes needed:
 
+- `media_upload` -> `POST /api/media` (with `client_id` = local media ID for idempotency; see `media-upload.md`)
 - `deck_create` -> `POST /api/decks`
 - `deck_update` -> `PATCH /api/decks/{id}`
 - `deck_delete` -> `DELETE /api/decks/{id}`
@@ -300,6 +344,8 @@ Each queue entry maps to an existing REST endpoint — no new backend routes nee
 - `card_update` -> `PATCH /api/decks/{id}/card`
 - `deck_reschedule` -> `POST /api/decks/{id}/reschedule`
 
+**Ordering constraint**: `media_upload` entries must be processed before any `fact_add`/`fact_update` that references the uploaded media ID in a marker (e.g., `[audio:tmp_m1]`). The sync engine sorts media uploads to the front of the queue.
+
 ### Ordering and idempotency
 
 - **Order matters**: a deck must exist on the server before its facts can be synced. Queue entries are processed sequentially.
@@ -308,7 +354,7 @@ Each queue entry maps to an existing REST endpoint — no new backend routes nee
 
 ### What doesn't need syncing
 
-- **min_interval / max_interval**: recomputed on every GetNextCard call, both server-side and client-side
+- **Interval bounds (min/max)**: not stored on the Card struct at all — computed on the fly during GetNextCard (server-side and client-side) and returned in the response. This eliminates stale-validation issues during offline sync.
 - **Stats**: purely derived from card data, computed locally
 - **Urgency**: computed on the fly, never stored
 
@@ -354,7 +400,7 @@ This is a nice-to-have — ship with sequential calls first.
 
 ## Backend Changes
 
-- Consider adding `interval` field to the Card struct and storing it alongside `due_date`, dropping `last_review` from persisted state (option 3). This aligns backend and frontend on the same minimal card representation. `last_review` remains an input-only field in the PATCH request.
+- **Remove `min_interval` / `max_interval` from the Card struct**. These fields are currently stored on the card in Redis and persisted across requests. Instead, compute them on the fly in both `GetNextCard` (return in response, don't persist) and `UpdateCard` (recompute for validation, don't read from stored card). This shrinks the card payload, eliminates stale-validation bugs during offline sync, and aligns backend with the client's local scheduling logic.
 - Add a bulk sync endpoint (e.g., `POST /api/sync`) that accepts a batch of queued operations — this avoids N sequential API calls on reconnect.
 
 ## Key Risks

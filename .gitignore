@@ -55,3 +55,6 @@ app.*.map.json
 
 # Go compiled binary
 backend-api/wordupx
+
+# Design docs (English only, not tracked)
+docs/design-doc/

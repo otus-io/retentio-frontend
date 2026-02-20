@@ -81,7 +81,7 @@ type Media struct {
 | Key | Type | Content |
 |-----|------|---------|
 | `media:{id}` | String (JSON) | Media metadata (id, owner, filename, mime, size, checksum, created_at) |
-| `user:{username}:media` | Set | Set of media IDs owned by this user |
+| `user:{username}:media` | Sorted Set | Media IDs scored by `created_at` (enables efficient `?since=` filtering via `ZRANGEBYSCORE`) |
 
 ### Binary file storage
 
@@ -191,12 +191,16 @@ All under `/api/media`, JWT-protected via `JwtAuthMiddleware`:
 
 1. Parse multipart form with size limit (`http.MaxBytesReader`)
 2. Validate MIME type by reading the file header (`http.DetectContentType`), not trusting the `Content-Type` header
-3. If `client_id` is provided and `media:{client_id}` already exists in Redis, return the existing metadata (idempotent)
+3. If `client_id` is provided, use `SETNX` on a short-lived lock key `media:lock:{client_id}` to guard against concurrent duplicate uploads. If `media:{client_id}` already exists in Redis, return the existing metadata (idempotent)
 4. Generate nanoid (or use `client_id`)
-5. Compute SHA-256 checksum while reading the file
-6. Write file to storage via `Storage.Put`
-7. Save metadata to Redis: `SET media:{id}` and `SADD user:{username}:media {id}`
+5. Stream the file to storage via `Storage.Put`, using `io.TeeReader` to compute the SHA-256 checksum during the write -- the file is never fully buffered in memory
+6. Save metadata to Redis: `SET media:{id}` and `ZADD user:{username}:media {created_at} {id}`
+7. If the Redis write in step 6 fails after the file was written in step 5, the orphaned file will be cleaned up by a periodic sweep job (see "Orphan cleanup" below)
 8. Respond with `201 Created` and media metadata
+
+**Orphan cleanup**: a background goroutine (or cron job) periodically scans the media directory for files whose IDs have no corresponding `media:{id}` key in Redis, and deletes them. This handles crash recovery between steps 5 and 6.
+
+**Rate limiting**: uploads are rate-limited per user (e.g. 30 uploads/minute) to prevent abuse. Enforced via a Redis sliding-window counter keyed by `ratelimit:upload:{username}`.
 
 **Response**:
 
@@ -221,14 +225,15 @@ All under `/api/media`, JWT-protected via `JwtAuthMiddleware`:
 
 | Param | Required | Description |
 |-------|----------|-------------|
-| `since` | No | Unix timestamp; only return media created after this time |
+| `since` | No | Unix timestamp; only return media created after this time (exclusive) |
+| `limit` | No | Max items to return (default 200, max 1000) |
+| `offset` | No | Number of items to skip (default 0) |
 
 **Handler logic**:
 
-1. `SMEMBERS user:{username}:media` to get all media IDs
-2. Load metadata for each ID
-3. If `since` is provided, filter to items where `created_at > since`
-4. Return metadata array (no binary data)
+1. Use `ZRANGEBYSCORE user:{username}:media {since} +inf LIMIT {offset} {limit}` to retrieve matching media IDs directly from Redis. If `since` is not provided, use `-inf` as the lower bound to return all. This avoids loading all IDs and filtering in Go -- Redis does the filtering using its skip-list index in O(log n + k) where k is the result count.
+2. Build a key slice from the returned IDs and `MGET media:{id1} media:{id2} ...` to load all metadata in a single Redis round-trip (same pattern as `LoadFacts`).
+3. Return metadata array (no binary data)
 
 **Response**:
 
@@ -238,7 +243,7 @@ All under `/api/media`, JWT-protected via `JwtAuthMiddleware`:
     {"id": "a1b2c3d4e5", "mime": "audio/mpeg", "size": 48210, "checksum": "sha256:9f86d...", "created_at": 1708100000},
     {"id": "f6g7h8i9j0", "mime": "image/jpeg", "size": 102400, "checksum": "sha256:3c7a1...", "created_at": 1708100500}
   ],
-  "meta": {"count": 2}
+  "meta": {"count": 2, "has_more": false}
 }
 ```
 
@@ -247,14 +252,14 @@ All under `/api/media`, JWT-protected via `JwtAuthMiddleware`:
 **Handler logic**:
 
 1. Load metadata from `media:{id}`
-2. Verify the requesting user is the owner (or the media is referenced in a shared/public deck -- future consideration)
-3. Set response headers: `Content-Type`, `Content-Length`, `ETag` (checksum)
+2. Verify the requesting user is the owner. For Phase 1, only the owner can download their own media. When deck sharing is implemented, access will be extended to users who have access to a deck that references the media -- this will require a reverse index from media ID to deck IDs (deferred).
+3. Set response headers: `Content-Type`, `Content-Length`, `Content-Disposition: inline`, `ETag` (checksum), `Cache-Control: public, max-age=31536000, immutable` (media is immutable -- aggressive caching is safe)
 4. Check `If-None-Match` header; if it matches the checksum, respond `304 Not Modified`
 5. Stream the file from `Storage.Get` to the response writer
 
 ### Metadata: `GET /api/media/{id}/meta`
 
-Same as download but returns only the JSON metadata, no binary. Useful for the frontend to check if media exists before downloading.
+Same as download but returns only the JSON metadata, no binary. Useful for the frontend to check if media exists before downloading. Sets the same `Cache-Control: public, max-age=31536000, immutable` header since metadata is also immutable.
 
 ### Delete: `DELETE /api/media/{id}`
 
@@ -264,7 +269,7 @@ Same as download but returns only the JSON metadata, no binary. Useful for the f
 2. Verify the requesting user is the owner
 3. Delete binary file via `Storage.Delete`
 4. `DEL media:{id}`
-5. `SREM user:{username}:media {id}`
+5. `ZREM user:{username}:media {id}`
 6. Respond with `200 OK`
 
 Note: deletion does not scan facts for dangling `[audio:id]` markers. The frontend handles missing media gracefully (shows a "media not found" placeholder). A future cleanup job could scan for orphaned markers.
@@ -299,9 +304,8 @@ This is designed to work with the upcoming local-first architecture where decks 
 ### Key properties
 
 - **Metadata-first**: the manifest is small (a few KB even for hundreds of items); binary downloads happen lazily
-- **Checksum-based dedup**: if the same file is uploaded from two devices, the server stores one copy and both uploads return the same metadata
-- **Idempotent uploads**: the `client_id` field means retrying a failed upload doesn't create duplicates
-- **Incremental**: `?since=` avoids re-fetching the full manifest on every sync
+- **Idempotent uploads**: the `client_id` field means retrying a failed upload doesn't create duplicates. If two devices upload the same file with different `client_id`s, both uploads succeed and create separate media entries -- the checksum is stored for sync comparison, not for server-side dedup
+- **Incremental**: `?since=` is backed by a Redis sorted set, so only IDs created after the given timestamp are fetched -- O(log n + k) where k is the number of new items, not O(n) over all items
 - **ETag/304**: phone skips re-downloading files it already has
 
 ### Conflict resolution
@@ -373,7 +377,7 @@ type SharedMedia struct {
 | `shared_media:index` | Set | Set of all shared media nanoids |
 | `shared_media:lookup:{word}:{lang}:{variant}` | String | nanoid (lookup index) |
 
-The lookup key enables finding shared media by word: given "apple", "en", "us", Redis returns the nanoid. The nanoid is then used for all storage and API operations.
+The lookup key enables finding shared media by word: given "apple", "en", "us", Redis returns the nanoid. The nanoid is then used for all storage and API operations. The `word` component is lowercased and must not contain colons (validated on upload) to avoid breaking the key structure.
 
 ### Binary file storage
 
@@ -533,7 +537,7 @@ When the frontend fetches the urgent card or fact list, the response includes th
 
 The fact fields come back as `["Apple", "苹果", "[audio:a1b2c3d4e5]"]`. The frontend then:
 
-1. Parses each field with a regex: `\[(audio|image):([a-z0-9]+)\]`
+1. Parses each field with a regex: `\[(audio|image):(shared:)?([a-z0-9]+)\]` (handles both user markers like `[audio:abc123]` and shared markers like `[audio:shared:abc123]`)
 2. For each match, checks if the file is in local cache
 3. If not cached, fetches the binary: `GET /api/media/a1b2c3d4e5`
 4. Renders the appropriate widget -- audio player or image view
