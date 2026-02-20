@@ -18,7 +18,7 @@ Returns the number of cards shifted and a summary.
 
 Shifting only overdue cards breaks the relative ordering between shifted and non-shifted cards. For example, a card due on day 3 (shifted to day 8) would end up scheduled after a card due on day 7 (unshifted), even though the day-3 card was originally first. Shifting all cards preserves the relative spacing -- it's equivalent to "pausing time" during the holiday.
 
-*We need to think about difference between preserving the review order ? * 
+*We need to think about difference between preserving the review order ?*
 
 ## Request Struct
 
@@ -43,6 +43,7 @@ maxDaysAway = (now - min(DueDate where DueDate <= now)) / 86400
 ```
 
 Rules:
+
 - If no overdue cards exist, return 400: "No overdue cards found, rescheduling is not needed"
 - If `maxDaysAway < 1`, clamp to 1
 - If `days > maxDaysAway`, return 400: "Cannot shift by N days — you have only been away for M days"
@@ -135,11 +136,13 @@ apiRouter.HandleFunc("/decks/{id}/reschedule", deck.RescheduleDeck).Methods("POS
 ## Tests
 
 ### Reschedule handlers
+
 - `TestRescheduleDeck`: verify all cards shifted by correct amount, both DueDate and LastReview
 - `TestRescheduleDeck` sub-tests: invalid days (0, -1, 366), unauthorized access, non-existent deck, shift exceeds days away
 - Verify unseen invariant is preserved (`DueDate - LastReview` stays the same after shift)
 
 ### Holiday detection in GetNextUrgentCard
+
 - `should suggest rescheduling when earliest overdue > 1 day`: cards overdue by 3 days, verify `reschedule_suggested: true`, `suggested_reschedule_days: 3`
 - `should not suggest rescheduling when overdue by less than 1 day`: card overdue by seconds, verify `reschedule_suggested: false`
 - `should not include reschedule fields when no cards are overdue`: all cards in the future, verify `reschedule_suggested` is absent from meta

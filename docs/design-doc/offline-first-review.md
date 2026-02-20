@@ -93,11 +93,13 @@ For `POST /api/catalog/{id}/update`, the user's deck entry stores a `lastUpdated
 ### Hive: local storage by deck type
 
 For **pre-made decks**:
+
 - Cache shared content (deck metadata, catalog facts) in Hive as read-only — used for offline display, auto-corrected on next pull
 - Store user-added facts in Hive as read-write — synced
 - Store per-user cards in Hive as read-write — synced
 
 For **user-created decks**:
+
 - Store everything (deck, facts, cards) in Hive as read-write — all synced
 
 Hive stores only **metadata** (JSON). Media **binaries** (audio, images) are stored on the phone's filesystem, keyed by media ID (e.g., `media/a1b2c3.mp3`) — not in Hive boxes. This mirrors the backend pattern where Redis holds metadata and the filesystem holds binaries (see `media-upload.md`).

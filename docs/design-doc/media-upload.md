@@ -107,6 +107,7 @@ Fact fields use inline markers to reference media by ID:
 ```
 
 The frontend parses these markers and resolves them:
+
 - **Online**: fetch from `GET /api/media/{id}`
 - **Offline (local-first)**: load from the phone's local media cache
 

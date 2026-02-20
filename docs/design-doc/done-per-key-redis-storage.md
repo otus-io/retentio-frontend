@@ -1,6 +1,8 @@
 # Per-Key Redis Storage for Facts and Cards
 
-Refactor facts and cards from monolithic JSON arrays to individual Redis keys. The current design stores all facts (and all cards) for a deck as a single JSON blob, making every single-entity operation O(n). Moving to per-key storage reduces `GetFact`, `UpdateFact`, and `UpdateCard` to O(1).
+Refactor facts and cards from monolithic JSON arrays to individual Redis keys. The current design stores all facts (and all
+cards) for a deck as a single JSON blob, making every single-entity operation O(n). Moving to per-key storage reduces
+`GetFact`, `UpdateFact`, and `UpdateCard` to O(1).
 
 ---
 
@@ -9,7 +11,7 @@ Refactor facts and cards from monolithic JSON arrays to individual Redis keys. T
 ### Redis layout
 
 | Key | Type | Content |
-|-----|------|---------|
+| --- | --- | --- |
 | `deck:{id}:facts` | String | `[{"id":"abc","fields":["Apple","苹果"]}, ...]` (entire array) |
 | `deck:{id}:cards` | String | `[{"fact_id":"abc","template_index":0, ...}, ...]` (entire array) |
 
@@ -24,12 +26,13 @@ Every operation that touches a single fact or card must:
 5. `json.Marshal` the entire array
 6. `SET` the entire blob back to Redis
 
-This is O(n) for what should be O(1) work, and the non-atomic read-modify-write creates race conditions under concurrent access.
+This is O(n) for what should be O(1) work, and the non-atomic read-modify-write creates race conditions under concurrent
+access.
 
 ### Complexity before refactor
 
 | Handler | Complexity | Notes |
-|---------|-----------|-------|
+| --- | --- | --- |
 | `GetFact` | O(f) | Deserializes all facts, linear scan |
 | `UpdateFact` | O(f) | Full read-modify-write |
 | `DeleteFact` | O(f+c) | Rebuilds both arrays |
@@ -63,7 +66,7 @@ type Card struct {
 ### Redis layout (after migration)
 
 | Key | Type | Content |
-|-----|------|---------|
+| --- | --- | --- |
 | `deck:{id}:facts` | **Set** | Set of fact IDs |
 | `fact:{factId}` | String | `{"id":"abc","fields":["Apple","苹果"]}` |
 | `deck:{id}:cards` | **Set** | Set of card IDs |
@@ -72,7 +75,7 @@ type Card struct {
 ### Redis command complexity reference
 
 | Command | Time Complexity |
-|---------|----------------|
+| --- | --- |
 | `GET` | O(1) |
 | `SET` | O(1) |
 | `DEL` | O(1) per key |
@@ -88,7 +91,7 @@ type Card struct {
 ### Complexity after refactor
 
 | Handler | Before | After | Redis commands (after) | Round-trips |
-|---------|--------|-------|------------------------|-------------|
+| --- | --- | --- | --- | --- |
 | `GetFact` | O(f) | **O(1)** | `SISMEMBER` O(1) + `GET` O(1) | 3 (GET deck + SISMEMBER + GET fact) |
 | `UpdateFact` | O(f) | **O(1)** | `SISMEMBER` O(1) + `GET` O(1) + `SET` O(1) | 4 (GET deck + SISMEMBER + GET fact + SET fact) |
 | `UpdateCard` | O(c) | **O(1)** | `SISMEMBER` O(1) + `GET` O(1) + `SET` O(1) | 4 (GET deck + SISMEMBER + GET card + SET card) |
@@ -113,7 +116,7 @@ Where: f = facts in deck, c = cards in deck, n = number of decks, f' = new facts
 ### [`backend-api/deck/fact.go`](backend-api/deck/fact.go)
 
 | Handler | Change |
-|---------|--------|
+| --- | --- |
 | `AddFact` | `SADD deck:{id}:facts` + `SET fact:{id}` per new fact. Cards still use monolithic array in Phase 1; per-key in Phase 2. |
 | `GetFacts` | `SMEMBERS deck:{id}:facts` + `MGET fact:{id1}, fact:{id2}, ...` |
 | `GetFact` | `SISMEMBER` for existence + `GET fact:{factId}` |
@@ -123,7 +126,7 @@ Where: f = facts in deck, c = cards in deck, n = number of decks, f' = new facts
 ### [`backend-api/deck/card.go`](backend-api/deck/card.go)
 
 | Handler | Change |
-|---------|--------|
+| --- | --- |
 | `GetNextCard` | `SMEMBERS` + `MGET` to load all cards. Write-back of `MinInterval`/`MaxInterval` becomes single `SET card:{id}`. |
 | `UpdateCard` | `GET card:{cardId}` + `SET card:{cardId}`. Lookup by card ID instead of `(factID, templateIndex)`. `last_review` required for interval updates. |
 | `GetCards` | `SMEMBERS` + `MGET` for cards; facts via `SMEMBERS` + `MGET`. |
@@ -132,7 +135,7 @@ Where: f = facts in deck, c = cards in deck, n = number of decks, f' = new facts
 ### [`backend-api/deck/deck.go`](backend-api/deck/deck.go)
 
 | Handler | Change |
-|---------|--------|
+| --- | --- |
 | `CreateDeck` | Remove initialization of empty `"[]"` for facts/cards (empty Sets need no initialization). |
 | `GetDecks` | Use pipeline `SCARD` for fact/card counts, `SMEMBERS` + `MGET` for full card data (stats computation). |
 | `GetDeck` | `SCARD` for fact count, `SMEMBERS` + `MGET` for cards (stats only). Does not return facts or cards in response. |
@@ -145,7 +148,7 @@ Where: f = facts in deck, c = cards in deck, n = number of decks, f' = new facts
 ### Endpoint rename
 
 | Before | After |
-|--------|-------|
+| --- | --- |
 | `GET /api/decks/{id}/urgent-card` | `GET /api/decks/{id}/card` |
 | `PATCH /api/decks/{id}/urgent-card` | `PATCH /api/decks/{id}/card` |
 | `GetUrgentCard` | `GetNextCard` |
@@ -156,16 +159,19 @@ Where: f = facts in deck, c = cards in deck, n = number of decks, f' = new facts
 The request body changes from `fact_id` + `template_index` to `card_id`, and requires `last_review` for interval updates:
 
 **Before:**
+
 ```json
 { "fact_id": "abc123", "template_index": 0, "interval": 3600 }
 ```
 
 **After (interval update — all three fields required):**
+
 ```json
 { "card_id": "xyz789", "interval": 3600, "last_review": 1704067200 }
 ```
 
 **Visibility update (only card_id + hidden):**
+
 ```json
 { "card_id": "xyz789", "hidden": true }
 ```
@@ -181,7 +187,7 @@ All other API contracts remain unchanged.
 
 A one-time script converts existing Redis data from monolithic arrays to per-key storage.
 
-### Per deck (atomic via TxPipeline):
+### Per deck (atomic via TxPipeline)
 
 1. Check if `deck:{id}:facts` is a String (old) or Set (already migrated)
 2. Load and parse the JSON array of facts

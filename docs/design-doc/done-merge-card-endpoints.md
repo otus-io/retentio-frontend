@@ -4,14 +4,15 @@ Consolidated the card review endpoints into a single REST resource at `/api/deck
 
 ## Endpoints
 
-```
+```text
 GET   /api/decks/{id}/card   → GetNextCard   (returns the next card to review)
 PATCH /api/decks/{id}/card   → UpdateCard    (updates interval or visibility by card_id)
 ```
 
 ## How PATCH finds the card
 
-The PATCH body includes `card_id` (required). The backend does an O(1) `SISMEMBER` check against the deck's card set, then `GET`/`SET` on the individual card key:
+The PATCH body includes `card_id` (required). The backend does an O(1) `SISMEMBER` check against the deck's card set,
+then `GET`/`SET` on the individual card key:
 
 ```go
 isMember, _ := common.RedisClient.SIsMember(ctx, common.DeckCardsKey(deckID), cardID).Result()

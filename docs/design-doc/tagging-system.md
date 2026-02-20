@@ -326,11 +326,13 @@ apiRouter.HandleFunc("/decks/{id}/tags", deck.GetDeckTags).Methods("GET", "OPTIO
 ### Tests
 
 #### Unit tests
+
 - Tag name validation: valid names, empty string, too long, spaces, special chars
 - Name normalization: "FoodRecipes" and "foodrecipes" are treated as the same
 - Association idempotency: adding the same tag-deck pair twice is a no-op
 
 #### Integration tests
+
 - `TestCreateTag`: create tag, verify stored in Redis with correct fields
 - `TestCreateTagDuplicateName`: attempt to create two tags with same name, expect 409 Conflict
 - `TestDeleteTag`: delete tag, verify removed from all associated decks
