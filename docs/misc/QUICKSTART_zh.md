@@ -240,7 +240,6 @@
     "owner": "swagger",
     "field": ["English", "Japanese"],
     "templates": [[0, 1]],
-    "facts": [],
     "rate": 20,
     "stats": {
       "cards_count": 0,
@@ -251,11 +250,12 @@
       "hidden_cards": 0,
       "new_cards_today": 0,
       "last_reviewed_at": 0
-    }
-  },
-  "meta": {
+    },
     "created_at": "2026-02-08T12:00:00Z",
     "updated_at": "2026-02-08T12:00:00Z"
+  },
+  "meta": {
+    "msg": "Deck retrieved successfully"
   }
 }
 ```

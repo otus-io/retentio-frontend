@@ -98,11 +98,11 @@ type Card struct {
 | `RescheduleDeck` | O(c) | O(c) | `SMEMBERS` O(c) + `MGET` O(c) + pipeline `SET`×c | 3 (GET deck + LoadCards + TxPipeline) |
 | `GetFacts` | O(f) | O(f) | `SMEMBERS` O(f) + `MGET` O(f) | 3 (GET deck + SMEMBERS + MGET) |
 | `GetCards` | O(f+c) | O(f+c) | `SMEMBERS` O(c) + `MGET` O(c) + `SMEMBERS` O(f) + `MGET` O(f) | 3 (GET deck + LoadCards + LoadFacts) |
-| `GetDeck` | O(f+c) | O(f+c) | `SMEMBERS` O(f) + `MGET` O(f) + `SMEMBERS` O(c) + `MGET` O(c) | 5 (GET deck + LoadFacts(2) + LoadCards(2)) |
+| `GetDeck` | O(f+c) | **O(c)** | `SCARD` O(1) + `SMEMBERS` O(c) + `MGET` O(c) | 4 (GET deck + SCARD + LoadCards(2)) |
 | `CreateDeck` | O(1) | O(1) | `SET` O(1) + `SADD` O(1) | 1 (TxPipeline) |
 | `UpdateDeck` | O(1) | O(1) | `GET` O(1) + `SET` O(1) | 2 (GET + SET) |
 | `DeleteDeck` | O(f+c) | O(f+c) | `SMEMBERS`×2 O(f+c) + pipeline `DEL`×(f+c+4) + `SREM` O(1) | 4 (GET deck + SMEMBERS×2 + TxPipeline) |
-| `ListDecks` | O(n*(f+c)) | O(n*(f+c)) | `SMEMBERS` O(n) + `MGET` O(n) + pipeline `SCARD`×2n + per-deck `LoadCards` | 3+n (SMEMBERS + MGET + Pipeline + n×LoadCards) |
+| `GetDecks` | O(n*(f+c)) | O(n*(f+c)) | `SMEMBERS` O(n) + `MGET` O(n) + pipeline `SCARD`×2n + per-deck `LoadCards` | 3+n (SMEMBERS + MGET + Pipeline + n×LoadCards) |
 
 Where: f = facts in deck, c = cards in deck, n = number of decks, f' = new facts added, t = templates per deleted fact (usually 1-2).
 
@@ -135,7 +135,7 @@ Where: f = facts in deck, c = cards in deck, n = number of decks, f' = new facts
 |---------|--------|
 | `CreateDeck` | Remove initialization of empty `"[]"` for facts/cards (empty Sets need no initialization). |
 | `GetDecks` | Use pipeline `SCARD` for fact/card counts, `SMEMBERS` + `MGET` for full card data (stats computation). |
-| `GetDeck` | `SMEMBERS` + `MGET` for both facts and cards. |
+| `GetDeck` | `SCARD` for fact count, `SMEMBERS` + `MGET` for cards (stats only). Does not return facts or cards in response. |
 | `DeleteDeck` | `SMEMBERS` both sets, pipeline `DEL` all individual fact/card keys + the sets themselves. |
 
 ---
@@ -402,7 +402,7 @@ _, err = pipe.Exec(common.Ctx)
 
 Pattern: `TxPipeline` → `SET deck:{id}` + `SADD user:{name}:decks`
 
-### `ListDecks` — retrieve all decks with counts
+### `GetDecks` — retrieve all decks with counts
 
 Redis complexity: `SMEMBERS` O(n) + `MGET` O(n) + pipeline 2n × `SCARD` O(1) + n × `LoadCards` O(c) = **O(n*c)**, 3+n round-trips
 
@@ -422,19 +422,20 @@ _, _ = countPipe.Exec(common.Ctx)
 
 Pattern: `SMEMBERS user:{name}:decks` → `MGET deck:{id1} ...` → `Pipeline SCARD` for fact/card counts
 
-### `GetDeck` — retrieve single deck with facts and cards
+### `GetDeck` — retrieve single deck with stats (no facts/cards in response)
 
-Redis complexity: `GET` O(1) + `LoadFacts` O(f) + `LoadCards` O(c) = **O(f+c)**, 5 round-trips
+Redis complexity: `GET` O(1) + `SCARD` O(1) + `LoadCards` O(c) = **O(c)**, 4 round-trips
 
 ```go
-// deck.go:279
+// deck.go:302-314
 deckData, err := common.RedisClient.Get(common.Ctx, deckKey).Result()
 // ...
-facts, err := LoadFacts(deckID)   // SMEMBERS + MGET
+factsCount, err := common.RedisClient.SCard(common.Ctx, common.DeckFactsKey(deckID)).Result()
 cards, err := LoadCards(deckID)   // SMEMBERS + MGET
+stats := ComputeStats(cards, int(factsCount))
 ```
 
-Pattern: `GET deck:{id}` → `LoadFacts` → `LoadCards`
+Pattern: `GET deck:{id}` → `SCARD deck:{id}:facts` → `LoadCards` → `ComputeStats`
 
 ### `UpdateDeck` — read-modify-write single deck key
 
