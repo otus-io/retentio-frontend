@@ -387,7 +387,8 @@ class DioClient {
     logger.e('e.response: ${e.response}');
     // DialogUtil.dismiss();
     // DialogUtil.showToast(msg);
-    return ResBaseModel(msg: msg, exception: e);
+    final data = e.response is Map ? e.response?.data : null;
+    return ResBaseModel(msg: data ?? msg, exception: e, code: -1);
   }
 
   static HttpClient _createHttpClient() {

@@ -1,6 +1,7 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wordupx/providers/loading_state_provider.dart';
 
 import '../../../main.dart';
 import '../../../mixins/notifier_mixin.dart';
@@ -121,23 +122,76 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
     state = state.copyWith(templates: index);
   }
 
-  Future<void> createDeck() async {
+  Future<void> createDeck(BuildContext context) async {
+    final name = nameController.text;
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'name cannot be empty',
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
     final params = {
       'fields': state.fields,
-      'name': nameController.text,
+      'name': name,
       'templates': [
         [0, 1],
-        if (state.templates == 1) ...[1, 0],
+        if (state.templates == 1) ...[
+          [1, 0],
+        ],
       ],
       'rate': state.rate.value,
     };
+    ref.read(loadingStateProvider.notifier).showLoading();
     if (cardType == DeckCardType.add) {
-      await DeckService.of.createDeck(params);
+      final res = await DeckService.of.createDeck(params);
+      if (res?.isSuccess == true) {
+        ref.read(loadingStateProvider.notifier).showLoading();
+        await ref.read(deckListProvider.notifier).onRefresh();
+        navigatorKey.currentContext?.pop();
+      } else {
+        ref.read(loadingStateProvider.notifier).showInitial();
+        if (res?.msg.isNotEmpty == true && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                res!.msg,
+                style: const TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     } else {
-      await DeckService.of.updateDeck(deckId: deckId, params: params);
+      final res = await DeckService.of.updateDeck(
+        deckId: deckId,
+        params: params,
+      );
+      if (res?.isSuccess == true) {
+        ref.read(loadingStateProvider.notifier).showLoading();
+        await ref.read(deckListProvider.notifier).onRefresh();
+        navigatorKey.currentContext?.pop();
+      } else {
+        ref.read(loadingStateProvider.notifier).showInitial();
+        if (res?.msg.isNotEmpty == true && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                res!.msg,
+                style: const TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
-    await ref.read(deckListProvider.notifier).onRefresh();
-    navigatorKey.currentContext?.pop();
   }
 }
 

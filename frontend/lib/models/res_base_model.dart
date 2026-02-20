@@ -15,7 +15,7 @@ class ResBaseModel {
   static ResBaseModel defaultRes = ResBaseModel();
 
   factory ResBaseModel.fromJson(dynamic json) => ResBaseModel(
-    code: json['code'] ?? -1,
+    code: json['code'] ?? 0,
     msg: json['message']?.toString() ?? 'Unknown error',
     data: json['data'],
   );
@@ -24,7 +24,9 @@ class ResBaseModel {
   String msg;
   dynamic data;
   DioException? exception;
-  bool get isSuccess => code == 0;
+
+  bool get isSuccess => code != -1 && data != null;
+
   bool get hasException => exception != null;
 
   ResBaseModel copyWith({

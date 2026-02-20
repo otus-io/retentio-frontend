@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
 import 'package:wordupx/providers/theme_provider.dart';
 import 'package:wordupx/providers/locale_provider.dart';
-
-import '../../services/apis/auth_service.dart';
+import 'package:wordupx/screen/profile/providers/profile_provide.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -20,13 +21,13 @@ class ProfileScreen extends ConsumerWidget {
       body: ListView(
         children: [
           // 用户信息卡片
-          _buildUserProfileHeader(),
+          _buildUserProfileHeader(ref),
           const SizedBox(height: 16),
           const Divider(height: 1),
 
           // 语言设置
           ListTile(
-            leading: const Icon(Icons.language),
+            leading: Icon(LucideIcons.globe),
             title: Text(loc.changeLanguage),
             subtitle: Text(_getLanguageDisplayName(currentLocale)),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -36,7 +37,7 @@ class ProfileScreen extends ConsumerWidget {
 
           // 主题设置
           ListTile(
-            leading: const Icon(Icons.palette),
+            leading: const Icon(LucideIcons.palette),
             title: Text(loc.changeTheme),
             subtitle: Text(_getThemeDisplayName(currentTheme, loc)),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -46,22 +47,22 @@ class ProfileScreen extends ConsumerWidget {
 
           // 退出登录
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
+            leading: const Icon(LucideIcons.logOut, color: Colors.red),
             title: Text(loc.logout, style: const TextStyle(color: Colors.red)),
             trailing: const Icon(
               Icons.arrow_forward_ios,
               size: 16,
               color: Colors.red,
             ),
-            onTap: () => _showLogoutDialog(context, loc),
+            onTap: () => _showLogoutDialog(ref, loc),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildUserProfileHeader() {
-    const String username = 'Mango'; // 暂时写死
+  Widget _buildUserProfileHeader(WidgetRef ref) {
+    final user = ref.watch(profileProvide).user;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -72,7 +73,7 @@ class ProfileScreen extends ConsumerWidget {
             radius: 40,
             backgroundColor: Colors.blue.shade100,
             child: Text(
-              username[0].toUpperCase(),
+              user.username.isEmpty ? '' : user.username[0].toUpperCase(),
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
@@ -87,7 +88,7 @@ class ProfileScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  username,
+                  user.username,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -95,7 +96,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '@$username',
+                  user.email,
                   style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                 ),
               ],
@@ -229,36 +230,29 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  void _showLogoutDialog(BuildContext context, AppLocalizations loc) async {
-    final shouldLogout = await showDialog<bool>(
-      context: context,
+  void _showLogoutDialog(WidgetRef ref, AppLocalizations loc) async {
+    showDialog<bool>(
+      context: ref.context,
       builder: (context) => AlertDialog(
         title: Text(loc.logoutConfirmTitle),
         content: Text(loc.logoutConfirmMessage),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () {
+              context.pop();
+            },
             child: Text(loc.cancel),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () {
+              context.pop();
+              ref.read(profileProvide.notifier).logout();
+            },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: Text(loc.logout),
           ),
         ],
       ),
     );
-
-    if (shouldLogout == true && context.mounted) {
-      // 退出登录
-      await AuthService.logout();
-
-      // 跳转到登录页
-      if (context.mounted) {
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil('/login', (route) => false);
-      }
-    }
   }
 }
