@@ -9,15 +9,20 @@
 ## 前提条件
 
 - 打开 Swagger UI：
-  - **本地**: http://localhost:8080/docs
-  - **生产环境**: https://api.wordupx.com/docs
+  - **本地**: <http://localhost:8080/docs>
+  - **生产环境**: <https://api.wordupx.com/docs>
+
+> **时间戳规范：** API 中所有时间戳均使用 **UTC** 时区。
+> ISO 8601 字符串使用 `Z` 后缀（例如 `2026-02-08T12:00:00Z`）。
+> Unix 时间戳为自 Unix 纪元（1970-01-01T00:00:00Z）以来的秒数。
+> 客户端需自行进行本地时间的转换。
 
 ---
 
 ## API 接口参考
 
 | 接口 | 方法 | 说明 |
-|------|------|------|
+| ------ | ------ | ------ |
 | `/auth/register` | POST | 注册用户 |
 | `/auth/login` | POST | 登录 |
 | `/auth/logout` | POST | 登出（使令牌失效） |
@@ -72,7 +77,7 @@
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
   },
   "meta": {
-    "expires": "2026-02-14T14:05:20.826883808+09:00"
+    "expires": "2026-02-14T05:05:20Z"
   }
 }
 ```
@@ -192,6 +197,8 @@
 >
 > 使用 2 个模板时，每个词条会生成 **2 张卡片** — 每个方向各一张。
 
+<!-- -->
+
 > **理解 `rate`（速率）：**
 >
 > 速率控制**每天引入多少张新卡片**。系统会将新卡片均匀分布在一天中：
@@ -228,6 +235,7 @@
 **接口:** `GET /api/decks/{id}`
 
 **参数:**
+
 - `id`: `a1b2c3`（您的卡组 ID）
 
 **响应:**
@@ -302,14 +310,16 @@
 > **理解 `meta`（元数据）：**
 >
 > | 字段 | 说明 |
-> |------|------|
+> | ------ | ------ |
 > | `total`（总数） | 当前用户拥有的卡组总数 |
 > | `msg`（消息） | 状态信息 |
+
+<!-- -->
 
 > **理解 `stats`（统计信息）：**
 >
 > | 字段 | 说明 |
-> |------|------|
+> | ------ | ------ |
 > | `cards_count`（卡片总数） | 卡组中的卡片总数 |
 > | `facts_count`（词条总数） | 卡组中的词条总数 |
 > | `unseen_cards`（未学习卡片） | 从未复习过的新卡片数量 |
@@ -319,9 +329,13 @@
 > | `new_cards_today`（今日新增卡片） | 今天添加的卡片数量（从午夜开始计算） |
 > | `last_reviewed_at`（上次复习时间） | 最近一次复习的 Unix 时间戳（未复习过则为 `0`） |
 >
-> 统计信息是实时计算的。对于刚创建的空卡组，所有值都为 `0`。添加词条后，`cards_count` 和 `unseen_cards` 会增加。随着复习的进行，`reviewed_cards` 会增长，`unseen_cards` 会减少。
+> 统计信息是实时计算的。对于刚创建的空卡组，所有值都为 `0`。
+> 添加词条后，`cards_count` 和 `unseen_cards` 会增加。
+> 随着复习的进行，`reviewed_cards` 会增长，`unseen_cards` 会减少。
 >
-> 卡片总数取决于词条数和模板数：`cards_count = facts_count × 模板数量`。例如，20 个词条搭配 2 个模板（`[0,1]` 和 `[1,0]`）会生成 40 张卡片。
+> 卡片总数取决于词条数和模板数：
+> `cards_count = facts_count × 模板数量`。
+> 例如，20 个词条搭配 2 个模板（`[0,1]` 和 `[1,0]`）会生成 40 张卡片。
 >
 > 客户端计算学习进度百分比：`reviewed_cards / cards_count * 100`。
 
@@ -330,6 +344,7 @@
 **接口:** `PATCH /api/decks/{id}`
 
 **参数:**
+
 - `id`: `a1b2c3`（您的卡组 ID）
 
 **请求体:**
@@ -364,6 +379,7 @@
 **接口:** `DELETE /api/decks/{id}`
 
 **参数:**
+
 - `id`: `a1b2c3`（您的卡组 ID）
 
 > 此操作会永久删除卡组及其所有关联的词条、卡片和模板。
@@ -388,6 +404,7 @@
 **接口:** `POST /api/decks/{id}/facts/{operation}`
 
 **参数:**
+
 - `id`: `a1b2c3`（您的卡组 ID）
 - `operation`: `append`
 
@@ -440,6 +457,7 @@
 **接口:** `GET /api/decks/{id}/card`
 
 **参数:**
+
 - `id`: `a1b2c3`（您的卡组 ID）
 
 **响应:**
@@ -475,6 +493,7 @@
 **接口:** `PATCH /api/decks/{id}/card`
 
 **参数:**
+
 - `id`: `a1b2c3`（您的卡组 ID）
 
 **请求体:**
@@ -487,15 +506,21 @@
 }
 ```
 
-> 使用 GET 响应中的 `card.id` 作为 `card_id`。`last_review` 为 Unix 时间戳（秒）— 客户端通常使用 `Math.floor(Date.now() / 1000)`。
+> 使用 GET 响应中的 `card.id` 作为 `card_id`。
+> `last_review` 为 UTC Unix 时间戳（秒）—
+> 客户端通常使用 `Math.floor(Date.now() / 1000)`。
+
+<!-- -->
 
 > 💡 **计算最小和最大间隔（前端计算）：**
 >
-> 服务器只在每张卡片上存储 `last_review` 和 `due_date`。前端必须推算当前间隔并计算允许范围后再提交。同一请求中不能同时发送 `interval` 和 `hidden`。
+> 服务器只在每张卡片上存储 `last_review` 和 `due_date`。
+> 前端必须推算当前间隔并计算允许范围后再提交。
+> 同一请求中不能同时发送 `interval` 和 `hidden`。
 >
 > **第 1 步 — 推算当前间隔：**
 >
-> ```
+> ```text
 > current_interval = due_date - last_review    （最小 60 秒）
 > ```
 >
@@ -503,7 +528,7 @@
 >
 > **第 2 步 — 计算紧迫度：**
 >
-> ```
+> ```text
 > urgency = (now - last_review) / (due_date - last_review)
 > ```
 >
@@ -511,21 +536,23 @@
 >
 > 当卡片已逾期（`urgency >= 1`）：
 >
-> ```
+> ```text
 > min_interval = current_interval × 0.5
 > max_interval = current_interval × 4.0
 > ```
 >
 > 当卡片尚未到期（`urgency < 1`）：
 >
-> ```
+> ```text
 > min_interval = current_interval × ((0.5 - 1) × urgency + 1)
 > max_interval = current_interval × ((4.0 - 1) × urgency + 1)
 > ```
 >
 > **第 4 步 — 提交前验证：**
 >
-> 前端必须验证所选的 `interval` 满足 `min_interval <= interval <= max_interval`，然后再发送 PATCH 请求。
+> 前端必须验证所选的 `interval` 满足
+> `min_interval <= interval <= max_interval`，
+> 然后再发送 PATCH 请求。
 
 **响应:**
 
@@ -551,6 +578,7 @@
 **接口:** `PATCH /api/decks/{id}/card`
 
 **参数:**
+
 - `id`: `a1b2c3`
 
 **请求体:**

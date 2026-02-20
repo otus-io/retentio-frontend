@@ -22,6 +22,7 @@ BACKEND_CHANGED=$(git diff --cached --name-only -- 'backend-api/' | head -1)
 FRONTEND_CHANGED=$(git diff --cached --name-only -- 'frontend/' | head -1)
 # Exclude auto-generated swagger.yaml from YAML lint
 YAML_FILES=$(git diff --cached --name-only --diff-filter=ACM -- '*.yml' '*.yaml' | grep -v 'backend-api/docs/swagger.yaml' || true)
+MD_FILES=$(git diff --cached --name-only --diff-filter=ACM -- '*.md' '*.mdc' || true)
 
 FAILED=0
 
@@ -49,6 +50,34 @@ if [ -n "$YAML_FILES" ]; then
         fi
     else
         echo -e "${YELLOW}  ⚠ yamllint not found — skipping (install: pip install yamllint)${NC}"
+    fi
+
+    echo ""
+fi
+
+# =============================================================================
+# Markdown lint (only if .md/.mdc files changed)
+# =============================================================================
+if [ -n "$MD_FILES" ]; then
+    echo -e "${YELLOW}━━━ Markdown Checks ━━━${NC}"
+    echo "📋 Linting Markdown files..."
+
+    if command -v markdownlint &> /dev/null; then
+        if markdownlint --config .markdownlint.json $MD_FILES 2>&1; then
+            echo -e "${GREEN}  ✓ Markdown lint OK${NC}"
+        else
+            echo -e "${RED}  ✗ Markdown lint issues found${NC}"
+            FAILED=1
+        fi
+    elif command -v markdownlint-cli2 &> /dev/null; then
+        if markdownlint-cli2 $MD_FILES 2>&1; then
+            echo -e "${GREEN}  ✓ Markdown lint OK${NC}"
+        else
+            echo -e "${RED}  ✗ Markdown lint issues found${NC}"
+            FAILED=1
+        fi
+    else
+        echo -e "${YELLOW}  ⚠ markdownlint not found — skipping (install: npm install -g markdownlint-cli)${NC}"
     fi
 
     echo ""
@@ -92,6 +121,19 @@ if [ -n "$BACKEND_CHANGED" ]; then
     else
         echo -e "${RED}  ✗ go vet found issues${NC}"
         FAILED=1
+    fi
+
+    # --- golangci-lint ---
+    echo "🔎 Running golangci-lint..."
+    if command -v golangci-lint &> /dev/null; then
+        if (cd backend-api && golangci-lint run ./...); then
+            echo -e "${GREEN}  ✓ golangci-lint OK${NC}"
+        else
+            echo -e "${RED}  ✗ golangci-lint found issues${NC}"
+            FAILED=1
+        fi
+    else
+        echo -e "${YELLOW}  ⚠ golangci-lint not found — skipping (install: https://golangci-lint.run/welcome/install/)${NC}"
     fi
 
     # --- go build ---
@@ -164,7 +206,7 @@ fi
 # =============================================================================
 # Final result
 # =============================================================================
-if [ -z "$BACKEND_CHANGED" ] && [ -z "$FRONTEND_CHANGED" ] && [ -z "$YAML_FILES" ]; then
+if [ -z "$BACKEND_CHANGED" ] && [ -z "$FRONTEND_CHANGED" ] && [ -z "$YAML_FILES" ] && [ -z "$MD_FILES" ]; then
     echo -e "${GREEN}No backend, frontend, or YAML changes — skipping checks.${NC}"
 fi
 
