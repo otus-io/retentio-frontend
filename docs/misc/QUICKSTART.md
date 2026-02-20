@@ -240,7 +240,6 @@ You can view a single deck or list all your decks. Both responses include a `sta
     "owner": "swagger",
     "field": ["English", "Japanese"],
     "templates": [[0, 1]],
-    "facts": [],
     "rate": 20,
     "stats": {
       "cards_count": 0,
@@ -249,12 +248,14 @@ You can view a single deck or list all your decks. Both responses include a `sta
       "reviewed_cards": 0,
       "due_cards": 0,
       "hidden_cards": 0,
-      "new_cards_today": 0
-    }
-  },
-  "meta": {
+      "new_cards_today": 0,
+      "last_reviewed_at": 0
+    },
     "created_at": "2026-02-08T12:00:00Z",
     "updated_at": "2026-02-08T12:00:00Z"
+  },
+  "meta": {
+    "msg": "Deck retrieved successfully"
   }
 }
 ```
@@ -283,7 +284,8 @@ You can view a single deck or list all your decks. Both responses include a `sta
           "reviewed_cards": 0,
           "due_cards": 0,
           "hidden_cards": 0,
-          "new_cards_today": 0
+          "new_cards_today": 0,
+          "last_reviewed_at": 0
         },
         "created_at": "2026-02-08T12:00:00Z",
         "updated_at": "2026-02-08T12:00:00Z"
@@ -315,6 +317,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 > | `due_cards` | Cards currently due for review (due_date <= now) |
 > | `hidden_cards` | Cards hidden from review by the user |
 > | `new_cards_today` | Cards that were added today (since midnight) |
+> | `last_reviewed_at` | Unix timestamp of the most recent review (`0` if never reviewed) |
 >
 > Stats are computed on-the-fly. For a freshly created empty deck, all values are `0`. After adding facts, `cards_count` and `unseen_cards` will increase. As you review cards, `reviewed_cards` grows and `unseen_cards` decreases.
 >
