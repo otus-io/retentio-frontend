@@ -454,8 +454,6 @@
       "last_review": 1763269701,
       "due_date": 1763269702,
       "hidden": false,
-      "min_interval": 150,
-      "max_interval": 1200,
       "created_at": 1763269700
     },
     "urgency": 2598
@@ -491,75 +489,43 @@
 
 > 使用 GET 响应中的 `card.id` 作为 `card_id`。`last_review` 为 Unix 时间戳（秒）— 客户端通常使用 `Math.floor(Date.now() / 1000)`。
 
-> 💡 **滑动条选择间隔：**
+> 💡 **计算最小和最大间隔（前端计算）：**
 >
-> 在应用中，用户通过滑动条选择复习间隔：
-> - **左端** = `min_interval`（如 `150` 秒）→ 卡片较难，较快复习
-> - **右端** = `max_interval`（如 `1200` 秒）→ 卡片较简单，稍后复习
+> 服务器只在每张卡片上存储 `last_review` 和 `due_date`。前端必须推算当前间隔并计算允许范围后再提交。同一请求中不能同时发送 `interval` 和 `hidden`。
 >
-> 间隔值的单位是秒。
-> 提交的间隔**必须**在 `[min_interval, max_interval]` 范围内，否则 API 会拒绝请求。同一请求中不能同时发送 `interval` 和 `hidden`。
-
-> 📖 **间隔复习算法详解：**
+> **第 1 步 — 推算当前间隔：**
 >
-> 系统使用**基于紧迫度的间隔复习**算法。完整流程如下：
+> ```
+> current_interval = due_date - last_review    （最小 60 秒）
+> ```
 >
-> **1. 紧迫度（Urgency）— 决定下一张显示哪张卡片**
+> 对于全新卡片（`last_review = 0`），将 `current_interval` 视为 60 秒。
 >
-> 每张卡片都有 `last_review`（上次复习时间）和 `due_date`（到期时间）。紧迫度的计算方式：
+> **第 2 步 — 计算紧迫度：**
 >
 > ```
 > urgency = (now - last_review) / (due_date - last_review)
 > ```
 >
-> - `urgency >= 1.0` → 卡片已**逾期**（已过到期时间）
-> - `urgency < 1.0` → 卡片**尚未到期**，但仍可能被显示
+> **第 3 步 — 计算最小和最大间隔：**
 >
-> 系统会将**紧迫度最高**的未隐藏卡片作为下一张最紧急卡片。
->
-> **2. 间隔计算 — min/max 是如何确定的**
->
-> 当前间隔为 `due_date - last_review`（最小 60 秒）。两个因子决定下次复习的范围：
->
-> | 因子 | 值 | 含义 |
-> |------|-----|------|
-> | `minFactor` | 0.5 | 较难 — 间隔减半 |
-> | `maxFactor` | 4.0 | 简单 — 间隔翻四倍 |
->
-> **当卡片已逾期**（`urgency >= 1`）：
+> 当卡片已逾期（`urgency >= 1`）：
 >
 > ```
-> min_interval = 当前间隔 × 0.5
-> max_interval = 当前间隔 × 4.0
+> min_interval = current_interval × 0.5
+> max_interval = current_interval × 4.0
 > ```
 >
-> **当卡片尚未到期**（`urgency < 1`），因子会按紧迫度等比缩小，提前复习时增长幅度较小：
+> 当卡片尚未到期（`urgency < 1`）：
 >
 > ```
-> min_interval = 当前间隔 × ((0.5 - 1) × urgency + 1)
-> max_interval = 当前间隔 × ((4.0 - 1) × urgency + 1)
+> min_interval = current_interval × ((0.5 - 1) × urgency + 1)
+> max_interval = current_interval × ((4.0 - 1) × urgency + 1)
 > ```
 >
-> **3. 更新 — 提交间隔后会发生什么**
+> **第 4 步 — 提交前验证：**
 >
-> 当您发送 `{ "card_id": "xyz12345", "interval": 600, "last_review": 1763272400 }` 时：
->
-> ```
-> last_review = now（当前时间）
-> due_date    = now + interval
-> ```
->
-> 下次该卡片出现时，新的间隔范围将基于更新后的间隔计算。这意味着间隔会**随时间增长** — 您对一张卡片越熟悉，再次看到它的时间间隔就越长。
->
-> **4. 示例演示**
->
-> | 步骤 | 当前间隔 | 您的选择 | 下次间隔范围 |
-> |------|---------|---------|-------------|
-> | 第 1 次复习 | 60 秒（1 分钟） | 120 秒（中间值） | 60 秒 – 480 秒 |
-> | 第 2 次复习 | 120 秒（2 分钟） | 240 秒（中间值） | 120 秒 – 960 秒 |
-> | 第 3 次复习 | 240 秒（4 分钟） | 480 秒（中间值） | 240 秒 – 1920 秒 |
->
-> 选择接近最大值会使增长更快（最多 4 倍），而选择接近最小值则会**缩短**间隔（最低 0.5 倍）。
+> 前端必须验证所选的 `interval` 满足 `min_interval <= interval <= max_interval`，然后再发送 PATCH 请求。
 
 **响应:**
 

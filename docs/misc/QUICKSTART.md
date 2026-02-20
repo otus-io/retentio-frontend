@@ -454,8 +454,6 @@ You can view a single deck or list all your decks. Both responses include a `sta
       "last_review": 1763269701,
       "due_date": 1763269702,
       "hidden": false,
-      "min_interval": 150,
-      "max_interval": 1200,
       "created_at": 1763269700
     },
     "urgency": 2598
@@ -491,75 +489,43 @@ After viewing a card, you need to update its interval based on how well you reme
 
 > Use `card.id` from the GET response as `card_id`. `last_review` is a Unix timestamp (seconds) — typically `Math.floor(Date.now() / 1000)` on the client.
 
-> 💡 **How the interval slider works:**
+> 💡 **Calculating min and max interval (client-side):**
 >
-> In the app, users select an interval using a slider:
-> - **Left end** = `min_interval` (e.g., `150` seconds) → Card was difficult, review sooner
-> - **Right end** = `max_interval` (e.g., `1200` seconds) → Card was easy, review later
+> The server stores only `last_review` and `due_date` on each card. The frontend must derive the current interval and compute the allowed range before submitting. Do not send both `interval` and `hidden` in the same request.
 >
-> The interval value is in seconds.
-> The submitted interval **must** be within the range `[min_interval, max_interval]`, or the API will reject it. Do not send both `interval` and `hidden` in the same request.
-
-> 📖 **How the spaced repetition algorithm works:**
+> **Step 1 — Derive the current interval:**
 >
-> The system uses an **urgency-based spaced repetition** algorithm. Here's the full flow:
+> ```
+> current_interval = due_date - last_review    (minimum 60 seconds)
+> ```
 >
-> **1. Urgency — which card to show next**
+> For a brand-new card (`last_review = 0`), treat `current_interval` as 60 seconds.
 >
-> Every card has `last_review` and `due_date` timestamps. Urgency is calculated as:
+> **Step 2 — Compute urgency:**
 >
 > ```
 > urgency = (now - last_review) / (due_date - last_review)
 > ```
 >
-> - `urgency >= 1.0` → the card is **overdue** (past its due date)
-> - `urgency < 1.0` → the card is **not yet due** but may still be shown
+> **Step 3 — Compute min and max interval:**
 >
-> The card with the **highest urgency** (that isn't hidden) is served as the next urgent card.
->
-> **2. Interval calculation — how min/max are determined**
->
-> The current interval is `due_date - last_review` (minimum 60 seconds). Two factors determine the next review range:
->
-> | Factor | Value | Meaning |
-> |--------|-------|---------|
-> | `minFactor` | 0.5 | Hard — halve the interval |
-> | `maxFactor` | 4.0 | Easy — quadruple the interval |
->
-> **When the card is overdue** (`urgency >= 1`):
+> When the card is overdue (`urgency >= 1`):
 >
 > ```
 > min_interval = current_interval × 0.5
 > max_interval = current_interval × 4.0
 > ```
 >
-> **When the card is not yet due** (`urgency < 1`), the factors are scaled down proportionally by urgency so that reviewing early yields a smaller growth:
+> When the card is not yet due (`urgency < 1`):
 >
 > ```
 > min_interval = current_interval × ((0.5 - 1) × urgency + 1)
 > max_interval = current_interval × ((4.0 - 1) × urgency + 1)
 > ```
 >
-> **3. Update — what happens when you submit an interval**
+> **Step 4 — Validate before sending:**
 >
-> When you send `{ "card_id": "xyz12345", "interval": 600, "last_review": 1763272400 }`:
->
-> ```
-> last_review = now
-> due_date    = now + interval
-> ```
->
-> The next time this card appears, the new interval range will be based on this updated interval. This means intervals **grow over time** — the better you know a card, the longer until you see it again.
->
-> **4. Example walkthrough**
->
-> | Step | Current interval | You choose | Next interval range |
-> |------|-----------------|------------|---------------------|
-> | 1st review | 60s (1 min) | 120s (midpoint) | 60s – 480s |
-> | 2nd review | 120s (2 min) | 240s (midpoint) | 120s – 960s |
-> | 3rd review | 240s (4 min) | 480s (midpoint) | 240s – 1920s |
->
-> Picking closer to the max makes intervals grow faster (up to 4×), while picking closer to the min **shrinks** them (down to 0.5×).
+> The frontend must verify that the chosen `interval` satisfies `min_interval <= interval <= max_interval` before sending the PATCH request.
 
 **Response:**
 
