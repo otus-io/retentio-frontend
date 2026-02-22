@@ -136,9 +136,9 @@ if [ -n "$BACKEND_CHANGED" ]; then
         echo -e "${YELLOW}  ⚠ golangci-lint not found — skipping (install: https://golangci-lint.run/welcome/install/)${NC}"
     fi
 
-    # --- go build ---
+    # --- go build (to /tmp so no binary is left in the repo) ---
     echo "🔨 Checking Go build..."
-    if (cd backend-api && go build ./...); then
+    if (cd backend-api && go build -o /tmp/wordupx-api-check .); then
         echo -e "${GREEN}  ✓ Go build OK${NC}"
     else
         echo -e "${RED}  ✗ Go build failed${NC}"
