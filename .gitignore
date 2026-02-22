@@ -58,8 +58,9 @@ app.*.map.json
 /android/app/release
 /frontend/ios/Podfile.lock
 
-# Go compiled binary
+# Go compiled binaries (dev-run.sh, run.sh)
 backend-api/wordupx
+backend-api/backend-api
 
 # Design docs (English only, not tracked)
 docs/design-doc/
