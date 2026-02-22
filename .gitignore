@@ -1,5 +1,7 @@
 # Node / npm
 node_modules/
+**/dist/
+ca/
 
 # Miscellaneous
 *.class
