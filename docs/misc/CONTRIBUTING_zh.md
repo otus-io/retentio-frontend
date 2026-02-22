@@ -83,6 +83,7 @@ PR 标题**必须**遵循以下格式：
 #### 范围
 
 范围应指明受影响的模块或组件：
+
 - `auth` - 认证相关更改
 - `deck` - 卡组管理
 - `card` - 卡片操作
@@ -187,6 +188,7 @@ test(auth): add unit tests for token refresh
 ### 原子提交
 
 每个提交应该：
+
 - 代表单一的逻辑更改
 - 能够独立编译并通过测试
 - 不破坏构建
@@ -204,6 +206,7 @@ test(auth): add unit tests for token refresh
 ### 提交消息示例
 
 **好的示例：**
+
 ```
 feat(auth): add JWT token refresh endpoint
 
@@ -214,6 +217,7 @@ Closes #42
 ```
 
 **不好的示例：**
+
 ```
 fixed stuff
 ```

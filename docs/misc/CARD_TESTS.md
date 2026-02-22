@@ -7,6 +7,7 @@ Run: `go test ./tests/integration/... -v`
 ## UpdateUrgentCard (`PATCH /api/decks/{id}/urgent-card`)
 
 ### TestUpdateCard
+
 | Case | Status |
 |---|---|
 | Update card interval successfully | 200 |
@@ -17,6 +18,7 @@ Run: `go test ./tests/integration/... -v`
 | Update visibility successfully | 200 |
 
 ### TestUpdateCardIntervalValidation
+
 | Case | Status |
 |---|---|
 | Reject interval below MinInterval | 400 |
@@ -27,18 +29,21 @@ Run: `go test ./tests/integration/... -v`
 | Reject request with no recognized fields | 400 |
 
 ### TestUpdateCardVisibility
+
 | Case | Status |
 |---|---|
 | Unhide a previously hidden card | 200 |
 | Reject empty request body | 400 |
 
 ### TestUpdateCardBasicVerification
+
 | Case | Validates |
 |---|---|
 | Interval update | `due_date == last_review + interval`, `last_review ≈ now`, Redis matches response |
 | Visibility update | `hidden_status` set, no interval fields in response, timestamps unchanged |
 
 ### TestUpdateCardFactIDVerification
+
 | Case | Status |
 |---|---|
 | Matching fact_id succeeds | 200 |
@@ -48,6 +53,7 @@ Run: `go test ./tests/integration/... -v`
 ## GetCards (`GET /api/decks/{id}/cards`)
 
 ### TestGetCards
+
 | Case | Status |
 |---|---|
 | Returns card stats successfully | 200 |
@@ -57,6 +63,7 @@ Run: `go test ./tests/integration/... -v`
 | Non-existent deck | 404 |
 
 ### TestGetCardsHiddenFilter
+
 | Case | Validates |
 |---|---|
 | Returns correct hidden stats and facts | total_cards, hidden_count, hidden_facts |
@@ -64,6 +71,7 @@ Run: `go test ./tests/integration/... -v`
 ## GetUrgentCard (`GET /api/decks/{id}/urgent-card`)
 
 ### TestGetNextUrgentCard
+
 | Case | Status |
 |---|---|
 | Get urgent card successfully | 200 |
@@ -73,6 +81,7 @@ Run: `go test ./tests/integration/... -v`
 | Non-existent deck | 404 |
 
 ### TestNextUrgentCardUrgencySelection
+
 | Case | Validates |
 |---|---|
 | Most overdue card selected | Highest urgency wins |
@@ -89,29 +98,37 @@ Run: `go test ./tests/integration/... -v`
 ## Review Cycle (GetUrgentCard + UpdateUrgentCard)
 
 ### TestFullReviewCycle
+
 - Add 3 facts, get urgent card, review it, verify next card is different, verify reviewed card is "seen" in Redis.
 
 ### TestReviewCycleMinInterval
+
 - 4 rounds always choosing `min_interval`. Verifies `due_date`, `last_review`, and Redis each round. Interval shrinks: 500 → 250 → 125 → 62.
 
 ### TestReviewCycleMaxInterval
+
 - 4 rounds always choosing `max_interval`. Verifies `due_date`, `last_review`, and Redis each round. Interval grows: 4000 → 16000 → 64000 → 256000.
 
 ### TestMultiCardUrgencyOrdering
+
 - 3 cards with distinct urgencies. Reviews in order: most urgent → least urgent. Verifies each round picks the correct next card.
 
 ### TestReviewDoesNotCorruptOtherCards
+
 - Reviews 1 card, verifies the other 2 cards have unchanged `LastReview`, `DueDate`, `MinInterval`, `MaxInterval`, and `Hidden` in Redis.
 
 ### TestHideUnhideMidCycle
+
 - Hides card 0 mid-session, verifies GetNext switches to card 1. Unhides card 0, verifies GetNext returns card 0 again.
 
 ### TestCardIndexCorrectness
+
 - Cross-verifies `card_index` matches `fact_id` in Redis, round-trip GetNext+Update modifies correct card, card_index consistent after AddFact with spread, idempotent without mutations, correct with multiple templates.
 
 ## RescheduleDeck (`POST /api/decks/{id}/reschedule`)
 
 ### TestRescheduleDeck
+
 | Case | Status |
 |---|---|
 | Reschedule all cards by N days | 200 |

@@ -36,6 +36,7 @@ flutter test test/utils/debounce_util_test.dart
 所有测试位于 `frontend/test/` 目录下：
 
 ### 单元测试
+
 - **models/** - 模型解析（fromJson、toJson）及属性访问器
 - **utils/** - 工具类（DebounceUtil 等）
 - **extensions/** - Widget 和 Context 扩展方法
@@ -44,6 +45,7 @@ flutter test test/utils/debounce_util_test.dart
 - **providers/** - 状态类和通知器
 
 ### Widget 测试
+
 - **screen/home/** - HomeScreen 渲染、文本、图标、多语言
 - **screen/login/** - LoginScreen 表单字段、按钮、主题切换、语言下拉框
 - **screen/login/widgets/** - ForgotPassword 表单、验证、邮箱输入
@@ -54,6 +56,7 @@ flutter test test/utils/debounce_util_test.dart
 - **widgets/** - BottomPopup 弹出/关闭、CommonRefresher 加载/空/子组件状态
 
 ### 辅助工具与报告
+
 - **helpers/** - 测试辅助工具（InMemoryHydratedStorage、测试组件包装器）
 - **reports/** - 生成的测试报告（已加入 gitignore）
 
