@@ -55,7 +55,7 @@ class CardNotifier extends Notifier<CardState> {
     await CardService.updateCard(deck.id, {
       'card_id': state.cardDetail?.card.id,
       'interval': 150,
-      'last_review': state.cardDetail?.card.lastReview,
+      'last_review': DateTime.now().millisecondsSinceEpoch ~/ 1000,
     });
   }
 
