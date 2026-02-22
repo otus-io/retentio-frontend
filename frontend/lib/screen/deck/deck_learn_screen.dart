@@ -1,57 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wordupx/extensions/context_extension.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
 import 'package:wordupx/models/deck.dart';
-import 'package:wordupx/models/card.dart' as model;
+import 'package:wordupx/screen/deck/providers/card_provider.dart';
+import 'package:wordupx/screen/deck/widgets/flash_card/flash_card.dart';
 
-import '../../services/apis/card_service.dart';
+import '../../providers/loading_state_provider.dart';
 
-class DeckLearnScreen extends StatefulWidget {
+class DeckLearnScreen extends ConsumerStatefulWidget {
   final Deck deck;
 
   const DeckLearnScreen({super.key, required this.deck});
 
   @override
-  State<DeckLearnScreen> createState() => _DeckLearnScreenState();
+  ConsumerState<DeckLearnScreen> createState() => _DeckLearnScreenState();
 }
 
-class _DeckLearnScreenState extends State<DeckLearnScreen> {
-  model.Card? _currentCard;
-  bool _isLoading = true;
-  String? _error;
-  bool _showAnswer = false;
-  int _cardsStudied = 0; // 已学习的卡片数
-  int _totalCardsInSession = 0; // 本次学习会话的总卡片数
-
-  @override
-  void initState() {
-    super.initState();
-    // 初始化本次会话的总卡片数（新卡片 + 待复习卡片）
-    _totalCardsInSession =
-        widget.deck.stats.unseenCards + widget.deck.reviewCards;
-    _loadNextCard();
-  }
-
-  Future<void> _loadNextCard() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-      _showAnswer = false;
-    });
-
-    try {
-      final card = await CardService.getNextDueCard(widget.deck.id);
-      setState(() {
-        _currentCard = card;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
-
+class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -64,30 +30,43 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
   }
 
   Widget _buildBody(ThemeData theme, AppLocalizations loc) {
-    if (_isLoading) {
+    final isLoading = ref.read(
+      cardProvider(widget.deck).select((value) => value.isLoading),
+    );
+    final card = ref.watch(
+      cardProvider(widget.deck).select((value) => value.cardDetail),
+    );
+    if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              'Error: $_error',
-              style: const TextStyle(color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(onPressed: _loadNextCard, child: Text(loc.retry)),
-          ],
-        ),
-      );
-    }
+    // if (_error != null) {
+    //   return Center(
+    //     child: Column(
+    //       mainAxisAlignment: MainAxisAlignment.center,
+    //       children: [
+    //         const Icon(Icons.error_outline, size: 64, color: Colors.grey),
+    //         const SizedBox(height: 16),
+    //         Text(
+    //           'Error: $_error',
+    //           style: const TextStyle(color: Colors.grey),
+    //           textAlign: TextAlign.center,
+    //         ),
+    //         const SizedBox(height: 16),
+    //         ElevatedButton(onPressed: _loadNextCard, child: Text(loc.retry)),
+    //       ],
+    //     ),
+    //   );
+    // }
 
-    if (_currentCard == null) {
+    final totalCardsInSession = ref
+        .read(cardProvider(widget.deck).notifier)
+        .totalCardsInSession;
+    final cardsStudied = ref.watch(
+      cardProvider(widget.deck).select((value) => value.cardsStudied),
+    );
+
+    if (card == null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -114,12 +93,12 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
       );
     }
 
-    return Column(
+    return Stack(
       children: [
         // 进度指示器
         LinearProgressIndicator(
-          value: _totalCardsInSession > 0
-              ? _cardsStudied / _totalCardsInSession
+          value: totalCardsInSession > 0
+              ? cardsStudied / totalCardsInSession
               : 0.0,
           minHeight: 4,
           backgroundColor: theme.brightness == Brightness.dark
@@ -128,39 +107,45 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
         ),
 
         // 卡片内容区域
-        Expanded(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // 问题卡片
-                  _buildCardFace(
-                    context,
-                    _currentCard!.front,
-                    'Question',
-                    Colors.blue,
-                  ),
-
-                  if (_showAnswer) ...[
-                    const SizedBox(height: 24),
-                    // 答案卡片
-                    _buildCardFace(
-                      context,
-                      _currentCard!.back,
-                      'Answer',
-                      Colors.green,
-                    ),
-                  ],
-                ],
+        Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FlashCard(
+                flashCardController: ref
+                    .read(cardProvider(widget.deck).notifier)
+                    .flashCardController,
+                width: double.infinity,
+                frontWidget: _buildCardFace(
+                  context,
+                  card.card.front,
+                  'Question',
+                  Colors.blue,
+                ),
+                backWidget: _buildCardFace(
+                  context,
+                  card.card.back,
+                  'Answer',
+                  Colors.green,
+                ),
+                onFlip: (value) {
+                  ref
+                      .read(cardProvider(widget.deck).notifier)
+                      .toggleShowAnswer();
+                },
               ),
-            ),
+              SizedBox(height: 100),
+            ],
           ),
         ),
 
         // 底部按钮区域
-        _buildBottomButtons(theme, loc),
+        Positioned(
+          bottom: 0,
+          width: ref.context.width,
+          child: _buildBottomButtons(theme, loc),
+        ),
       ],
     );
   }
@@ -171,6 +156,9 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
     String label,
     Color color,
   ) {
+    final loadingState = ref.watch(
+      cardProvider(widget.deck).select((value) => value.loadingState),
+    );
     return Container(
       width: double.infinity,
       constraints: const BoxConstraints(minHeight: 200),
@@ -194,7 +182,7 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            content,
+            loadingState == LoadingState.initial ? '' : content,
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w500,
@@ -220,120 +208,61 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
         ],
       ),
       child: SafeArea(
-        child: !_showAnswer
-            ? ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _showAnswer = true;
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+        child: Consumer(
+          builder: (context, ref, child) {
+            final showAnswer = ref.watch(
+              cardProvider(widget.deck).select((value) => value.showAnswer),
+            );
+            return Column(
+              children: [
+                ElevatedButton(
+                  onPressed: () async {
+                    final isFond = ref
+                        .read(cardProvider(widget.deck).notifier)
+                        .flashCardController
+                        .isFront;
+                    if (isFond) {
+                      ref
+                          .read(cardProvider(widget.deck).notifier)
+                          .flashCardController
+                          .flip();
+                    } else {
+                      await ref
+                          .read(cardProvider(widget.deck).notifier)
+                          .nextCard();
+                      ref
+                          .read(cardProvider(widget.deck).notifier)
+                          .flashCardController
+                          .showFront();
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 8,
+                    children: [
+                      if (showAnswer) const Icon(Icons.visibility),
+                      Text(
+                        showAnswer ? loc.showAnswer : loc.review,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.visibility),
-                    const SizedBox(width: 8),
-                    Text(
-                      loc.showAnswer,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            : Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // TODO: 提交答案为"困难"
-                        setState(() {
-                          _cardsStudied++;
-                        });
-                        _loadNextCard();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          const Icon(Icons.close, size: 20),
-                          const SizedBox(height: 4),
-                          Text(loc.hard, style: const TextStyle(fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // TODO: 提交答案为"一般"
-                        setState(() {
-                          _cardsStudied++;
-                        });
-                        _loadNextCard();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          const Icon(Icons.remove, size: 20),
-                          const SizedBox(height: 4),
-                          Text(loc.good, style: const TextStyle(fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // TODO: 提交答案为"简单"
-                        setState(() {
-                          _cardsStudied++;
-                        });
-                        _loadNextCard();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          const Icon(Icons.check, size: 20),
-                          const SizedBox(height: 4),
-                          Text(loc.easy, style: const TextStyle(fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

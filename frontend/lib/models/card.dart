@@ -1,45 +1,64 @@
 class CardDetail {
-  final int factIndex;
-  final int templateIndex;
-  final int lastReview;
-  final int dueDate;
-  final bool hidden;
-  final int minCalculation;
-  final int maxCalculation;
+  Card card;
+  double urgency;
 
-  CardDetail({
-    required this.factIndex,
-    required this.templateIndex,
-    required this.lastReview,
-    required this.dueDate,
-    required this.hidden,
-    required this.minCalculation,
-    required this.maxCalculation,
-  });
+  CardDetail({required this.card, required this.urgency});
 
-  factory CardDetail.fromJson(Map<String, dynamic> json) {
+  factory CardDetail.fromJson(Map<String, dynamic> json) => CardDetail(
+    card: Card.fromJson(json["card"]),
+    urgency: json["urgency"]?.toDouble(),
+  );
+
+  Map<String, dynamic> toJson() => {"card": card.toJson(), "urgency": urgency};
+
+  CardDetail? copyWith({Fact? fact}) {
     return CardDetail(
-      factIndex: json['fact_index'] as int? ?? 0,
-      templateIndex: json['template_index'] as int? ?? 0,
-      lastReview: json['last_review'] as int? ?? 0,
-      dueDate: json['due_date'] as int? ?? 0,
-      hidden: json['hidden'] as bool? ?? false,
-      minCalculation: json['min_calculation'] as int? ?? 0,
-      maxCalculation: json['max_calculation'] as int? ?? 0,
+      card: card.copyWith(fact: fact),
+      urgency: urgency,
     );
   }
+}
 
-  Map<String, dynamic> toJson() {
-    return {
-      'fact_index': factIndex,
-      'template_index': templateIndex,
-      'last_review': lastReview,
-      'due_date': dueDate,
-      'hidden': hidden,
-      'min_calculation': minCalculation,
-      'max_calculation': maxCalculation,
-    };
-  }
+class Card {
+  int createdAt;
+  int dueDate;
+  String factId;
+  bool hidden;
+  String id;
+  int lastReview;
+  int templateIndex;
+  Fact? fact;
+
+  Card({
+    required this.createdAt,
+    required this.dueDate,
+    required this.factId,
+    required this.hidden,
+    required this.id,
+    required this.lastReview,
+    required this.templateIndex,
+    this.fact,
+  });
+
+  factory Card.fromJson(Map<String, dynamic> json) => Card(
+    createdAt: json["created_at"],
+    dueDate: json["due_date"],
+    factId: json["fact_id"],
+    hidden: json["hidden"],
+    id: json["id"],
+    lastReview: json["last_review"],
+    templateIndex: json["template_index"],
+  );
+
+  Map<String, dynamic> toJson() => {
+    "created_at": createdAt,
+    "due_date": dueDate,
+    "fact_id": factId,
+    "hidden": hidden,
+    "id": id,
+    "last_review": lastReview,
+    "template_index": templateIndex,
+  };
 
   /// 是否需要复习（到期时间小于当前时间）
   bool get isDue {
@@ -49,107 +68,43 @@ class CardDetail {
 
   /// 是否是新卡片（从未复习过）
   bool get isNew => lastReview == 0;
-}
-
-class Card {
-  final CardDetail card;
-  final int cardIndex;
-  final int defInterval;
-  final List<String> fact;
-  final int hiddenCards;
-  final int maxInterval;
-  final int minInterval;
-  final List<int> template;
-  final double urgency;
-
-  Card({
-    required this.card,
-    required this.cardIndex,
-    required this.defInterval,
-    required this.fact,
-    required this.hiddenCards,
-    required this.maxInterval,
-    required this.minInterval,
-    required this.template,
-    required this.urgency,
-  });
-
-  factory Card.fromJson(Map<String, dynamic> json) {
-    // 检查是否是简化版（直接包含 CardDetail 字段）还是完整版（嵌套 card 对象）
-    final bool isSimplified =
-        json.containsKey('fact_index') && !json.containsKey('card');
-
-    if (isSimplified) {
-      // 简化版：直接使用顶层的 CardDetail 字段
-      return Card(
-        card: CardDetail.fromJson(json),
-        cardIndex: json['card_index'] as int? ?? 0,
-        defInterval: json['def_interval'] as int? ?? 0,
-        fact:
-            (json['fact'] as List<dynamic>?)
-                ?.map((e) => e.toString())
-                .toList() ??
-            [],
-        hiddenCards: json['hidden_cards'] as int? ?? 0,
-        maxInterval: json['max_interval'] as int? ?? 0,
-        minInterval: json['min_interval'] as int? ?? 0,
-        template:
-            (json['template'] as List<dynamic>?)
-                ?.map((e) => e as int)
-                .toList() ??
-            [],
-        urgency: (json['urgency'] as num?)?.toDouble() ?? 0.0,
-      );
-    } else {
-      // 完整版：使用嵌套的 card 对象
-      return Card(
-        card: CardDetail.fromJson(json['card'] as Map<String, dynamic>),
-        cardIndex: json['card_index'] as int? ?? 0,
-        defInterval: json['def_interval'] as int? ?? 0,
-        fact:
-            (json['fact'] as List<dynamic>?)
-                ?.map((e) => e.toString())
-                .toList() ??
-            [],
-        hiddenCards: json['hidden_cards'] as int? ?? 0,
-        maxInterval: json['max_interval'] as int? ?? 0,
-        minInterval: json['min_interval'] as int? ?? 0,
-        template:
-            (json['template'] as List<dynamic>?)
-                ?.map((e) => e as int)
-                .toList() ??
-            [],
-        urgency: (json['urgency'] as num?)?.toDouble() ?? 0.0,
-      );
-    }
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'card': card.toJson(),
-      'card_index': cardIndex,
-      'def_interval': defInterval,
-      'fact': fact,
-      'hidden_cards': hiddenCards,
-      'max_interval': maxInterval,
-      'min_interval': minInterval,
-      'template': template,
-      'urgency': urgency,
-    };
-  }
 
   /// 获取卡片正面内容（通常是第一个 fact）
-  String get front => fact.isNotEmpty ? fact[0] : '';
+  String get front => fact!.fields.isNotEmpty ? fact!.fields[0] : '';
 
   /// 获取卡片背面内容（通常是第二个 fact）
-  String get back => fact.length > 1 ? fact[1] : '';
-
-  /// 是否需要复习
-  bool get isDue => card.isDue;
-
-  /// 是否是新卡片
-  bool get isNew => card.isNew;
+  String get back => fact!.fields.length > 1 ? fact!.fields[1] : '';
 
   /// 是否被隐藏
-  bool get isHidden => card.hidden;
+  bool get isHidden => hidden;
+
+  Card copyWith({Fact? fact}) {
+    return Card(
+      createdAt: createdAt,
+      dueDate: dueDate,
+      factId: factId,
+      hidden: hidden,
+      id: id,
+      lastReview: lastReview,
+      templateIndex: templateIndex,
+      fact: fact,
+    );
+  }
+}
+
+class Fact {
+  List<String> fields;
+  String id;
+
+  Fact({required this.fields, required this.id});
+
+  factory Fact.fromJson(Map<String, dynamic> json) => Fact(
+    fields: List<String>.from(json["fields"].map((x) => x)),
+    id: json["id"],
+  );
+
+  Map<String, dynamic> toJson() => {
+    "fields": List<dynamic>.from(fields.map((x) => x)),
+    "id": id,
+  };
 }

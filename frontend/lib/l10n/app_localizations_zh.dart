@@ -200,4 +200,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get template => '模版';
+
+  @override
+  String get next => '下一个';
 }
