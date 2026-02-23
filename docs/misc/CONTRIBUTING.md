@@ -83,10 +83,10 @@ PR titles **MUST** follow the format:
 #### Scope
 
 The scope should indicate the affected module or component:
+
 - `auth` - Authentication related changes
 - `deck` - Deck management
 - `card` - Card operations
-- `media` - Media handling
 - `api` - General API changes
 - `frontend` - Frontend/mobile app changes
 - `ci` - CI/CD pipeline changes
@@ -188,6 +188,7 @@ Every PR should include:
 ### Atomic Commits
 
 Each commit should:
+
 - Represent a single logical change
 - Be compilable and pass tests independently
 - Not break the build
@@ -205,6 +206,7 @@ Each commit should:
 ### Example Commit Messages
 
 **Good:**
+
 ```
 feat(auth): add JWT token refresh endpoint
 
@@ -215,6 +217,7 @@ Closes #42
 ```
 
 **Bad:**
+
 ```
 fixed stuff
 ```

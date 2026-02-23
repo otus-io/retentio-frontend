@@ -20,6 +20,7 @@ void main() {
         final detail = CardDetail.fromJson(json);
         expect(detail.card.id, "xyz12345");
         expect(detail.urgency, 0.75);
+
       });
     });
   });

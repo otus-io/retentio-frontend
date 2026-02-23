@@ -21,10 +21,10 @@ WordUpX is a vocabulary learning app with a Go backend (gorilla/mux, Redis, JWT)
 - Prefer clear naming over comments; add comments only for complex logic
 
 ## Documentation
-- All user-facing docs must have English and Chinese versions (e.g., `FOO.md` + `FOO_zh.md`)
+- All user-facing docs must have English and Chinese versions (e.g., `FOO.md` + `FOO_zh.md`), **except** design docs (`docs/design-doc/`) which are English only
 - Keep `docs/API_PROGRESS_TRACKER.md` updated when adding/changing endpoints
 
 ## Key Principles
 - Never modify production code to make tests pass — tests expose bugs for developers to fix
-- RESTful API design (no RPC-style endpoints) — see `docs/DESIGN_DECISIONS.md`
+- RESTful API design (no RPC-style endpoints) — see `docs/design-doc/restful-api-design.md`
 - CI must pass before merge: `gofmt`, `go vet`, `go test`, `dart format`, `flutter analyze`, `flutter test`

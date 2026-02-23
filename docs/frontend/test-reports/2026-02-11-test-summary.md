@@ -12,6 +12,7 @@
 **状态：** 失败（已有测试，非新增测试套件）
 
 **错误信息：**
+
 ```
 Bad state: No ProviderScope found
 ```
@@ -20,6 +21,7 @@ Bad state: No ProviderScope found
 `MyApp` 是一个 `ConsumerStatefulWidget`（Riverpod），需要一个 `ProviderScope` 作为祖先组件。测试中直接调用了 `tester.pumpWidget(const MyApp())`，但没有用 `ProviderScope` 包裹。
 
 **位置：**
+
 - 测试文件：`test/widget_test.dart`，第 16 行
 - 源文件：`lib/main.dart`，第 65 行（`_MyAppState.build`）
 
@@ -39,6 +41,7 @@ await tester.pumpWidget(
 ### 2. `test/models/deck_test.dart` — Deck fromJson 系列（6 项失败）
 
 **失败的测试：**
+
 - `parses deck with owner as object`
 - `parses deck with owner as string`
 - `parses templates as nested list [[0], [1]]`
@@ -61,6 +64,7 @@ templates: List<List<int>>.from(
 **问题：** 当 API 返回扁平列表 `[0, 1]` 而非嵌套列表 `[[0], [1]]` 时，代码尝试对 `int` 调用 `.map()`，导致崩溃。
 
 **错误信息：**
+
 ```
 NoSuchMethodError: Class 'int' has no instance method 'map'.
 Receiver: 0
@@ -68,6 +72,7 @@ Tried calling: map(Closure: (dynamic) => dynamic)
 ```
 
 **修复建议：** 添加兼容处理，同时支持扁平和嵌套列表：
+
 ```dart
 List<List<int>> parsedTemplates = [];
 if (json['templates'] != null && json['templates'] is List) {
@@ -93,11 +98,13 @@ rate: json['rate'],
 **问题：** 当 JSON 中缺少 `rate` 字段时，`json['rate']` 为 `null`，赋值给 `int rate` 会崩溃。
 
 **错误信息：**
+
 ```
 type 'Null' is not a subtype of type 'int'
 ```
 
 **修复建议：**
+
 ```dart
 rate: json['rate'] as int? ?? 0,
 ```
@@ -109,11 +116,13 @@ rate: json['rate'] as int? ?? 0,
 **问题：** 当 API 返回 `rate` 为 `double`（如 `0.95` 或 `2.5`）时，赋值给 `int rate` 会崩溃。
 
 **错误信息：**
+
 ```
 type 'double' is not a subtype of type 'int'
 ```
 
 **修复建议：**
+
 ```dart
 rate: (json['rate'] as num?)?.toInt() ?? 0,
 ```
@@ -123,6 +132,7 @@ rate: (json['rate'] as num?)?.toInt() ?? 0,
 ### 3. `test/screen/deck/deck_detail_screen_test.dart` — 全部 11 项失败
 
 **失败的测试：**
+
 - `renders without errors`
 - `displays deck name in AppBar`
 - `displays total cards stat`
@@ -142,6 +152,7 @@ rate: (json['rate'] as num?)?.toInt() ?? 0,
 ### 4. `test/screen/deck/deck_learn_screen_test.dart` — 全部 4 项失败
 
 **失败的测试：**
+
 - `renders without errors`
 - `displays deck name in AppBar`
 - `shows loading or completion state after init`

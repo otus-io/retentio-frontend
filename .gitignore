@@ -1,3 +1,8 @@
+# Node / npm
+node_modules/
+**/dist/
+ca/
+
 # Miscellaneous
 *.class
 *.log
@@ -52,3 +57,10 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 /frontend/ios/Podfile.lock
+
+# Go compiled binaries (dev-run.sh, run.sh)
+backend-api/wordupx
+backend-api/backend-api
+
+# Design docs (English only, not tracked)
+docs/design-doc/

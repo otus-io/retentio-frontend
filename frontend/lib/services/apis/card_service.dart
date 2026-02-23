@@ -3,6 +3,7 @@ import 'package:wordupx/services/apis/api_service.dart';
 import 'package:wordupx/services/index.dart';
 
 class CardService {
+
   /// 获取指定 deck 的所有卡片
   static Future<List<Fact>> getDeckCards(String deckId) async {
     final res = await ApiService.get(Api.facts, pathParams: {'id': deckId});
@@ -14,10 +15,11 @@ class CardService {
       return fats;
     }
 
-    return [];
+    return {'total_cards': 0, 'hidden_count': 0, 'hidden_facts': []};
   }
 
   /// 获取下一张需要学习的卡片
+
   static Future<CardDetail?> getNextDueCard(String deckId) async {
     try {
       final res = await ApiService.get(Api.card, pathParams: {'id': deckId});

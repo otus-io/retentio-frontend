@@ -9,17 +9,25 @@
 ## 前提条件
 
 - 打开 Swagger UI：
-  - **本地**: http://localhost:8080/docs
-  - **生产环境**: https://api.wordupx.com/docs
+  - **本地**: <http://localhost:8080/docs>
+  - **生产环境**: <https://api.wordupx.com/docs>
+
+> **时间戳规范：** API 中所有时间戳均使用 **UTC** 时区。
+> ISO 8601 字符串使用 `Z` 后缀（例如 `2026-02-08T12:00:00Z`）。
+> Unix 时间戳为自 Unix 纪元（1970-01-01T00:00:00Z）以来的秒数。
+> 客户端需自行进行本地时间的转换。
 
 ---
 
 ## API 接口参考
 
 | 接口 | 方法 | 说明 |
-|------|------|------|
+| ------ | ------ | ------ |
 | `/auth/register` | POST | 注册用户 |
 | `/auth/login` | POST | 登录 |
+| `/auth/logout` | POST | 登出（使令牌失效） |
+| `/auth/forgot-password` | POST | 请求密码重置令牌 |
+| `/auth/reset-password` | POST | 使用令牌重置密码 |
 | `/api/decks` | POST | 创建卡组 |
 | `/api/decks` | GET | 获取所有卡组 |
 | `/api/decks/{id}` | GET | 获取卡组详情 |
@@ -27,13 +35,12 @@
 | `/api/decks/{id}` | DELETE | 删除卡组 |
 | `/api/decks/{id}/facts/{operation}` | POST | 添加词条 (operation: `append`, `prepend`, `shuffle`, `spread`) |
 | `/api/decks/{id}/facts` | GET | 获取所有词条 |
-| `/api/decks/{id}/facts/{factIndex}` | GET | 获取单个词条 |
-| `/api/decks/{id}/facts/{factIndex}` | PATCH | 更新词条 |
-| `/api/decks/{id}/facts/{factIndex}` | DELETE | 删除词条 |
-| `/api/decks/{id}/next-due-card` | GET | 获取下一张待复习卡片 |
-| `/api/decks/{id}/cards/{operation}` | GET | 获取卡片 (`all-cards`, `hidden-cards`) |
-| `/api/decks/{id}/cards/{cardIndex}/{operation}` | PATCH | 更新卡片 (`update-interval`, `update-visibility`) |
-| `/api/decks/{id}/hidden-cards` | GET | 获取已隐藏卡片详情 |
+| `/api/decks/{id}/facts/{factId}` | GET | 获取单个词条 |
+| `/api/decks/{id}/facts/{factId}` | PATCH | 更新词条 |
+| `/api/decks/{id}/facts/{factId}` | DELETE | 删除词条 |
+| `/api/decks/{id}/card` | GET | 获取最紧急卡片 |
+| `/api/decks/{id}/card` | PATCH | 更新卡片间隔或可见性（按 card_id 查找） |
+| `/api/decks/{id}/cards` | GET | 获取卡片统计（总数、隐藏数量、隐藏事实） |
 
 ---
 
@@ -70,7 +77,7 @@
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
   },
   "meta": {
-    "expires": "2026-02-14T14:05:20.826883808+09:00"
+    "expires": "2026-02-14T05:05:20Z"
   }
 }
 ```
@@ -82,6 +89,72 @@
 3. 点击 **"Authorize"** 保存
 
 现在所有后续请求都会自动包含您的身份验证令牌。
+
+### 登出
+
+**接口:** `POST /auth/logout`
+
+需要 `Authorization: Bearer <token>` 请求头。使令牌失效，之后无法再使用。
+
+**响应:**
+
+```json
+{
+  "data": {
+    "msg": "Logged out successfully"
+  },
+  "meta": null
+}
+```
+
+### 忘记密码
+
+**接口:** `POST /auth/forgot-password`
+
+```json
+{
+  "email": "swagger@example.com"
+}
+```
+
+**响应:**
+
+```json
+{
+  "data": {
+    "reset_token": "a3f8b2c1d4e5f6..."
+  },
+  "meta": {
+    "expires_in": "15m0s"
+  }
+}
+```
+
+> 重置令牌在 15 分钟后过期。在生产环境中，此令牌将通过电子邮件发送，而不是在响应中返回。
+
+### 重置密码
+
+**接口:** `POST /auth/reset-password`
+
+```json
+{
+  "token": "a3f8b2c1d4e5f6...",
+  "new_password": "mynewpassword"
+}
+```
+
+**响应:**
+
+```json
+{
+  "data": {
+    "msg": "Password reset successfully"
+  },
+  "meta": null
+}
+```
+
+> 重置后，请使用新密码登录。重置令牌为一次性使用，不能重复使用。
 
 ---
 
@@ -124,6 +197,8 @@
 >
 > 使用 2 个模板时，每个词条会生成 **2 张卡片** — 每个方向各一张。
 
+<!-- -->
+
 > **理解 `rate`（速率）：**
 >
 > 速率控制**每天引入多少张新卡片**。系统会将新卡片均匀分布在一天中：
@@ -139,7 +214,7 @@
 ```json
 {
   "data": {
-    "deck_id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05"
+    "deck_id": "a1b2c3"
   },
   "meta": {
     "msg": "Deck created successfully"
@@ -160,19 +235,19 @@
 **接口:** `GET /api/decks/{id}`
 
 **参数:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
+
+- `id`: `a1b2c3`（您的卡组 ID）
 
 **响应:**
 
 ```json
 {
   "data": {
-    "id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05",
+    "id": "a1b2c3",
     "name": "English Japanese IELTS Deck",
     "owner": "swagger",
     "field": ["English", "Japanese"],
     "templates": [[0, 1]],
-    "facts": [],
     "rate": 20,
     "stats": {
       "cards_count": 0,
@@ -181,12 +256,14 @@
       "reviewed_cards": 0,
       "due_cards": 0,
       "hidden_cards": 0,
-      "new_cards_today": 0
-    }
-  },
-  "meta": {
+      "new_cards_today": 0,
+      "last_reviewed_at": 0
+    },
     "created_at": "2026-02-08T12:00:00Z",
     "updated_at": "2026-02-08T12:00:00Z"
+  },
+  "meta": {
+    "msg": "Deck retrieved successfully"
   }
 }
 ```
@@ -202,7 +279,7 @@
   "data": {
     "decks": [
       {
-        "id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05",
+        "id": "a1b2c3",
         "name": "English Japanese IELTS Deck",
         "owner": "swagger",
         "field": ["English", "Japanese"],
@@ -215,7 +292,8 @@
           "reviewed_cards": 0,
           "due_cards": 0,
           "hidden_cards": 0,
-          "new_cards_today": 0
+          "new_cards_today": 0,
+          "last_reviewed_at": 0
         },
         "created_at": "2026-02-08T12:00:00Z",
         "updated_at": "2026-02-08T12:00:00Z"
@@ -232,14 +310,16 @@
 > **理解 `meta`（元数据）：**
 >
 > | 字段 | 说明 |
-> |------|------|
+> | ------ | ------ |
 > | `total`（总数） | 当前用户拥有的卡组总数 |
 > | `msg`（消息） | 状态信息 |
+
+<!-- -->
 
 > **理解 `stats`（统计信息）：**
 >
 > | 字段 | 说明 |
-> |------|------|
+> | ------ | ------ |
 > | `cards_count`（卡片总数） | 卡组中的卡片总数 |
 > | `facts_count`（词条总数） | 卡组中的词条总数 |
 > | `unseen_cards`（未学习卡片） | 从未复习过的新卡片数量 |
@@ -247,10 +327,15 @@
 > | `due_cards`（待复习卡片） | 当前待复习的卡片数量（due_date <= 当前时间） |
 > | `hidden_cards`（已隐藏卡片） | 被用户隐藏的卡片数量 |
 > | `new_cards_today`（今日新增卡片） | 今天添加的卡片数量（从午夜开始计算） |
+> | `last_reviewed_at`（上次复习时间） | 最近一次复习的 Unix 时间戳（未复习过则为 `0`） |
 >
-> 统计信息是实时计算的。对于刚创建的空卡组，所有值都为 `0`。添加词条后，`cards_count` 和 `unseen_cards` 会增加。随着复习的进行，`reviewed_cards` 会增长，`unseen_cards` 会减少。
+> 统计信息是实时计算的。对于刚创建的空卡组，所有值都为 `0`。
+> 添加词条后，`cards_count` 和 `unseen_cards` 会增加。
+> 随着复习的进行，`reviewed_cards` 会增长，`unseen_cards` 会减少。
 >
-> 卡片总数取决于词条数和模板数：`cards_count = facts_count × 模板数量`。例如，20 个词条搭配 2 个模板（`[0,1]` 和 `[1,0]`）会生成 40 张卡片。
+> 卡片总数取决于词条数和模板数：
+> `cards_count = facts_count × 模板数量`。
+> 例如，20 个词条搭配 2 个模板（`[0,1]` 和 `[1,0]`）会生成 40 张卡片。
 >
 > 客户端计算学习进度百分比：`reviewed_cards / cards_count * 100`。
 
@@ -259,7 +344,8 @@
 **接口:** `PATCH /api/decks/{id}`
 
 **参数:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
+
+- `id`: `a1b2c3`（您的卡组 ID）
 
 **请求体:**
 
@@ -279,7 +365,7 @@
 ```json
 {
   "data": {
-    "deck_id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05"
+    "deck_id": "a1b2c3"
   },
   "meta": {
     "msg": "Deck updated successfully",
@@ -293,7 +379,8 @@
 **接口:** `DELETE /api/decks/{id}`
 
 **参数:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
+
+- `id`: `a1b2c3`（您的卡组 ID）
 
 > 此操作会永久删除卡组及其所有关联的词条、卡片和模板。
 
@@ -302,7 +389,7 @@
 ```json
 {
   "data": {
-    "deck_id": "ab66b3d7-1094-4d05-8ba2-1f90d92f2d05"
+    "deck_id": "a1b2c3"
   },
   "meta": {
     "msg": "Deck deleted successfully"
@@ -317,7 +404,8 @@
 **接口:** `POST /api/decks/{id}/facts/{operation}`
 
 **参数:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
+
+- `id`: `a1b2c3`（您的卡组 ID）
 - `operation`: `append`
 
 **请求体:**
@@ -364,12 +452,13 @@
 
 ---
 
-## 5. 获取下一张待复习卡片
+## 5. 获取下一张最紧急卡片
 
-**接口:** `GET /api/decks/{id}/next-due-card`
+**接口:** `GET /api/decks/{id}/card`
 
 **参数:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
+
+- `id`: `a1b2c3`（您的卡组 ID）
 
 **响应:**
 
@@ -377,31 +466,23 @@
 {
   "data": {
     "card": {
-      "fact_index": 0,
+      "id": "xyz12345",
+      "fact_id": "x9k2m4np",
       "template_index": 0,
       "last_review": 1763269701,
       "due_date": 1763269702,
       "hidden": false,
-      "min_calculation": 150,
-      "max_calculation": 1200,
       "created_at": 1763269700
     },
-    "card_index": 0,
-    "def_interval": 600,
-    "due_cards": 1,
-    "fact": ["Apple", "りんご"],
-    "hidden_cards": 0,
-    "max_interval": 1200,
-    "min_interval": 150,
-    "template": [0, 1],
-    "total_cards": 20,
     "urgency": 2598
   },
   "meta": {
-    "now": "1763272299"
+    "msg": "Next urgent card retrieved successfully"
   }
 }
 ```
+
+> 请保存 `card.id` — 更新卡片时（步骤 6）需要用到。
 
 ---
 
@@ -409,94 +490,69 @@
 
 查看卡片后，您需要根据记忆程度更新复习间隔。
 
-**接口:** `PATCH /api/decks/{id}/cards/{cardIndex}/update-interval`
+**接口:** `PATCH /api/decks/{id}/card`
 
 **参数:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`（您的卡组 ID）
-- `cardIndex`: `0`（来自第 4 步的 `card_index`）
-- `operation`: `update-interval`
+
+- `id`: `a1b2c3`（您的卡组 ID）
 
 **请求体:**
 
 ```json
 {
-  "interval": 600
+  "card_id": "xyz12345",
+  "interval": 600,
+  "last_review": 1763272400
 }
 ```
 
-> 💡 **滑动条选择间隔：**
->
-> 在应用中，用户通过滑动条选择复习间隔：
-> - **左端** = `min_interval`（如 `150` 秒）→ 卡片较难，较快复习
-> - **右端** = `max_interval`（如 `1200` 秒）→ 卡片较简单，稍后复习
-> - **中间** = `def_interval`（如 `600` 秒）→ 卡片难度适中
->
-> 间隔值的单位是秒。
-> 提交的间隔**必须**在 `[min_interval, max_interval]` 范围内，否则 API 会拒绝请求。
+> 使用 GET 响应中的 `card.id` 作为 `card_id`。
+> `last_review` 为 UTC Unix 时间戳（秒）—
+> 客户端通常使用 `Math.floor(Date.now() / 1000)`。
 
-> 📖 **间隔复习算法详解：**
+<!-- -->
+
+> 💡 **计算最小和最大间隔（前端计算）：**
 >
-> 系统使用**基于紧迫度的间隔复习**算法。完整流程如下：
+> 服务器只在每张卡片上存储 `last_review` 和 `due_date`。
+> 前端必须推算当前间隔并计算允许范围后再提交。
+> 同一请求中不能同时发送 `interval` 和 `hidden`。
 >
-> **1. 紧迫度（Urgency）— 决定下一张显示哪张卡片**
+> **第 1 步 — 推算当前间隔：**
 >
-> 每张卡片都有 `last_review`（上次复习时间）和 `due_date`（到期时间）。紧迫度的计算方式：
->
+> ```text
+> current_interval = due_date - last_review    （最小 60 秒）
 > ```
+>
+> 对于全新卡片（`last_review = 0`），将 `current_interval` 视为 60 秒。
+>
+> **第 2 步 — 计算紧迫度：**
+>
+> ```text
 > urgency = (now - last_review) / (due_date - last_review)
 > ```
 >
-> - `urgency >= 1.0` → 卡片已**逾期**（已过到期时间）
-> - `urgency < 1.0` → 卡片**尚未到期**，但仍可能被显示
+> **第 3 步 — 计算最小和最大间隔：**
 >
-> 系统会将**紧迫度最高**的未隐藏卡片作为下一张待复习卡片。
+> 当卡片已逾期（`urgency >= 1`）：
 >
-> **2. 间隔计算 — min/max/def 是如何确定的**
->
-> 当前间隔为 `due_date - last_review`（最小 300 秒）。三个因子决定下次复习的范围：
->
-> | 因子 | 值 | 含义 |
-> |------|-----|------|
-> | `minFactor` | 0.5 | 较难 — 间隔减半 |
-> | `defFactor` | 2.0 | 适中 — 间隔翻倍 |
-> | `maxFactor` | 4.0 | 简单 — 间隔翻四倍 |
->
-> **当卡片已逾期**（`urgency >= 1`）：
->
-> ```
-> min_interval = 当前间隔 × 0.5
-> def_interval = 当前间隔 × 2.0
-> max_interval = 当前间隔 × 4.0
+> ```text
+> min_interval = current_interval × 0.5
+> max_interval = current_interval × 4.0
 > ```
 >
-> **当卡片尚未到期**（`urgency < 1`），因子会按紧迫度等比缩小，提前复习时增长幅度较小：
+> 当卡片尚未到期（`urgency < 1`）：
 >
-> ```
-> min_interval = 当前间隔 × ((0.5 - 1) × urgency + 1)
-> def_interval = 当前间隔 × ((2.0 - 1) × urgency + 1)
-> max_interval = 当前间隔 × ((4.0 - 1) × urgency + 1)
-> ```
->
-> **3. 更新 — 提交间隔后会发生什么**
->
-> 当您发送 `{ "interval": 600 }` 时：
->
-> ```
-> last_review = now（当前时间）
-> due_date    = now + interval
+> ```text
+> min_interval = current_interval × ((0.5 - 1) × urgency + 1)
+> max_interval = current_interval × ((4.0 - 1) × urgency + 1)
 > ```
 >
-> 下次该卡片出现时，新的间隔范围将基于更新后的间隔计算。这意味着间隔会**随时间增长** — 您对一张卡片越熟悉，再次看到它的时间间隔就越长。
+> **第 4 步 — 提交前验证：**
 >
-> **4. 示例演示**
->
-> | 步骤 | 当前间隔 | 您的选择 | 下次间隔范围 |
-> |------|---------|---------|-------------|
-> | 第 1 次复习 | 300 秒（5 分钟） | 600 秒（默认） | 300 秒 – 2400 秒 |
-> | 第 2 次复习 | 600 秒（10 分钟） | 1200 秒（默认） | 600 秒 – 4800 秒 |
-> | 第 3 次复习 | 1200 秒（20 分钟） | 2400 秒（默认） | 1200 秒 – 9600 秒 |
->
-> 每次选择默认值，间隔就会**翻倍**。选择接近最大值会使增长更快（最多 4 倍），而选择接近最小值则会**缩短**间隔（最低 0.5 倍）。
+> 前端必须验证所选的 `interval` 满足
+> `min_interval <= interval <= max_interval`，
+> 然后再发送 PATCH 请求。
 
 **响应:**
 
@@ -505,11 +561,10 @@
   "data": {
     "last_review": 1763272400,
     "due_date": 1763273000,
-    "new_interval": 600,
-    "hidden_status": false
+    "new_interval": 600
   },
   "meta": {
-    "msg": "Card updated successfully"
+    "msg": "Card interval updated successfully"
   }
 }
 ```
@@ -520,17 +575,17 @@
 
 如果您想暂时从复习中隐藏某张卡片：
 
-**接口:** `PATCH /api/decks/{id}/cards/{cardIndex}/update-visibility`
+**接口:** `PATCH /api/decks/{id}/card`
 
 **参数:**
-- `id`: `ab66b3d7-1094-4d05-8ba2-1f90d92f2d05`
-- `cardIndex`: `0`
-- `operation`: `update-visibility`
+
+- `id`: `a1b2c3`
 
 **请求体:**
 
 ```json
 {
+  "card_id": "xyz12345",
   "hidden": true
 }
 ```
@@ -543,7 +598,7 @@
     "hidden_status": true
   },
   "meta": {
-    "msg": "Card updated successfully"
+    "msg": "Card visibility updated successfully"
   }
 }
 ```

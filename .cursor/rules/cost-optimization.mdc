@@ -1,0 +1,43 @@
+---
+description: Reduce Cursor token usage and cost by keeping AI output concise and minimizing unnecessary tool calls
+alwaysApply: true
+---
+
+# Cost Optimization
+
+## Thinking Discipline
+
+- Keep internal reasoning minimal — don't deliberate over straightforward tasks
+- For simple edits (rename, add a line, fix a typo), act immediately with zero deliberation
+- Never restate the user's request back to yourself before acting
+- Don't enumerate multiple approaches when the right one is obvious — just do it
+
+## Output Discipline
+
+- Be concise — avoid boilerplate comments, redundant docstrings, and filler text in generated code
+- When generating tests, produce one focused test file per prompt; don't pad with obvious/trivial test cases
+- When generating docs, write tight prose; skip sections that add no information (e.g., empty "Notes" headers)
+- Never repeat large code blocks back to the user just to show what was changed — describe the change briefly
+- Skip unnecessary preamble ("Sure!", "Great question!", "Let me...") — get straight to the action or answer
+- After making an edit, confirm in one short sentence; don't recap what the code does
+
+## Tool Call Efficiency
+
+- Don't re-read files that are already in context (open tabs, recently read, or attached by the user)
+- Batch independent tool calls into a single round-trip instead of sequential calls
+- Use targeted reads (offset + limit) for large files instead of reading the entire file
+- Prefer Grep/Glob over broad semantic search when you know the symbol or filename
+- Don't explore the codebase when the user already told you the file or location
+
+## Conversation Efficiency
+
+- Ask clarifying questions upfront if the request is ambiguous — one round of questions is cheaper than re-generating
+- When the user points to a specific file/function, go straight to it — don't scan the whole codebase first
+- If a task has multiple parts (e.g., "add tests and docs"), confirm scope before generating everything
+
+## Generation Guidelines
+
+- For docs: generate English first, then Chinese in one pass —
+  don't split across conversations
+- For tests: follow existing test patterns (see `go-testing` rule) instead of inventing new structures each time
+- For boilerplate (handlers, models): use the codebase's existing patterns as a template — don't over-engineer

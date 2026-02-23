@@ -1,0 +1,168 @@
+# =============================================================================
+# .cursorignore — MAXIMUM PRIVACY (no compromise)
+# Prevents Cursor from reading, indexing, or sending these files/dirs.
+# =============================================================================
+
+# ===== Git internals (commits, author names, emails, remotes, repo name) =====
+.git/
+
+# ===== ALL GitHub metadata (workflows leak repo structure, secrets, deploy targets) =====
+.github/
+
+# ===== Environment variables & secrets (every possible convention) =====
+.env
+.env.*
+*.env
+**/.env
+**/.env.*
+**/.env.local
+**/.env.development
+**/.env.production
+**/.env.staging
+**/.env.test
+.envrc
+.direnv/
+
+# ===== Private keys, certificates & signing =====
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.crt
+*.cer
+*.der
+*.csr
+*.gpg
+*.asc
+*.pgp
+*.sig
+*.signing
+
+# ===== SSH =====
+id_rsa*
+id_ed25519*
+id_ecdsa*
+id_dsa*
+*.pub
+known_hosts
+authorized_keys
+ssh_config
+config.d/
+
+# ===== Credentials, tokens, secrets (broad patterns) =====
+*secret*
+*credential*
+*password*
+*passwd*
+*token*
+*apikey*
+*api_key*
+*api-key*
+*auth_token*
+*access_key*
+*private_key*
+serviceAccountKey*.json
+*-credentials.json
+*.secret
+*.secrets
+*.keyfile
+
+# ===== Cloud provider configs =====
+.aws/
+.gcloud/
+.azure/
+.aliyun/
+.oci/
+.digitalocean/
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
+.terraform/
+
+# ===== Docker secrets & compose overrides =====
+docker-compose.override.yml
+docker-compose.override.yaml
+**/*docker*secret*
+.docker/
+
+# ===== Database dumps, backups, data files =====
+*.sql
+*.dump
+*.bak
+*.backup
+*.sqlite
+*.sqlite3
+*.db
+
+# ===== Config files that commonly hold secrets =====
+**/config/local.*
+**/config/secrets.*
+**/config/production.*
+**/config/private.*
+*.local.yaml
+*.local.yml
+*.local.json
+*.local.toml
+
+# ===== Package manager caches & lock internals =====
+node_modules/
+.pub-cache/
+.dart_tool/
+vendor/
+.bundle/
+
+# ===== Build artifacts & binaries (may embed secrets/paths) =====
+**/build/
+**/dist/
+**/out/
+**/*.exe
+**/*.dll
+**/*.so
+**/*.dylib
+
+# ===== OS & IDE metadata (user paths, account info) =====
+.DS_Store
+Thumbs.db
+Desktop.ini
+.Spotlight-V100
+.Trashes
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.iml
+
+# ===== Shell & tool history (commands, paths, usernames) =====
+.bash_history
+.zsh_history
+.python_history
+.node_repl_history
+.psql_history
+.mysql_history
+.rediscli_history
+.wget-hsts
+.lesshst
+
+# ===== Log files (may contain tokens, IPs, user data) =====
+*.log
+**/logs/
+**/*.log.*
+
+# ===== macOS & Linux user-level configs sometimes mounted in workspace =====
+.netrc
+.npmrc
+.yarnrc
+.pypirc
+.gem/credentials
+.config/
+.local/
+
+# ===== Kubernetes & Helm secrets =====
+**/secrets.yaml
+**/secrets.yml
+**/secret.yaml
+**/secret.yml
+*kubeconfig*

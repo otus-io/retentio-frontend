@@ -1,4 +1,5 @@
 class CardDetail {
+\
   Card card;
   double urgency;
 
@@ -69,6 +70,7 @@ class Card {
   /// 是否是新卡片（从未复习过）
   bool get isNew => lastReview == 0;
 
+
   /// 获取卡片正面内容（通常是第一个 fact）
   String get front => fact!.fields.isNotEmpty ? fact!.fields[0] : '';
 
@@ -91,6 +93,7 @@ class Card {
     );
   }
 }
+
 
 class Fact {
   List<String> fields;
