@@ -18,6 +18,7 @@ class CardNotifier extends Notifier<CardState> {
   int get totalCardsInSession => deck.stats.unseenCards + deck.reviewCards;
 
   final FlashCardController flashCardController = FlashCardController();
+  final List<int> scope = [60, 600];
 
   CardNotifier(this.deck);
 
@@ -28,13 +29,17 @@ class CardNotifier extends Notifier<CardState> {
       logger.e('CardNotifier onDispose');
       flashCardController.dispose();
     });
-    return CardState(isLoading: true);
+    return CardState(isLoading: true, selectedInterval: scope.last * 0.5);
   }
 
   ///获取推荐的Fact
   Future<void> getRecommendedFact() async {
     await getAllFacts();
     getCardDetail();
+  }
+
+  void selectInterval(double interval) {
+    state = state.copyWith(selectedInterval: interval);
   }
 
   void toggleShowAnswer() {
@@ -54,7 +59,7 @@ class CardNotifier extends Notifier<CardState> {
   Future<void> reviewCard() async {
     await CardService.updateCard(deck.id, {
       'card_id': state.cardDetail?.card.id,
-      'interval': 150,
+      'interval': state.selectedInterval,
       'last_review': DateTime.now().millisecondsSinceEpoch ~/ 1000,
     });
   }
@@ -74,7 +79,7 @@ class CardNotifier extends Notifier<CardState> {
 
   Future<void> getAllFacts() async {
     final response = await CardService.getDeckCards(deck.id);
-    state = CardState(facts: response);
+    state = state.copyWith(facts: response);
   }
 }
 
@@ -90,6 +95,8 @@ class CardState {
 
   final LoadingState loadingState;
 
+  final double selectedInterval;
+
   CardState({
     this.cardDetail,
     this.facts = const [],
@@ -97,6 +104,7 @@ class CardState {
     this.cardsStudied = 0,
     this.showAnswer = true,
     this.loadingState = LoadingState.loaded,
+    this.selectedInterval = 0,
   });
 
   CardState copyWith({
@@ -106,6 +114,7 @@ class CardState {
     int? cardsStudied,
     bool? showAnswer,
     LoadingState? loadingState,
+    double? selectedInterval,
   }) {
     return CardState(
       cardDetail: cardDetail ?? this.cardDetail,
@@ -114,6 +123,7 @@ class CardState {
       cardsStudied: cardsStudied ?? this.cardsStudied,
       showAnswer: showAnswer ?? this.showAnswer,
       loadingState: loadingState ?? this.loadingState,
+      selectedInterval: selectedInterval ?? this.selectedInterval,
     );
   }
 }

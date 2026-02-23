@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wordupx/extensions/context_extension.dart';
+import 'package:wordupx/extensions/widget_extension.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
 import 'package:wordupx/models/deck.dart';
 import 'package:wordupx/screen/deck/providers/card_provider.dart';
@@ -213,8 +214,54 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
             final showAnswer = ref.watch(
               cardProvider(widget.deck).select((value) => value.showAnswer),
             );
+
             return Column(
+              spacing: 8,
               children: [
+                Consumer(
+                  builder: (context, ref, child) {
+                    final interval = ref.watch(
+                      cardProvider(
+                        widget.deck,
+                      ).select((value) => value.selectedInterval),
+                    );
+                    final scope = ref.read(
+                      cardProvider(
+                        widget.deck,
+                      ).notifier.select((value) => value.scope),
+                    );
+                    return Row(
+                      children: [
+                        Text(
+                          'Easy',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Slider(
+                          value: interval.ceilToDouble(),
+                          min: scope.first.roundToDouble(),
+                          max: scope.last.roundToDouble(),
+                          divisions: 100,
+                          label: '${(interval).ceil() ~/ 60}m',
+                          onChanged: (double value) {
+                            ref
+                                .read(cardProvider(widget.deck).notifier)
+                                .selectInterval(value);
+                          },
+                        ).expanded(),
+                        Text(
+                          'Hard',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
                 ElevatedButton(
                   onPressed: () async {
                     final isFond = ref
