@@ -18,7 +18,6 @@ class DeckLearnScreen extends ConsumerStatefulWidget {
   ConsumerState<DeckLearnScreen> createState() => _DeckLearnScreenState();
 }
 
-
 class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
   @override
   Widget build(BuildContext context) {
