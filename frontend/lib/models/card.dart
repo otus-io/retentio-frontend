@@ -1,8 +1,10 @@
-class CardDetail {
-  Card card;
-  double urgency;
+import 'package:equatable/equatable.dart';
 
-  CardDetail({required this.card, required this.urgency});
+class CardDetail extends Equatable {
+  final Card card;
+  final double urgency;
+
+  const CardDetail({required this.card, required this.urgency});
 
   factory CardDetail.fromJson(Map<String, dynamic> json) => CardDetail(
     card: Card.fromJson(json["card"]),
@@ -17,19 +19,22 @@ class CardDetail {
       urgency: urgency,
     );
   }
+
+  @override
+  List<Object?> get props => [card, urgency];
 }
 
-class Card {
-  int createdAt;
-  int dueDate;
-  String factId;
-  bool hidden;
-  String id;
-  int lastReview;
-  int templateIndex;
-  Fact? fact;
+class Card extends Equatable {
+  final int createdAt;
+  final int dueDate;
+  final String factId;
+  final bool hidden;
+  final String id;
+  final int lastReview;
+  final int templateIndex;
+  final Fact? fact;
 
-  Card({
+  const Card({
     required this.createdAt,
     required this.dueDate,
     required this.factId,
@@ -90,13 +95,16 @@ class Card {
       fact: fact,
     );
   }
+
+  @override
+  List<Object?> get props => [id, factId];
 }
 
-class Fact {
-  List<String> fields;
-  String id;
+class Fact extends Equatable {
+  final List<String> fields;
+  final String id;
 
-  Fact({required this.fields, required this.id});
+  const Fact({required this.fields, required this.id});
 
   factory Fact.fromJson(Map<String, dynamic> json) => Fact(
     fields: List<String>.from(json["fields"].map((x) => x)),
@@ -107,4 +115,7 @@ class Fact {
     "fields": List<dynamic>.from(fields.map((x) => x)),
     "id": id,
   };
+
+  @override
+  List<Object?> get props => [fields, id];
 }

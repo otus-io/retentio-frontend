@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:pull_down_button/pull_down_button.dart';
 import 'package:wordupx/extensions/context_extension.dart';
 import 'package:wordupx/extensions/widget_extension.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
@@ -25,7 +27,42 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.deck.name)),
+      appBar: AppBar(
+        title: Text(widget.deck.name),
+        actions: [
+          PullDownButton(
+            routeTheme: PullDownMenuRouteTheme(
+              width: 150,
+              backgroundColor: theme.colorScheme.surface,
+            ),
+            itemBuilder: (context) => [
+              PullDownMenuItem(
+                title: 'Edit Fact',
+                onTap: () {},
+                icon: LucideIcons.pencil,
+              ),
+              PullDownMenuItem(
+                title: 'Hide Card',
+                onTap: () async {
+                  await ref
+                      .read(cardProvider(widget.deck).notifier)
+                      .nextCard(isHide: true);
+                  ref
+                      .read(cardProvider(widget.deck).notifier)
+                      .flashCardController
+                      .showFront();
+                  ref.read(cardProvider(widget.deck).notifier).showAnswer();
+                },
+                icon: LucideIcons.eyeOff,
+              ),
+            ],
+            buttonBuilder: (context, showMenu) => IconButton(
+              onPressed: showMenu,
+              icon: Icon(LucideIcons.ellipsisVertical),
+            ),
+          ),
+        ],
+      ),
       body: _buildBody(theme, loc),
     );
   }

@@ -42,6 +42,10 @@ class CardNotifier extends Notifier<CardState> {
     state = state.copyWith(selectedInterval: interval);
   }
 
+  void showAnswer() {
+    state = state.copyWith(showAnswer: true, loadingState: LoadingState.loaded);
+  }
+
   void toggleShowAnswer() {
     state = state.copyWith(
       showAnswer: !state.showAnswer,
@@ -49,18 +53,21 @@ class CardNotifier extends Notifier<CardState> {
     );
   }
 
-  Future<void> nextCard() async {
-    state = state.copyWith(loadingState: LoadingState.initial);
-    await reviewCard();
+  Future<void> nextCard({bool isHide = false}) async {
+    state = state.copyWith(loadingState: LoadingState.initial, isHide: isHide);
+    await reviewCard(isHide: isHide);
     await getCardDetail();
     state = state.copyWith(cardsStudied: state.cardsStudied + 1);
   }
 
-  Future<void> reviewCard() async {
+  Future<void> reviewCard({bool isHide = false}) async {
     await CardService.updateCard(deck.id, {
+      if (isHide)
+        'hidden': state.isHide
+      else
+        'interval': state.selectedInterval,
+      if (!isHide) 'last_review': DateTime.now().millisecondsSinceEpoch ~/ 1000,
       'card_id': state.cardDetail?.card.id,
-      'interval': state.selectedInterval,
-      'last_review': DateTime.now().millisecondsSinceEpoch ~/ 1000,
     });
   }
 
@@ -72,8 +79,13 @@ class CardNotifier extends Notifier<CardState> {
       final factId = response.card.factId;
       var fact = facts.firstWhereOrNull((element) => element.id == factId);
       fact ??= await CardService.getFact(deck.id, factId);
+      logger.d(fact?.toJson());
       final cardDetail = response.copyWith(fact: fact);
-      state = state.copyWith(cardDetail: cardDetail, isLoading: false);
+      state = state.copyWith(
+        cardDetail: cardDetail,
+        isLoading: false,
+        isHide: false,
+      );
     }
   }
 
@@ -97,6 +109,8 @@ class CardState {
 
   final double selectedInterval;
 
+  final bool isHide;
+
   CardState({
     this.cardDetail,
     this.facts = const [],
@@ -105,6 +119,7 @@ class CardState {
     this.showAnswer = true,
     this.loadingState = LoadingState.loaded,
     this.selectedInterval = 0,
+    this.isHide = false,
   });
 
   CardState copyWith({
@@ -115,6 +130,7 @@ class CardState {
     bool? showAnswer,
     LoadingState? loadingState,
     double? selectedInterval,
+    bool? isHide,
   }) {
     return CardState(
       cardDetail: cardDetail ?? this.cardDetail,
@@ -124,6 +140,7 @@ class CardState {
       showAnswer: showAnswer ?? this.showAnswer,
       loadingState: loadingState ?? this.loadingState,
       selectedInterval: selectedInterval ?? this.selectedInterval,
+      isHide: isHide ?? this.isHide,
     );
   }
 }
