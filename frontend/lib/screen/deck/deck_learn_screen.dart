@@ -7,9 +7,12 @@ import 'package:wordupx/extensions/widget_extension.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
 import 'package:wordupx/models/deck.dart';
 import 'package:wordupx/screen/deck/providers/card_provider.dart';
+import 'package:wordupx/screen/deck/providers/edit_fact_provider.dart';
+import 'package:wordupx/screen/deck/widgets/edit_fact_widget.dart';
 import 'package:wordupx/screen/deck/widgets/flash_card/flash_card.dart';
 
 import '../../providers/loading_state_provider.dart';
+import '../../widgets/common_bottom_sheet.dart';
 
 class DeckLearnScreen extends ConsumerStatefulWidget {
   final Deck deck;
@@ -38,7 +41,19 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
             itemBuilder: (context) => [
               PullDownMenuItem(
                 title: 'Edit Fact',
-                onTap: () {},
+                onTap: () {
+                  showCommonBottomSheet(
+                    context: context,
+                    initialChildSize: 0.4,
+                    minChildSize: 0.3,
+                    maxChildSize: 0.5,
+                    title: 'Edit Fact',
+                    child: ProviderScope(
+                      overrides: [deckProvider.overrideWithValue(widget.deck)],
+                      child: EditFactWidget(deck: widget.deck),
+                    ),
+                  );
+                },
                 icon: LucideIcons.pencil,
               ),
               PullDownMenuItem(
