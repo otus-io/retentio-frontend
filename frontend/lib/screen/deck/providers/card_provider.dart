@@ -89,6 +89,35 @@ class CardNotifier extends Notifier<CardState> {
     }
   }
 
+  Future<void> refreshFact() async {
+    final cardDetail = state.cardDetail;
+    if (cardDetail?.card.fact == null) {
+      return;
+    }
+    final response = await CardService.getFact(
+      deck.id,
+      cardDetail!.card.fact!.id,
+    );
+    if (response != null) {
+      final facts = List<Fact>.from(state.facts);
+
+      ///替换 facts中对应的fact
+      facts[facts.indexWhere((element) => element.id == response.id)] =
+          response;
+      flashCardController.showFront();
+      final temp = cardDetail.copyWith(fact: response);
+
+      state = state.copyWith(
+        cardDetail: temp,
+        facts: facts,
+        isLoading: false,
+        isHide: false,
+        showAnswer: true,
+        loadingState: LoadingState.loaded,
+      );
+    }
+  }
+
   Future<void> getAllFacts() async {
     final response = await CardService.getDeckCards(deck.id);
     state = state.copyWith(facts: response);

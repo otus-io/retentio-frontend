@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../models/deck.dart';
+import '../../../providers/loading_state_provider.dart';
 import '../../learn/widgets/loading_state_widget.dart';
 import '../providers/edit_fact_provider.dart';
 
@@ -54,7 +56,14 @@ class EditFactWidget extends ConsumerWidget {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: () {},
+                  onPressed: () async {
+                    ref.read(loadingStateProvider.notifier).showLoading();
+                    await ref.read(editFactProvider.notifier).updateFact();
+                    ref.read(loadingStateProvider.notifier).showLoaded();
+                    if (context.mounted) {
+                      context.pop();
+                    }
+                  },
                   child: Row(
                     spacing: 5,
                     mainAxisAlignment: .center,

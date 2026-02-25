@@ -180,7 +180,7 @@ class DioClient {
   ///Patch 请求
   Future<ResBaseModel?> patch(
     String url, {
-    Map<String, dynamic>? params,
+    dynamic params,
     Map<String, dynamic>? pathParams,
   }) async {
     assert(_didConfig, 'Please call Dioclient.config(...) first.');

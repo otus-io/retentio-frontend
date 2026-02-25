@@ -59,7 +59,7 @@ class ApiService {
   static Future<ResBaseModel?> patch(
     String endpoint, {
     Map<String, String>? pathParams,
-    Map<String, dynamic>? params,
+    dynamic params,
   }) {
     return dioClient.patch(endpoint, pathParams: pathParams, params: params);
   }

@@ -145,7 +145,6 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
         ),
       );
     }
-
     return Stack(
       children: [
         // 进度指示器

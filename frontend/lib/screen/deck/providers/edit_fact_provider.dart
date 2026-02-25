@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/deck.dart';
+import '../../../services/apis/card_service.dart';
 import 'card_provider.dart';
 
 final editFactProvider = NotifierProvider.autoDispose(
@@ -30,5 +31,17 @@ class EditFactNotifier extends Notifier {
       answerController.dispose();
       questionController.dispose();
     });
+  }
+
+  Future<bool> updateFact() async {
+    final deck = ref.read(deckProvider);
+    final fact = ref.read(cardProvider(deck)).cardDetail?.card.fact;
+    final facts = [questionController.text, answerController.text];
+    final res = await CardService.updateFact(deck.id, fact!.id, facts);
+    bool success = res?.isSuccess == true;
+    if (success) {
+      ref.read(cardProvider(deck).notifier).refreshFact();
+    }
+    return success;
   }
 }

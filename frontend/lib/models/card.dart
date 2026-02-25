@@ -63,6 +63,7 @@ class Card extends Equatable {
     "id": id,
     "last_review": lastReview,
     "template_index": templateIndex,
+    "fact": fact?.toJson(),
   };
 
   /// 是否需要复习（到期时间小于当前时间）
@@ -97,7 +98,7 @@ class Card extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, factId];
+  List<Object?> get props => [id, factId, fact];
 }
 
 class Fact extends Equatable {

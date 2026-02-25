@@ -1,6 +1,8 @@
 import 'package:wordupx/models/card.dart';
+import 'package:wordupx/models/res_base_model.dart';
 import 'package:wordupx/services/apis/api_service.dart';
 import 'package:wordupx/services/index.dart';
+import 'package:wordupx/utils/log.dart';
 
 class CardService {
   /// 获取指定 deck 的所有卡片
@@ -62,9 +64,24 @@ class CardService {
         return null; // 没有需要学习的卡片
       }
 
-      return Fact.fromJson(res?.data);
+      return Fact.fromJson(res?.data['fact']);
     } catch (e) {
+      logger.e(e);
       return null;
     }
+  }
+
+  /// Updates a fact in a deck
+  static Future<ResBaseModel?> updateFact(
+    String deckId,
+    String factId,
+    dynamic params,
+  ) async {
+    final res = await ApiService.patch(
+      Api.fact,
+      pathParams: {'id': deckId, 'factId': factId},
+      params: params,
+    );
+    return res;
   }
 }
