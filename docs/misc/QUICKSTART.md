@@ -27,6 +27,7 @@ This guide walks you through using the WordUpX API via Swagger UI.
 - [5. Get Next Urgent Card](#5-get-next-urgent-card)
 - [6. Review a Card](#6-review-a-card)
 - [7. Hide a Card (Optional)](#7-hide-a-card-optional)
+- [8. Media (Audio / Images)](#8-media-audio--images)
 - [Next Steps](#next-steps)
 
 ---
@@ -67,6 +68,10 @@ This guide walks you through using the WordUpX API via Swagger UI.
 | `/api/decks/{id}/card` | GET | Get most urgent card |
 | `/api/decks/{id}/card` | PATCH | Update card interval or visibility (by card_id) |
 | `/api/decks/{id}/cards` | GET | Get card stats (total, hidden count, hidden facts) |
+| `/api/media` | POST | Upload media (audio/image) |
+| `/api/media` | GET | List user's media (sync manifest) |
+| `/api/media/{id}` | GET | Download media file |
+| `/api/media/{id}` | DELETE | Delete media |
 
 ---
 
@@ -611,8 +616,24 @@ If you want to temporarily hide a card from reviews:
 
 ---
 
+## 8. Media (Audio / Images)
+
+You can attach audio and images to facts. Fact fields reference media by ID using markers `[audio:id]` and `[image:id]`.
+
+**Flow:**
+
+1. **Upload** — `POST /api/media` (multipart/form-data, field `file`). Response includes `data.id`.
+2. **Add fact with media** — Include markers in `entries`, e.g. `["Word", "[audio:abc123]", "[image:def456]", "Translation"]` with `scheme` split so the front includes the media fields (e.g. `[3, 0]` for word + audio + image on front).
+
+When displaying fact text only (e.g. in a list), the UI shows markers as `audio:id` and `image:id` (no brackets). Storage and API use `[type:id]`.
+
+For full design (upload, delete, display, sync), see **[Media Upload design doc](../design-doc/media-upload.md)**.
+
+---
+
 ## Next Steps
 
 - Keep reviewing cards by repeating steps 5-6
 - Create more decks with different field configurations
+- Attach audio and images using the [Media Upload](../design-doc/media-upload.md) flow
 - Explore other endpoints in Swagger UI
