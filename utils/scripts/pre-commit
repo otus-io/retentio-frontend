@@ -126,7 +126,7 @@ if [ -n "$BACKEND_CHANGED" ]; then
     # --- golangci-lint ---
     echo "🔎 Running golangci-lint..."
     if command -v golangci-lint &> /dev/null; then
-        if (cd backend-api && golangci-lint run ./...); then
+        if (cd backend-api && GOFLAGS="-buildvcs=false" golangci-lint run ./...); then
             echo -e "${GREEN}  ✓ golangci-lint OK${NC}"
         else
             echo -e "${RED}  ✗ golangci-lint found issues${NC}"

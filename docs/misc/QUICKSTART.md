@@ -223,7 +223,6 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 ```
 
 > 📝 Save the `deck_id` - you'll need it for the next steps.
-
 > **Why no template on deck?** Decks no longer have a `template` (or `templates`) field. Layout and whether a fact gets a reverse card are controlled **per fact** via the fact's `scheme` when you add facts (see [Add Facts](#4-add-facts)). This lets you choose which facts are siblinged and how each fact's front/back split is defined, without one global setting for the whole deck.
 
 ---
