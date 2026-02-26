@@ -6,6 +6,31 @@
 
 本指南将帮助您通过 Swagger UI 使用 WordUpX API。
 
+## 目录
+
+- [前提条件](#前提条件)
+- [API 接口参考](#api-接口参考)
+- [1. 身份验证](#1-身份验证)
+  - [创建用户](#创建用户)
+  - [登录](#登录)
+  - [授权](#授权)
+  - [登出](#登出)
+  - [忘记密码](#忘记密码)
+  - [重置密码](#重置密码)
+- [2. 创建卡组](#2-创建卡组)
+- [3. 查看卡组详情](#3-查看卡组详情)
+  - [获取单个卡组](#获取单个卡组)
+  - [获取所有卡组](#获取所有卡组)
+  - [更新卡组](#更新卡组)
+  - [删除卡组](#删除卡组)
+- [4. 添加词条](#4-添加词条)
+- [5. 获取下一张最紧急卡片](#5-获取下一张最紧急卡片)
+- [6. 复习卡片](#6-复习卡片)
+- [7. 隐藏卡片（可选）](#7-隐藏卡片可选)
+- [后续步骤](#后续步骤)
+
+---
+
 ## 前提条件
 
 - 打开 Swagger UI：
@@ -169,35 +194,9 @@
     "Japanese"
   ],
   "name": "English Japanese IELTS Deck",
-  "rate": 20,
-  "templates": [
-    [0, 1]
-  ]
+  "rate": 20
 }
 ```
-
-> **理解 `templates`（模板）：**
->
-> 模板定义了如何将词条转化为卡片。每个模板是一个字段索引数组，决定了卡片正面和背面显示哪些字段。
->
-> - `fields` 定义了可用的列：索引 `0` = "English"，索引 `1` = "Japanese"
-> - `[0, 1]` 表示：正面显示 **English** → 背面显示 **Japanese**
->
-> 您可以添加多个模板来创建双向卡片：
->
-> ```json
-> "templates": [
->   [0, 1],
->   [1, 0]
-> ]
-> ```
->
-> - `[0, 1]` → 英语 → 日语（看英文，回忆日语）
-> - `[1, 0]` → 日语 → 英语（看日语，回忆英文）
->
-> 使用 2 个模板时，每个词条会生成 **2 张卡片** — 每个方向各一张。
-
-<!-- -->
 
 > **理解 `rate`（速率）：**
 >
@@ -247,7 +246,6 @@
     "name": "English Japanese IELTS Deck",
     "owner": "swagger",
     "field": ["English", "Japanese"],
-    "templates": [[0, 1]],
     "rate": 20,
     "stats": {
       "cards_count": 0,
@@ -283,7 +281,6 @@
         "name": "English Japanese IELTS Deck",
         "owner": "swagger",
         "field": ["English", "Japanese"],
-        "templates": [[0, 1]],
         "rate": 20,
         "stats": {
           "cards_count": 0,
@@ -333,9 +330,7 @@
 > 添加词条后，`cards_count` 和 `unseen_cards` 会增加。
 > 随着复习的进行，`reviewed_cards` 会增长，`unseen_cards` 会减少。
 >
-> 卡片总数取决于词条数和模板数：
-> `cards_count = facts_count × 模板数量`。
-> 例如，20 个词条搭配 2 个模板（`[0,1]` 和 `[1,0]`）会生成 40 张卡片。
+> 卡片总数取决于词条数以及每个词条的 **scheme**：scheme 的个位为 0 表示一张卡，为 1 表示两张卡（主卡 + 反向卡）。例如 20 个词条均使用 scheme `10` → 20 张卡；10 个词条用 `11`、10 个用 `10` → 30 张卡。
 >
 > 客户端计算学习进度百分比：`reviewed_cards / cards_count * 100`。
 
@@ -353,7 +348,6 @@
 {
   "name": "更新后的卡组名称",
   "fields": ["English", "Japanese"],
-  "templates": [[0, 1], [1, 0]],
   "rate": 30
 }
 ```
@@ -382,7 +376,7 @@
 
 - `id`: `a1b2c3`（您的卡组 ID）
 
-> 此操作会永久删除卡组及其所有关联的词条、卡片和模板。
+> 此操作会永久删除卡组及其所有关联的词条和卡片。
 
 **响应:**
 
@@ -413,29 +407,34 @@
 ```json
 {
   "facts": [
-    ["Apple", "りんご"],
-    ["Book", "本"],
-    ["Water", "水"],
-    ["Hello", "こんにちは"],
-    ["Thank you", "ありがとう"],
-    ["Good morning", "おはよう"],
-    ["Cat", "猫"],
-    ["Dog", "犬"],
-    ["House", "家"],
-    ["Car", "車"],
-    ["Friend", "友達"],
-    ["School", "学校"],
-    ["Teacher", "先生"],
-    ["Student", "学生"],
-    ["Food", "食べ物"],
-    ["Time", "時間"],
-    ["Love", "愛"],
-    ["Peace", "平和"],
-    ["Beautiful", "美しい"],
-    ["Happy", "幸せ"]
+    { "entries": ["Apple", "りんご"], "scheme": 10 },
+    { "entries": ["Book", "本"], "scheme": 10 },
+    { "entries": ["Water", "水"], "scheme": 10 },
+    { "entries": ["Hello", "こんにちは"], "scheme": 10 },
+    { "entries": ["Thank you", "ありがとう"], "scheme": 10 },
+    { "entries": ["Good morning", "おはよう"], "scheme": 10 },
+    { "entries": ["Cat", "猫"], "scheme": 10 },
+    { "entries": ["Dog", "犬"], "scheme": 10 },
+    { "entries": ["House", "家"], "scheme": 10 },
+    { "entries": ["Car", "車"], "scheme": 10 },
+    { "entries": ["Friend", "友達"], "scheme": 10 },
+    { "entries": ["School", "学校"], "scheme": 10 },
+    { "entries": ["Teacher", "先生"], "scheme": 10 },
+    { "entries": ["Student", "学生"], "scheme": 10 },
+    { "entries": ["Food", "食べ物"], "scheme": 10 },
+    { "entries": ["Time", "時間"], "scheme": 10 },
+    { "entries": ["Love", "愛"], "scheme": 10 },
+    { "entries": ["Peace", "平和"], "scheme": 10 },
+    { "entries": ["Beautiful", "美しい"], "scheme": 10 },
+    { "entries": ["Happy", "幸せ"], "scheme": 10 }
   ]
 }
 ```
+
+> **理解词条级别的 `entries` 和 `scheme`：**
+>
+> - **`entries`**：该词条的内容（与卡组列一一对应），如英语/日语为 `["Apple", "りんご"]`。
+> - **`scheme`**：两位数字表示布局。**十位** = 正面显示的条目数（1–9），**个位** = 是否生成反向卡（0 = 一张卡，1 = 两张卡：主卡 + 反向）。例如：`10` = 正面 1 条、无反向卡；`11` = 正面 1 条、有反向卡；`20` = 正面 2 条、无反向卡。须满足 `0 < split <= len(entries)`。
 
 **响应:**
 
@@ -468,7 +467,7 @@
     "card": {
       "id": "xyz12345",
       "fact_id": "x9k2m4np",
-      "template_index": 0,
+      "is_sibling": false,
       "last_review": 1763269701,
       "due_date": 1763269702,
       "hidden": false,

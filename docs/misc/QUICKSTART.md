@@ -6,6 +6,31 @@
 
 This guide walks you through using the WordUpX API via Swagger UI.
 
+## Table of Contents
+
+- [Prerequisites](#prerequisites)
+- [API Reference](#api-reference)
+- [1. Authentication](#1-authentication)
+  - [Create a User](#create-a-user)
+  - [Login](#login)
+  - [Authorize](#authorize)
+  - [Logout](#logout)
+  - [Forgot Password](#forgot-password)
+  - [Reset Password](#reset-password)
+- [2. Create a Deck](#2-create-a-deck)
+- [3. View Deck Details](#3-view-deck-details)
+  - [Get a Single Deck](#get-a-single-deck)
+  - [List All Decks](#list-all-decks)
+  - [Update a Deck](#update-a-deck)
+  - [Delete a Deck](#delete-a-deck)
+- [4. Add Facts](#4-add-facts)
+- [5. Get Next Urgent Card](#5-get-next-urgent-card)
+- [6. Review a Card](#6-review-a-card)
+- [7. Hide a Card (Optional)](#7-hide-a-card-optional)
+- [Next Steps](#next-steps)
+
+---
+
 ## Prerequisites
 
 - Open Swagger UI at:
@@ -170,37 +195,9 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
     "Japanese"
   ],
   "name": "English Japanese IELTS Deck",
-  "rate": 20,
-  "templates": [
-    [0, 1]
-  ]
+  "rate": 20
 }
 ```
-
-> **Understanding `templates`:**
->
-> Templates define how facts are turned into cards. Each template
-> is an array of field indices that determines which fields appear
-> on the front and back of a card.
->
-> - `fields` defines the available columns: index `0` = "English", index `1` = "Japanese"
-> - `[0, 1]` means: show **English** (front) → **Japanese** (back)
->
-> You can add multiple templates to create cards in both directions:
->
-> ```json
-> "templates": [
->   [0, 1],
->   [1, 0]
-> ]
-> ```
->
-> - `[0, 1]` → English → Japanese (reading the English word, recall the Japanese)
-> - `[1, 0]` → Japanese → English (reading the Japanese word, recall the English)
->
-> With 2 templates, each fact generates **2 cards** — one for each direction.
-
-<!-- -->
 
 > **Understanding `rate`:**
 >
@@ -250,7 +247,6 @@ You can view a single deck or list all your decks. Both responses include a `sta
     "name": "English Japanese IELTS Deck",
     "owner": "swagger",
     "field": ["English", "Japanese"],
-    "templates": [[0, 1]],
     "rate": 20,
     "stats": {
       "cards_count": 0,
@@ -286,7 +282,6 @@ You can view a single deck or list all your decks. Both responses include a `sta
         "name": "English Japanese IELTS Deck",
         "owner": "swagger",
         "field": ["English", "Japanese"],
-        "templates": [[0, 1]],
         "rate": 20,
         "stats": {
           "cards_count": 0,
@@ -337,10 +332,8 @@ You can view a single deck or list all your decks. Both responses include a `sta
 > `unseen_cards` will increase. As you review cards,
 > `reviewed_cards` grows and `unseen_cards` decreases.
 >
-> The total cards in a deck depends on the number of facts and
-> templates: `cards_count = facts_count × number_of_templates`.
-> For example, 20 facts with 2 templates (`[0,1]` and `[1,0]`)
-> produces 40 cards.
+> The total cards in a deck depends on the number of facts and each
+> fact's **scheme**: the ones digit of scheme is 0 (one card) or 1 (two cards: primary + sibling). So 20 facts with scheme `10` each → 20 cards; 10 facts with `11` and 10 with `10` → 30 cards.
 >
 > To calculate a progress percentage on the client side: `reviewed_cards / cards_count * 100`.
 
@@ -358,7 +351,6 @@ You can view a single deck or list all your decks. Both responses include a `sta
 {
   "name": "Updated Deck Name",
   "fields": ["English", "Japanese"],
-  "templates": [[0, 1], [1, 0]],
   "rate": 30
 }
 ```
@@ -389,7 +381,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 
 - `id`: `a1b2c3` (your deck ID)
 
-> This permanently deletes the deck and all its associated facts, cards, and templates.
+> This permanently deletes the deck and all its associated facts and cards.
 
 **Response:**
 
@@ -420,29 +412,34 @@ You can view a single deck or list all your decks. Both responses include a `sta
 ```json
 {
   "facts": [
-    ["Apple", "りんご"],
-    ["Book", "本"],
-    ["Water", "水"],
-    ["Hello", "こんにちは"],
-    ["Thank you", "ありがとう"],
-    ["Good morning", "おはよう"],
-    ["Cat", "猫"],
-    ["Dog", "犬"],
-    ["House", "家"],
-    ["Car", "車"],
-    ["Friend", "友達"],
-    ["School", "学校"],
-    ["Teacher", "先生"],
-    ["Student", "学生"],
-    ["Food", "食べ物"],
-    ["Time", "時間"],
-    ["Love", "愛"],
-    ["Peace", "平和"],
-    ["Beautiful", "美しい"],
-    ["Happy", "幸せ"]
+    { "entries": ["Apple", "りんご"], "scheme": 10 },
+    { "entries": ["Book", "本"], "scheme": 10 },
+    { "entries": ["Water", "水"], "scheme": 10 },
+    { "entries": ["Hello", "こんにちは"], "scheme": 10 },
+    { "entries": ["Thank you", "ありがとう"], "scheme": 10 },
+    { "entries": ["Good morning", "おはよう"], "scheme": 10 },
+    { "entries": ["Cat", "猫"], "scheme": 10 },
+    { "entries": ["Dog", "犬"], "scheme": 10 },
+    { "entries": ["House", "家"], "scheme": 10 },
+    { "entries": ["Car", "車"], "scheme": 10 },
+    { "entries": ["Friend", "友達"], "scheme": 10 },
+    { "entries": ["School", "学校"], "scheme": 10 },
+    { "entries": ["Teacher", "先生"], "scheme": 10 },
+    { "entries": ["Student", "学生"], "scheme": 10 },
+    { "entries": ["Food", "食べ物"], "scheme": 10 },
+    { "entries": ["Time", "時間"], "scheme": 10 },
+    { "entries": ["Love", "愛"], "scheme": 10 },
+    { "entries": ["Peace", "平和"], "scheme": 10 },
+    { "entries": ["Beautiful", "美しい"], "scheme": 10 },
+    { "entries": ["Happy", "幸せ"], "scheme": 10 }
   ]
 }
 ```
+
+> **Understanding fact-level `entries` and `scheme`:**
+>
+> - **`entries`**: The content values for this fact (one per deck column), e.g. `["Apple", "りんご"]` for English/Japanese.
+> - **`scheme`**: A two-digit number encoding layout. **Tens digit** = split (how many entries on the **front**; 1–9). **Ones digit** = sibling (0 = one card, 1 = two cards: primary + reverse). Examples: `10` = split at 1, no sibling; `11` = split at 1, with sibling; `20` = split at 2, no sibling. Must satisfy `0 < split <= len(entries)`.
 
 **Response:**
 
@@ -475,7 +472,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
     "card": {
       "id": "xyz12345",
       "fact_id": "x9k2m4np",
-      "template_index": 0,
+      "is_sibling": false,
       "last_review": 1763269701,
       "due_date": 1763269702,
       "hidden": false,
