@@ -224,6 +224,8 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 
 > 📝 Save the `deck_id` - you'll need it for the next steps.
 
+> **Why no template on deck?** Decks no longer have a `template` (or `templates`) field. Layout and whether a fact gets a reverse card are controlled **per fact** via the fact's `scheme` when you add facts (see [Add Facts](#4-add-facts)). This lets you choose which facts are siblinged and how each fact's front/back split is defined, without one global setting for the whole deck.
+
 ---
 
 ## 3. View Deck Details
@@ -333,7 +335,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 > `reviewed_cards` grows and `unseen_cards` decreases.
 >
 > The total cards in a deck depends on the number of facts and each
-> fact's **scheme**: the ones digit of scheme is 0 (one card) or 1 (two cards: primary + sibling). So 20 facts with scheme `10` each → 20 cards; 10 facts with `11` and 10 with `10` → 30 cards.
+> fact's **scheme** `[split, sibling]`: second element 0 = one card, 1 = two cards (primary + sibling). So 20 facts with scheme `[1, 0]` each → 20 cards; 10 facts with `[1, 1]` and 10 with `[1, 0]` → 30 cards.
 >
 > To calculate a progress percentage on the client side: `reviewed_cards / cards_count * 100`.
 
@@ -412,26 +414,26 @@ You can view a single deck or list all your decks. Both responses include a `sta
 ```json
 {
   "facts": [
-    { "entries": ["Apple", "りんご"], "scheme": 10 },
-    { "entries": ["Book", "本"], "scheme": 10 },
-    { "entries": ["Water", "水"], "scheme": 10 },
-    { "entries": ["Hello", "こんにちは"], "scheme": 10 },
-    { "entries": ["Thank you", "ありがとう"], "scheme": 10 },
-    { "entries": ["Good morning", "おはよう"], "scheme": 10 },
-    { "entries": ["Cat", "猫"], "scheme": 10 },
-    { "entries": ["Dog", "犬"], "scheme": 10 },
-    { "entries": ["House", "家"], "scheme": 10 },
-    { "entries": ["Car", "車"], "scheme": 10 },
-    { "entries": ["Friend", "友達"], "scheme": 10 },
-    { "entries": ["School", "学校"], "scheme": 10 },
-    { "entries": ["Teacher", "先生"], "scheme": 10 },
-    { "entries": ["Student", "学生"], "scheme": 10 },
-    { "entries": ["Food", "食べ物"], "scheme": 10 },
-    { "entries": ["Time", "時間"], "scheme": 10 },
-    { "entries": ["Love", "愛"], "scheme": 10 },
-    { "entries": ["Peace", "平和"], "scheme": 10 },
-    { "entries": ["Beautiful", "美しい"], "scheme": 10 },
-    { "entries": ["Happy", "幸せ"], "scheme": 10 }
+    { "entries": ["Apple", "りんご"], "scheme": [1, 0] },
+    { "entries": ["Book", "本"], "scheme": [1, 0] },
+    { "entries": ["Water", "水"], "scheme": [1, 0] },
+    { "entries": ["Hello", "こんにちは"], "scheme": [1, 0] },
+    { "entries": ["Thank you", "ありがとう"], "scheme": [1, 0] },
+    { "entries": ["Good morning", "おはよう"], "scheme": [1, 0] },
+    { "entries": ["Cat", "猫"], "scheme": [1, 0] },
+    { "entries": ["Dog", "犬"], "scheme": [1, 0] },
+    { "entries": ["House", "家"], "scheme": [1, 0] },
+    { "entries": ["Car", "車"], "scheme": [1, 0] },
+    { "entries": ["Friend", "友達"], "scheme": [1, 0] },
+    { "entries": ["School", "学校"], "scheme": [1, 0] },
+    { "entries": ["Teacher", "先生"], "scheme": [1, 0] },
+    { "entries": ["Student", "学生"], "scheme": [1, 0] },
+    { "entries": ["Food", "食べ物"], "scheme": [1, 0] },
+    { "entries": ["Time", "時間"], "scheme": [1, 0] },
+    { "entries": ["Love", "愛"], "scheme": [1, 0] },
+    { "entries": ["Peace", "平和"], "scheme": [1, 0] },
+    { "entries": ["Beautiful", "美しい"], "scheme": [1, 0] },
+    { "entries": ["Happy", "幸せ"], "scheme": [1, 0] }
   ]
 }
 ```
@@ -439,7 +441,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 > **Understanding fact-level `entries` and `scheme`:**
 >
 > - **`entries`**: The content values for this fact (one per deck column), e.g. `["Apple", "りんご"]` for English/Japanese.
-> - **`scheme`**: A two-digit number encoding layout. **Tens digit** = split (how many entries on the **front**; 1–9). **Ones digit** = sibling (0 = one card, 1 = two cards: primary + reverse). Examples: `10` = split at 1, no sibling; `11` = split at 1, with sibling; `20` = split at 2, no sibling. Must satisfy `0 < split <= len(entries)`.
+> - **`scheme`**: A two-element array `[split, sibling]`. **split** = how many entries on the **front** (1 or more). **sibling** = 0 for one card, 1 for two cards (primary + reverse). Examples: `[1, 0]` = split at 1, no sibling; `[1, 1]` = split at 1, with sibling; `[2, 0]` = split at 2, no sibling. Must satisfy `0 < split <= len(entries)`.
 
 **Response:**
 

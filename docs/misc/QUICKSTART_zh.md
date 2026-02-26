@@ -223,6 +223,8 @@
 
 > 📝 保存 `deck_id` - 后续步骤需要用到。
 
+> **为什么卡组没有 template？** 卡组已不再包含 `template`（或 `templates`）字段。布局以及是否生成反向卡改为在**添加词条**时通过每个词条的 `scheme` 控制（见 [添加词条](#4-添加词条)）。这样可以对不同词条分别设置是否生成反向卡以及正反面分界，而无需整副卡组共用一套模板。
+
 ---
 
 ## 3. 查看卡组详情
@@ -330,7 +332,7 @@
 > 添加词条后，`cards_count` 和 `unseen_cards` 会增加。
 > 随着复习的进行，`reviewed_cards` 会增长，`unseen_cards` 会减少。
 >
-> 卡片总数取决于词条数以及每个词条的 **scheme**：scheme 的个位为 0 表示一张卡，为 1 表示两张卡（主卡 + 反向卡）。例如 20 个词条均使用 scheme `10` → 20 张卡；10 个词条用 `11`、10 个用 `10` → 30 张卡。
+> 卡片总数取决于词条数以及每个词条的 **scheme** `[split, sibling]`：第二项为 0 表示一张卡，为 1 表示两张卡（主卡 + 反向卡）。例如 20 个词条均使用 scheme `[1, 0]` → 20 张卡；10 个词条用 `[1, 1]`、10 个用 `[1, 0]` → 30 张卡。
 >
 > 客户端计算学习进度百分比：`reviewed_cards / cards_count * 100`。
 
@@ -407,26 +409,26 @@
 ```json
 {
   "facts": [
-    { "entries": ["Apple", "りんご"], "scheme": 10 },
-    { "entries": ["Book", "本"], "scheme": 10 },
-    { "entries": ["Water", "水"], "scheme": 10 },
-    { "entries": ["Hello", "こんにちは"], "scheme": 10 },
-    { "entries": ["Thank you", "ありがとう"], "scheme": 10 },
-    { "entries": ["Good morning", "おはよう"], "scheme": 10 },
-    { "entries": ["Cat", "猫"], "scheme": 10 },
-    { "entries": ["Dog", "犬"], "scheme": 10 },
-    { "entries": ["House", "家"], "scheme": 10 },
-    { "entries": ["Car", "車"], "scheme": 10 },
-    { "entries": ["Friend", "友達"], "scheme": 10 },
-    { "entries": ["School", "学校"], "scheme": 10 },
-    { "entries": ["Teacher", "先生"], "scheme": 10 },
-    { "entries": ["Student", "学生"], "scheme": 10 },
-    { "entries": ["Food", "食べ物"], "scheme": 10 },
-    { "entries": ["Time", "時間"], "scheme": 10 },
-    { "entries": ["Love", "愛"], "scheme": 10 },
-    { "entries": ["Peace", "平和"], "scheme": 10 },
-    { "entries": ["Beautiful", "美しい"], "scheme": 10 },
-    { "entries": ["Happy", "幸せ"], "scheme": 10 }
+    { "entries": ["Apple", "りんご"], "scheme": [1, 0] },
+    { "entries": ["Book", "本"], "scheme": [1, 0] },
+    { "entries": ["Water", "水"], "scheme": [1, 0] },
+    { "entries": ["Hello", "こんにちは"], "scheme": [1, 0] },
+    { "entries": ["Thank you", "ありがとう"], "scheme": [1, 0] },
+    { "entries": ["Good morning", "おはよう"], "scheme": [1, 0] },
+    { "entries": ["Cat", "猫"], "scheme": [1, 0] },
+    { "entries": ["Dog", "犬"], "scheme": [1, 0] },
+    { "entries": ["House", "家"], "scheme": [1, 0] },
+    { "entries": ["Car", "車"], "scheme": [1, 0] },
+    { "entries": ["Friend", "友達"], "scheme": [1, 0] },
+    { "entries": ["School", "学校"], "scheme": [1, 0] },
+    { "entries": ["Teacher", "先生"], "scheme": [1, 0] },
+    { "entries": ["Student", "学生"], "scheme": [1, 0] },
+    { "entries": ["Food", "食べ物"], "scheme": [1, 0] },
+    { "entries": ["Time", "時間"], "scheme": [1, 0] },
+    { "entries": ["Love", "愛"], "scheme": [1, 0] },
+    { "entries": ["Peace", "平和"], "scheme": [1, 0] },
+    { "entries": ["Beautiful", "美しい"], "scheme": [1, 0] },
+    { "entries": ["Happy", "幸せ"], "scheme": [1, 0] }
   ]
 }
 ```
@@ -434,7 +436,7 @@
 > **理解词条级别的 `entries` 和 `scheme`：**
 >
 > - **`entries`**：该词条的内容（与卡组列一一对应），如英语/日语为 `["Apple", "りんご"]`。
-> - **`scheme`**：两位数字表示布局。**十位** = 正面显示的条目数（1–9），**个位** = 是否生成反向卡（0 = 一张卡，1 = 两张卡：主卡 + 反向）。例如：`10` = 正面 1 条、无反向卡；`11` = 正面 1 条、有反向卡；`20` = 正面 2 条、无反向卡。须满足 `0 < split <= len(entries)`。
+> - **`scheme`**：两元素数组 `[split, sibling]`。**split** = 正面显示的条目数（≥1），**sibling** = 0 为一张卡，1 为两张卡（主卡 + 反向）。例如：`[1, 0]` = 正面 1 条、无反向卡；`[1, 1]` = 正面 1 条、有反向卡；`[2, 0]` = 正面 2 条、无反向卡。须满足 `0 < split <= len(entries)`。
 
 **响应:**
 
