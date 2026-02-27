@@ -12,7 +12,7 @@
 | --- | --- | --- | --- |
 | `POST /auth/register` | 注册用户 | ✅ | ✅ |
 | `POST /auth/login` | 用户登录 | ✅ | ✅ |
-| `POST /auth/logout` | 用户登出 | ❌ | ✅ |
+| `POST /auth/logout` | 用户登出 | ✅ | ✅ |
 | `POST /auth/forgot-password` | 请求密码重置令牌 | ❌ | ✅ |
 | `POST /auth/reset-password` | 使用令牌重置密码 | ❌ | ✅ |
 
@@ -20,7 +20,7 @@
 
 | 接口 | 说明 | 前端 | 后端 |
 | --- | --- | --- | --- |
-| `GET /api/profile` | 获取当前用户信息 | ❌ | ✅ |
+| `GET /api/profile` | 获取当前用户信息 | ✅ | ✅ |
 | `PATCH /api/profile` | 更新用户信息（用户名、邮箱、密码等） | ❌ | ❌ |
 
 ### 卡组
@@ -29,7 +29,7 @@
 | --- | --- | --- | --- |
 | `POST /api/decks` | 创建卡组（创建后自动预排24小时） | ✅ | ✅ |
 | `GET /api/decks` | 获取所有卡组 | ✅ | ✅ |
-| `GET /api/decks/{id}` | 获取卡组详情 | ❌ | ✅ |
+| `GET /api/decks/{id}` | 获取卡组详情 | ✅ | ✅ |
 | `PATCH /api/decks/{id}` | 更新卡组 | ✅ | ✅ |
 | `DELETE /api/decks/{id}` | 删除卡组 | ✅ | ✅ |
 | `GET /api/decks/{id}/card` (meta) | 假期检测：通过 card 元数据返回 | ❌ | ✅ |
@@ -40,23 +40,23 @@
 
 | 接口 | 说明 | 前端 | 后端 |
 | --- | --- | --- | --- |
-| `POST /api/decks/{id}/facts/{operation}` | 添加词条 (append/prepend/shuffle/spread) | ❌ | ✅ |
-| `POST /api/decks/{id}/facts/{factId}/cards` | 为词条添加一张卡片（如反向卡） | ❌ | ✅ |
-| `GET /api/decks/{id}/facts` | 获取所有词条 | ❌ | ✅ |
-| `GET /api/decks/{id}/facts/{factId}` | 获取单个词条 | ❌ | ✅ |
-| `PATCH /api/decks/{id}/facts/{factId}` | 更新词条 | ❌ | ✅ |
-| `DELETE /api/decks/{id}/facts/{factId}` | 删除词条 | ❌ | ✅ |
+| `POST /api/decks/{id}/facts/{operation}` | 添加词条 (append/prepend/shuffle/spread) | ✅ | ✅ |
+| `POST /api/decks/{id}/facts/{factId}/cards` | 为词条添加一张卡片（如反向卡） | ✅ | ✅ |
+| `GET /api/decks/{id}/facts` | 获取所有词条 | ✅ | ✅ |
+| `GET /api/decks/{id}/facts/{factId}` | 获取单个词条 | ✅ | ✅ |
+| `PATCH /api/decks/{id}/facts/{factId}` | 更新词条 | ✅ | ✅ |
+| `DELETE /api/decks/{id}/facts/{factId}` | 删除词条 | ✅ | ✅ |
 | `GET /api/decks/{id}/facts/search` | 模糊搜索词条（提前复习特定单词） | ❌ | ❌ |
 
 ### 卡片
 
 | 接口 | 说明 | 前端 | 后端 |
 | --- | --- | --- | --- |
-| `GET /api/decks/{id}/card` | 获取最紧急卡片 | ❌ | ✅ |
-| `PATCH /api/decks/{id}/card` | 更新卡片间隔或可见性（按 card_id 查找，支持 last_review 离线同步） | ❌ | ✅ |
-| `GET /api/decks/{id}/cards` | 获取卡片统计（总数、隐藏数量、隐藏事实） | ❌ | ✅ |
-| `DELETE /api/decks/{id}/cards/{cardId}` | 删除单张卡片（词条与其他卡片不变） | ❌ | ✅ |
-| `POST /api/decks/{id}/reschedule` | 假期模式：按天数平移卡片复习计划 | ❌ | ✅ |
+| `GET /api/decks/{id}/card` | 获取最紧急卡片 | ✅ | ✅ |
+| `PATCH /api/decks/{id}/card` | 更新卡片间隔或可见性（按 card_id 查找，支持 last_review 离线同步） | ✅ | ✅ |
+| `GET /api/decks/{id}/cards` | 获取卡片统计（总数、隐藏数量、隐藏事实） | ✅ | ✅ |
+| `DELETE /api/decks/{id}/cards/{cardId}` | 删除单张卡片（词条与其他卡片不变） | ✅ | ✅ |
+| `POST /api/decks/{id}/reschedule` | 假期模式：按天数平移卡片复习计划 | ✅ | ✅ |
 
 ### 排行榜 / 游戏化
 
@@ -70,11 +70,11 @@
 
 | 接口 | 说明 | 前端 | 后端 |
 | --- | --- | --- | --- |
-| `POST /api/media` | 上传媒体文件 | ❌ | ✅ |
-| `GET /api/media` | 列出用户媒体（支持 since/limit/offset） | ❌ | ✅ |
-| `GET /api/media/{id}` | 下载媒体文件 | ❌ | ✅ |
-| `GET /api/media/{id}/meta` | 获取媒体元数据 | ❌ | ✅ |
-| `DELETE /api/media/{id}` | 删除媒体 | ❌ | ✅ |
+| `POST /api/media` | 上传媒体文件 | ✅ | ✅ |
+| `GET /api/media` | 列出用户媒体（支持 since/limit/offset） | ✅ | ✅ |
+| `GET /api/media/{id}` | 下载媒体文件 | ✅ | ✅ |
+| `GET /api/media/{id}/meta` | 获取媒体元数据 | ✅ | ✅ |
+| `DELETE /api/media/{id}` | 删除媒体 | ✅ | ✅ |
 
 ### 共享媒体（管理员）
 
