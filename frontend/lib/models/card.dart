@@ -1,22 +1,39 @@
 class CardDetail {
   final String factId;
-  final int templateIndex;
+
+  /// [[front indices], [back indices]] for splitting fact entries into front/back
+  final List<List<int>> template;
   final int lastReview;
   final int dueDate;
   final bool hidden;
 
   CardDetail({
     required this.factId,
-    required this.templateIndex,
+    required this.template,
     required this.lastReview,
     required this.dueDate,
     required this.hidden,
   });
 
   factory CardDetail.fromJson(Map<String, dynamic> json) {
+    List<List<int>> t = [];
+    final raw = json['template'];
+    if (raw is List) {
+      for (final row in raw) {
+        if (row is List) {
+          t.add([for (final x in row) (x as num).toInt()]);
+        }
+      }
+    }
+    if (t.length != 2) {
+      t = [
+        [0],
+        [1],
+      ];
+    }
     return CardDetail(
       factId: json['fact_id'] as String? ?? '',
-      templateIndex: json['template_index'] as int? ?? 0,
+      template: t,
       lastReview: json['last_review'] as int? ?? 0,
       dueDate: json['due_date'] as int? ?? 0,
       hidden: json['hidden'] as bool? ?? false,
@@ -26,7 +43,7 @@ class CardDetail {
   Map<String, dynamic> toJson() {
     return {
       'fact_id': factId,
-      'template_index': templateIndex,
+      'template': template,
       'last_review': lastReview,
       'due_date': dueDate,
       'hidden': hidden,
@@ -53,10 +70,8 @@ class Card {
   factory Card.fromJson(Map<String, dynamic> json) {
     final bool isSimplified =
         json.containsKey('fact_id') && !json.containsKey('card');
-
-    final cardDetail = isSimplified
-        ? CardDetail.fromJson(json)
-        : CardDetail.fromJson(json['card'] as Map<String, dynamic>);
+    final cardMap = isSimplified ? json : json['card'] as Map<String, dynamic>?;
+    final cardDetail = CardDetail.fromJson(cardMap ?? {});
 
     return Card(
       card: cardDetail,

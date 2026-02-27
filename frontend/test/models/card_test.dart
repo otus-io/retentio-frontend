@@ -7,14 +7,20 @@ void main() {
       test('parses full JSON with all fields', () {
         final json = {
           'fact_id': 'abc1234',
-          'template_index': 2,
+          'template': [
+            [0],
+            [1, 2],
+          ],
           'last_review': 1000,
           'due_date': 2000,
           'hidden': true,
         };
         final detail = CardDetail.fromJson(json);
         expect(detail.factId, 'abc1234');
-        expect(detail.templateIndex, 2);
+        expect(detail.template, [
+          [0],
+          [1, 2],
+        ]);
         expect(detail.lastReview, 1000);
         expect(detail.dueDate, 2000);
         expect(detail.hidden, true);
@@ -23,7 +29,10 @@ void main() {
       test('uses default values for missing fields', () {
         final detail = CardDetail.fromJson({});
         expect(detail.factId, '');
-        expect(detail.templateIndex, 0);
+        expect(detail.template, [
+          [0],
+          [1],
+        ]);
         expect(detail.lastReview, 0);
         expect(detail.dueDate, 0);
         expect(detail.hidden, false);
@@ -32,14 +41,17 @@ void main() {
       test('uses null coalescing for null values', () {
         final json = {
           'fact_id': null,
-          'template_index': null,
+          'template': null,
           'last_review': null,
           'due_date': null,
           'hidden': null,
         };
         final detail = CardDetail.fromJson(json);
         expect(detail.factId, '');
-        expect(detail.templateIndex, 0);
+        expect(detail.template, [
+          [0],
+          [1],
+        ]);
         expect(detail.lastReview, 0);
         expect(detail.dueDate, 0);
         expect(detail.hidden, false);
@@ -50,14 +62,20 @@ void main() {
       test('serializes to correct format', () {
         final detail = CardDetail(
           factId: 'abc1234',
-          templateIndex: 2,
+          template: [
+            [0],
+            [1, 2],
+          ],
           lastReview: 1000,
           dueDate: 2000,
           hidden: true,
         );
         final json = detail.toJson();
         expect(json['fact_id'], 'abc1234');
-        expect(json['template_index'], 2);
+        expect(json['template'], [
+          [0],
+          [1, 2],
+        ]);
         expect(json['last_review'], 1000);
         expect(json['due_date'], 2000);
         expect(json['hidden'], true);
@@ -69,7 +87,10 @@ void main() {
         final pastTime = (DateTime.now().millisecondsSinceEpoch ~/ 1000) - 3600;
         final detail = CardDetail(
           factId: 'a',
-          templateIndex: 0,
+          template: [
+            [0],
+            [1],
+          ],
           lastReview: 0,
           dueDate: pastTime,
           hidden: false,
@@ -81,7 +102,10 @@ void main() {
         final pastTime = (DateTime.now().millisecondsSinceEpoch ~/ 1000) - 3600;
         final detail = CardDetail(
           factId: 'a',
-          templateIndex: 0,
+          template: [
+            [0],
+            [1],
+          ],
           lastReview: 0,
           dueDate: pastTime,
           hidden: true,
@@ -94,7 +118,10 @@ void main() {
             (DateTime.now().millisecondsSinceEpoch ~/ 1000) + 3600;
         final detail = CardDetail(
           factId: 'a',
-          templateIndex: 0,
+          template: [
+            [0],
+            [1],
+          ],
           lastReview: 0,
           dueDate: futureTime,
           hidden: false,
@@ -107,7 +134,10 @@ void main() {
       test('returns true when lastReview is 0', () {
         final detail = CardDetail(
           factId: 'a',
-          templateIndex: 0,
+          template: [
+            [0],
+            [1],
+          ],
           lastReview: 0,
           dueDate: 0,
           hidden: false,
@@ -118,7 +148,10 @@ void main() {
       test('returns false when lastReview is non-zero', () {
         final detail = CardDetail(
           factId: 'a',
-          templateIndex: 0,
+          template: [
+            [0],
+            [1],
+          ],
           lastReview: 1000,
           dueDate: 0,
           hidden: false,
@@ -131,7 +164,10 @@ void main() {
   group('Card', () {
     final cardDetail = CardDetail(
       factId: 'a',
-      templateIndex: 0,
+      template: [
+        [0],
+        [1],
+      ],
       lastReview: 0,
       dueDate: 0,
       hidden: false,
@@ -141,7 +177,10 @@ void main() {
       test('parses simplified JSON (flat CardDetail fields)', () {
         final json = {
           'fact_id': 'abc1234',
-          'template_index': 0,
+          'template': [
+            [0],
+            [1],
+          ],
           'last_review': 0,
           'due_date': 0,
           'hidden': false,
@@ -158,7 +197,10 @@ void main() {
         final json = {
           'card': {
             'fact_id': 'def5678',
-            'template_index': 1,
+            'template': [
+              [1],
+              [0],
+            ],
             'last_review': 500,
             'due_date': 1000,
             'hidden': false,
@@ -176,7 +218,10 @@ void main() {
       test('uses defaults for missing fields', () {
         final json = {
           'fact_id': 'a',
-          'template_index': 0,
+          'template': [
+            [0],
+            [1],
+          ],
           'last_review': 0,
           'due_date': 0,
           'hidden': false,
@@ -201,7 +246,10 @@ void main() {
         final pastTime = (DateTime.now().millisecondsSinceEpoch ~/ 1000) - 3600;
         final dueDetail = CardDetail(
           factId: 'a',
-          templateIndex: 0,
+          template: [
+            [0],
+            [1],
+          ],
           lastReview: 0,
           dueDate: pastTime,
           hidden: false,
@@ -213,7 +261,10 @@ void main() {
       test('isNew delegates to card.isNew', () {
         final newDetail = CardDetail(
           factId: 'a',
-          templateIndex: 0,
+          template: [
+            [0],
+            [1],
+          ],
           lastReview: 0,
           dueDate: 0,
           hidden: false,
@@ -225,7 +276,10 @@ void main() {
       test('isHidden delegates to card.hidden', () {
         final hiddenDetail = CardDetail(
           factId: 'a',
-          templateIndex: 0,
+          template: [
+            [0],
+            [1],
+          ],
           lastReview: 0,
           dueDate: 0,
           hidden: true,
