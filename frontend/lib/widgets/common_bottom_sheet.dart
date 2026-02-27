@@ -22,8 +22,8 @@ Future<T?> showCommonBottomSheet<T>({
   AnimationStyle? sheetAnimationStyle,
   bool? requestFocus,
   String? title,
-  double initialChildSize = 0.7,
-  double minChildSize = 0.6,
+  double initialChildSize = 0.6,
+  double minChildSize = 0.5,
   double maxChildSize = 0.8,
 }) {
   return showModalBottomSheet<T>(

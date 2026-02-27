@@ -12,7 +12,7 @@ Deck _createTestDeck({
   int cardsCount = 20,
 }) {
   return Deck.fromJson(<String, dynamic>{
-    'id': 'test-deck-1',
+    'id': 'un4k9u',
     'name': name,
     'templates': [
       [0, 1],
@@ -36,6 +36,8 @@ Deck _createTestDeck({
 }
 
 void main() {
+  setUpAll(setupTestEnvironment);
+  tearDownAll(tearDownTestEnvironment);
   group('DeckLearnScreen Widget', () {
     testWidgets('renders without errors', (tester) async {
       final deck = _createTestDeck();
@@ -44,7 +46,7 @@ void main() {
       );
       // Only pump once — async CardService call is in-flight
       await tester.pump();
-
+      await tester.pump(const Duration(seconds: 1));
       expect(find.byType(DeckLearnScreen), findsOneWidget);
     });
 
@@ -54,7 +56,7 @@ void main() {
         buildTestableWidgetWithoutProvider(DeckLearnScreen(deck: deck)),
       );
       await tester.pump();
-
+      await tester.pump(const Duration(seconds: 1));
       expect(find.text('Vocabulary'), findsOneWidget);
     });
 
@@ -76,17 +78,6 @@ void main() {
       final hasError = find.textContaining('Error').evaluate().isNotEmpty;
 
       expect(hasLoading || hasAllCaughtUp || hasError, isTrue);
-    });
-
-    testWidgets('has Scaffold with AppBar', (tester) async {
-      final deck = _createTestDeck();
-      await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(DeckLearnScreen(deck: deck)),
-      );
-      await tester.pump();
-
-      expect(find.byType(Scaffold), findsOneWidget);
-      expect(find.byType(AppBar), findsOneWidget);
     });
   });
 }

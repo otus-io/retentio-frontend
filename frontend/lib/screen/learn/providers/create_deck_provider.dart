@@ -57,24 +57,27 @@ enum Rate {
   const Rate(this.value);
 
   static Rate fromValue(int value) {
-    return Rate.values.firstWhere((element) => element.value == value);
+    return Rate.values.firstWhere(
+      (element) => element.value == value,
+      orElse: () => Rate.slow,
+    );
   }
 }
 
 enum DeckCardType { add, edit }
 
 class CreateDeckNotifier extends Notifier<CreateDeckState> {
-  final List<String> languages = [
-    'English',
-    'Chinese',
-    'Spanish',
-    'Arabic',
-    'French',
-    'Russian',
-    'Portuguese',
-    'German',
-    'Japanese',
-  ];
+  // final List<String> languages = [
+  //   'English',
+  //   'Chinese',
+  //   'Spanish',
+  //   'Arabic',
+  //   'French',
+  //   'Russian',
+  //   'Portuguese',
+  //   'German',
+  //   'Japanese',
+  // ];
   final TextEditingController nameController = TextEditingController();
   DeckCardType cardType = DeckCardType.add;
   String deckId = '';
@@ -137,7 +140,7 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
       return;
     }
     final params = {
-      'fields': state.fields,
+      //  'fields': state.fields,
       'name': name,
       'templates': [
         [0, 1],

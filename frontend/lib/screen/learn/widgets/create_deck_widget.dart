@@ -17,70 +17,69 @@ class CreateDeckWidget extends ConsumerStatefulWidget {
 class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget> {
   @override
   Widget build(BuildContext context) {
-    final desk = ref.watch(createDeckProvider);
-    final languages = ref.read(createDeckProvider.notifier).languages;
+    // final desk = ref.watch(createDeckProvider);
+    // final languages = ref.read(createDeckProvider.notifier).languages;
     return Column(
       spacing: 20,
       children: [
-        Row(
-          spacing: 16,
-          children: [
-            Icon(LucideIcons.languages),
-            Text('${context.loc.language}:'),
-            DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: desk.fields.first,
-                icon: const Icon(Icons.arrow_drop_down),
-                padding: .zero,
-                borderRadius: BorderRadius.circular(4),
-
-                items: languages
-                    .map(
-                      (e) => DropdownMenuItem(
-                        value: e,
-                        child: Text(e, style: TextStyle(fontSize: 13)),
-                      ),
-                    )
-                    .toList(),
-
-                // 语言切换
-                onChanged: (String? newLocale) {
-                  if (newLocale != null) {
-                    ref
-                        .read(createDeckProvider.notifier)
-                        .changeField(0, newLocale);
-                  }
-                },
-              ),
-            ),
-            DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: desk.fields.last,
-                padding: .symmetric(horizontal: 5),
-                icon: const Icon(Icons.arrow_drop_down),
-                borderRadius: BorderRadius.circular(4),
-                items: languages
-                    .map(
-                      (e) => DropdownMenuItem(
-                        value: e,
-                        child: Text(e, style: TextStyle(fontSize: 13)),
-                      ),
-                    )
-                    .toList(),
-
-                // 语言切换
-                onChanged: (String? newLocale) {
-                  if (newLocale != null) {
-                    ref
-                        .read(createDeckProvider.notifier)
-                        .changeField(1, newLocale);
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
-
+        // Row(
+        //   spacing: 16,
+        //   children: [
+        //     Icon(LucideIcons.languages),
+        //     Text('${context.loc.language}:'),
+        //     DropdownButtonHideUnderline(
+        //       child: DropdownButton<String>(
+        //         value: desk.fields.first,
+        //         icon: const Icon(Icons.arrow_drop_down),
+        //         padding: .zero,
+        //         borderRadius: BorderRadius.circular(4),
+        //
+        //         items: languages
+        //             .map(
+        //               (e) => DropdownMenuItem(
+        //                 value: e,
+        //                 child: Text(e, style: TextStyle(fontSize: 13)),
+        //               ),
+        //             )
+        //             .toList(),
+        //
+        //         // 语言切换
+        //         onChanged: (String? newLocale) {
+        //           if (newLocale != null) {
+        //             ref
+        //                 .read(createDeckProvider.notifier)
+        //                 .changeField(0, newLocale);
+        //           }
+        //         },
+        //       ),
+        //     ),
+        //     DropdownButtonHideUnderline(
+        //       child: DropdownButton<String>(
+        //         value: desk.fields.last,
+        //         padding: .symmetric(horizontal: 5),
+        //         icon: const Icon(Icons.arrow_drop_down),
+        //         borderRadius: BorderRadius.circular(4),
+        //         items: languages
+        //             .map(
+        //               (e) => DropdownMenuItem(
+        //                 value: e,
+        //                 child: Text(e, style: TextStyle(fontSize: 13)),
+        //               ),
+        //             )
+        //             .toList(),
+        //
+        //         // 语言切换
+        //         onChanged: (String? newLocale) {
+        //           if (newLocale != null) {
+        //             ref
+        //                 .read(createDeckProvider.notifier)
+        //                 .changeField(1, newLocale);
+        //           }
+        //         },
+        //       ),
+        //     ),
+        //   ],
+        // ),
         Row(
           spacing: 16,
           mainAxisSize: .max,

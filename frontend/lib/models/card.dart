@@ -1,21 +1,51 @@
-class CardDetail {
-  final String factId;
+import 'package:equatable/equatable.dart';
 
-  /// [[front indices], [back indices]] for splitting fact entries into front/back
-  final List<List<int>> template;
-  final int lastReview;
+class CardDetail extends Equatable {
+  final Card card;
+  final double urgency;
+
+  const CardDetail({required this.card, required this.urgency});
+
+  factory CardDetail.fromJson(Map<String, dynamic> json) => CardDetail(
+    card: Card.fromJson(json["card"]),
+    urgency: json["urgency"]?.toDouble(),
+  );
+
+  Map<String, dynamic> toJson() => {"card": card.toJson(), "urgency": urgency};
+
+  CardDetail? copyWith({Fact? fact}) {
+    return CardDetail(
+      card: card.copyWith(fact: fact),
+      urgency: urgency,
+    );
+  }
+
+  @override
+  List<Object?> get props => [card, urgency];
+}
+
+class Card extends Equatable {
+  final int createdAt;
   final int dueDate;
+  final String factId;
   final bool hidden;
+  final String id;
+  final int lastReview;
+  final List<List<int>> template;
+  final Fact? fact;
 
-  CardDetail({
-    required this.factId,
-    required this.template,
-    required this.lastReview,
+  const Card({
+    required this.createdAt,
     required this.dueDate,
+    required this.factId,
     required this.hidden,
+    required this.id,
+    required this.lastReview,
+    required this.template,
+    this.fact,
   });
 
-  factory CardDetail.fromJson(Map<String, dynamic> json) {
+  factory Card.fromJson(Map<String, dynamic> json) {
     List<List<int>> t = [];
     final raw = json['template'];
     if (raw is List) {
@@ -31,24 +61,27 @@ class CardDetail {
         [1],
       ];
     }
-    return CardDetail(
-      factId: json['fact_id'] as String? ?? '',
+    return Card(
+      createdAt: json["created_at"] as int? ?? 0,
+      dueDate: json["due_date"] as int? ?? 0,
+      factId: json["fact_id"] as String? ?? '',
+      hidden: json["hidden"] as bool? ?? false,
+      id: json["id"] as String? ?? '',
+      lastReview: json["last_review"] as int? ?? 0,
       template: t,
-      lastReview: json['last_review'] as int? ?? 0,
-      dueDate: json['due_date'] as int? ?? 0,
-      hidden: json['hidden'] as bool? ?? false,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'fact_id': factId,
-      'template': template,
-      'last_review': lastReview,
-      'due_date': dueDate,
-      'hidden': hidden,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    "created_at": createdAt,
+    "due_date": dueDate,
+    "fact_id": factId,
+    "hidden": hidden,
+    "id": id,
+    "last_review": lastReview,
+    "template": template,
+    "fact": fact?.toJson(),
+  };
 
   /// 是否需要复习（到期时间小于当前时间）
   bool get isDue {
@@ -58,38 +91,49 @@ class CardDetail {
 
   /// 是否是新卡片（从未复习过）
   bool get isNew => lastReview == 0;
-}
 
-class Card {
-  final CardDetail card;
-  final int cardIndex;
-  final double urgency;
+  /// 获取卡片正面内容（通常是第一个 fact）
+  String get front => fact!.fields.isNotEmpty ? fact!.fields[0] : '';
 
-  Card({required this.card, required this.cardIndex, required this.urgency});
+  /// 获取卡片背面内容（通常是第二个 fact）
+  String get back => fact!.fields.length > 1 ? fact!.fields[1] : '';
 
-  factory Card.fromJson(Map<String, dynamic> json) {
-    final bool isSimplified =
-        json.containsKey('fact_id') && !json.containsKey('card');
-    final cardMap = isSimplified ? json : json['card'] as Map<String, dynamic>?;
-    final cardDetail = CardDetail.fromJson(cardMap ?? {});
+  /// 是否被隐藏
+  bool get isHidden => hidden;
 
+  Card copyWith({Fact? fact}) {
     return Card(
-      card: cardDetail,
-      cardIndex: json['card_index'] as int? ?? 0,
-      urgency: (json['urgency'] as num?)?.toDouble() ?? 0.0,
+      createdAt: createdAt,
+      dueDate: dueDate,
+      factId: factId,
+      hidden: hidden,
+      id: id,
+      lastReview: lastReview,
+      template: template,
+      fact: fact,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {'card': card.toJson(), 'card_index': cardIndex, 'urgency': urgency};
-  }
+  @override
+  List<Object?> get props => [id, factId, fact];
+}
 
-  /// 是否需要复习
-  bool get isDue => card.isDue;
+class Fact extends Equatable {
+  final List<String> fields;
+  final String id;
 
-  /// 是否是新卡片
-  bool get isNew => card.isNew;
+  const Fact({required this.fields, required this.id});
 
-  /// 是否被隐藏
-  bool get isHidden => card.hidden;
+  factory Fact.fromJson(Map<String, dynamic> json) => Fact(
+    fields: List<String>.from(json["fields"].map((x) => x)),
+    id: json["id"],
+  );
+
+  Map<String, dynamic> toJson() => {
+    "fields": List<dynamic>.from(fields.map((x) => x)),
+    "id": id,
+  };
+
+  @override
+  List<Object?> get props => [fields, id];
 }

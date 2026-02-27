@@ -267,5 +267,9 @@
   "template": "Template",
   "@template": {
     "description": "Template label"
+  },
+  "next": "Next",
+  "@next": {
+    "description": "Next button text"
   }
 }
