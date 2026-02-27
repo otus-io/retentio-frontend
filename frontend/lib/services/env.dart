@@ -23,7 +23,7 @@ class Env {
       case ApiEnv.debug:
         return 'https://api.wordupx.com';
       case ApiEnv.dev:
-        return 'https://api.wordupx.com';
+        return 'https://api.wordupx.com:8443';
       case ApiEnv.release:
         return 'https://api.wordupx.com';
     }

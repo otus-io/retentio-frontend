@@ -200,4 +200,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get template => 'Template';
+
+  @override
+  String get next => 'Next';
 }
