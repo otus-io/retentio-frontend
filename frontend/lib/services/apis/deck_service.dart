@@ -10,30 +10,24 @@ class DeckService {
 
   /// 获取所有 decks
   Future<List<Deck>> getDecks() async {
-    try {
-      final res = await ApiService.get(Api.decks);
-      // 如果返回的 data 包含 decks 字段
-      if (res?.data['decks'] != null && res?.data['decks'] is List) {
-        final decksList = res?.data['decks'] as List;
-        return decksList
-            .map((deckJson) => Deck.fromJson(deckJson as Map<String, dynamic>))
-            .toList();
-      }
-
-      return [];
-    } catch (e) {
-      rethrow;
-    }
+    final res = await ApiService.get(Api.decks);
+    if (res?.isSuccess != true || res?.data is! Map) return [];
+    final data = res!.data as Map<String, dynamic>;
+    final decksList = data['decks'];
+    if (decksList is! List) return [];
+    return decksList
+        .map((e) => e is Map<String, dynamic> ? Deck.fromJson(e) : null)
+        .whereType<Deck>()
+        .toList();
   }
 
   /// 获取单个 deck 的详细信息（包含 facts）
   Future<Deck> getDeckDetail(String deckId) async {
-    try {
-      final res = await ApiService.get(Api.deck, pathParams: {'id': deckId});
-      return Deck.fromJson(res?.data);
-    } catch (e) {
-      rethrow;
+    final res = await ApiService.get(Api.deck, pathParams: {'id': deckId});
+    if (res?.isSuccess != true || res?.data is! Map<String, dynamic>) {
+      throw Exception(res?.msg ?? 'Failed to load deck');
     }
+    return Deck.fromJson(res!.data as Map<String, dynamic>);
   }
 
   /// 创建 deck

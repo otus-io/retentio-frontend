@@ -27,7 +27,8 @@
 - [5. 获取下一张最紧急卡片](#5-获取下一张最紧急卡片)
 - [6. 复习卡片](#6-复习卡片)
 - [7. 隐藏卡片（可选）](#7-隐藏卡片可选)
-- [8. 媒体（音频 / 图片）](#8-媒体音频--图片)
+- [8. 删除卡片](#8-删除卡片)
+- [9. 媒体（音频 / 图片）](#9-媒体音频--图片)
 - [后续步骤](#后续步骤)
 
 ---
@@ -60,14 +61,17 @@
 | `/api/decks/{id}` | PATCH | 更新卡组 |
 | `/api/decks/{id}` | DELETE | 删除卡组 |
 | `/api/decks/{id}/facts/{operation}` | POST | 添加词条 (operation: `append`, `prepend`, `shuffle`, `spread`) |
+| `/api/decks/{id}/facts/{factId}/cards` | POST | 为词条添加一张卡片（如反向卡） |
 | `/api/decks/{id}/facts` | GET | 获取所有词条 |
 | `/api/decks/{id}/facts/{factId}` | GET | 获取单个词条 |
 | `/api/decks/{id}/facts/{factId}` | PATCH | 更新词条 |
 | `/api/decks/{id}/facts/{factId}` | DELETE | 删除词条 |
 | `/api/decks/{id}/card` | GET | 获取最紧急卡片 |
-| `/api/decks/{id}/card` | PATCH | 更新卡片间隔或可见性（按 card_id 查找） |
-| `/api/decks/{id}/cards` | GET | 获取卡片统计（总数、隐藏数量、隐藏事实） |
-| `/api/media` | POST | 上传媒体（音频/图片） |
+| `/api/decks/{id}/card` | PATCH | 更新卡片间隔或可见性（按 card_id） |
+| `/api/decks/{id}/cards` | GET | 获取卡片统计 |
+| `/api/decks/{id}/cards/{cardId}` | DELETE | 删除单张卡片（词条及其他卡片不变） |
+| `/api/decks/{id}/reschedule` | POST | 假期模式：按天数平移卡片复习计划 |
+| `/api/media` | POST | 上传媒体 |
 | `/api/media` | GET | 列出用户媒体（同步清单） |
 | `/api/media/{id}` | GET | 下载媒体文件 |
 | `/api/media/{id}` | DELETE | 删除媒体 |
@@ -227,7 +231,7 @@
 ```
 
 > 📝 保存 `deck_id` - 后续步骤需要用到。
-> **为什么卡组没有 template？** 卡组已不再包含 `template`（或 `templates`）字段。布局以及是否生成反向卡改为在**添加词条**时通过每个词条的 `scheme` 控制（见 [添加词条](#4-添加词条)）。这样可以对不同词条分别设置是否生成反向卡以及正反面分界，而无需整副卡组共用一套模板。
+> **为什么卡组没有 template？** 模板不存储在卡组上。添加词条时可传入可选参数 `template`（每个词条一个 `[[正面索引], [背面索引]]`）。服务端将该布局写入每张**卡片**的 `template`。**默认不生成兄弟卡（反向卡）**，每词条仅一张卡（正面第一条、背面其余）。省略 `template` 即使用该默认。
 
 ---
 
@@ -336,7 +340,7 @@
 > 添加词条后，`cards_count` 和 `unseen_cards` 会增加。
 > 随着复习的进行，`reviewed_cards` 会增长，`unseen_cards` 会减少。
 >
-> 卡片总数取决于词条数以及每个词条的 **scheme** `[split, sibling]`：第二项为 0 表示一张卡，为 1 表示两张卡（主卡 + 反向卡）。例如 20 个词条均使用 scheme `[1, 0]` → 20 张卡；10 个词条用 `[1, 1]`、10 个用 `[1, 0]` → 30 张卡。
+> 卡组卡片总数默认等于词条数：**每词条一张卡，默认不生成兄弟卡**。若需为某词条增加第二张卡（如反向卡），可调用 `POST /api/decks/{id}/facts/{factId}/cards` 并传入 `template_index`。
 >
 > 客户端计算学习进度百分比：`reviewed_cards / cards_count * 100`。
 
@@ -408,39 +412,46 @@
 - `id`: `a1b2c3`（您的卡组 ID）
 - `operation`: `append`
 
-**请求体:**
+**请求体：** 词条数组（每项含 `entries`）及可选的 `template`。服务端为每个词条生成唯一 ID，并为每个词条创建**一张卡片**（默认不生成反向/兄弟卡）。卡片的正/背面布局由 `template[i]` 指定（词条索引 `i`），省略或长度不足时使用默认 `[[0], [1, 2, ...]]`。
 
 ```json
 {
   "facts": [
-    { "entries": ["Apple", "りんご"], "scheme": [1, 0] },
-    { "entries": ["Book", "本"], "scheme": [1, 0] },
-    { "entries": ["Water", "水"], "scheme": [1, 0] },
-    { "entries": ["Hello", "こんにちは"], "scheme": [1, 0] },
-    { "entries": ["Thank you", "ありがとう"], "scheme": [1, 0] },
-    { "entries": ["Good morning", "おはよう"], "scheme": [1, 0] },
-    { "entries": ["Cat", "猫"], "scheme": [1, 0] },
-    { "entries": ["Dog", "犬"], "scheme": [1, 0] },
-    { "entries": ["House", "家"], "scheme": [1, 0] },
-    { "entries": ["Car", "車"], "scheme": [1, 0] },
-    { "entries": ["Friend", "友達"], "scheme": [1, 0] },
-    { "entries": ["School", "学校"], "scheme": [1, 0] },
-    { "entries": ["Teacher", "先生"], "scheme": [1, 0] },
-    { "entries": ["Student", "学生"], "scheme": [1, 0] },
-    { "entries": ["Food", "食べ物"], "scheme": [1, 0] },
-    { "entries": ["Time", "時間"], "scheme": [1, 0] },
-    { "entries": ["Love", "愛"], "scheme": [1, 0] },
-    { "entries": ["Peace", "平和"], "scheme": [1, 0] },
-    { "entries": ["Beautiful", "美しい"], "scheme": [1, 0] },
-    { "entries": ["Happy", "幸せ"], "scheme": [1, 0] }
+    { "entries": ["Apple", "りんご"] },
+    { "entries": ["Book", "本"] },
+    { "entries": ["Water", "水"] },
+    { "entries": ["Hello", "こんにちは"] },
+    { "entries": ["Thank you", "ありがとう"] },
+    { "entries": ["Good morning", "おはよう"] },
+    { "entries": ["Cat", "猫"] },
+    { "entries": ["Dog", "犬"] },
+    { "entries": ["House", "家"] },
+    { "entries": ["Car", "車"] },
+    { "entries": ["Friend", "友達"] },
+    { "entries": ["School", "学校"] },
+    { "entries": ["Teacher", "先生"] },
+    { "entries": ["Student", "学生"] },
+    { "entries": ["Food", "食べ物"] },
+    { "entries": ["Time", "時間"] },
+    { "entries": ["Love", "愛"] },
+    { "entries": ["Peace", "平和"] },
+    { "entries": ["Beautiful", "美しい"] },
+    { "entries": ["Happy", "幸せ"] }
   ]
 }
 ```
 
-> **理解词条级别的 `entries` 和 `scheme`：**
+可选 **`template`**：布局数组，与词条一一对应。每项为 `[[正面索引], [背面索引]]`（如 `[[0], [1]]`）。省略或长度不足时，对应词条使用默认布局。例如两个词条、第二个为反向：
+
+```json
+"template": [ [[0], [1]], [[1], [0]] ]
+```
+
+> **理解请求体：**
 >
-> - **`entries`**：该词条的内容（与卡组列一一对应），如英语/日语为 `["Apple", "りんご"]`。
-> - **`scheme`**：两元素数组 `[split, sibling]`。**split** = 正面显示的条目数（≥1），**sibling** = 0 为一张卡，1 为两张卡（主卡 + 反向）。例如：`[1, 0]` = 正面 1 条、无反向卡；`[1, 1]` = 正面 1 条、有反向卡；`[2, 0]` = 正面 2 条、无反向卡。须满足 `0 < split <= len(entries)`。
+> - **`entries`**：该词条的内容（与卡组列一一对应），如 `["Apple", "りんご"]`。
+> - **`fields`**（可选）：该词条各列的显示名称；第 `i` 个条目对应 `fields[i]`。省略则使用卡组默认 `fields`。若提供，长度须与 `entries` 一致（如三列可为 `["Word", "Translation", "Example sentence"]`）。
+> - **`template`**（可选）：按词条的布局。每词条一个 `[][]int`；省略或 `i >= len(template)` 时使用默认 `[[0], [1, 2, ...]]`。使用三维数组（每词条一个布局）是为了让不同词条可有不同正/背面布局，并为将来「一词条多张卡」（如主卡 + 反向 + 第三种变体）预留扩展；当前接口仍为每词条只创建一张卡。
 
 **响应:**
 
@@ -473,7 +484,7 @@
     "card": {
       "id": "xyz12345",
       "fact_id": "x9k2m4np",
-      "is_sibling": false,
+      "template": [[0], [1]],
       "last_review": 1763269701,
       "due_date": 1763269702,
       "hidden": false,
@@ -610,14 +621,42 @@
 
 ---
 
-## 8. 媒体（音频 / 图片）
+## 8. 删除卡片
+
+从卡组中永久删除单张卡片。该词条及该词条的其他卡片（如反向卡）不受影响。
+
+**接口：** `DELETE /api/decks/{id}/cards/{cardId}`
+
+**参数：**
+
+- `id`：卡组 ID（如 `a1b2c3`）
+- `cardId`：卡片 ID（来自获取下一张卡片或卡片统计的响应）
+
+**请求体：** 无。
+
+**响应：**
+
+```json
+{
+  "data": {
+    "card_id": "xyz12345"
+  },
+  "meta": {
+    "msg": "Card deleted successfully"
+  }
+}
+```
+
+---
+
+## 9. 媒体（音频 / 图片）
 
 可为词条附加音频和图片。词条字段通过标记 `[audio:id]` 和 `[image:id]` 按 ID 引用媒体。
 
 **流程：**
 
 1. **上传** — `POST /api/media`（multipart/form-data，字段 `file`）。响应包含 `data.id`。
-2. **添加带媒体的词条** — 在 `entries` 中加入标记，例如 `["Word", "[audio:abc123]", "[image:def456]", "Translation"]`，并设置 `scheme` 的 split，使正面包含媒体字段（如 `[3, 0]` 表示正面为词 + 音频 + 图片）。
+2. **添加带媒体的词条** — 在 `entries` 中加入标记，例如 `["Word", "[audio:abc123]", "[image:def456]", "Translation"]`。可按需传入 `template` 指定每词条的正/背面布局；省略则使用默认（正面第一条、背面其余）。
 
 仅以纯文本展示词条时（如列表中），界面显示为 `audio:id` 和 `image:id`（无方括号）。存储与 API 使用 `[type:id]`。
 

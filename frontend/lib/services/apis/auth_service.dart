@@ -6,20 +6,17 @@ import 'package:wordupx/services/index.dart';
 import 'api_service.dart';
 
 class AuthService {
-  /// 注册
   static Future<ResBaseModel?> register({
     required String email,
     required String username,
     required String password,
   }) async {
-    final data = await ApiService.post(
+    return ApiService.post(
       Api.register,
       body: {'email': email, 'username': username, 'password': password},
     );
-    return data;
   }
 
-  /// 登录
   static Future<Map<String, dynamic>> login({
     required String username,
     required String password,
@@ -29,23 +26,38 @@ class AuthService {
       body: {'username': username, 'password': password},
     );
 
-    // 若返回里有 token，则顺便保存，后续请求会自动带上
-    final token = res?.data['token'];
-
+    final token = res?.data is Map ? (res!.data as Map)['token'] : null;
     if (token is String && token.isNotEmpty) {
-      ApiService.setToken(token);
-      // 登录成功后设置 isLogin 为 true
+      await ApiService.setToken(token);
       providerContainer.read(isLoginProvider.notifier).setLogin(true);
     }
 
-    return res?.data ?? {};
+    return res?.data is Map
+        ? Map<String, dynamic>.from(res!.data as Map)
+        : <String, dynamic>{};
   }
 
-  /// 登出（可选）
-  static Future<void> logout() async {
-    // 如果有后端登出接口，这里可调用：
-    // await ApiService.post('/auth/logout');
-    ApiService.clearToken();
+  /// Logout: invalidates token on server and clears local state.
+  static Future<ResBaseModel?> logout() async {
+    final res = await ApiService.post(Api.logout);
+    await ApiService.clearToken();
     providerContainer.read(isLoginProvider.notifier).setLogin(false);
+    return res;
+  }
+
+  /// Request password reset; server returns reset_token (e.g. for email flow).
+  static Future<ResBaseModel?> forgotPassword({required String email}) async {
+    return ApiService.post(Api.forgotPassword, body: {'email': email});
+  }
+
+  /// Reset password using token from forgot-password.
+  static Future<ResBaseModel?> resetPassword({
+    required String token,
+    required String newPassword,
+  }) async {
+    return ApiService.post(
+      Api.resetPassword,
+      body: {'token': token, 'new_password': newPassword},
+    );
   }
 }

@@ -378,17 +378,20 @@ class DioClient {
       case DioExceptionType.receiveTimeout:
         msg = 'Receive timeout';
       case DioExceptionType.badResponse:
-        msg = 'Bad response';
+        final data = e.response?.data;
+        if (data is Map && (data['msg'] != null || data['message'] != null)) {
+          msg = (data['msg'] ?? data['message']).toString();
+        } else {
+          msg = 'Bad response';
+        }
+        break;
       case DioExceptionType.cancel:
         msg = 'Request cancel';
       case DioExceptionType.unknown:
         msg = e.message ?? 'Unknown error';
     }
     logger.e('e.response: ${e.response}');
-    // DialogUtil.dismiss();
-    // DialogUtil.showToast(msg);
-    final data = e.response is Map ? e.response?.data : null;
-    return ResBaseModel(msg: data ?? msg, exception: e, code: -1);
+    return ResBaseModel(msg: msg, exception: e, code: -1);
   }
 
   static HttpClient _createHttpClient() {

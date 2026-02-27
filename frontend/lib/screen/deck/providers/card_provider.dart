@@ -72,7 +72,7 @@ class CardNotifier extends Notifier<CardState> {
   }
 
   Future<void> getCardDetail() async {
-    final response = await CardService.getNextDueCard(deck.id);
+    final response = await CardService.getNextCard(deck.id);
 
     if (response != null) {
       final facts = state.facts;
@@ -119,7 +119,7 @@ class CardNotifier extends Notifier<CardState> {
   }
 
   Future<void> getAllFacts() async {
-    final response = await CardService.getDeckCards(deck.id);
+    final response = await CardService.getFacts(deck.id);
     state = state.copyWith(facts: response);
   }
 }

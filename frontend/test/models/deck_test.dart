@@ -21,38 +21,58 @@ void main() {
   group('DeckStats', () {
     test('fromJson parses all fields', () {
       final json = {
-        'unseen_cards': 10,
-        'facts_count': 50,
-        'due_cards': 5,
         'cards_count': 20,
+        'facts_count': 50,
+        'unseen_cards': 10,
+        'reviewed_cards': 10,
+        'due_cards': 5,
+        'hidden_cards': 2,
+        'new_cards_today': 4,
+        'last_reviewed_at': 1739696400,
       };
       final stats = DeckStats.fromJson(json);
-      expect(stats.unseenCards, 10);
-      expect(stats.factsCount, 50);
-      expect(stats.dueCards, 5);
       expect(stats.cardsCount, 20);
+      expect(stats.factsCount, 50);
+      expect(stats.unseenCards, 10);
+      expect(stats.reviewedCards, 10);
+      expect(stats.dueCards, 5);
+      expect(stats.hiddenCards, 2);
+      expect(stats.newCardsToday, 4);
+      expect(stats.lastReviewedAt, 1739696400);
     });
 
     test('fromJson uses default 0 for missing fields', () {
       final stats = DeckStats.fromJson({});
-      expect(stats.unseenCards, 0);
-      expect(stats.factsCount, 0);
-      expect(stats.dueCards, 0);
       expect(stats.cardsCount, 0);
+      expect(stats.factsCount, 0);
+      expect(stats.unseenCards, 0);
+      expect(stats.reviewedCards, 0);
+      expect(stats.dueCards, 0);
+      expect(stats.hiddenCards, 0);
+      expect(stats.newCardsToday, 0);
+      expect(stats.lastReviewedAt, 0);
     });
 
     test('toJson serializes correctly', () {
       final stats = DeckStats(
-        unseenCards: 5,
-        factsCount: 25,
-        dueCards: 3,
         cardsCount: 30,
+        factsCount: 25,
+        unseenCards: 5,
+        reviewedCards: 25,
+        dueCards: 3,
+        hiddenCards: 1,
+        newCardsToday: 2,
+        lastReviewedAt: 1704067200,
       );
       final json = stats.toJson();
-      expect(json['unseen_cards'], 5);
-      expect(json['facts_count'], 25);
-      expect(json['due_cards'], 3);
       expect(json['cards_count'], 30);
+      expect(json['facts_count'], 25);
+      expect(json['unseen_cards'], 5);
+      expect(json['reviewed_cards'], 25);
+      expect(json['due_cards'], 3);
+      expect(json['hidden_cards'], 1);
+      expect(json['new_cards_today'], 2);
+      expect(json['last_reviewed_at'], 1704067200);
     });
   });
 
@@ -66,10 +86,14 @@ void main() {
             [0, 1],
           ],
           'stats': {
-            'unseen_cards': 5,
-            'facts_count': 10,
-            'due_cards': 2,
             'cards_count': 20,
+            'facts_count': 10,
+            'unseen_cards': 5,
+            'reviewed_cards': 15,
+            'due_cards': 2,
+            'hidden_cards': 0,
+            'new_cards_today': 0,
+            'last_reviewed_at': 0,
           },
           'rate': 10,
           'owner': {'username': 'owner1', 'email': 'owner@test.com'},
@@ -178,10 +202,14 @@ void main() {
             <int>[0],
           ],
           stats: DeckStats(
-            unseenCards: 5,
-            factsCount: 10,
-            dueCards: 2,
             cardsCount: 20,
+            factsCount: 10,
+            unseenCards: 5,
+            reviewedCards: 15,
+            dueCards: 2,
+            hiddenCards: 0,
+            newCardsToday: 0,
+            lastReviewedAt: 0,
           ),
           rate: 1,
           owner: DeckOwner(username: 'u', email: 'e@e.com'),
@@ -207,10 +235,14 @@ void main() {
           name: 'n',
           templates: <List<int>>[],
           stats: DeckStats(
-            unseenCards: 0,
-            factsCount: 0,
-            dueCards: 0,
             cardsCount: 0,
+            factsCount: 0,
+            unseenCards: 0,
+            reviewedCards: 0,
+            dueCards: 0,
+            hiddenCards: 0,
+            newCardsToday: 0,
+            lastReviewedAt: 0,
           ),
           rate: 0,
           owner: DeckOwner(username: '', email: ''),
@@ -228,10 +260,14 @@ void main() {
           name: 'n',
           templates: <List<int>>[],
           stats: DeckStats(
-            unseenCards: 5,
-            factsCount: 10,
-            dueCards: 2,
             cardsCount: 20,
+            factsCount: 10,
+            unseenCards: 5,
+            reviewedCards: 15,
+            dueCards: 2,
+            hiddenCards: 0,
+            newCardsToday: 0,
+            lastReviewedAt: 0,
           ),
           rate: 0,
           owner: DeckOwner(username: '', email: ''),
@@ -249,10 +285,14 @@ void main() {
           name: 'n',
           templates: <List<int>>[],
           stats: DeckStats(
-            unseenCards: 0,
-            factsCount: 0,
-            dueCards: 0,
             cardsCount: 10,
+            factsCount: 10,
+            unseenCards: 0,
+            reviewedCards: 10,
+            dueCards: 0,
+            hiddenCards: 0,
+            newCardsToday: 0,
+            lastReviewedAt: 0,
           ),
           rate: 0,
           owner: DeckOwner(username: '', email: ''),
@@ -272,10 +312,14 @@ void main() {
           name: 'n',
           templates: <List<int>>[],
           stats: DeckStats(
-            unseenCards: 8,
-            factsCount: 20,
-            dueCards: 5,
             cardsCount: 25,
+            factsCount: 20,
+            unseenCards: 8,
+            reviewedCards: 17,
+            dueCards: 5,
+            hiddenCards: 0,
+            newCardsToday: 0,
+            lastReviewedAt: 0,
           ),
           rate: 0,
           owner: DeckOwner(username: '', email: ''),

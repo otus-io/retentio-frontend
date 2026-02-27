@@ -14,11 +14,16 @@ class ResBaseModel {
 
   static ResBaseModel defaultRes = ResBaseModel();
 
-  factory ResBaseModel.fromJson(dynamic json) => ResBaseModel(
-    code: json['code'] ?? 0,
-    msg: json['message']?.toString() ?? 'Unknown error',
-    data: json['data'],
-  );
+  factory ResBaseModel.fromJson(dynamic json) {
+    if (json == null || json is! Map) {
+      return ResBaseModel();
+    }
+    return ResBaseModel(
+      code: json['code'] ?? (json['data'] != null ? 0 : -1),
+      msg: (json['msg'] ?? json['message'])?.toString() ?? 'Unknown error',
+      data: json['data'],
+    );
+  }
 
   int code;
   String msg;

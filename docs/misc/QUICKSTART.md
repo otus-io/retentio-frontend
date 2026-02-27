@@ -27,7 +27,8 @@ This guide walks you through using the WordUpX API via Swagger UI.
 - [5. Get Next Urgent Card](#5-get-next-urgent-card)
 - [6. Review a Card](#6-review-a-card)
 - [7. Hide a Card (Optional)](#7-hide-a-card-optional)
-- [8. Media (Audio / Images)](#8-media-audio--images)
+- [8. Delete a Card](#8-delete-a-card)
+- [9. Media (Audio / Images)](#9-media-audio--images)
 - [Next Steps](#next-steps)
 
 ---
@@ -61,6 +62,7 @@ This guide walks you through using the WordUpX API via Swagger UI.
 | `/api/decks/{id}` | PATCH | Update deck |
 | `/api/decks/{id}` | DELETE | Delete deck |
 | `/api/decks/{id}/facts/{operation}` | POST | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`) |
+| `/api/decks/{id}/facts/{factId}/cards` | POST | Add a card for an existing fact (e.g. sibling/reversed) |
 | `/api/decks/{id}/facts` | GET | Get all facts |
 | `/api/decks/{id}/facts/{factId}` | GET | Get a specific fact |
 | `/api/decks/{id}/facts/{factId}` | PATCH | Update a fact |
@@ -68,6 +70,8 @@ This guide walks you through using the WordUpX API via Swagger UI.
 | `/api/decks/{id}/card` | GET | Get most urgent card |
 | `/api/decks/{id}/card` | PATCH | Update card interval or visibility (by card_id) |
 | `/api/decks/{id}/cards` | GET | Get card stats (total, hidden count, hidden facts) |
+| `/api/decks/{id}/cards/{cardId}` | DELETE | Delete a single card (fact and other cards unchanged) |
+| `/api/decks/{id}/reschedule` | POST | Reschedule deck cards (shift due dates by N days) |
 | `/api/media` | POST | Upload media (audio/image) |
 | `/api/media` | GET | List user's media (sync manifest) |
 | `/api/media/{id}` | GET | Download media file |
@@ -228,7 +232,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 ```
 
 > 📝 Save the `deck_id` - you'll need it for the next steps.
-> **Why no template on deck?** Decks no longer have a `template` (or `templates`) field. Layout and whether a fact gets a reverse card are controlled **per fact** via the fact's `scheme` when you add facts (see [Add Facts](#4-add-facts)). This lets you choose which facts are siblinged and how each fact's front/back split is defined, without one global setting for the whole deck.
+> **Why no template on deck?** Templates are not stored on the deck. When you add facts, you can pass an optional `template` array (one `[[front indices], [back indices]]` per fact). The server writes that layout onto each **card**. By default, **no sibling (reversed) card is created**—only one card per fact (front = first entry, back = rest). Omit `template` to use that default.
 
 ---
 
@@ -338,8 +342,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 > `unseen_cards` will increase. As you review cards,
 > `reviewed_cards` grows and `unseen_cards` decreases.
 >
-> The total cards in a deck depends on the number of facts and each
-> fact's **scheme** `[split, sibling]`: second element 0 = one card, 1 = two cards (primary + sibling). So 20 facts with scheme `[1, 0]` each → 20 cards; 10 facts with `[1, 1]` and 10 with `[1, 0]` → 30 cards.
+> The total cards in a deck equals the number of facts: **one card per fact by default, no sibling card**. To add a second card for a fact (e.g. reversed), use `POST /api/decks/{id}/facts/{factId}/cards` with `template_index`.
 >
 > To calculate a progress percentage on the client side: `reviewed_cards / cards_count * 100`.
 
@@ -413,39 +416,46 @@ You can view a single deck or list all your decks. Both responses include a `sta
 - `id`: `a1b2c3` (your deck ID)
 - `operation`: `append`
 
-**Request Body:**
+**Request Body:** An array of fact items (each with `entries`) and optional `template`. The server generates a unique fact ID for each fact and creates **one card per fact** (no sibling/reversed card by default). Each card's front/back layout is given by `template[i]` for fact index `i`, or the default `[[0], [1, 2, ...]]` when omitted.
 
 ```json
 {
   "facts": [
-    { "entries": ["Apple", "りんご"], "scheme": [1, 0] },
-    { "entries": ["Book", "本"], "scheme": [1, 0] },
-    { "entries": ["Water", "水"], "scheme": [1, 0] },
-    { "entries": ["Hello", "こんにちは"], "scheme": [1, 0] },
-    { "entries": ["Thank you", "ありがとう"], "scheme": [1, 0] },
-    { "entries": ["Good morning", "おはよう"], "scheme": [1, 0] },
-    { "entries": ["Cat", "猫"], "scheme": [1, 0] },
-    { "entries": ["Dog", "犬"], "scheme": [1, 0] },
-    { "entries": ["House", "家"], "scheme": [1, 0] },
-    { "entries": ["Car", "車"], "scheme": [1, 0] },
-    { "entries": ["Friend", "友達"], "scheme": [1, 0] },
-    { "entries": ["School", "学校"], "scheme": [1, 0] },
-    { "entries": ["Teacher", "先生"], "scheme": [1, 0] },
-    { "entries": ["Student", "学生"], "scheme": [1, 0] },
-    { "entries": ["Food", "食べ物"], "scheme": [1, 0] },
-    { "entries": ["Time", "時間"], "scheme": [1, 0] },
-    { "entries": ["Love", "愛"], "scheme": [1, 0] },
-    { "entries": ["Peace", "平和"], "scheme": [1, 0] },
-    { "entries": ["Beautiful", "美しい"], "scheme": [1, 0] },
-    { "entries": ["Happy", "幸せ"], "scheme": [1, 0] }
+    { "entries": ["Apple", "りんご"] },
+    { "entries": ["Book", "本"] },
+    { "entries": ["Water", "水"] },
+    { "entries": ["Hello", "こんにちは"] },
+    { "entries": ["Thank you", "ありがとう"] },
+    { "entries": ["Good morning", "おはよう"] },
+    { "entries": ["Cat", "猫"] },
+    { "entries": ["Dog", "犬"] },
+    { "entries": ["House", "家"] },
+    { "entries": ["Car", "車"] },
+    { "entries": ["Friend", "友達"] },
+    { "entries": ["School", "学校"] },
+    { "entries": ["Teacher", "先生"] },
+    { "entries": ["Student", "学生"] },
+    { "entries": ["Food", "食べ物"] },
+    { "entries": ["Time", "時間"] },
+    { "entries": ["Love", "愛"] },
+    { "entries": ["Peace", "平和"] },
+    { "entries": ["Beautiful", "美しい"] },
+    { "entries": ["Happy", "幸せ"] }
   ]
 }
 ```
 
-> **Understanding fact-level `entries` and `scheme`:**
+Optional **`template`**: array of layouts, one per fact. Each element is `[[front indices], [back indices]]` (e.g. `[[0], [1]]` = front entry 0, back entry 1). If `template` is omitted or shorter than `facts`, missing facts use the default layout. Example with two facts, second fact reversed:
+
+```json
+"template": [ [[0], [1]], [[1], [0]] ]
+```
+
+> **Understanding the request:**
 >
 > - **`entries`**: The content values for this fact (one per deck column), e.g. `["Apple", "りんご"]` for English/Japanese.
-> - **`scheme`**: A two-element array `[split, sibling]`. **split** = how many entries on the **front** (1 or more). **sibling** = 0 for one card, 1 for two cards (primary + reverse). Examples: `[1, 0]` = split at 1, no sibling; `[1, 1]` = split at 1, with sibling; `[2, 0]` = split at 2, no sibling. Must satisfy `0 < split <= len(entries)`.
+> - **`fields`** (optional): Column names for this fact; entry `i` is shown under `fields[i]`. If omitted, use the deck's default `fields`. When provided, length must equal `len(entries)` (e.g. `["Word", "Translation", "Example sentence"]` for three entries).
+> - **`template`** (optional): Per-fact layout. One `[][]int` per fact; when empty or `i >= len(template)`, that fact gets default `[[0], [1, 2, ...]]`. The array is 3D (one layout per fact) so each fact can have a different front/back layout, and to allow for one fact with multiple cards later (e.g. primary + reversed + a third variant)—today the API still creates only one card per fact.
 
 **Response:**
 
@@ -478,7 +488,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
     "card": {
       "id": "xyz12345",
       "fact_id": "x9k2m4np",
-      "is_sibling": false,
+      "template": [[0], [1]],
       "last_review": 1763269701,
       "due_date": 1763269702,
       "hidden": false,
@@ -616,14 +626,42 @@ If you want to temporarily hide a card from reviews:
 
 ---
 
-## 8. Media (Audio / Images)
+## 8. Delete a Card
+
+Permanently remove a single card from a deck. The fact and any other cards for that fact (e.g. a sibling/reversed card) are unchanged.
+
+**Endpoint:** `DELETE /api/decks/{id}/cards/{cardId}`
+
+**Parameters:**
+
+- `id`: deck ID (e.g. `a1b2c3`)
+- `cardId`: card ID (from get-next-card response or card stats)
+
+**Request Body:** None.
+
+**Response:**
+
+```json
+{
+  "data": {
+    "card_id": "xyz12345"
+  },
+  "meta": {
+    "msg": "Card deleted successfully"
+  }
+}
+```
+
+---
+
+## 9. Media (Audio / Images)
 
 You can attach audio and images to facts. Fact fields reference media by ID using markers `[audio:id]` and `[image:id]`.
 
 **Flow:**
 
 1. **Upload** — `POST /api/media` (multipart/form-data, field `file`). Response includes `data.id`.
-2. **Add fact with media** — Include markers in `entries`, e.g. `["Word", "[audio:abc123]", "[image:def456]", "Translation"]` with `scheme` split so the front includes the media fields (e.g. `[3, 0]` for word + audio + image on front).
+2. **Add fact with media** — Include markers in `entries`, e.g. `["Word", "[audio:abc123]", "[image:def456]", "Translation"]`. Use optional `template` for custom front/back layout per fact; omit for default (front = first entry, back = rest).
 
 When displaying fact text only (e.g. in a list), the UI shows markers as `audio:id` and `image:id` (no brackets). Storage and API use `[type:id]`.
 
