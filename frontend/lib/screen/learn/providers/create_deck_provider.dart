@@ -139,15 +139,21 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
       );
       return;
     }
+    if (state.fields.length < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'At least two fields are required',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
     final params = {
-      //  'fields': state.fields,
       'name': name,
-      'templates': [
-        [0, 1],
-        if (state.templates == 1) ...[
-          [1, 0],
-        ],
-      ],
+      'fields': state.fields,
       'rate': state.rate.value,
     };
     ref.read(loadingStateProvider.notifier).showLoading();

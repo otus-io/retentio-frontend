@@ -200,11 +200,55 @@ void main() {
       expect(fact.fields, ["Apple", "苹果"]);
     });
 
-    test('toJson serializes correctly', () {
+    test('fromJson accepts backend entries key', () {
+      final json = {
+        "entries": ["Hello", "こんにちは"],
+        "id": "f2",
+      };
+      final fact = Fact.fromJson(json);
+      expect(fact.id, "f2");
+      expect(fact.fields, ["Hello", "こんにちは"]);
+    });
+
+    test('fromJson handles empty or missing list', () {
+      final fact = Fact.fromJson({'id': 'f3'});
+      expect(fact.id, 'f3');
+      expect(fact.fields, isEmpty);
+    });
+
+    test('toJson serializes correctly (backend uses entries)', () {
       final fact = Fact(fields: ['Apple', '苹果'], id: 'f1');
       final json = fact.toJson();
       expect(json['id'], 'f1');
-      expect(json['fields'], ['Apple', '苹果']);
+      expect(json['entries'], ['Apple', '苹果']);
+    });
+  });
+
+  group('CardStats', () {
+    test('fromJson parses total_cards and hidden_count', () {
+      final json = {
+        'total_cards': 10,
+        'hidden_count': 2,
+        'hidden_facts': [
+          {
+            'id': 'f1',
+            'entries': ['A', 'B'],
+          },
+        ],
+      };
+      final stats = CardStats.fromJson(json);
+      expect(stats.totalCards, 10);
+      expect(stats.hiddenCount, 2);
+      expect(stats.hiddenFacts.length, 1);
+      expect(stats.hiddenFacts[0].id, 'f1');
+      expect(stats.hiddenFacts[0].fields, ['A', 'B']);
+    });
+
+    test('fromJson handles missing fields', () {
+      final stats = CardStats.fromJson({});
+      expect(stats.totalCards, 0);
+      expect(stats.hiddenCount, 0);
+      expect(stats.hiddenFacts, isEmpty);
     });
   });
 }

@@ -32,9 +32,13 @@ class ApiService {
   static Future<ResBaseModel?> post(
     String endpoint, {
     Map<String, dynamic>? body,
+    Map<String, String>? pathParams,
   }) async {
-    final response = await dioClient.post(endpoint, params: body);
-
+    final response = await dioClient.post(
+      endpoint,
+      params: body,
+      pathParams: pathParams,
+    );
     return response;
   }
 
@@ -50,8 +54,13 @@ class ApiService {
   static Future<ResBaseModel?> get(
     String endpoint, {
     Map<String, String>? pathParams,
+    Map<String, dynamic>? queryParams,
   }) async {
-    final response = await dioClient.get(endpoint, pathParams: pathParams);
+    final response = await dioClient.get(
+      endpoint,
+      pathParams: pathParams,
+      params: queryParams,
+    );
     return response;
   }
 

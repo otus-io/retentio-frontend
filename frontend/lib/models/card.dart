@@ -6,10 +6,27 @@ class CardDetail extends Equatable {
 
   const CardDetail({required this.card, required this.urgency});
 
-  factory CardDetail.fromJson(Map<String, dynamic> json) => CardDetail(
-    card: Card.fromJson(json["card"]),
-    urgency: json["urgency"]?.toDouble(),
-  );
+  factory CardDetail.fromJson(Map<String, dynamic> json) {
+    final cardJson = json['card'];
+    final card = cardJson is Map<String, dynamic>
+        ? Card.fromJson(cardJson)
+        : Card(
+            id: '',
+            factId: '',
+            template: [
+              [0],
+              [1],
+            ],
+            lastReview: 0,
+            dueDate: 0,
+            hidden: false,
+            createdAt: 0,
+          );
+    final urgency = (json['urgency'] is num)
+        ? (json['urgency'] as num).toDouble()
+        : 0.0;
+    return CardDetail(card: card, urgency: urgency);
+  }
 
   Map<String, dynamic> toJson() => {"card": card.toJson(), "urgency": urgency};
 
@@ -124,16 +141,47 @@ class Fact extends Equatable {
 
   const Fact({required this.fields, required this.id});
 
-  factory Fact.fromJson(Map<String, dynamic> json) => Fact(
-    fields: List<String>.from(json["fields"].map((x) => x)),
-    id: json["id"],
-  );
+  factory Fact.fromJson(Map<String, dynamic> json) {
+    final raw = json['entries'] ?? json['fields'];
+    final list = raw is List
+        ? List<String>.from(raw.map((x) => x?.toString() ?? ''))
+        : <String>[];
+    return Fact(id: json['id']?.toString() ?? '', fields: list);
+  }
 
   Map<String, dynamic> toJson() => {
-    "fields": List<dynamic>.from(fields.map((x) => x)),
-    "id": id,
+    'id': id,
+    'entries': List<dynamic>.from(fields),
   };
 
   @override
   List<Object?> get props => [fields, id];
+}
+
+/// Response shape for GET /api/decks/{id}/cards (card statistics).
+class CardStats {
+  final int totalCards;
+  final int hiddenCount;
+  final List<Fact> hiddenFacts;
+
+  const CardStats({
+    required this.totalCards,
+    required this.hiddenCount,
+    required this.hiddenFacts,
+  });
+
+  factory CardStats.fromJson(Map<String, dynamic> json) {
+    final rawFacts = json['hidden_facts'];
+    final list = rawFacts is List
+        ? (rawFacts)
+              .map((e) => e is Map<String, dynamic> ? Fact.fromJson(e) : null)
+              .whereType<Fact>()
+              .toList()
+        : <Fact>[];
+    return CardStats(
+      totalCards: (json['total_cards'] as num?)?.toInt() ?? 0,
+      hiddenCount: (json['hidden_count'] as num?)?.toInt() ?? 0,
+      hiddenFacts: list,
+    );
+  }
 }
