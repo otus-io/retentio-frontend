@@ -30,6 +30,8 @@ This guide walks you through using the WordUpX API via Swagger UI.
 - [7. Hide a Card (Optional)](#7-hide-a-card-optional)
 - [8. Delete a Card](#8-delete-a-card)
 - [9. Media (Audio / Images)](#9-media-audio--images)
+- [10. Other endpoints (facts, card stats, reschedule)](#10-other-endpoints-facts-card-stats-reschedule)
+- [Response examples reference](#response-examples-reference)
 - [Next Steps](#next-steps)
 
 ---
@@ -516,7 +518,31 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 
 - `id`: `a1b2c3` (your deck ID)
 
-**Response:**
+**Response (segments without field names — when deck or fact have no field names):**
+
+```json
+{
+  "data": {
+    "card": {
+      "id": "card_nolabel",
+      "fact_id": "f_nolabel",
+      "template": [[0], [1]],
+      "last_review": 1763269700,
+      "due_date": 1763269800,
+      "hidden": false,
+      "created_at": 1763269600,
+      "front": [{"text": "Apple"}],
+      "back": [{"text": "苹果"}]
+    },
+    "urgency": 1.0
+  },
+  "meta": {
+    "msg": "Next urgent card retrieved successfully"
+  }
+}
+```
+
+**Response (with field names):**
 
 ```json
 {
@@ -528,13 +554,67 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
       "last_review": 1763269701,
       "due_date": 1763269702,
       "hidden": false,
-      "created_at": 1763269700
+      "created_at": 1763269700,
+      "front": [{"field": "Word", "text": "Apple"}],
+      "back": [{"field": "Translation", "text": "苹果"}]
     },
-    "urgency": 2598
+    "urgency": 2.598
   },
   "meta": {
     "msg": "Next urgent card retrieved successfully"
   }
+}
+```
+
+`front` and `back` are arrays of segment objects (each with optional `field`, and at most one of `text`, `audio`, or `image`). You can render the card from these without fetching the fact separately.
+
+**Front-only card (template with empty back, e.g. `[[0], []]`):**
+
+```json
+{
+  "data": {
+    "card": {
+      "id": "c_front_only",
+      "fact_id": "f1",
+      "template": [[0], []],
+      "last_review": 0,
+      "due_date": 1763269800,
+      "hidden": false,
+      "created_at": 1763269600,
+      "front": [{"field": "Question", "text": "Only front text"}],
+      "back": []
+    },
+    "urgency": 1.0
+  },
+  "meta": { "msg": "Next urgent card retrieved successfully" }
+}
+```
+
+**Card with audio and image segments (each content type in its own segment):**
+
+```json
+{
+  "data": {
+    "card": {
+      "id": "c_media",
+      "fact_id": "f_media1",
+      "template": [[0, 1], [2, 3]],
+      "last_review": 1763269700,
+      "due_date": 1763269800,
+      "hidden": false,
+      "created_at": 1763269600,
+      "front": [
+        {"field": "Front", "text": "Word"},
+        {"field": "Pronunciation", "audio": "abc123"}
+      ],
+      "back": [
+        {"field": "Picture", "image": "def456"},
+        {"field": "Back", "text": "Translation"}
+      ]
+    },
+    "urgency": 1.2
+  },
+  "meta": { "msg": "Next urgent card retrieved successfully" }
 }
 ```
 
@@ -696,12 +776,174 @@ You can attach audio and images to facts. Fact fields reference media by ID usin
 
 **Flow:**
 
-1. **Upload** — `POST /api/media` (multipart/form-data, field `file`). Response includes `data.id`.
-2. **Add fact with media** — Include markers in `entries`, e.g. `["Word", "[audio:abc123]", "[image:def456]", "Translation"]`. Use optional `template` for custom front/back layout per fact; omit for default (front = first entry, back = rest).
+1. **Upload** — `POST /api/media` (multipart/form-data, field `file`).
+
+**Upload response:**
+
+```json
+{
+  "data": {
+    "id": "abc1234def0",
+    "owner": "swagger",
+    "filename": "pronunciation.mp3",
+    "mime": "audio/mpeg",
+    "size": 51200,
+    "checksum": "sha256:e3b0c44298fc1c149afbf4c8996fb924",
+    "created_at": 1704067200
+  },
+  "meta": { "msg": "media uploaded" }
+}
+```
+
+1. **Add fact with media** — Include markers in `entries`, e.g. `["Word", "[audio:abc123]", "[image:def456]", "Translation"]`. Use optional `template` for custom front/back layout per fact; omit for default (front = first entry, back = rest).
+
+**List media (GET /api/media) response:**
+
+```json
+{
+  "data": [
+    {
+      "id": "abc1234def0",
+      "owner": "swagger",
+      "filename": "pronunciation.mp3",
+      "mime": "audio/mpeg",
+      "size": 51200,
+      "checksum": "sha256:e3b0c44298fc1c149afbf4c8996fb924",
+      "created_at": 1704067200
+    }
+  ],
+  "meta": { "count": 1, "has_more": false }
+}
+```
+
+**Delete media (DELETE /api/media/{id}) response:**
+
+```json
+{
+  "data": { "msg": "media deleted" }
+}
+```
 
 When displaying fact text only (e.g. in a list), the UI shows markers as `audio:id` and `image:id` (no brackets). Storage and API use `[type:id]`.
 
 For full design (upload, delete, display, sync), see **[Media Upload design doc](../design-doc/media-upload.md)**.
+
+---
+
+## 10. Other endpoints (facts, card stats, reschedule)
+
+### Get all facts
+
+**Endpoint:** `GET /api/decks/{id}/facts`
+
+**Response:**
+
+```json
+{
+  "data": {
+    "facts": [
+      { "id": "x9k2m4np", "entries": ["Apple", "りんご"], "fields": ["English", "Japanese"] },
+      { "id": "f2abc", "entries": ["Book", "本"] }
+    ]
+  },
+  "meta": { "msg": "Facts retrieved successfully" }
+}
+```
+
+### Get one fact
+
+**Endpoint:** `GET /api/decks/{id}/facts/{factId}`
+
+**Response:**
+
+```json
+{
+  "data": {
+    "fact": {
+      "id": "x9k2m4np",
+      "entries": ["Apple", "りんご"],
+      "fields": ["English", "Japanese"]
+    }
+  }
+}
+```
+
+### Get card stats
+
+**Endpoint:** `GET /api/decks/{id}/cards`
+
+**Response:**
+
+```json
+{
+  "data": {
+    "total_cards": 20,
+    "hidden_count": 3,
+    "hidden_facts": [
+      { "id": "f_h1", "entries": ["Hidden word", "隠れた語"], "fields": ["English", "Japanese"] }
+    ],
+    "orphaned_hidden_cards": 0
+  },
+  "meta": { "msg": "Card stats retrieved successfully" }
+}
+```
+
+### Reschedule deck
+
+**Endpoint:** `POST /api/decks/{id}/reschedule`
+
+Shifts due dates and last_review of all cards in the deck by N days (1–365). Only allowed when the deck has overdue cards.
+
+**Request:**
+
+```json
+{ "days": 5 }
+```
+
+**Response:**
+
+```json
+{
+  "data": {
+    "cards_shifted": 42,
+    "days": 5,
+    "max_days_away": 10
+  },
+  "meta": { "msg": "Successfully rescheduled 42 cards by 5 days" }
+}
+```
+
+---
+
+## Response examples reference
+
+| Endpoint | Method | Response shape |
+| -------- | ------ | ---------------- |
+| `/auth/register` | POST | `{ "data": { … }, "meta": { "msg": "..." } }` — see [Create a User](#create-a-user) |
+| `/auth/login` | POST | `{ "data": { "token", "expires" }, "meta": { "expires" } }` |
+| `/auth/logout` | POST | `{ "data": { "msg": "Logged out successfully" }, "meta": null }` |
+| `/auth/forgot-password` | POST | `{ "data": { "reset_token" }, "meta": { "expires_in" } }` |
+| `/auth/reset-password` | POST | `{ "data": { "msg": "Password reset successfully" }, "meta": null }` |
+| `/api/decks` | POST | `{ "data": { "deck_id" }, "meta": { "msg" } }` |
+| `/api/decks` | GET | `{ "data": { "decks": [ … ] }, "meta": { "total", "msg" } }` |
+| `/api/decks/{id}` | GET | `{ "data": { deck + stats }, "meta": { "msg" } }` |
+| `/api/decks/{id}` | PATCH | `{ "data": { "deck_id" }, "meta": { "msg", "updated_at" } }` |
+| `/api/decks/{id}` | DELETE | `{ "data": { "deck_id" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/facts/{op}` | POST | Add facts: `{ "data": { "fact_length" }, "meta": { "msg" } }`; add one card: `{ "data": { "card_id" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/facts` | GET | `{ "data": { "facts": [ … ] }, "meta": { "msg" } }` |
+| `/api/decks/{id}/facts/{factId}` | GET | `{ "data": { "fact": { … } } }` |
+| `/api/decks/{id}/facts/{factId}` | PATCH | `{ "data": { "fact_id" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/facts/{factId}` | DELETE | `{ "data": { "fact_id" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/card` | GET | `{ "data": { "card": { id, fact_id, template, …, front[], back[] }, "urgency" }, "meta": { "msg", … } }` |
+| `/api/decks/{id}/card` | PATCH | Interval: `{ "data": { "last_review", "due_date", "new_interval" }, "meta": { "msg" } }`; visibility: `{ "data": { "hidden_status" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/cards` | GET | `{ "data": { "total_cards", "hidden_count", "hidden_facts", "orphaned_hidden_cards" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/cards/{cardId}` | DELETE | `{ "data": { "card_id" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/reschedule` | POST | `{ "data": { "cards_shifted", "days", "max_days_away" }, "meta": { "msg" } }` |
+| `/api/media` | POST | `{ "data": { id, owner, filename, mime, size, checksum, created_at }, "meta": { "msg" } }` |
+| `/api/media` | GET | `{ "data": [ MediaSwagger, … ], "meta": { "count", "has_more" } }` |
+| `/api/media/{id}` | DELETE | `{ "data": { "msg": "media deleted" } }` |
+
+Full JSON examples for each are in the sections above.
 
 ---
 

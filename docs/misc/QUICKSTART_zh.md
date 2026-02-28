@@ -30,6 +30,8 @@
 - [7. 隐藏卡片（可选）](#7-隐藏卡片可选)
 - [8. 删除卡片](#8-删除卡片)
 - [9. 媒体（音频 / 图片）](#9-媒体音频--图片)
+- [10. 其他接口（词条、卡片统计、假期模式）](#10-其他接口词条卡片统计假期模式)
+- [响应示例速查](#响应示例速查)
 - [后续步骤](#后续步骤)
 
 ---
@@ -512,7 +514,31 @@
 
 - `id`: `a1b2c3`（您的卡组 ID）
 
-**响应:**
+**响应（无字段名 — 当卡组或词条未配置字段名时，段中无 `field`）：**
+
+```json
+{
+  "data": {
+    "card": {
+      "id": "card_nolabel",
+      "fact_id": "f_nolabel",
+      "template": [[0], [1]],
+      "last_review": 1763269700,
+      "due_date": 1763269800,
+      "hidden": false,
+      "created_at": 1763269600,
+      "front": [{"text": "Apple"}],
+      "back": [{"text": "苹果"}]
+    },
+    "urgency": 1.0
+  },
+  "meta": {
+    "msg": "Next urgent card retrieved successfully"
+  }
+}
+```
+
+**响应（含字段名）：**
 
 ```json
 {
@@ -524,13 +550,67 @@
       "last_review": 1763269701,
       "due_date": 1763269702,
       "hidden": false,
-      "created_at": 1763269700
+      "created_at": 1763269700,
+      "front": [{"field": "Word", "text": "Apple"}],
+      "back": [{"field": "Translation", "text": "苹果"}]
     },
-    "urgency": 2598
+    "urgency": 2.598
   },
   "meta": {
     "msg": "Next urgent card retrieved successfully"
   }
+}
+```
+
+`front` 和 `back` 为段对象数组（每段含可选 `field`，以及至多一个 `text`、`audio` 或 `image`）。可直接据此渲染卡片，无需再请求 fact。
+
+**仅正面卡片（背面为空，如 template `[[0], []]`）：**
+
+```json
+{
+  "data": {
+    "card": {
+      "id": "c_front_only",
+      "fact_id": "f1",
+      "template": [[0], []],
+      "last_review": 0,
+      "due_date": 1763269800,
+      "hidden": false,
+      "created_at": 1763269600,
+      "front": [{"field": "Question", "text": "Only front text"}],
+      "back": []
+    },
+    "urgency": 1.0
+  },
+  "meta": { "msg": "Next urgent card retrieved successfully" }
+}
+```
+
+**含音频与图片段的卡片（每种内容类型单独一段）：**
+
+```json
+{
+  "data": {
+    "card": {
+      "id": "c_media",
+      "fact_id": "f_media1",
+      "template": [[0, 1], [2, 3]],
+      "last_review": 1763269700,
+      "due_date": 1763269800,
+      "hidden": false,
+      "created_at": 1763269600,
+      "front": [
+        {"field": "Front", "text": "Word"},
+        {"field": "Pronunciation", "audio": "abc123"}
+      ],
+      "back": [
+        {"field": "Picture", "image": "def456"},
+        {"field": "Back", "text": "Translation"}
+      ]
+    },
+    "urgency": 1.2
+  },
+  "meta": { "msg": "Next urgent card retrieved successfully" }
 }
 ```
 
@@ -691,12 +771,148 @@
 
 **流程：**
 
-1. **上传** — `POST /api/media`（multipart/form-data，字段 `file`）。响应包含 `data.id`。
-2. **添加带媒体的词条** — 在 `entries` 中加入标记，例如 `["Word", "[audio:abc123]", "[image:def456]", "Translation"]`。可按需传入 `template` 指定每词条的正/背面布局；省略则使用默认（正面第一条、背面其余）。
+1. **上传** — `POST /api/media`（multipart/form-data，字段 `file`）。
+
+**上传响应示例：**
+
+```json
+{
+  "data": {
+    "id": "abc1234def0",
+    "owner": "swagger",
+    "filename": "pronunciation.mp3",
+    "mime": "audio/mpeg",
+    "size": 51200,
+    "checksum": "sha256:e3b0c44298fc1c149afbf4c8996fb924",
+    "created_at": 1704067200
+  },
+  "meta": { "msg": "media uploaded" }
+}
+```
+
+1. **添加带媒体的词条** — 在 `entries` 中加入标记，例如 `["Word", "[audio:abc123]", "[image:def456]", "Translation"]`。可按需传入 `template` 指定每词条的正/背面布局；省略则使用默认（正面第一条、背面其余）。
+
+**列出媒体（GET /api/media）响应示例：**
+
+```json
+{
+  "data": [
+    {
+      "id": "abc1234def0",
+      "owner": "swagger",
+      "filename": "pronunciation.mp3",
+      "mime": "audio/mpeg",
+      "size": 51200,
+      "checksum": "sha256:e3b0c44298fc1c149afbf4c8996fb924",
+      "created_at": 1704067200
+    }
+  ],
+  "meta": { "count": 1, "has_more": false }
+}
+```
+
+**删除媒体（DELETE /api/media/{id}）响应示例：**
+
+```json
+{
+  "data": { "msg": "media deleted" }
+}
+```
 
 仅以纯文本展示词条时（如列表中），界面显示为 `audio:id` 和 `image:id`（无方括号）。存储与 API 使用 `[type:id]`。
 
 完整设计（上传、删除、展示、同步）见 **[媒体上传设计文档](../design-doc/media-upload.md)**。
+
+---
+
+## 10. 其他接口（词条、卡片统计、假期模式）
+
+### 获取所有词条
+
+**接口：** `GET /api/decks/{id}/facts`
+
+**响应示例：**
+
+```json
+{
+  "data": {
+    "facts": [
+      { "id": "x9k2m4np", "entries": ["Apple", "りんご"], "fields": ["English", "Japanese"] },
+      { "id": "f2abc", "entries": ["Book", "本"] }
+    ]
+  },
+  "meta": { "msg": "Facts retrieved successfully" }
+}
+```
+
+### 获取单个词条
+
+**接口：** `GET /api/decks/{id}/facts/{factId}`
+
+**响应示例：**
+
+```json
+{
+  "data": {
+    "fact": {
+      "id": "x9k2m4np",
+      "entries": ["Apple", "りんご"],
+      "fields": ["English", "Japanese"]
+    }
+  }
+}
+```
+
+### 获取卡片统计
+
+**接口：** `GET /api/decks/{id}/cards`
+
+**响应示例：**
+
+```json
+{
+  "data": {
+    "total_cards": 20,
+    "hidden_count": 3,
+    "hidden_facts": [
+      { "id": "f_h1", "entries": ["Hidden word", "隠れた語"], "fields": ["English", "Japanese"] }
+    ],
+    "orphaned_hidden_cards": 0
+  },
+  "meta": { "msg": "Card stats retrieved successfully" }
+}
+```
+
+### 假期模式（平移复习计划）
+
+**接口：** `POST /api/decks/{id}/reschedule`
+
+将卡组内所有卡片的 due_date 与 last_review 按 N 天（1–365）平移。仅当卡组存在逾期卡片时允许调用。
+
+**请求体：**
+
+```json
+{ "days": 5 }
+```
+
+**响应示例：**
+
+```json
+{
+  "data": {
+    "cards_shifted": 42,
+    "days": 5,
+    "max_days_away": 10
+  },
+  "meta": { "msg": "Successfully rescheduled 42 cards by 5 days" }
+}
+```
+
+---
+
+## 响应示例速查
+
+上述各节均包含完整 JSON 示例。接口与响应结构对应关系与 [Response examples reference](QUICKSTART.md#response-examples-reference)（英文版）一致，此处不重复列表。
 
 ---
 

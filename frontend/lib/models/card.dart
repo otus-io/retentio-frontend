@@ -1,5 +1,36 @@
 import 'package:equatable/equatable.dart';
 
+/// One segment in front/back: at most one of text, audio, image; optional field.
+class FrontBackSegment extends Equatable {
+  final String? field;
+  final String? text;
+  final String? audio;
+  final String? image;
+
+  const FrontBackSegment({this.field, this.text, this.audio, this.image});
+
+  static FrontBackSegment? fromJson(dynamic raw) {
+    if (raw is! Map<String, dynamic>) return null;
+    return FrontBackSegment(
+      field: raw['field']?.toString(),
+      text: raw['text']?.toString(),
+      audio: raw['audio']?.toString(),
+      image: raw['image']?.toString(),
+    );
+  }
+
+  static List<FrontBackSegment> listFromJson(dynamic raw) {
+    if (raw is! List) return [];
+    return raw
+        .map((e) => FrontBackSegment.fromJson(e))
+        .whereType<FrontBackSegment>()
+        .toList();
+  }
+
+  @override
+  List<Object?> get props => [field, text, audio, image];
+}
+
 class CardDetail extends Equatable {
   final Card card;
   final double urgency;
@@ -50,6 +81,8 @@ class Card extends Equatable {
   final int lastReview;
   final List<List<int>> template;
   final Fact? fact;
+  final List<FrontBackSegment>? frontSegments;
+  final List<FrontBackSegment>? backSegments;
 
   const Card({
     required this.createdAt,
@@ -60,6 +93,8 @@ class Card extends Equatable {
     required this.lastReview,
     required this.template,
     this.fact,
+    this.frontSegments,
+    this.backSegments,
   });
 
   factory Card.fromJson(Map<String, dynamic> json) {
@@ -78,6 +113,8 @@ class Card extends Equatable {
         [1],
       ];
     }
+    final frontRaw = json['front'];
+    final backRaw = json['back'];
     return Card(
       createdAt: json["created_at"] as int? ?? 0,
       dueDate: json["due_date"] as int? ?? 0,
@@ -86,6 +123,12 @@ class Card extends Equatable {
       id: json["id"] as String? ?? '',
       lastReview: json["last_review"] as int? ?? 0,
       template: t,
+      frontSegments: frontRaw != null
+          ? FrontBackSegment.listFromJson(frontRaw)
+          : null,
+      backSegments: backRaw != null
+          ? FrontBackSegment.listFromJson(backRaw)
+          : null,
     );
   }
 
@@ -109,11 +152,31 @@ class Card extends Equatable {
   /// 是否是新卡片（从未复习过）
   bool get isNew => lastReview == 0;
 
-  /// 获取卡片正面内容（通常是第一个 fact）
-  String get front => fact!.fields.isNotEmpty ? fact!.fields[0] : '';
+  /// 获取卡片正面内容（优先使用 API 返回的 front 段，否则用 fact）
+  String get front {
+    if (frontSegments != null && frontSegments!.isNotEmpty) {
+      final texts = frontSegments!
+          .map((s) => s.text)
+          .whereType<String>()
+          .toList();
+      return texts.isNotEmpty ? texts.join(' ') : '';
+    }
+    if (fact != null && fact!.fields.isNotEmpty) return fact!.fields[0];
+    return '';
+  }
 
-  /// 获取卡片背面内容（通常是第二个 fact）
-  String get back => fact!.fields.length > 1 ? fact!.fields[1] : '';
+  /// 获取卡片背面内容（优先使用 API 返回的 back 段，否则用 fact）
+  String get back {
+    if (backSegments != null && backSegments!.isNotEmpty) {
+      final texts = backSegments!
+          .map((s) => s.text)
+          .whereType<String>()
+          .toList();
+      return texts.isNotEmpty ? texts.join(' ') : '';
+    }
+    if (fact != null && fact!.fields.length > 1) return fact!.fields[1];
+    return '';
+  }
 
   /// 是否被隐藏
   bool get isHidden => hidden;
@@ -127,12 +190,14 @@ class Card extends Equatable {
       id: id,
       lastReview: lastReview,
       template: template,
-      fact: fact,
+      fact: fact ?? this.fact,
+      frontSegments: frontSegments,
+      backSegments: backSegments,
     );
   }
 
   @override
-  List<Object?> get props => [id, factId, fact];
+  List<Object?> get props => [id, factId, fact, frontSegments, backSegments];
 }
 
 class Fact extends Equatable {

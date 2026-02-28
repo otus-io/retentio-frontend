@@ -142,7 +142,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Register'));
+      final registerButton = find.widgetWithText(ElevatedButton, 'Register');
+      await tester.ensureVisible(registerButton);
+      await tester.tap(registerButton, warnIfMissed: false);
       await tester.pump();
 
       expect(find.byType(RegisterScreen), findsOneWidget);

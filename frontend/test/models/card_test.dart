@@ -91,6 +91,71 @@ void main() {
         expect(card.hidden, false);
         expect(card.createdAt, 0);
       });
+
+      test('parses front and back segment arrays from API', () {
+        final json = {
+          "id": "c1",
+          "fact_id": "f1",
+          "template": [
+            [0],
+            [1],
+          ],
+          "last_review": 1704067200,
+          "due_date": 1704153600,
+          "hidden": false,
+          "created_at": 1704067200,
+          "front": [
+            {"field": "Word", "text": "Apple"},
+            {"field": "Pronunciation", "audio": "abc123"},
+          ],
+          "back": [
+            {"field": "Translation", "text": "苹果"},
+          ],
+        };
+        final card = Card.fromJson(json);
+        expect(card.front, "Apple");
+        expect(card.back, "苹果");
+      });
+
+      test('parses front-only card with empty back array', () {
+        final json = {
+          "id": "c1",
+          "fact_id": "f1",
+          "template": [
+            [0],
+            [],
+          ],
+          "last_review": 0,
+          "due_date": 0,
+          "hidden": false,
+          "created_at": 0,
+          "front": [
+            {"field": "Question", "text": "Only front"},
+          ],
+          "back": [],
+        };
+        final card = Card.fromJson(json);
+        expect(card.front, "Only front");
+        expect(card.back, "");
+      });
+
+      test('front/back getters use fact when segments absent', () {
+        final card = Card(
+          id: 'c1',
+          factId: 'f1',
+          template: [
+            [0],
+            [1],
+          ],
+          lastReview: 0,
+          dueDate: 0,
+          hidden: false,
+          createdAt: 0,
+          fact: Fact(fields: ['Hello', '世界'], id: 'f1'),
+        );
+        expect(card.front, 'Hello');
+        expect(card.back, '世界');
+      });
     });
 
     group('isDue', () {
