@@ -19,7 +19,6 @@ class Api {
   static const String facts = '/api/decks/{id}/facts';
   static const String factsWithOperation = '/api/decks/{id}/facts/{operation}';
   static const String fact = '/api/decks/{id}/facts/{factId}';
-  static const String factCards = '/api/decks/{id}/facts/{factId}/cards';
 
   static const String media = '/api/media';
   static const String mediaById = '/api/media/{id}';

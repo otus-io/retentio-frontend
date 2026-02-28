@@ -40,8 +40,7 @@
 
 | 接口 | 说明 | 前端 | 后端 |
 | --- | --- | --- | --- |
-| `POST /api/decks/{id}/facts/{operation}` | 添加词条 (append/prepend/shuffle/spread) | ✅ | ✅ |
-| `POST /api/decks/{id}/facts/{factId}/cards` | 为词条添加一张卡片（如反向卡） | ✅ | ✅ |
+| `POST /api/decks/{id}/facts/{operation}` | 添加词条 (append/prepend/shuffle/spread) 或为词条添加卡片 (operation=add_card，body 含 fact_id、template [[正面],[背面]]；重复 template 返回 400) | ✅ | ✅ |
 | `GET /api/decks/{id}/facts` | 获取所有词条 | ✅ | ✅ |
 | `GET /api/decks/{id}/facts/{factId}` | 获取单个词条 | ✅ | ✅ |
 | `PATCH /api/decks/{id}/facts/{factId}` | 更新词条 | ✅ | ✅ |

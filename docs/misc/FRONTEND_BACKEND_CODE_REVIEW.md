@@ -58,12 +58,11 @@ Review of the Flutter frontend against the Go backend API to ensure strict align
 
 | Endpoint | Backend | Frontend | Status |
 |----------|---------|----------|--------|
-| POST .../facts/{operation} | body: facts: [{ entries, fields? }], template? | addFacts(facts, template?) | OK |
+| POST .../facts/{operation} | body: facts + template? (append/prepend/shuffle/spread) or fact_id + template [[front],[back]] (add_card; 400 if duplicate) | addFacts(...) / addCardForFact(deckId, factId, template: [[1],[0]]) | OK |
 | GET .../facts | data.facts | data['facts'] → Fact.fromJson | OK |
 | GET .../facts/{factId} | data.fact | data['fact'] → Fact.fromJson | OK |
 | PATCH .../facts/{factId} | body: entries?, fields? | updateFact(deckId, factId, params) | OK |
 | DELETE .../facts/{factId} | — | delete(Api.fact, pathParams) | OK |
-| POST .../facts/{factId}/cards | body: template_index? (int) | addCardForFact(..., templateIndex: n) | OK |
 
 Fact model: backend uses `entries` (required) and `fields` (optional). Frontend Fact.fromJson accepts `entries` or `fields`. **Correct.**
 
@@ -102,7 +101,7 @@ Card PATCH: frontend sends exactly one of (interval+last_review) or hidden, plus
 
 ## 8. Paths and Constants
 
-- **Api** (api.dart): All paths match backend (auth, profile, decks, card, cards, cardById, reschedule, facts, factsWithOperation, fact, factCards, media, mediaById). **Correct.**
+- **Api** (api.dart): All paths match backend (auth, profile, decks, card, cards, cardById, reschedule, facts, factsWithOperation, fact, media, mediaById). **Correct.**
 - **Path params**: ApiService passes pathParams to DioClient; placeholders `{id}`, `{cardId}`, `factId`, `operation` are replaced. **Correct.**
 
 ---

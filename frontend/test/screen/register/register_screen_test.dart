@@ -104,5 +104,61 @@ void main() {
 
       expect(find.text('testuser'), findsOneWidget);
     });
+
+    testWidgets('password and confirm password are independent fields', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildTestableWidgetWithoutProvider(const RegisterScreen()),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).at(2), 'pass1');
+      await tester.enterText(find.byType(TextField).at(3), 'pass2');
+      await tester.pump();
+
+      expect(find.text('pass1'), findsOneWidget);
+      expect(find.text('pass2'), findsOneWidget);
+    });
+
+    testWidgets('accepts very long email', (tester) async {
+      await tester.pumpWidget(
+        buildTestableWidgetWithoutProvider(const RegisterScreen()),
+      );
+      await tester.pumpAndSettle();
+
+      final longEmail = '${'a' * 200}@${'b' * 50}.com';
+      await tester.enterText(find.byType(TextField).first, longEmail);
+      await tester.pump();
+
+      expect(find.text(longEmail), findsOneWidget);
+    });
+
+    testWidgets('tap register with all fields empty does not crash', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildTestableWidgetWithoutProvider(const RegisterScreen()),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Register'));
+      await tester.pump();
+
+      expect(find.byType(RegisterScreen), findsOneWidget);
+    });
+
+    testWidgets('accepts special characters in email', (tester) async {
+      await tester.pumpWidget(
+        buildTestableWidgetWithoutProvider(const RegisterScreen()),
+      );
+      await tester.pumpAndSettle();
+
+      const email = r'user+tag<>@example.co.uk';
+      await tester.enterText(find.byType(TextField).first, email);
+      await tester.pump();
+
+      expect(find.text(email), findsOneWidget);
+    });
   });
 }

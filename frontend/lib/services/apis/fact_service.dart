@@ -22,17 +22,16 @@ class FactService {
   }
 
   /// Add a card for an existing fact (e.g. reversed/sibling).
+  /// [template] is [[front indices], [back indices]], e.g. [[0],[1]] or [[1],[0]] for reversed.
   static Future<ResBaseModel?> addCardForFact(
     String deckId,
     String factId, {
-    int? templateIndex,
+    required List<List<int>> template,
   }) async {
-    final body = <String, dynamic>{};
-    if (templateIndex != null) body['template_index'] = templateIndex;
     return ApiService.post(
-      Api.factCards,
-      pathParams: {'id': deckId, 'factId': factId},
-      body: body.isNotEmpty ? body : null,
+      Api.factsWithOperation,
+      pathParams: {'id': deckId, 'operation': 'add_card'},
+      body: {'fact_id': factId, 'template': template},
     );
   }
 

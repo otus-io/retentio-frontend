@@ -166,5 +166,55 @@ void main() {
       expect(find.byIcon(Icons.refresh), findsOneWidget);
       expect(find.byIcon(Icons.check_circle), findsOneWidget);
     });
+
+    testWidgets('displays very long deck name', (tester) async {
+      final longName = 'A' * 80;
+      final deck = _createTestDeck(name: longName);
+      await tester.pumpWidget(
+        buildTestableWidgetWithoutProvider(DeckDetailScreen(deck: deck)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(longName), findsOneWidget);
+    });
+
+    testWidgets('start learning enabled when only new cards', (tester) async {
+      final deck = _createTestDeck(unseenCards: 1, dueCards: 0);
+      await tester.pumpWidget(
+        buildTestableWidgetWithoutProvider(DeckDetailScreen(deck: deck)),
+      );
+      await tester.pumpAndSettle();
+
+      final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      expect(button.onPressed, isNotNull);
+      expect(find.text('Start Learning'), findsOneWidget);
+    });
+
+    testWidgets('start learning enabled when only due cards', (tester) async {
+      final deck = _createTestDeck(unseenCards: 0, dueCards: 1);
+      await tester.pumpWidget(
+        buildTestableWidgetWithoutProvider(DeckDetailScreen(deck: deck)),
+      );
+      await tester.pumpAndSettle();
+
+      final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      expect(button.onPressed, isNotNull);
+      expect(find.text('Start Learning'), findsOneWidget);
+    });
+
+    testWidgets('displays zero for all stats when deck empty', (tester) async {
+      final deck = _createTestDeck(
+        cardsCount: 0,
+        unseenCards: 0,
+        dueCards: 0,
+        factsCount: 0,
+      );
+      await tester.pumpWidget(
+        buildTestableWidgetWithoutProvider(DeckDetailScreen(deck: deck)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('0'), findsNWidgets(4));
+    });
   });
 }
