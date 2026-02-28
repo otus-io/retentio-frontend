@@ -24,6 +24,7 @@ This guide walks you through using the WordUpX API via Swagger UI.
   - [Update a Deck](#update-a-deck)
   - [Delete a Deck](#delete-a-deck)
 - [4. Add Facts](#4-add-facts)
+  - [Add a card for an existing fact (e.g. reversed)](#add-a-card-for-an-existing-fact-eg-reversed)
 - [5. Get Next Urgent Card](#5-get-next-urgent-card)
 - [6. Review a Card](#6-review-a-card)
 - [7. Hide a Card (Optional)](#7-hide-a-card-optional)
@@ -61,8 +62,7 @@ This guide walks you through using the WordUpX API via Swagger UI.
 | `/api/decks/{id}` | GET | Get deck details |
 | `/api/decks/{id}` | PATCH | Update deck |
 | `/api/decks/{id}` | DELETE | Delete deck |
-| `/api/decks/{id}/facts/{operation}` | POST | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`) |
-| `/api/decks/{id}/facts/{factId}/cards` | POST | Add a card for an existing fact (e.g. sibling/reversed) |
+| `/api/decks/{id}/facts/{operation}` | POST | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`) or add card for existing fact (operation: `add_card`, body: `fact_id`, `template` = `[[front], [back]]` e.g. `[[0],[1]]` or `[[1],[0]]`; backend rejects if template already exists for that fact) |
 | `/api/decks/{id}/facts` | GET | Get all facts |
 | `/api/decks/{id}/facts/{factId}` | GET | Get a specific fact |
 | `/api/decks/{id}/facts/{factId}` | PATCH | Update a fact |
@@ -342,7 +342,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 > `unseen_cards` will increase. As you review cards,
 > `reviewed_cards` grows and `unseen_cards` decreases.
 >
-> The total cards in a deck equals the number of facts: **one card per fact by default, no sibling card**. To add a second card for a fact (e.g. reversed), use `POST /api/decks/{id}/facts/{factId}/cards` with `template_index`.
+> The total cards in a deck equals the number of facts: **one card per fact by default, no sibling card**. To add a second card for a fact (e.g. reversed), use `POST /api/decks/{id}/facts/add_card` with body `{"fact_id": "<factId>", "template": [[1], [0]]}`. The backend rejects if that template already exists for the fact.
 >
 > To calculate a progress percentage on the client side: `reviewed_cards / cards_count * 100`.
 
@@ -466,6 +466,42 @@ Optional **`template`**: array of layouts, one per fact. Each element is `[[fron
   },
   "meta": {
     "msg": "Added 20 facts successfully"
+  }
+}
+```
+
+### Add a card for an existing fact (e.g. reversed)
+
+By default there is **one card per fact**. To add a second card for a fact (e.g. a reversed card so the back side is shown first), use the same endpoint with `operation`: `add_card` and a different request body.
+
+**Endpoint:** `POST /api/decks/{id}/facts/{operation}`
+
+**Parameters:**
+
+- `id`: your deck ID
+- `operation`: `add_card`
+
+**Request Body:**
+
+```json
+{
+  "fact_id": "x9k2m4np",
+  "template": [[1], [0]]
+}
+```
+
+- **`fact_id`** (required): The fact's ID (from `GET /api/decks/{id}/facts` or the add-facts response).
+- **`template`** (required): `[[front indices], [back indices]]` defining how the card shows the fact's entries. For a 2-entry fact: `[[0],[1]]` = front entry 0, back entry 1; `[[1],[0]]` = reversed. All indices must be in `0..(n-1)`, disjoint, and cover every entry. The backend returns 400 if this exact template already exists for another card of this fact.
+
+**Response:**
+
+```json
+{
+  "data": {
+    "card_id": "newcard123"
+  },
+  "meta": {
+    "msg": "Card added successfully"
   }
 }
 ```
