@@ -62,7 +62,7 @@ This guide walks you through using the WordUpX API via Swagger UI.
 | `/api/decks/{id}` | GET | Get deck details |
 | `/api/decks/{id}` | PATCH | Update deck |
 | `/api/decks/{id}` | DELETE | Delete deck |
-| `/api/decks/{id}/facts/{operation}` | POST | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`) or add card for existing fact (operation: `add_card`, body: `fact_id`, `template` = `[[front], [back]]` e.g. `[[0],[1]]` or `[[1],[0]]`; backend rejects if template already exists for that fact) |
+| `/api/decks/{id}/facts/{operation}` | POST | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`). Body: (1) `facts` only, (2) `facts` + `template`, or (3) `fact_id` + `template` to add one card for an existing fact. Exactly one shape per request. |
 | `/api/decks/{id}/facts` | GET | Get all facts |
 | `/api/decks/{id}/facts/{factId}` | GET | Get a specific fact |
 | `/api/decks/{id}/facts/{factId}` | PATCH | Update a fact |
@@ -342,7 +342,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 > `unseen_cards` will increase. As you review cards,
 > `reviewed_cards` grows and `unseen_cards` decreases.
 >
-> The total cards in a deck equals the number of facts: **one card per fact by default, no sibling card**. To add a second card for a fact (e.g. reversed), use `POST /api/decks/{id}/facts/add_card` with body `{"fact_id": "<factId>", "template": [[1], [0]]}`. The backend rejects if that template already exists for the fact.
+> The total cards in a deck equals the number of facts: **one card per fact by default, no sibling card**. To add a second card for a fact (e.g. reversed), use `POST /api/decks/{id}/facts/append` (or `prepend`, `shuffle`, `spread`) with body `{"fact_id": "<factId>", "template": [[1], [0]]}`. The backend rejects if that template already exists for the fact.
 >
 > To calculate a progress percentage on the client side: `reviewed_cards / cards_count * 100`.
 
@@ -472,14 +472,14 @@ Optional **`template`**: array of layouts, one per fact. Each element is `[[fron
 
 ### Add a card for an existing fact (e.g. reversed)
 
-By default there is **one card per fact**. To add a second card for a fact (e.g. a reversed card so the back side is shown first), use the same endpoint with `operation`: `add_card` and a different request body.
+By default there is **one card per fact**. To add a second card for a fact (e.g. a reversed card so the back side is shown first), use the same endpoint with **operation**: `append` (or `prepend`, `shuffle`, `spread`) and a body with `fact_id` and `template` — **not** `add_card`.
 
 **Endpoint:** `POST /api/decks/{id}/facts/{operation}`
 
 **Parameters:**
 
 - `id`: your deck ID
-- `operation`: `add_card`
+- `operation`: `append`, `prepend`, `shuffle`, or `spread` (placement of the new card among unseen cards)
 
 **Request Body:**
 

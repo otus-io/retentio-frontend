@@ -47,5 +47,72 @@ void main() {
       expect(MediaItem.fromJson(m.toJson()).id, m.id);
       expect(MediaItem.fromJson(m.toJson()).size, m.size);
     });
+
+    test(
+      'audio mime: isAudio, placeholderPrefix, fieldNameSuffix, entryPlaceholder',
+      () {
+        const m = MediaItem(
+          id: 'aid1',
+          owner: 'u',
+          filename: 'f.mp3',
+          mime: 'audio/mpeg',
+          size: 0,
+          checksum: '',
+          createdAt: 0,
+        );
+        expect(m.isAudio, true);
+        expect(m.isImage, false);
+        expect(m.placeholderPrefix, 'audio');
+        expect(m.fieldNameSuffix, 'audio');
+        expect(m.entryPlaceholder, '[audio:aid1]');
+      },
+    );
+
+    test(
+      'image mime: isImage, placeholderPrefix, fieldNameSuffix, entryPlaceholder',
+      () {
+        const m = MediaItem(
+          id: 'iid1',
+          owner: 'u',
+          filename: 'f.png',
+          mime: 'image/png',
+          size: 0,
+          checksum: '',
+          createdAt: 0,
+        );
+        expect(m.isAudio, false);
+        expect(m.isImage, true);
+        expect(m.placeholderPrefix, 'image');
+        expect(m.fieldNameSuffix, 'img');
+        expect(m.entryPlaceholder, '[image:iid1]');
+      },
+    );
+
+    test('static mime helpers', () {
+      expect(MediaItem.isAudioMime('audio/mpeg'), true);
+      expect(MediaItem.isAudioMime('AUDIO/wav'), true);
+      expect(MediaItem.isAudioMime('image/png'), false);
+      expect(MediaItem.isImageMime('image/png'), true);
+      expect(MediaItem.isImageMime('IMAGE/jpeg'), true);
+      expect(MediaItem.isImageMime('audio/mpeg'), false);
+      expect(MediaItem.placeholderPrefixForMime('audio/ogg'), 'audio');
+      expect(MediaItem.placeholderPrefixForMime('image/gif'), 'image');
+      expect(MediaItem.fieldNameSuffixForMime('audio/mpeg'), 'audio');
+      expect(MediaItem.fieldNameSuffixForMime('image/webp'), 'img');
+    });
+
+    test('unknown or empty mime defaults to image/img', () {
+      const m = MediaItem(
+        id: 'x',
+        owner: 'u',
+        filename: 'f',
+        mime: '',
+        size: 0,
+        checksum: '',
+        createdAt: 0,
+      );
+      expect(m.placeholderPrefix, 'image');
+      expect(m.fieldNameSuffix, 'img');
+    });
   });
 }
