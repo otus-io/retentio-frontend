@@ -7,6 +7,8 @@ import 'api_service.dart';
 
 class MediaService {
   /// Upload a file. Returns created media metadata or null on failure.
+  /// After upload, use MediaService.forFact(media) to get entryValue ([audio:id] / [image:id])
+  /// and fieldNameSuffix (audio / img) for fact entries and field names.
   static Future<MediaItem?> upload(
     String filePath, {
     String? fileName,
@@ -22,6 +24,15 @@ class MediaService {
     if (res?.isSuccess != true || res?.data is! Map) return null;
     return MediaItem.fromJson(Map<String, dynamic>.from(res!.data as Map));
   }
+
+  /// Entry value and field name suffix for adding this media to a fact.
+  /// [entryValue] is [audio:id] or [image:id]; [fieldNameSuffix] is "audio" or "img".
+  static ({String entryValue, String fieldNameSuffix}) forFact(
+    MediaItem media,
+  ) => (
+    entryValue: media.entryPlaceholder,
+    fieldNameSuffix: media.fieldNameSuffix,
+  );
 
   /// List user media. Optional since (unix ts), limit, offset.
   static Future<List<MediaItem>> list({

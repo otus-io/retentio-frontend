@@ -61,7 +61,7 @@
 | `/api/decks/{id}` | GET | 获取卡组详情 |
 | `/api/decks/{id}` | PATCH | 更新卡组 |
 | `/api/decks/{id}` | DELETE | 删除卡组 |
-| `/api/decks/{id}/facts/{operation}` | POST | 添加词条 (append/prepend/shuffle/spread) 或为词条添加一张卡 (operation=add_card，body 含 fact_id、template=[[正面索引],[背面索引]]；若该 template 已存在则 400) |
+| `/api/decks/{id}/facts/{operation}` | POST | 添加词条：operation 为 append/prepend/shuffle/spread。请求体三选一：(1) 仅 facts；(2) facts + template；(3) fact_id + template（为已有词条添加一张卡）。每次请求仅一种形状。 |
 | `/api/decks/{id}/facts` | GET | 获取所有词条 |
 | `/api/decks/{id}/facts/{factId}` | GET | 获取单个词条 |
 | `/api/decks/{id}/facts/{factId}` | PATCH | 更新词条 |
@@ -340,7 +340,7 @@
 > 添加词条后，`cards_count` 和 `unseen_cards` 会增加。
 > 随着复习的进行，`reviewed_cards` 会增长，`unseen_cards` 会减少。
 >
-> 卡组卡片总数默认等于词条数：**每词条一张卡，默认不生成兄弟卡**。若需为某词条增加第二张卡（如反向卡），可调用 `POST /api/decks/{id}/facts/add_card`，body 传 `{"fact_id": "<factId>", "template": [[1], [0]]}`。若该 template 已存在则返回 400。
+> 卡组卡片总数默认等于词条数：**每词条一张卡，默认不生成兄弟卡**。若需为某词条增加第二张卡（如反向卡），可调用 `POST /api/decks/{id}/facts/append`（或 prepend/shuffle/spread），body 传 `{"fact_id": "<factId>", "template": [[1], [0]]}`。若该 template 已存在则返回 400。
 >
 > 客户端计算学习进度百分比：`reviewed_cards / cards_count * 100`。
 
@@ -468,14 +468,14 @@
 
 ### 为已有词条添加一张卡（如反向卡）
 
-默认**每词条一张卡**。若要为某词条再增加一张卡（如反向卡：先显示背面再显示正面），使用同一接口，`operation` 设为 `add_card`，请求体不同。
+默认**每词条一张卡**。若要为某词条再增加一张卡（如反向卡：先显示背面再显示正面），使用同一接口，**operation** 设为 `append`（或 `prepend`、`shuffle`、`spread`），请求体使用 `fact_id` + `template`，**不要**使用 `add_card`。
 
 **接口:** `POST /api/decks/{id}/facts/{operation}`
 
 **参数:**
 
 - `id`: 卡组 ID
-- `operation`: `add_card`
+- `operation`: `append`、`prepend`、`shuffle` 或 `spread`（新卡在未复习卡中的位置）
 
 **请求体:**
 
