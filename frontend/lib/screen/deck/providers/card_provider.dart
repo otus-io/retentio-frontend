@@ -75,6 +75,15 @@ class CardNotifier extends Notifier<CardState> {
     final response = await CardService.getNextCard(deck.id);
 
     if (response != null) {
+      final card = response.card;
+      if (card.frontSegments != null && card.backSegments != null) {
+        state = state.copyWith(
+          cardDetail: response,
+          isLoading: false,
+          isHide: false,
+        );
+        return;
+      }
       final facts = state.facts;
       final factId = response.card.factId;
       var fact = facts.firstWhereOrNull((element) => element.id == factId);
