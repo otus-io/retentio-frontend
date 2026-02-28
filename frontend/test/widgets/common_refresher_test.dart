@@ -147,5 +147,30 @@ void main() {
       );
       expect(smartRefresher.enablePullUp, isFalse);
     });
+
+    testWidgets('when both isLoading and isEmpty true shows loading', (
+      tester,
+    ) async {
+      final controller = RefreshController();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CommonRefresher(
+              controller: controller,
+              isLoading: true,
+              isEmpty: true,
+              emptyView: const Text('Empty'),
+              child: ListView(children: const [Text('Content')]),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(CupertinoActivityIndicator), findsOneWidget);
+      expect(find.text('Empty'), findsNothing);
+      expect(find.text('Content'), findsNothing);
+    });
   });
 }

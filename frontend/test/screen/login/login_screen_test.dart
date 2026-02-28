@@ -107,5 +107,59 @@ void main() {
 
       expect(find.byType(DropdownButton<Locale>), findsOneWidget);
     });
+
+    testWidgets('tap login with empty fields does not crash', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Login'));
+      await tester.pump();
+
+      expect(find.byType(LoginScreen), findsOneWidget);
+    });
+
+    testWidgets('accepts very long username', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
+      await tester.pumpAndSettle();
+
+      final longName = 'a' * 500;
+      await tester.enterText(find.byType(TextField).first, longName);
+      await tester.pump();
+
+      expect(find.text(longName), findsOneWidget);
+    });
+
+    testWidgets('accepts very long password', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
+      await tester.pumpAndSettle();
+
+      final longPass = 'x' * 300;
+      await tester.enterText(find.byType(TextField).last, longPass);
+      await tester.pump();
+
+      expect(find.text(longPass), findsOneWidget);
+    });
+
+    testWidgets('accepts whitespace-only input', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).first, '   \t  ');
+      await tester.enterText(find.byType(TextField).last, ' ');
+      await tester.pump();
+
+      expect(find.byType(LoginScreen), findsOneWidget);
+    });
+
+    testWidgets('accepts special characters in username', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
+      await tester.pumpAndSettle();
+
+      const special = 'user<>"&@test';
+      await tester.enterText(find.byType(TextField).first, special);
+      await tester.pump();
+
+      expect(find.text(special), findsOneWidget);
+    });
   });
 }
