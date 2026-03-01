@@ -28,6 +28,8 @@ This guide walks you through using the WordUpX API via Swagger UI.
   - [Add Facts](#add-facts)
   - [Get all facts](#get-all-facts)
   - [Get one fact](#get-one-fact)
+  - [Update a fact](#update-a-fact)
+  - [Delete a fact](#delete-a-fact)
 - [4. Cards](#4-cards)
   - [Add a card for an existing fact (e.g. reversed)](#add-a-card-for-an-existing-fact-eg-reversed)
   - [Get Next Urgent Card](#get-next-urgent-card)
@@ -36,6 +38,15 @@ This guide walks you through using the WordUpX API via Swagger UI.
   - [Delete a Card](#delete-a-card)
   - [Get card stats](#get-card-stats)
 - [5. Media (Audio / Images)](#5-media-audio--images)
+  - [Upload media](#upload-media)
+  - [List media](#list-media)
+  - [Get media metadata](#get-media-metadata)
+  - [Download media](#download-media)
+  - [Delete media](#delete-media)
+  - [List or lookup shared media (work in progress)](#list-or-lookup-shared-media-work-in-progress)
+  - [Download shared media (work in progress)](#download-shared-media-work-in-progress)
+  - [Admin shared media (work in progress)](#admin-shared-media-work-in-progress)
+  - [Using media in facts (work in progress)](#using-media-in-facts-work-in-progress)
 - [Response examples reference](#response-examples-reference)
 - [Next Steps](#next-steps)
 
@@ -64,6 +75,7 @@ This guide walks you through using the WordUpX API via Swagger UI.
 | `/auth/logout` | POST | Logout (invalidate token) |
 | `/auth/forgot-password` | POST | Request password reset token |
 | `/auth/reset-password` | POST | Reset password with token |
+| `/api/profile` | GET | Get current user profile |
 | `/api/decks` | POST | Create deck |
 | `/api/decks` | GET | List all decks |
 | `/api/decks/{id}` | GET | Get deck details |
@@ -82,8 +94,14 @@ This guide walks you through using the WordUpX API via Swagger UI.
 | `/api/decks/{id}/reschedule` | POST | Reschedule deck cards (shift due dates by N days) |
 | `/api/media` | POST | Upload media (audio/image) |
 | `/api/media` | GET | List user's media (sync manifest) |
+| `/api/media/shared` | GET | List or lookup shared media (`?word=...&lang=...`) |
+| `/api/media/shared/{id}` | GET | Download shared media file |
+| `/api/media/{id}/meta` | GET | Get media metadata (no file body) |
 | `/api/media/{id}` | GET | Download media file |
 | `/api/media/{id}` | DELETE | Delete media |
+| `/api/admin/media/shared` | POST | **(Admin)** Upload shared media |
+| `/api/admin/media/shared/{id}` | DELETE | **(Admin)** Delete shared media |
+| `/api/admin/decks/import` | POST | **(Admin)** Import shared deck (zip with manifest) |
 
 ---
 
@@ -539,6 +557,47 @@ Optional **`template`**: array of layouts, one per fact. Each element is `[[fron
 }
 ```
 
+### Update a fact
+
+**Endpoint:** `PATCH /api/decks/{id}/facts/{factId}`
+
+**Parameters:** `id` (deck ID), `factId` (fact ID from GET facts or add-facts).
+
+**Request Body:** Optional `entries` and `fields`. If `entries` is provided it replaces the fact's entries; if `fields` is provided its length must equal `len(entries)`.
+
+```json
+{
+  "entries": ["Apple", "りんご"],
+  "fields": ["English", "Japanese"]
+}
+```
+
+**Response:**
+
+```json
+{
+  "data": { "fact_id": "x9k2m4np" },
+  "meta": { "msg": "Fact updated successfully" }
+}
+```
+
+### Delete a fact
+
+**Endpoint:** `DELETE /api/decks/{id}/facts/{factId}`
+
+**Parameters:** `id` (deck ID), `factId` (fact ID).
+
+Permanently deletes the fact and all cards derived from it.
+
+**Response:**
+
+```json
+{
+  "data": { "fact_id": "x9k2m4np" },
+  "meta": { "msg": "Fact deleted successfully" }
+}
+```
+
 ---
 
 ## 4. Cards
@@ -865,11 +924,11 @@ Permanently remove a single card from a deck. The fact and any other cards for t
 
 You can attach audio and images to facts. Fact fields reference media by ID using markers `[audio:id]` and `[image:id]`.
 
-**Flow:**
+### Upload media
 
-1. **Upload** — `POST /api/media` (multipart/form-data, field `file`).
+**Endpoint:** `POST /api/media` — multipart/form-data, field `file`.
 
-**Upload response:**
+**Response:**
 
 ```json
 {
@@ -886,9 +945,11 @@ You can attach audio and images to facts. Fact fields reference media by ID usin
 }
 ```
 
-1. **Add fact with media** — Include markers in `entries`, e.g. `["Word", "[audio:abc123]", "[image:def456]", "Translation"]`. Use optional `template` for custom front/back layout per fact; omit for default (front = first entry, back = rest).
+### List media
 
-**List media (GET /api/media) response:**
+**Endpoint:** `GET /api/media` — returns the current user's media (sync manifest).
+
+**Response:**
 
 ```json
 {
@@ -907,7 +968,23 @@ You can attach audio and images to facts. Fact fields reference media by ID usin
 }
 ```
 
-**Delete media (DELETE /api/media/{id}) response:**
+### Get media metadata
+
+**Endpoint:** `GET /api/media/{id}/meta`
+
+Returns metadata only (id, owner, filename, mime, size, checksum, created_at), no file body.
+
+### Download media
+
+**Endpoint:** `GET /api/media/{id}`
+
+Returns the media file (binary) for user-owned media by ID.
+
+### Delete media
+
+**Endpoint:** `DELETE /api/media/{id}`
+
+**Response:**
 
 ```json
 {
@@ -915,7 +992,21 @@ You can attach audio and images to facts. Fact fields reference media by ID usin
 }
 ```
 
-When displaying fact text only (e.g. in a list), the UI shows markers as `audio:id` and `image:id` (no brackets). Storage and API use `[type:id]`.
+### List or lookup shared media (work in progress)
+
+**Endpoint:** `GET /api/media/shared` — list shared pronunciation assets; optional `?word=...&lang=...` to lookup.
+
+### Download shared media (work in progress)
+
+**Endpoint:** `GET /api/media/shared/{id}` — download shared media file by ID.
+
+### Admin shared media (work in progress)
+
+**Endpoints:** `POST /api/admin/media/shared` (upload), `DELETE /api/admin/media/shared/{id}` (delete). Admin-only.
+
+### Using media in facts (work in progress)
+
+Include markers in `entries`, e.g. `["Word", "[audio:abc123]", "[image:def456]", "Translation"]`. Use optional `template` for custom front/back layout per fact; omit for default (front = first entry, back = rest). When displaying fact text only (e.g. in a list), the UI shows markers as `audio:id` and `image:id` (no brackets). Storage and API use `[type:id]`.
 
 For full design (upload, delete, display, sync), see **[Media Upload design doc](../design-doc/media-upload.md)**.
 
@@ -930,6 +1021,7 @@ For full design (upload, delete, display, sync), see **[Media Upload design doc]
 | `/auth/logout` | POST | `{ "data": { "msg": "Logged out successfully" }, "meta": null }` |
 | `/auth/forgot-password` | POST | `{ "data": { "reset_token" }, "meta": { "expires_in" } }` |
 | `/auth/reset-password` | POST | `{ "data": { "msg": "Password reset successfully" }, "meta": null }` |
+| `/api/profile` | GET | `{ "data": { user profile }, "meta": { "msg" } }` |
 | `/api/decks` | POST | `{ "data": { "deck_id" }, "meta": { "msg" } }` |
 | `/api/decks` | GET | `{ "data": { "decks": [ … ] }, "meta": { "total", "msg" } }` |
 | `/api/decks/{id}` | GET | `{ "data": { deck + stats }, "meta": { "msg" } }` |
@@ -948,7 +1040,14 @@ For full design (upload, delete, display, sync), see **[Media Upload design doc]
 | `/api/decks/{id}/reschedule` | POST | `{ "data": { "cards_shifted", "days", "max_days_away" }, "meta": { "msg" } }` |
 | `/api/media` | POST | `{ "data": { id, owner, filename, mime, size, checksum, created_at }, "meta": { "msg" } }` |
 | `/api/media` | GET | `{ "data": [ MediaSwagger, … ], "meta": { "count", "has_more" } }` |
+| `/api/media/shared` | GET | List or lookup shared media (query: `word`, `lang`) |
+| `/api/media/shared/{id}` | GET | Download shared media (binary) |
+| `/api/media/{id}/meta` | GET | `{ "data": { id, owner, filename, mime, size, checksum, created_at }, "meta": { "msg" } }` |
+| `/api/media/{id}` | GET | Download media (binary) |
 | `/api/media/{id}` | DELETE | `{ "data": { "msg": "media deleted" } }` |
+| `/api/admin/media/shared` | POST | **(Admin)** Upload shared media |
+| `/api/admin/media/shared/{id}` | DELETE | **(Admin)** Delete shared media |
+| `/api/admin/decks/import` | POST | **(Admin)** Import shared deck |
 
 Full JSON examples for each are in the sections above.
 
@@ -957,6 +1056,6 @@ Full JSON examples for each are in the sections above.
 ## Next Steps
 
 - Keep reviewing cards by repeating steps 5-6
-- Create more decks with different field configurations
-- Attach audio and images using the [Media Upload](../design-doc/media-upload.md) flow
-- Explore other endpoints in Swagger UI
+- **Tagging system** — organize decks and facts with tags (planned)
+- **Offline sync** — sync data when back online (planned)
+- **Local storage** — cache decks and cards for offline use (planned)
