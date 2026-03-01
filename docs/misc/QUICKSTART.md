@@ -17,20 +17,25 @@ This guide walks you through using the WordUpX API via Swagger UI.
   - [Logout](#logout)
   - [Forgot Password](#forgot-password)
   - [Reset Password](#reset-password)
-- [2. Create a Deck](#2-create-a-deck)
-- [3. View Deck Details](#3-view-deck-details)
+- [2. Decks](#2-decks)
+  - [Create a Deck](#create-a-deck)
   - [Get a Single Deck](#get-a-single-deck)
   - [List All Decks](#list-all-decks)
   - [Update a Deck](#update-a-deck)
   - [Delete a Deck](#delete-a-deck)
-- [4. Add Facts](#4-add-facts)
+  - [Reschedule deck](#reschedule-deck)
+- [3. Facts](#3-facts)
+  - [Add Facts](#add-facts)
+  - [Get all facts](#get-all-facts)
+  - [Get one fact](#get-one-fact)
+- [4. Cards](#4-cards)
   - [Add a card for an existing fact (e.g. reversed)](#add-a-card-for-an-existing-fact-eg-reversed)
-- [5. Get Next Urgent Card](#5-get-next-urgent-card)
-- [6. Review a Card](#6-review-a-card)
-- [7. Hide a Card (Optional)](#7-hide-a-card-optional)
-- [8. Delete a Card](#8-delete-a-card)
-- [9. Media (Audio / Images)](#9-media-audio--images)
-- [10. Other endpoints (facts, card stats, reschedule)](#10-other-endpoints-facts-card-stats-reschedule)
+  - [Get Next Urgent Card](#get-next-urgent-card)
+  - [Review a Card](#review-a-card)
+  - [Hide a Card](#hide-a-card)
+  - [Delete a Card](#delete-a-card)
+  - [Get card stats](#get-card-stats)
+- [5. Media (Audio / Images)](#5-media-audio--images)
 - [Response examples reference](#response-examples-reference)
 - [Next Steps](#next-steps)
 
@@ -64,12 +69,13 @@ This guide walks you through using the WordUpX API via Swagger UI.
 | `/api/decks/{id}` | GET | Get deck details |
 | `/api/decks/{id}` | PATCH | Update deck |
 | `/api/decks/{id}` | DELETE | Delete deck |
-| `/api/decks/{id}/facts/{operation}` | POST | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`). Body: (1) `facts` only, (2) `facts` + `template`, or (3) `fact_id` + `template` to add one card for an existing fact. Exactly one shape per request. |
+| `/api/decks/{id}/facts/{operation}` | POST | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`). Body: `facts` (required) and optional `template`. To add a card for an existing fact, use POST `/api/decks/{id}/card` instead. |
 | `/api/decks/{id}/facts` | GET | Get all facts |
 | `/api/decks/{id}/facts/{factId}` | GET | Get a specific fact |
 | `/api/decks/{id}/facts/{factId}` | PATCH | Update a fact |
 | `/api/decks/{id}/facts/{factId}` | DELETE | Delete a fact |
 | `/api/decks/{id}/card` | GET | Get most urgent card |
+| `/api/decks/{id}/card` | POST | Add one card from an existing fact (e.g. reversed). Body: `fact_id`, `template`, optional `operation`. |
 | `/api/decks/{id}/card` | PATCH | Update card interval or visibility (by card_id) |
 | `/api/decks/{id}/cards` | GET | Get card stats (total, hidden count, hidden facts) |
 | `/api/decks/{id}/cards/{cardId}` | DELETE | Delete a single card (fact and other cards unchanged) |
@@ -195,7 +201,9 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 
 ---
 
-## 2. Create a Deck
+## 2. Decks
+
+### Create a Deck
 
 **Endpoint:** `POST /api/decks`
 
@@ -237,10 +245,6 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 > **Why no template on deck?** Templates are not stored on the deck. When you add facts, you can pass an optional `template` array (one `[[front indices], [back indices]]` per fact). The server writes that layout onto each **card**. By default, **no sibling (reversed) card is created**—only one card per fact (front = first entry, back = rest). Omit `template` to use that default.
 
 ---
-
-## 3. View Deck Details
-
-You can view a single deck or list all your decks. Both responses include a `stats` object with card statistics.
 
 ### Get a Single Deck
 
@@ -344,7 +348,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 > `unseen_cards` will increase. As you review cards,
 > `reviewed_cards` grows and `unseen_cards` decreases.
 >
-> The total cards in a deck equals the number of facts: **one card per fact by default, no sibling card**. To add a second card for a fact (e.g. reversed), use `POST /api/decks/{id}/facts/append` (or `prepend`, `shuffle`, `spread`) with body `{"fact_id": "<factId>", "template": [[1], [0]]}`. The backend rejects if that template already exists for the fact.
+> The total cards in a deck equals the number of facts: **one card per fact by default, no sibling card**. To add a second card for a fact (e.g. reversed), use `POST /api/decks/{id}/card` with body `{"fact_id": "<factId>", "template": [[1], [0]]}`. The backend rejects 400 if that template already exists for the fact.
 >
 > To calculate a progress percentage on the client side: `reviewed_cards / cards_count * 100`.
 
@@ -407,9 +411,36 @@ You can view a single deck or list all your decks. Both responses include a `sta
 }
 ```
 
+### Reschedule deck
+
+**Endpoint:** `POST /api/decks/{id}/reschedule`
+
+Shifts due dates and last_review of all cards in the deck by N days (1–365). Only allowed when the deck has overdue cards.
+
+**Request:**
+
+```json
+{ "days": 5 }
+```
+
+**Response:**
+
+```json
+{
+  "data": {
+    "cards_shifted": 42,
+    "days": 5,
+    "max_days_away": 10
+  },
+  "meta": { "msg": "Successfully rescheduled 42 cards by 5 days" }
+}
+```
+
 ---
 
-## 4. Add Facts
+## 3. Facts
+
+### Add Facts
 
 **Endpoint:** `POST /api/decks/{id}/facts/{operation}`
 
@@ -472,16 +503,55 @@ Optional **`template`**: array of layouts, one per fact. Each element is `[[fron
 }
 ```
 
+### Get all facts
+
+**Endpoint:** `GET /api/decks/{id}/facts`
+
+**Response:**
+
+```json
+{
+  "data": {
+    "facts": [
+      { "id": "x9k2m4np", "entries": ["Apple", "りんご"], "fields": ["English", "Japanese"] },
+      { "id": "f2abc", "entries": ["Book", "本"] }
+    ]
+  },
+  "meta": { "msg": "Facts retrieved successfully" }
+}
+```
+
+### Get one fact
+
+**Endpoint:** `GET /api/decks/{id}/facts/{factId}`
+
+**Response:**
+
+```json
+{
+  "data": {
+    "fact": {
+      "id": "x9k2m4np",
+      "entries": ["Apple", "りんご"],
+      "fields": ["English", "Japanese"]
+    }
+  }
+}
+```
+
+---
+
+## 4. Cards
+
 ### Add a card for an existing fact (e.g. reversed)
 
-By default there is **one card per fact**. To add a second card for a fact (e.g. a reversed card so the back side is shown first), use the same endpoint with **operation**: `append` (or `prepend`, `shuffle`, `spread`) and a body with `fact_id` and `template` — **not** `add_card`.
+By default there is **one card per fact**. To add a second card for a fact (e.g. a reversed card so the back side is shown first), use **POST /api/decks/{id}/card** with body `fact_id` and `template`. This is a separate endpoint from adding facts.
 
-**Endpoint:** `POST /api/decks/{id}/facts/{operation}`
+**Endpoint:** `POST /api/decks/{id}/card`
 
 **Parameters:**
 
 - `id`: your deck ID
-- `operation`: `append`, `prepend`, `shuffle`, or `spread` (placement of the new card among unseen cards)
 
 **Request Body:**
 
@@ -494,6 +564,7 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 
 - **`fact_id`** (required): The fact's ID (from `GET /api/decks/{id}/facts` or the add-facts response).
 - **`template`** (required): `[[front indices], [back indices]]` defining how the card shows the fact's entries. For a 2-entry fact: `[[0],[1]]` = front entry 0, back entry 1; `[[1],[0]]` = reversed. All indices must be in `0..(n-1)`, disjoint, and cover every entry. The backend returns 400 if this exact template already exists for another card of this fact.
+- **`operation`** (optional): `append`, `prepend`, `shuffle`, or `spread` — where to place the new card among unseen cards. Default is `append`.
 
 **Response:**
 
@@ -510,7 +581,7 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 
 ---
 
-## 5. Get Next Urgent Card
+### Get Next Urgent Card
 
 **Endpoint:** `GET /api/decks/{id}/card`
 
@@ -622,7 +693,7 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 
 ---
 
-## 6. Review a Card
+### Review a Card
 
 After viewing a card, you need to update its interval based on how well you remembered it.
 
@@ -708,7 +779,7 @@ After viewing a card, you need to update its interval based on how well you reme
 
 ---
 
-## 7. Hide a Card (Optional)
+### Hide a Card
 
 If you want to temporarily hide a card from reviews:
 
@@ -742,7 +813,7 @@ If you want to temporarily hide a card from reviews:
 
 ---
 
-## 8. Delete a Card
+### Delete a Card
 
 Permanently remove a single card from a deck. The fact and any other cards for that fact (e.g. a sibling/reversed card) are unchanged.
 
@@ -768,9 +839,29 @@ Permanently remove a single card from a deck. The fact and any other cards for t
 }
 ```
 
+### Get card stats
+
+**Endpoint:** `GET /api/decks/{id}/cards`
+
+**Response:**
+
+```json
+{
+  "data": {
+    "total_cards": 20,
+    "hidden_count": 3,
+    "hidden_facts": [
+      { "id": "f_h1", "entries": ["Hidden word", "隠れた語"], "fields": ["English", "Japanese"] }
+    ],
+    "orphaned_hidden_cards": 0
+  },
+  "meta": { "msg": "Card stats retrieved successfully" }
+}
+```
+
 ---
 
-## 9. Media (Audio / Images)
+## 5. Media (Audio / Images)
 
 You can attach audio and images to facts. Fact fields reference media by ID using markers `[audio:id]` and `[image:id]`.
 
@@ -830,91 +921,6 @@ For full design (upload, delete, display, sync), see **[Media Upload design doc]
 
 ---
 
-## 10. Other endpoints (facts, card stats, reschedule)
-
-### Get all facts
-
-**Endpoint:** `GET /api/decks/{id}/facts`
-
-**Response:**
-
-```json
-{
-  "data": {
-    "facts": [
-      { "id": "x9k2m4np", "entries": ["Apple", "りんご"], "fields": ["English", "Japanese"] },
-      { "id": "f2abc", "entries": ["Book", "本"] }
-    ]
-  },
-  "meta": { "msg": "Facts retrieved successfully" }
-}
-```
-
-### Get one fact
-
-**Endpoint:** `GET /api/decks/{id}/facts/{factId}`
-
-**Response:**
-
-```json
-{
-  "data": {
-    "fact": {
-      "id": "x9k2m4np",
-      "entries": ["Apple", "りんご"],
-      "fields": ["English", "Japanese"]
-    }
-  }
-}
-```
-
-### Get card stats
-
-**Endpoint:** `GET /api/decks/{id}/cards`
-
-**Response:**
-
-```json
-{
-  "data": {
-    "total_cards": 20,
-    "hidden_count": 3,
-    "hidden_facts": [
-      { "id": "f_h1", "entries": ["Hidden word", "隠れた語"], "fields": ["English", "Japanese"] }
-    ],
-    "orphaned_hidden_cards": 0
-  },
-  "meta": { "msg": "Card stats retrieved successfully" }
-}
-```
-
-### Reschedule deck
-
-**Endpoint:** `POST /api/decks/{id}/reschedule`
-
-Shifts due dates and last_review of all cards in the deck by N days (1–365). Only allowed when the deck has overdue cards.
-
-**Request:**
-
-```json
-{ "days": 5 }
-```
-
-**Response:**
-
-```json
-{
-  "data": {
-    "cards_shifted": 42,
-    "days": 5,
-    "max_days_away": 10
-  },
-  "meta": { "msg": "Successfully rescheduled 42 cards by 5 days" }
-}
-```
-
----
-
 ## Response examples reference
 
 | Endpoint | Method | Response shape |
@@ -929,7 +935,8 @@ Shifts due dates and last_review of all cards in the deck by N days (1–365). O
 | `/api/decks/{id}` | GET | `{ "data": { deck + stats }, "meta": { "msg" } }` |
 | `/api/decks/{id}` | PATCH | `{ "data": { "deck_id" }, "meta": { "msg", "updated_at" } }` |
 | `/api/decks/{id}` | DELETE | `{ "data": { "deck_id" }, "meta": { "msg" } }` |
-| `/api/decks/{id}/facts/{op}` | POST | Add facts: `{ "data": { "fact_length" }, "meta": { "msg" } }`; add one card: `{ "data": { "card_id" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/facts/{op}` | POST | Add facts: `{ "data": { "fact_length" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/card` | POST | Add card from existing fact: `{ "data": { "card_id" }, "meta": { "msg" } }` |
 | `/api/decks/{id}/facts` | GET | `{ "data": { "facts": [ … ] }, "meta": { "msg" } }` |
 | `/api/decks/{id}/facts/{factId}` | GET | `{ "data": { "fact": { … } } }` |
 | `/api/decks/{id}/facts/{factId}` | PATCH | `{ "data": { "fact_id" }, "meta": { "msg" } }` |

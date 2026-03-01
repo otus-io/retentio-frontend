@@ -40,7 +40,7 @@
 
 | 接口 | 说明 | 前端 | 后端 |
 | --- | --- | --- | --- |
-| `POST /api/decks/{id}/facts/{operation}` | 添加词条 (append/prepend/shuffle/spread) 或为词条添加卡片 (operation=add_card，body 含 fact_id、template [[正面],[背面]]；重复 template 返回 400) | ✅ | ✅ |
+| `POST /api/decks/{id}/facts/{operation}` | 添加词条 (append/prepend/shuffle/spread)，body 为 facts + 可选 template | ✅ | ✅ |
 | `GET /api/decks/{id}/facts` | 获取所有词条 | ✅ | ✅ |
 | `GET /api/decks/{id}/facts/{factId}` | 获取单个词条 | ✅ | ✅ |
 | `PATCH /api/decks/{id}/facts/{factId}` | 更新词条 | ✅ | ✅ |
@@ -52,6 +52,7 @@
 | 接口 | 说明 | 前端 | 后端 |
 | --- | --- | --- | --- |
 | `GET /api/decks/{id}/card` | 获取最紧急卡片 | ✅ | ✅ |
+| `POST /api/decks/{id}/card` | 为已有词条添加一张卡片（body: fact_id, template [[正面],[背面]]，可选 operation: append/prepend/shuffle/spread） | ✅ | ✅ |
 | `PATCH /api/decks/{id}/card` | 更新卡片间隔或可见性（按 card_id 查找，支持 last_review 离线同步） | ✅ | ✅ |
 | `GET /api/decks/{id}/cards` | 获取卡片统计（总数、隐藏数量、隐藏事实） | ✅ | ✅ |
 | `DELETE /api/decks/{id}/cards/{cardId}` | 删除单张卡片（词条与其他卡片不变） | ✅ | ✅ |
