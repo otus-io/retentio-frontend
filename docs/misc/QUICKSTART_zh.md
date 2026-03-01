@@ -17,20 +17,25 @@
   - [登出](#登出)
   - [忘记密码](#忘记密码)
   - [重置密码](#重置密码)
-- [2. 创建卡组](#2-创建卡组)
-- [3. 查看卡组详情](#3-查看卡组详情)
+- [2. 卡组](#2-卡组)
+  - [创建卡组](#创建卡组)
   - [获取单个卡组](#获取单个卡组)
   - [获取所有卡组](#获取所有卡组)
   - [更新卡组](#更新卡组)
   - [删除卡组](#删除卡组)
-- [4. 添加词条](#4-添加词条)
+  - [假期模式（平移复习计划）](#假期模式平移复习计划)
+- [3. 词条](#3-词条)
+  - [添加词条](#添加词条)
+  - [获取所有词条](#获取所有词条)
+  - [获取单个词条](#获取单个词条)
+- [4. 卡片](#4-卡片)
   - [为已有词条添加一张卡（如反向卡）](#为已有词条添加一张卡如反向卡)
-- [5. 获取下一张最紧急卡片](#5-获取下一张最紧急卡片)
-- [6. 复习卡片](#6-复习卡片)
-- [7. 隐藏卡片（可选）](#7-隐藏卡片可选)
-- [8. 删除卡片](#8-删除卡片)
-- [9. 媒体（音频 / 图片）](#9-媒体音频--图片)
-- [10. 其他接口（词条、卡片统计、假期模式）](#10-其他接口词条卡片统计假期模式)
+  - [获取下一张最紧急卡片](#获取下一张最紧急卡片)
+  - [复习卡片](#复习卡片)
+  - [隐藏卡片](#隐藏卡片)
+  - [删除卡片](#删除卡片)
+  - [获取卡片统计](#获取卡片统计)
+- [5. 媒体（音频 / 图片）](#5-媒体音频--图片)
 - [响应示例速查](#响应示例速查)
 - [后续步骤](#后续步骤)
 
@@ -63,12 +68,13 @@
 | `/api/decks/{id}` | GET | 获取卡组详情 |
 | `/api/decks/{id}` | PATCH | 更新卡组 |
 | `/api/decks/{id}` | DELETE | 删除卡组 |
-| `/api/decks/{id}/facts/{operation}` | POST | 添加词条：operation 为 append/prepend/shuffle/spread。请求体三选一：(1) 仅 facts；(2) facts + template；(3) fact_id + template（为已有词条添加一张卡）。每次请求仅一种形状。 |
+| `/api/decks/{id}/facts/{operation}` | POST | 添加词条：operation 为 append/prepend/shuffle/spread。请求体：facts（必填）及可选 template。为已有词条添加一张卡请使用 POST `/api/decks/{id}/card`。 |
 | `/api/decks/{id}/facts` | GET | 获取所有词条 |
 | `/api/decks/{id}/facts/{factId}` | GET | 获取单个词条 |
 | `/api/decks/{id}/facts/{factId}` | PATCH | 更新词条 |
 | `/api/decks/{id}/facts/{factId}` | DELETE | 删除词条 |
 | `/api/decks/{id}/card` | GET | 获取最紧急卡片 |
+| `/api/decks/{id}/card` | POST | 为已有词条添加一张卡（如反向卡）。请求体：fact_id、template，可选 operation。 |
 | `/api/decks/{id}/card` | PATCH | 更新卡片间隔或可见性（按 card_id） |
 | `/api/decks/{id}/cards` | GET | 获取卡片统计 |
 | `/api/decks/{id}/cards/{cardId}` | DELETE | 删除单张卡片（词条及其他卡片不变） |
@@ -194,7 +200,9 @@
 
 ---
 
-## 2. 创建卡组
+## 2. 卡组
+
+### 创建卡组
 
 **接口:** `POST /api/decks`
 
@@ -236,10 +244,6 @@
 > **为什么卡组没有 template？** 模板不存储在卡组上。添加词条时可传入可选参数 `template`（每个词条一个 `[[正面索引], [背面索引]]`）。服务端将该布局写入每张**卡片**的 `template`。**默认不生成兄弟卡（反向卡）**，每词条仅一张卡（正面第一条、背面其余）。省略 `template` 即使用该默认。
 
 ---
-
-## 3. 查看卡组详情
-
-您可以查看单个卡组或列出所有卡组。两个接口的响应都包含一个 `stats` 对象，提供卡片统计信息。
 
 ### 获取单个卡组
 
@@ -342,7 +346,7 @@
 > 添加词条后，`cards_count` 和 `unseen_cards` 会增加。
 > 随着复习的进行，`reviewed_cards` 会增长，`unseen_cards` 会减少。
 >
-> 卡组卡片总数默认等于词条数：**每词条一张卡，默认不生成兄弟卡**。若需为某词条增加第二张卡（如反向卡），可调用 `POST /api/decks/{id}/facts/append`（或 prepend/shuffle/spread），body 传 `{"fact_id": "<factId>", "template": [[1], [0]]}`。若该 template 已存在则返回 400。
+> 卡组卡片总数默认等于词条数：**每词条一张卡，默认不生成兄弟卡**。若需为某词条增加第二张卡（如反向卡），请调用 `POST /api/decks/{id}/card`，body 传 `{"fact_id": "<factId>", "template": [[1], [0]]}`。若该 template 已存在则返回 400。
 >
 > 客户端计算学习进度百分比：`reviewed_cards / cards_count * 100`。
 
@@ -403,9 +407,36 @@
 }
 ```
 
+### 假期模式（平移复习计划）
+
+**接口：** `POST /api/decks/{id}/reschedule`
+
+将卡组内所有卡片的 due_date 与 last_review 按 N 天（1–365）平移。仅当卡组存在逾期卡片时允许调用。
+
+**请求体：**
+
+```json
+{ "days": 5 }
+```
+
+**响应示例：**
+
+```json
+{
+  "data": {
+    "cards_shifted": 42,
+    "days": 5,
+    "max_days_away": 10
+  },
+  "meta": { "msg": "Successfully rescheduled 42 cards by 5 days" }
+}
+```
+
 ---
 
-## 4. 添加词条
+## 3. 词条
+
+### 添加词条
 
 **接口:** `POST /api/decks/{id}/facts/{operation}`
 
@@ -468,16 +499,55 @@
 }
 ```
 
+### 获取所有词条
+
+**接口：** `GET /api/decks/{id}/facts`
+
+**响应示例：**
+
+```json
+{
+  "data": {
+    "facts": [
+      { "id": "x9k2m4np", "entries": ["Apple", "りんご"], "fields": ["English", "Japanese"] },
+      { "id": "f2abc", "entries": ["Book", "本"] }
+    ]
+  },
+  "meta": { "msg": "Facts retrieved successfully" }
+}
+```
+
+### 获取单个词条
+
+**接口：** `GET /api/decks/{id}/facts/{factId}`
+
+**响应示例：**
+
+```json
+{
+  "data": {
+    "fact": {
+      "id": "x9k2m4np",
+      "entries": ["Apple", "りんご"],
+      "fields": ["English", "Japanese"]
+    }
+  }
+}
+```
+
+---
+
+## 4. 卡片
+
 ### 为已有词条添加一张卡（如反向卡）
 
-默认**每词条一张卡**。若要为某词条再增加一张卡（如反向卡：先显示背面再显示正面），使用同一接口，**operation** 设为 `append`（或 `prepend`、`shuffle`、`spread`），请求体使用 `fact_id` + `template`，**不要**使用 `add_card`。
+默认**每词条一张卡**。若要为某词条再增加一张卡（如反向卡：先显示背面再显示正面），请使用 **POST /api/decks/{id}/card**，请求体传 `fact_id` 与 `template`。此接口与「添加词条」分开。
 
-**接口:** `POST /api/decks/{id}/facts/{operation}`
+**接口:** `POST /api/decks/{id}/card`
 
 **参数:**
 
 - `id`: 卡组 ID
-- `operation`: `append`、`prepend`、`shuffle` 或 `spread`（新卡在未复习卡中的位置）
 
 **请求体:**
 
@@ -490,6 +560,7 @@
 
 - **`fact_id`**（必填）：词条 ID（来自 `GET /api/decks/{id}/facts` 或添加词条后的数据）。
 - **`template`**（必填）：`[[正面索引], [背面索引]]`，指定卡片如何展示词条各列。两列词条：`[[0],[1]]` = 正面第 0 列、背面第 1 列；`[[1],[0]]` = 反向。索引须在 `0..(n-1)` 内、互不重复且覆盖所有列。若该 fact 下已有卡片使用相同 template 则返回 400。
+- **`operation`**（可选）：`append`、`prepend`、`shuffle` 或 `spread`，表示新卡在未复习卡中的位置，默认为 `append`。
 
 **响应:**
 
@@ -506,7 +577,7 @@
 
 ---
 
-## 5. 获取下一张最紧急卡片
+### 获取下一张最紧急卡片
 
 **接口:** `GET /api/decks/{id}/card`
 
@@ -618,7 +689,7 @@
 
 ---
 
-## 6. 复习卡片
+### 复习卡片
 
 查看卡片后，您需要根据记忆程度更新复习间隔。
 
@@ -703,7 +774,7 @@
 
 ---
 
-## 7. 隐藏卡片（可选）
+### 隐藏卡片
 
 如果您想暂时从复习中隐藏某张卡片：
 
@@ -737,7 +808,7 @@
 
 ---
 
-## 8. 删除卡片
+### 删除卡片
 
 从卡组中永久删除单张卡片。该词条及该词条的其他卡片（如反向卡）不受影响。
 
@@ -763,9 +834,29 @@
 }
 ```
 
+### 获取卡片统计
+
+**接口：** `GET /api/decks/{id}/cards`
+
+**响应示例：**
+
+```json
+{
+  "data": {
+    "total_cards": 20,
+    "hidden_count": 3,
+    "hidden_facts": [
+      { "id": "f_h1", "entries": ["Hidden word", "隠れた語"], "fields": ["English", "Japanese"] }
+    ],
+    "orphaned_hidden_cards": 0
+  },
+  "meta": { "msg": "Card stats retrieved successfully" }
+}
+```
+
 ---
 
-## 9. 媒体（音频 / 图片）
+## 5. 媒体（音频 / 图片）
 
 可为词条附加音频和图片。词条字段通过标记 `[audio:id]` 和 `[image:id]` 按 ID 引用媒体。
 
@@ -822,91 +913,6 @@
 仅以纯文本展示词条时（如列表中），界面显示为 `audio:id` 和 `image:id`（无方括号）。存储与 API 使用 `[type:id]`。
 
 完整设计（上传、删除、展示、同步）见 **[媒体上传设计文档](../design-doc/media-upload.md)**。
-
----
-
-## 10. 其他接口（词条、卡片统计、假期模式）
-
-### 获取所有词条
-
-**接口：** `GET /api/decks/{id}/facts`
-
-**响应示例：**
-
-```json
-{
-  "data": {
-    "facts": [
-      { "id": "x9k2m4np", "entries": ["Apple", "りんご"], "fields": ["English", "Japanese"] },
-      { "id": "f2abc", "entries": ["Book", "本"] }
-    ]
-  },
-  "meta": { "msg": "Facts retrieved successfully" }
-}
-```
-
-### 获取单个词条
-
-**接口：** `GET /api/decks/{id}/facts/{factId}`
-
-**响应示例：**
-
-```json
-{
-  "data": {
-    "fact": {
-      "id": "x9k2m4np",
-      "entries": ["Apple", "りんご"],
-      "fields": ["English", "Japanese"]
-    }
-  }
-}
-```
-
-### 获取卡片统计
-
-**接口：** `GET /api/decks/{id}/cards`
-
-**响应示例：**
-
-```json
-{
-  "data": {
-    "total_cards": 20,
-    "hidden_count": 3,
-    "hidden_facts": [
-      { "id": "f_h1", "entries": ["Hidden word", "隠れた語"], "fields": ["English", "Japanese"] }
-    ],
-    "orphaned_hidden_cards": 0
-  },
-  "meta": { "msg": "Card stats retrieved successfully" }
-}
-```
-
-### 假期模式（平移复习计划）
-
-**接口：** `POST /api/decks/{id}/reschedule`
-
-将卡组内所有卡片的 due_date 与 last_review 按 N 天（1–365）平移。仅当卡组存在逾期卡片时允许调用。
-
-**请求体：**
-
-```json
-{ "days": 5 }
-```
-
-**响应示例：**
-
-```json
-{
-  "data": {
-    "cards_shifted": 42,
-    "days": 5,
-    "max_days_away": 10
-  },
-  "meta": { "msg": "Successfully rescheduled 42 cards by 5 days" }
-}
-```
 
 ---
 
