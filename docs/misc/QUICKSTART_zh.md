@@ -17,6 +17,7 @@
   - [登出](#登出)
   - [忘记密码](#忘记密码)
   - [重置密码](#重置密码)
+- [1.1 用户资料](#11-用户资料)
 - [2. 卡组](#2-卡组)
   - [创建卡组](#创建卡组)
   - [获取单个卡组](#获取单个卡组)
@@ -28,6 +29,8 @@
   - [添加词条](#添加词条)
   - [获取所有词条](#获取所有词条)
   - [获取单个词条](#获取单个词条)
+  - [更新词条](#更新词条)
+  - [删除词条](#删除词条)
 - [4. 卡片](#4-卡片)
   - [为已有词条添加一张卡（如反向卡）](#为已有词条添加一张卡如反向卡)
   - [获取下一张最紧急卡片](#获取下一张最紧急卡片)
@@ -36,6 +39,15 @@
   - [删除卡片](#删除卡片)
   - [获取卡片统计](#获取卡片统计)
 - [5. 媒体（音频 / 图片）](#5-媒体音频--图片)
+  - [上传媒体](#上传媒体)
+  - [列出媒体](#列出媒体)
+  - [获取媒体元数据](#获取媒体元数据)
+  - [下载媒体](#下载媒体)
+  - [删除媒体](#删除媒体)
+  - [列出或查询共享媒体（开发中）](#列出或查询共享媒体开发中)
+  - [下载共享媒体（开发中）](#下载共享媒体开发中)
+  - [管理端共享媒体（开发中）](#管理端共享媒体开发中)
+  - [在词条中使用媒体（开发中）](#在词条中使用媒体开发中)
 - [响应示例速查](#响应示例速查)
 - [后续步骤](#后续步骤)
 
@@ -63,6 +75,7 @@
 | `/auth/logout` | POST | 登出（使令牌失效） |
 | `/auth/forgot-password` | POST | 请求密码重置令牌 |
 | `/auth/reset-password` | POST | 使用令牌重置密码 |
+| `/api/profile` | GET | 获取当前用户资料 |
 | `/api/decks` | POST | 创建卡组 |
 | `/api/decks` | GET | 获取所有卡组 |
 | `/api/decks/{id}` | GET | 获取卡组详情 |
@@ -79,10 +92,18 @@
 | `/api/decks/{id}/cards` | GET | 获取卡片统计 |
 | `/api/decks/{id}/cards/{cardId}` | DELETE | 删除单张卡片（词条及其他卡片不变） |
 | `/api/decks/{id}/reschedule` | POST | 假期模式：按天数平移卡片复习计划 |
-| `/api/media` | POST | 上传媒体 |
+| `/api/media` | POST | 上传媒体（音频/图片） |
 | `/api/media` | GET | 列出用户媒体（同步清单） |
+| `/api/media/shared` | GET | 列出或查询共享媒体（`?word=...&lang=...`） |
+| `/api/media/shared/{id}` | GET | 下载共享媒体文件 |
+| `/api/media/{id}/meta` | GET | 获取媒体元数据（不含文件体） |
 | `/api/media/{id}` | GET | 下载媒体文件 |
 | `/api/media/{id}` | DELETE | 删除媒体 |
+| `/api/admin/media/shared` | POST | **（管理端）** 上传共享媒体 |
+| `/api/admin/media/shared/{id}` | DELETE | **（管理端）** 删除共享媒体 |
+| `/api/admin/decks/import` | POST | **（管理端）** 导入共享卡组（zip + manifest） |
+
+> **说明：** 管理端媒体相关接口为**开发中**，行为可能变更。
 
 ---
 
@@ -197,6 +218,14 @@
 ```
 
 > 重置后，请使用新密码登录。重置令牌为一次性使用，不能重复使用。
+
+---
+
+## 1.1 用户资料
+
+**接口：** `GET /api/profile`
+
+需在请求头中携带 `Authorization: Bearer <token>`。返回当前用户的资料（如用户名、邮箱）。
 
 ---
 
@@ -535,6 +564,47 @@
 }
 ```
 
+### 更新词条
+
+**接口：** `PATCH /api/decks/{id}/facts/{factId}`
+
+**参数：** `id`（卡组 ID）、`factId`（词条 ID，来自 GET 词条或添加词条响应）。
+
+**请求体：** 可选 `entries` 与 `fields`。若提供 `entries` 则替换该词条内容；若提供 `fields`，其长度须与 `entries` 一致。
+
+```json
+{
+  "entries": ["Apple", "りんご"],
+  "fields": ["English", "Japanese"]
+}
+```
+
+**响应：**
+
+```json
+{
+  "data": { "fact_id": "x9k2m4np" },
+  "meta": { "msg": "Fact updated successfully" }
+}
+```
+
+### 删除词条
+
+**接口：** `DELETE /api/decks/{id}/facts/{factId}`
+
+**参数：** `id`（卡组 ID）、`factId`（词条 ID）。
+
+永久删除该词条及其衍生出的所有卡片。
+
+**响应：**
+
+```json
+{
+  "data": { "fact_id": "x9k2m4np" },
+  "meta": { "msg": "Fact deleted successfully" }
+}
+```
+
 ---
 
 ## 4. 卡片
@@ -860,11 +930,11 @@
 
 可为词条附加音频和图片。词条字段通过标记 `[audio:id]` 和 `[image:id]` 按 ID 引用媒体。
 
-**流程：**
+### 上传媒体
 
-1. **上传** — `POST /api/media`（multipart/form-data，字段 `file`）。
+**接口：** `POST /api/media` — multipart/form-data，字段 `file`。
 
-**上传响应示例：**
+**响应：**
 
 ```json
 {
@@ -881,9 +951,11 @@
 }
 ```
 
-1. **添加带媒体的词条** — 在 `entries` 中加入标记，例如 `["Word", "[audio:abc123]", "[image:def456]", "Translation"]`。可按需传入 `template` 指定每词条的正/背面布局；省略则使用默认（正面第一条、背面其余）。
+### 列出媒体
 
-**列出媒体（GET /api/media）响应示例：**
+**接口：** `GET /api/media` — 返回当前用户的媒体（同步清单）。
+
+**响应：**
 
 ```json
 {
@@ -902,7 +974,23 @@
 }
 ```
 
-**删除媒体（DELETE /api/media/{id}）响应示例：**
+### 获取媒体元数据
+
+**接口：** `GET /api/media/{id}/meta`
+
+仅返回元数据（id、owner、filename、mime、size、checksum、created_at），不含文件体。
+
+### 下载媒体
+
+**接口：** `GET /api/media/{id}`
+
+按 ID 返回用户拥有的媒体文件（二进制）。
+
+### 删除媒体
+
+**接口：** `DELETE /api/media/{id}`
+
+**响应：**
 
 ```json
 {
@@ -910,7 +998,21 @@
 }
 ```
 
-仅以纯文本展示词条时（如列表中），界面显示为 `audio:id` 和 `image:id`（无方括号）。存储与 API 使用 `[type:id]`。
+### 列出或查询共享媒体（开发中）
+
+**接口：** `GET /api/media/shared` — 列出共享发音资源；可选查询参数 `?word=...&lang=...` 进行查询。
+
+### 下载共享媒体（开发中）
+
+**接口：** `GET /api/media/shared/{id}` — 按 ID 下载共享媒体文件。
+
+### 管理端共享媒体（开发中）
+
+**接口：** `POST /api/admin/media/shared`（上传）、`DELETE /api/admin/media/shared/{id}`（删除）。仅管理端。
+
+### 在词条中使用媒体（开发中）
+
+在 `entries` 中加入标记，例如 `["Word", "[audio:abc123]", "[image:def456]", "Translation"]`。可选用 `template` 指定每词条的正/背面布局；省略则使用默认（正面第一条、背面其余）。仅以纯文本展示词条时（如列表中），界面显示为 `audio:id` 和 `image:id`（无方括号）。存储与 API 使用 `[type:id]`。
 
 完整设计（上传、删除、展示、同步）见 **[媒体上传设计文档](../design-doc/media-upload.md)**。
 
@@ -925,6 +1027,6 @@
 ## 后续步骤
 
 - 重复步骤 5-6 继续复习卡片
-- 创建更多不同字段配置的卡组
-- 使用[媒体上传](../design-doc/media-upload.md)流程附加音频与图片
-- 在 Swagger UI 中探索其他接口
+- **标签系统** — 用标签管理卡组与词条（规划中）
+- **离线同步** — 恢复联网后同步数据（规划中）
+- **本地存储** — 缓存卡组与卡片供离线使用（规划中）

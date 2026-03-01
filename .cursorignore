@@ -6,8 +6,7 @@
 # ===== Git internals (commits, author names, emails, remotes, repo name) =====
 .git/
 
-# ===== ALL GitHub metadata (workflows leak repo structure, secrets, deploy targets) =====
-.github/
+# ===== GitHub: workflows readable (removed .github/ from ignore) =====
 
 # ===== Environment variables & secrets (every possible convention) =====
 .env
