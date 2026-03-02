@@ -263,7 +263,7 @@
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3"
+    "deck_id": "a1b2c3d4e5f6"
   },
   "meta": {
     "msg": "Deck created successfully"
@@ -282,14 +282,14 @@
 
 **参数:**
 
-- `id`: `a1b2c3`（您的卡组 ID）
+- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 
 **响应:**
 
 ```json
 {
   "data": {
-    "id": "a1b2c3",
+    "id": "a1b2c3d4e5f6",
     "name": "English Japanese IELTS Deck",
     "owner": "swagger",
     "field": ["English", "Japanese"],
@@ -324,7 +324,7 @@
   "data": {
     "decks": [
       {
-        "id": "a1b2c3",
+        "id": "a1b2c3d4e5f6",
         "name": "English Japanese IELTS Deck",
         "owner": "swagger",
         "field": ["English", "Japanese"],
@@ -387,7 +387,7 @@
 
 **参数:**
 
-- `id`: `a1b2c3`（您的卡组 ID）
+- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 
 **请求体:**
 
@@ -406,7 +406,7 @@
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3"
+    "deck_id": "a1b2c3d4e5f6"
   },
   "meta": {
     "msg": "Deck updated successfully",
@@ -421,7 +421,7 @@
 
 **参数:**
 
-- `id`: `a1b2c3`（您的卡组 ID）
+- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 
 > 此操作会永久删除卡组及其所有关联的词条和卡片。
 
@@ -430,7 +430,7 @@
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3"
+    "deck_id": "a1b2c3d4e5f6"
   },
   "meta": {
     "msg": "Deck deleted successfully"
@@ -473,7 +473,7 @@
 
 **参数:**
 
-- `id`: `a1b2c3`（您的卡组 ID）
+- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 - `operation`: `append`
 
 **请求体：** 词条数组（每项含 `entries`）及可选的 `template`。服务端为每个词条生成唯一 ID，并为每个词条创建**一张卡片**（默认不生成反向/兄弟卡）。卡片的正/背面布局由 `template[i]` 指定（词条索引 `i`），省略或长度不足时使用默认 `[[0], [1, 2, ...]]`。
@@ -655,7 +655,7 @@
 
 **参数:**
 
-- `id`: `a1b2c3`（您的卡组 ID）
+- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 
 **响应（无字段名 — 当卡组或词条未配置字段名时，段中 `field` 为空字符串）：**
 
@@ -770,7 +770,7 @@
 
 **参数:**
 
-- `id`: `a1b2c3`（您的卡组 ID）
+- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 
 **请求体:**
 
@@ -855,7 +855,7 @@
 
 **参数:**
 
-- `id`: `a1b2c3`
+- `id`: `a1b2c3d4e5f6`
 
 **请求体:**
 
@@ -889,7 +889,7 @@
 
 **参数：**
 
-- `id`：卡组 ID（如 `a1b2c3`）
+- `id`：卡组 ID（如 `a1b2c3d4e5f6`）
 - `cardId`：卡片 ID（来自获取下一张卡片或卡片统计的响应）
 
 **请求体：** 无。

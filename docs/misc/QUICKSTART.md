@@ -253,7 +253,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3"
+    "deck_id": "a1b2c3d4e5f6"
   },
   "meta": {
     "msg": "Deck created successfully"
@@ -272,14 +272,14 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 
 **Parameters:**
 
-- `id`: `a1b2c3` (your deck ID)
+- `id`: `a1b2c3d4e5f6` (your deck ID)
 
 **Response:**
 
 ```json
 {
   "data": {
-    "id": "a1b2c3",
+    "id": "a1b2c3d4e5f6",
     "name": "English Japanese IELTS Deck",
     "owner": "swagger",
     "field": ["English", "Japanese"],
@@ -314,7 +314,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
   "data": {
     "decks": [
       {
-        "id": "a1b2c3",
+        "id": "a1b2c3d4e5f6",
         "name": "English Japanese IELTS Deck",
         "owner": "swagger",
         "field": ["English", "Japanese"],
@@ -378,7 +378,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 
 **Parameters:**
 
-- `id`: `a1b2c3` (your deck ID)
+- `id`: `a1b2c3d4e5f6` (your deck ID)
 
 **Request Body:**
 
@@ -399,7 +399,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3"
+    "deck_id": "a1b2c3d4e5f6"
   },
   "meta": {
     "msg": "Deck updated successfully",
@@ -414,7 +414,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 
 **Parameters:**
 
-- `id`: `a1b2c3` (your deck ID)
+- `id`: `a1b2c3d4e5f6` (your deck ID)
 
 > This permanently deletes the deck and all its associated facts and cards.
 
@@ -423,7 +423,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3"
+    "deck_id": "a1b2c3d4e5f6"
   },
   "meta": {
     "msg": "Deck deleted successfully"
@@ -466,7 +466,7 @@ Shifts due dates and last_review of all cards in the deck by N days (1–365). O
 
 **Parameters:**
 
-- `id`: `a1b2c3` (your deck ID)
+- `id`: `a1b2c3d4e5f6` (your deck ID)
 - `operation`: `append`
 
 **Request Body:** An array of fact items (each with `entries`) and optional `template`. The server generates a unique fact ID for each fact and creates **one card per fact** (no sibling/reversed card by default). Each card's front/back layout is given by `template[i]` for fact index `i`, or the default `[[0], [1, 2, ...]]` when omitted.
@@ -648,7 +648,7 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 
 **Parameters:**
 
-- `id`: `a1b2c3` (your deck ID)
+- `id`: `a1b2c3d4e5f6` (your deck ID)
 
 **Response (segments without field names — when deck or fact have no field names):**
 
@@ -763,7 +763,7 @@ After viewing a card, you need to update its interval based on how well you reme
 
 **Parameters:**
 
-- `id`: `a1b2c3` (your deck ID)
+- `id`: `a1b2c3d4e5f6` (your deck ID)
 
 **Request Body:**
 
@@ -849,7 +849,7 @@ If you want to temporarily hide a card from reviews:
 
 **Parameters:**
 
-- `id`: `a1b2c3`
+- `id`: `a1b2c3d4e5f6`
 
 **Request Body:**
 
@@ -883,7 +883,7 @@ Permanently remove a single card from a deck. The fact and any other cards for t
 
 **Parameters:**
 
-- `id`: deck ID (e.g. `a1b2c3`)
+- `id`: deck ID (e.g. `a1b2c3d4e5f6`)
 - `cardId`: card ID (from get-next-card response or card stats)
 
 **Request Body:** None.
