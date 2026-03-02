@@ -1,122 +1,90 @@
-import 'package:equatable/equatable.dart';
+// To parse this JSON data, do
+//
+//     final cardDetail = cardDetailFromJson(jsonString);
 
-class CardDetail extends Equatable {
-  final Card card;
-  final double urgency;
+import 'dart:convert';
 
-  const CardDetail({required this.card, required this.urgency});
+CardDetail cardDetailFromJson(String str) =>
+    CardDetail.fromJson(json.decode(str));
 
-  factory CardDetail.fromJson(Map<String, dynamic> json) => CardDetail(
-    card: Card.fromJson(json["card"]),
-    urgency: json["urgency"]?.toDouble(),
-  );
+String cardDetailToJson(CardDetail data) => json.encode(data.toJson());
 
-  Map<String, dynamic> toJson() => {"card": card.toJson(), "urgency": urgency};
+class CardDetail {
+  Card card;
 
-  CardDetail? copyWith({Fact? fact}) {
-    return CardDetail(
-      card: card.copyWith(fact: fact),
-      urgency: urgency,
-    );
-  }
+  CardDetail({required this.card});
 
-  @override
-  List<Object?> get props => [card, urgency];
+  factory CardDetail.fromJson(Map<String, dynamic> json) =>
+      CardDetail(card: Card.fromJson(json["card"]));
+
+  Map<String, dynamic> toJson() => {"card": card.toJson()};
 }
 
-class Card extends Equatable {
-  final int createdAt;
-  final int dueDate;
-  final String factId;
-  final bool hidden;
-  final String id;
-  final int lastReview;
-  final int templateIndex;
-  final Fact? fact;
+class Card {
+  List<Back> back;
+  int createdAt;
+  int dueDate;
+  String factId;
+  List<Back> front;
+  bool hidden;
+  String id;
+  int lastReview;
+  List<List<int>> template;
 
-  const Card({
+  Card({
+    required this.back,
     required this.createdAt,
     required this.dueDate,
     required this.factId,
+    required this.front,
     required this.hidden,
     required this.id,
     required this.lastReview,
-    required this.templateIndex,
-    this.fact,
+    required this.template,
   });
 
   factory Card.fromJson(Map<String, dynamic> json) => Card(
+    back: List<Back>.from(json["back"].map((x) => Back.fromJson(x))),
     createdAt: json["created_at"],
     dueDate: json["due_date"],
     factId: json["fact_id"],
+    front: List<Back>.from(json["front"].map((x) => Back.fromJson(x))),
     hidden: json["hidden"],
     id: json["id"],
     lastReview: json["last_review"],
-    templateIndex: json["template_index"],
+    template: List<List<int>>.from(
+      json["template"].map((x) => List<int>.from(x.map((x) => x))),
+    ),
   );
 
   Map<String, dynamic> toJson() => {
+    "back": List<dynamic>.from(back.map((x) => x.toJson())),
     "created_at": createdAt,
     "due_date": dueDate,
     "fact_id": factId,
+    "front": List<dynamic>.from(front.map((x) => x.toJson())),
     "hidden": hidden,
     "id": id,
     "last_review": lastReview,
-    "template_index": templateIndex,
-    "fact": fact?.toJson(),
+    "template": List<dynamic>.from(
+      template.map((x) => List<dynamic>.from(x.map((x) => x))),
+    ),
   };
-
-  /// 是否需要复习（到期时间小于当前时间）
-  bool get isDue {
-    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    return dueDate <= now && !hidden;
-  }
-
-  /// 是否是新卡片（从未复习过）
-  bool get isNew => lastReview == 0;
-
-  /// 获取卡片正面内容（通常是第一个 fact）
-  String get front => fact!.fields.isNotEmpty ? fact!.fields[0] : '';
-
-  /// 获取卡片背面内容（通常是第二个 fact）
-  String get back => fact!.fields.length > 1 ? fact!.fields[1] : '';
-
-  /// 是否被隐藏
-  bool get isHidden => hidden;
-
-  Card copyWith({Fact? fact}) {
-    return Card(
-      createdAt: createdAt,
-      dueDate: dueDate,
-      factId: factId,
-      hidden: hidden,
-      id: id,
-      lastReview: lastReview,
-      templateIndex: templateIndex,
-      fact: fact,
-    );
-  }
-
-  @override
-  List<Object?> get props => [id, factId, fact];
 }
 
-class Fact extends Equatable {
-  final List<String> fields;
-  final String id;
+class Back {
+  String field;
+  String type;
+  String value;
 
-  const Fact({required this.fields, required this.id});
+  Back({required this.field, required this.type, required this.value});
 
-  factory Fact.fromJson(Map<String, dynamic> json) => Fact(
-    fields: List<String>.from(json["fields"].map((x) => x)),
-    id: json["id"],
-  );
+  factory Back.fromJson(Map<String, dynamic> json) =>
+      Back(field: json["field"], type: json["type"], value: json["value"]);
 
   Map<String, dynamic> toJson() => {
-    "fields": List<dynamic>.from(fields.map((x) => x)),
-    "id": id,
+    "field": field,
+    "type": type,
+    "value": value,
   };
-
-  @override
-  List<Object?> get props => [fields, id];
 }

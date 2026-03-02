@@ -7,19 +7,29 @@ void main() {
       test('parses full JSON with all fields', () {
         final json = {
           "card": {
-            "created_at": 1704067200,
-            "due_date": 1704153600,
-            "fact_id": "abc1234",
+            "back": [
+              {"field": "Japanese", "type": "text", "value": "挨拶"},
+              {"field": "audio", "type": "audio", "value": "204bfe1fwg"},
+            ],
+            "created_at": 1772370463,
+            "due_date": 1772292702,
+            "fact_id": "88ri5b2g",
+            "front": [
+              {"field": "Chinese", "type": "text", "value": "打招呼"},
+              {"field": "", "type": "text", "value": "挨拶します"},
+              {"field": "img", "type": "image", "value": "43b0jpd03v"},
+            ],
             "hidden": false,
             "id": "xyz12345",
-            "last_review": 1704067200,
-            "template_index": 0,
+            "last_review": 1772292701,
+            "template": [
+              [2, 3, 4],
+              [0, 1],
+            ],
           },
-          "urgency": 0.75,
         };
         final detail = CardDetail.fromJson(json);
         expect(detail.card.id, "xyz12345");
-        expect(detail.urgency, 0.75);
       });
     });
   });

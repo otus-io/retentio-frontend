@@ -171,13 +171,13 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
                 width: double.infinity,
                 frontWidget: _buildCardFace(
                   context,
-                  card.card.front,
+                  card.card.front.first.value,
                   'Question',
                   Colors.blue,
                 ),
                 backWidget: _buildCardFace(
                   context,
-                  card.card.back,
+                  card.card.back.first.value,
                   'Answer',
                   Colors.green,
                 ),

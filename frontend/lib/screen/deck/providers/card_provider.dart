@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wordupx/providers/loading_state_provider.dart';
 import 'package:wordupx/screen/deck/widgets/flash_card/flash_card_controller.dart';
@@ -24,18 +23,12 @@ class CardNotifier extends Notifier<CardState> {
 
   @override
   CardState build() {
-    getRecommendedFact();
+    getCardDetail();
     ref.onDispose(() {
       logger.e('CardNotifier onDispose');
       flashCardController.dispose();
     });
     return CardState(isLoading: true, selectedInterval: scope.last * 0.5);
-  }
-
-  ///获取推荐的Fact
-  Future<void> getRecommendedFact() async {
-    await getAllFacts();
-    getCardDetail();
   }
 
   void selectInterval(double interval) {
@@ -75,58 +68,17 @@ class CardNotifier extends Notifier<CardState> {
     final response = await CardService.getNextDueCard(deck.id);
 
     if (response != null) {
-      final facts = state.facts;
-      final factId = response.card.factId;
-      var fact = facts.firstWhereOrNull((element) => element.id == factId);
-      fact ??= await CardService.getFact(deck.id, factId);
-      logger.d(fact?.toJson());
-      final cardDetail = response.copyWith(fact: fact);
       state = state.copyWith(
-        cardDetail: cardDetail,
+        cardDetail: response,
         isLoading: false,
         isHide: false,
       );
     }
-  }
-
-  Future<void> refreshFact() async {
-    final cardDetail = state.cardDetail;
-    if (cardDetail?.card.fact == null) {
-      return;
-    }
-    final response = await CardService.getFact(
-      deck.id,
-      cardDetail!.card.fact!.id,
-    );
-    if (response != null) {
-      final facts = List<Fact>.from(state.facts);
-
-      ///替换 facts中对应的fact
-      facts[facts.indexWhere((element) => element.id == response.id)] =
-          response;
-      flashCardController.showFront();
-      final temp = cardDetail.copyWith(fact: response);
-
-      state = state.copyWith(
-        cardDetail: temp,
-        facts: facts,
-        isLoading: false,
-        isHide: false,
-        showAnswer: true,
-        loadingState: LoadingState.loaded,
-      );
-    }
-  }
-
-  Future<void> getAllFacts() async {
-    final response = await CardService.getDeckCards(deck.id);
-    state = state.copyWith(facts: response);
   }
 }
 
 class CardState {
   final CardDetail? cardDetail;
-  final List<Fact> facts;
   final bool isLoading;
 
   /// 已经学过的卡片数
@@ -142,7 +94,6 @@ class CardState {
 
   CardState({
     this.cardDetail,
-    this.facts = const [],
     this.isLoading = false,
     this.cardsStudied = 0,
     this.showAnswer = true,
@@ -153,7 +104,6 @@ class CardState {
 
   CardState copyWith({
     CardDetail? cardDetail,
-    List<Fact>? facts,
     bool? isLoading,
     int? cardsStudied,
     bool? showAnswer,
@@ -163,7 +113,6 @@ class CardState {
   }) {
     return CardState(
       cardDetail: cardDetail ?? this.cardDetail,
-      facts: facts ?? this.facts,
       isLoading: isLoading ?? this.isLoading,
       cardsStudied: cardsStudied ?? this.cardsStudied,
       showAnswer: showAnswer ?? this.showAnswer,

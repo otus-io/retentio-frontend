@@ -14,7 +14,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
-  dio: ^5.9.1
+  dio: ^5.9.2
   flutter_riverpod: ^3.2.1
   collection: ^1.19.1
   shared_preferences: ^2.5.4
@@ -30,7 +30,8 @@ dependencies:
   pull_to_refresh: ^2.0.0
   pull_down_button: ^0.10.2
   equatable: ^2.0.8
-
+  extended_image: ^10.0.1
+  path: ^1.9.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
