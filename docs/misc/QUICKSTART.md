@@ -63,6 +63,8 @@ This guide walks you through using the WordUpX API via Swagger UI.
 > Unix timestamps are seconds since the Unix epoch
 > (1970-01-01T00:00:00Z). Clients must convert to/from local time
 > on their side.
+>
+> **ID format:** Deck, fact, and card IDs are random **lowercase alphanumeric** strings (no underscores or hyphens). Backend generates: **deck_id** 12 characters, **fact_id** and **card_id** 8 characters each. Media IDs (e.g. in `[audio:id]`) are 10 characters. Example IDs in this guide follow these lengths.
 
 ---
 
@@ -251,7 +253,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3"
+    "deck_id": "a1b2c3d4e5f6"
   },
   "meta": {
     "msg": "Deck created successfully"
@@ -270,14 +272,14 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 
 **Parameters:**
 
-- `id`: `a1b2c3` (your deck ID)
+- `id`: `a1b2c3d4e5f6` (your deck ID)
 
 **Response:**
 
 ```json
 {
   "data": {
-    "id": "a1b2c3",
+    "id": "a1b2c3d4e5f6",
     "name": "English Japanese IELTS Deck",
     "owner": "swagger",
     "field": ["English", "Japanese"],
@@ -312,7 +314,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
   "data": {
     "decks": [
       {
-        "id": "a1b2c3",
+        "id": "a1b2c3d4e5f6",
         "name": "English Japanese IELTS Deck",
         "owner": "swagger",
         "field": ["English", "Japanese"],
@@ -376,7 +378,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 
 **Parameters:**
 
-- `id`: `a1b2c3` (your deck ID)
+- `id`: `a1b2c3d4e5f6` (your deck ID)
 
 **Request Body:**
 
@@ -397,7 +399,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3"
+    "deck_id": "a1b2c3d4e5f6"
   },
   "meta": {
     "msg": "Deck updated successfully",
@@ -412,7 +414,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 
 **Parameters:**
 
-- `id`: `a1b2c3` (your deck ID)
+- `id`: `a1b2c3d4e5f6` (your deck ID)
 
 > This permanently deletes the deck and all its associated facts and cards.
 
@@ -421,7 +423,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3"
+    "deck_id": "a1b2c3d4e5f6"
   },
   "meta": {
     "msg": "Deck deleted successfully"
@@ -464,7 +466,7 @@ Shifts due dates and last_review of all cards in the deck by N days (1–365). O
 
 **Parameters:**
 
-- `id`: `a1b2c3` (your deck ID)
+- `id`: `a1b2c3d4e5f6` (your deck ID)
 - `operation`: `append`
 
 **Request Body:** An array of fact items (each with `entries`) and optional `template`. The server generates a unique fact ID for each fact and creates **one card per fact** (no sibling/reversed card by default). Each card's front/back layout is given by `template[i]` for fact index `i`, or the default `[[0], [1, 2, ...]]` when omitted.
@@ -532,7 +534,7 @@ Optional **`template`**: array of layouts, one per fact. Each element is `[[fron
   "data": {
     "facts": [
       { "id": "x9k2m4np", "entries": ["Apple", "りんご"], "fields": ["English", "Japanese"] },
-      { "id": "f2abc", "entries": ["Book", "本"] }
+      { "id": "b00k1ab2", "entries": ["Book", "本"] }
     ]
   },
   "meta": { "msg": "Facts retrieved successfully" }
@@ -630,7 +632,7 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 ```json
 {
   "data": {
-    "card_id": "newcard123"
+    "card_id": "n3w4c5a6"
   },
   "meta": {
     "msg": "Card added successfully"
@@ -646,7 +648,7 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 
 **Parameters:**
 
-- `id`: `a1b2c3` (your deck ID)
+- `id`: `a1b2c3d4e5f6` (your deck ID)
 
 **Response (segments without field names — when deck or fact have no field names):**
 
@@ -654,8 +656,8 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 {
   "data": {
     "card": {
-      "id": "card_nolabel",
-      "fact_id": "f_nolabel",
+      "id": "k7m2n9p1",
+      "fact_id": "a3b4c5d6",
       "template": [[0], [1]],
       "last_review": 1763269700,
       "due_date": 1763269800,
@@ -704,8 +706,8 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 {
   "data": {
     "card": {
-      "id": "c_front_only",
-      "fact_id": "f1",
+      "id": "p4q5r6s7",
+      "fact_id": "w1x2y3z4",
       "template": [[0], []],
       "last_review": 0,
       "due_date": 1763269800,
@@ -726,8 +728,8 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 {
   "data": {
     "card": {
-      "id": "c_media",
-      "fact_id": "f_media1",
+      "id": "m8n9o0p1",
+      "fact_id": "f2a3b4c5",
       "template": [[0, 1], [2, 3]],
       "last_review": 1763269700,
       "due_date": 1763269800,
@@ -761,7 +763,7 @@ After viewing a card, you need to update its interval based on how well you reme
 
 **Parameters:**
 
-- `id`: `a1b2c3` (your deck ID)
+- `id`: `a1b2c3d4e5f6` (your deck ID)
 
 **Request Body:**
 
@@ -847,7 +849,7 @@ If you want to temporarily hide a card from reviews:
 
 **Parameters:**
 
-- `id`: `a1b2c3`
+- `id`: `a1b2c3d4e5f6`
 
 **Request Body:**
 
@@ -881,7 +883,7 @@ Permanently remove a single card from a deck. The fact and any other cards for t
 
 **Parameters:**
 
-- `id`: deck ID (e.g. `a1b2c3`)
+- `id`: deck ID (e.g. `a1b2c3d4e5f6`)
 - `cardId`: card ID (from get-next-card response or card stats)
 
 **Request Body:** None.
@@ -911,7 +913,7 @@ Permanently remove a single card from a deck. The fact and any other cards for t
     "total_cards": 20,
     "hidden_count": 3,
     "hidden_facts": [
-      { "id": "f_h1", "entries": ["Hidden word", "隠れた語"], "fields": ["English", "Japanese"] }
+      { "id": "h1d2e3n4", "entries": ["Hidden word", "隠れた語"], "fields": ["English", "Japanese"] }
     ],
     "orphaned_hidden_cards": 0
   },

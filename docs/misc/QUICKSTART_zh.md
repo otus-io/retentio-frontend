@@ -63,6 +63,8 @@
 > ISO 8601 字符串使用 `Z` 后缀（例如 `2026-02-08T12:00:00Z`）。
 > Unix 时间戳为自 Unix 纪元（1970-01-01T00:00:00Z）以来的秒数。
 > 客户端需自行进行本地时间的转换。
+>
+> **ID 格式：** 卡组、词条、卡片 ID 均为随机 **小写字母数字** 字符串（无下划线或连字符）。后端生成：**deck_id** 12 位、**fact_id** 与 **card_id** 各 8 位。媒体 ID（如 `[audio:id]` 中的 id）为 10 位。本指南中的示例 ID 均符合上述长度。
 
 ---
 
@@ -261,7 +263,7 @@
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3"
+    "deck_id": "a1b2c3d4e5f6"
   },
   "meta": {
     "msg": "Deck created successfully"
@@ -280,14 +282,14 @@
 
 **参数:**
 
-- `id`: `a1b2c3`（您的卡组 ID）
+- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 
 **响应:**
 
 ```json
 {
   "data": {
-    "id": "a1b2c3",
+    "id": "a1b2c3d4e5f6",
     "name": "English Japanese IELTS Deck",
     "owner": "swagger",
     "field": ["English", "Japanese"],
@@ -322,7 +324,7 @@
   "data": {
     "decks": [
       {
-        "id": "a1b2c3",
+        "id": "a1b2c3d4e5f6",
         "name": "English Japanese IELTS Deck",
         "owner": "swagger",
         "field": ["English", "Japanese"],
@@ -385,7 +387,7 @@
 
 **参数:**
 
-- `id`: `a1b2c3`（您的卡组 ID）
+- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 
 **请求体:**
 
@@ -404,7 +406,7 @@
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3"
+    "deck_id": "a1b2c3d4e5f6"
   },
   "meta": {
     "msg": "Deck updated successfully",
@@ -419,7 +421,7 @@
 
 **参数:**
 
-- `id`: `a1b2c3`（您的卡组 ID）
+- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 
 > 此操作会永久删除卡组及其所有关联的词条和卡片。
 
@@ -428,7 +430,7 @@
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3"
+    "deck_id": "a1b2c3d4e5f6"
   },
   "meta": {
     "msg": "Deck deleted successfully"
@@ -471,7 +473,7 @@
 
 **参数:**
 
-- `id`: `a1b2c3`（您的卡组 ID）
+- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 - `operation`: `append`
 
 **请求体：** 词条数组（每项含 `entries`）及可选的 `template`。服务端为每个词条生成唯一 ID，并为每个词条创建**一张卡片**（默认不生成反向/兄弟卡）。卡片的正/背面布局由 `template[i]` 指定（词条索引 `i`），省略或长度不足时使用默认 `[[0], [1, 2, ...]]`。
@@ -539,7 +541,7 @@
   "data": {
     "facts": [
       { "id": "x9k2m4np", "entries": ["Apple", "りんご"], "fields": ["English", "Japanese"] },
-      { "id": "f2abc", "entries": ["Book", "本"] }
+      { "id": "b00k1ab2", "entries": ["Book", "本"] }
     ]
   },
   "meta": { "msg": "Facts retrieved successfully" }
@@ -637,7 +639,7 @@
 ```json
 {
   "data": {
-    "card_id": "newcard123"
+    "card_id": "n3w4c5a6"
   },
   "meta": {
     "msg": "Card added successfully"
@@ -653,7 +655,7 @@
 
 **参数:**
 
-- `id`: `a1b2c3`（您的卡组 ID）
+- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 
 **响应（无字段名 — 当卡组或词条未配置字段名时，段中 `field` 为空字符串）：**
 
@@ -661,8 +663,8 @@
 {
   "data": {
     "card": {
-      "id": "card_nolabel",
-      "fact_id": "f_nolabel",
+      "id": "k7m2n9p1",
+      "fact_id": "a3b4c5d6",
       "template": [[0], [1]],
       "last_review": 1763269700,
       "due_date": 1763269800,
@@ -711,8 +713,8 @@
 {
   "data": {
     "card": {
-      "id": "c_front_only",
-      "fact_id": "f1",
+      "id": "p4q5r6s7",
+      "fact_id": "w1x2y3z4",
       "template": [[0], []],
       "last_review": 0,
       "due_date": 1763269800,
@@ -733,8 +735,8 @@
 {
   "data": {
     "card": {
-      "id": "c_media",
-      "fact_id": "f_media1",
+      "id": "m8n9o0p1",
+      "fact_id": "f2a3b4c5",
       "template": [[0, 1], [2, 3]],
       "last_review": 1763269700,
       "due_date": 1763269800,
@@ -768,7 +770,7 @@
 
 **参数:**
 
-- `id`: `a1b2c3`（您的卡组 ID）
+- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 
 **请求体:**
 
@@ -853,7 +855,7 @@
 
 **参数:**
 
-- `id`: `a1b2c3`
+- `id`: `a1b2c3d4e5f6`
 
 **请求体:**
 
@@ -887,7 +889,7 @@
 
 **参数：**
 
-- `id`：卡组 ID（如 `a1b2c3`）
+- `id`：卡组 ID（如 `a1b2c3d4e5f6`）
 - `cardId`：卡片 ID（来自获取下一张卡片或卡片统计的响应）
 
 **请求体：** 无。
@@ -917,7 +919,7 @@
     "total_cards": 20,
     "hidden_count": 3,
     "hidden_facts": [
-      { "id": "f_h1", "entries": ["Hidden word", "隠れた語"], "fields": ["English", "Japanese"] }
+      { "id": "h1d2e3n4", "entries": ["Hidden word", "隠れた語"], "fields": ["English", "Japanese"] }
     ],
     "orphaned_hidden_cards": 0
   },
