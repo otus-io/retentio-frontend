@@ -63,6 +63,8 @@
 > ISO 8601 字符串使用 `Z` 后缀（例如 `2026-02-08T12:00:00Z`）。
 > Unix 时间戳为自 Unix 纪元（1970-01-01T00:00:00Z）以来的秒数。
 > 客户端需自行进行本地时间的转换。
+>
+> **ID 格式：** 卡组、词条、卡片 ID 均为随机 **小写字母数字** 字符串（无下划线或连字符）。后端生成：**deck_id** 12 位、**fact_id** 与 **card_id** 各 8 位。媒体 ID（如 `[audio:id]` 中的 id）为 10 位。本指南中的示例 ID 均符合上述长度。
 
 ---
 
@@ -539,7 +541,7 @@
   "data": {
     "facts": [
       { "id": "x9k2m4np", "entries": ["Apple", "りんご"], "fields": ["English", "Japanese"] },
-      { "id": "f2abc", "entries": ["Book", "本"] }
+      { "id": "b00k1ab2", "entries": ["Book", "本"] }
     ]
   },
   "meta": { "msg": "Facts retrieved successfully" }
@@ -637,7 +639,7 @@
 ```json
 {
   "data": {
-    "card_id": "newcard123"
+    "card_id": "n3w4c5a6"
   },
   "meta": {
     "msg": "Card added successfully"
@@ -661,8 +663,8 @@
 {
   "data": {
     "card": {
-      "id": "card_nolabel",
-      "fact_id": "f_nolabel",
+      "id": "k7m2n9p1",
+      "fact_id": "a3b4c5d6",
       "template": [[0], [1]],
       "last_review": 1763269700,
       "due_date": 1763269800,
@@ -711,8 +713,8 @@
 {
   "data": {
     "card": {
-      "id": "c_front_only",
-      "fact_id": "f1",
+      "id": "p4q5r6s7",
+      "fact_id": "w1x2y3z4",
       "template": [[0], []],
       "last_review": 0,
       "due_date": 1763269800,
@@ -733,8 +735,8 @@
 {
   "data": {
     "card": {
-      "id": "c_media",
-      "fact_id": "f_media1",
+      "id": "m8n9o0p1",
+      "fact_id": "f2a3b4c5",
       "template": [[0, 1], [2, 3]],
       "last_review": 1763269700,
       "due_date": 1763269800,
@@ -917,7 +919,7 @@
     "total_cards": 20,
     "hidden_count": 3,
     "hidden_facts": [
-      { "id": "f_h1", "entries": ["Hidden word", "隠れた語"], "fields": ["English", "Japanese"] }
+      { "id": "h1d2e3n4", "entries": ["Hidden word", "隠れた語"], "fields": ["English", "Japanese"] }
     ],
     "orphaned_hidden_cards": 0
   },

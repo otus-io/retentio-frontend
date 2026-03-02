@@ -63,6 +63,8 @@ This guide walks you through using the WordUpX API via Swagger UI.
 > Unix timestamps are seconds since the Unix epoch
 > (1970-01-01T00:00:00Z). Clients must convert to/from local time
 > on their side.
+>
+> **ID format:** Deck, fact, and card IDs are random **lowercase alphanumeric** strings (no underscores or hyphens). Backend generates: **deck_id** 12 characters, **fact_id** and **card_id** 8 characters each. Media IDs (e.g. in `[audio:id]`) are 10 characters. Example IDs in this guide follow these lengths.
 
 ---
 
@@ -532,7 +534,7 @@ Optional **`template`**: array of layouts, one per fact. Each element is `[[fron
   "data": {
     "facts": [
       { "id": "x9k2m4np", "entries": ["Apple", "りんご"], "fields": ["English", "Japanese"] },
-      { "id": "f2abc", "entries": ["Book", "本"] }
+      { "id": "b00k1ab2", "entries": ["Book", "本"] }
     ]
   },
   "meta": { "msg": "Facts retrieved successfully" }
@@ -630,7 +632,7 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 ```json
 {
   "data": {
-    "card_id": "newcard123"
+    "card_id": "n3w4c5a6"
   },
   "meta": {
     "msg": "Card added successfully"
@@ -654,8 +656,8 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 {
   "data": {
     "card": {
-      "id": "card_nolabel",
-      "fact_id": "f_nolabel",
+      "id": "k7m2n9p1",
+      "fact_id": "a3b4c5d6",
       "template": [[0], [1]],
       "last_review": 1763269700,
       "due_date": 1763269800,
@@ -704,8 +706,8 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 {
   "data": {
     "card": {
-      "id": "c_front_only",
-      "fact_id": "f1",
+      "id": "p4q5r6s7",
+      "fact_id": "w1x2y3z4",
       "template": [[0], []],
       "last_review": 0,
       "due_date": 1763269800,
@@ -726,8 +728,8 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 {
   "data": {
     "card": {
-      "id": "c_media",
-      "fact_id": "f_media1",
+      "id": "m8n9o0p1",
+      "fact_id": "f2a3b4c5",
       "template": [[0, 1], [2, 3]],
       "last_review": 1763269700,
       "due_date": 1763269800,
@@ -911,7 +913,7 @@ Permanently remove a single card from a deck. The fact and any other cards for t
     "total_cards": 20,
     "hidden_count": 3,
     "hidden_facts": [
-      { "id": "f_h1", "entries": ["Hidden word", "隠れた語"], "fields": ["English", "Japanese"] }
+      { "id": "h1d2e3n4", "entries": ["Hidden word", "隠れた語"], "fields": ["English", "Japanese"] }
     ],
     "orphaned_hidden_cards": 0
   },
