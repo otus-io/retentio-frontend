@@ -655,7 +655,7 @@
 
 - `id`: `a1b2c3`（您的卡组 ID）
 
-**响应（无字段名 — 当卡组或词条未配置字段名时，段中无 `field`）：**
+**响应（无字段名 — 当卡组或词条未配置字段名时，段中 `field` 为空字符串）：**
 
 ```json
 {
@@ -668,8 +668,8 @@
       "due_date": 1763269800,
       "hidden": false,
       "created_at": 1763269600,
-      "front": [{"text": "Apple"}],
-      "back": [{"text": "苹果"}]
+      "front": [{"field": "", "type": "text", "value": "Apple"}],
+      "back": [{"field": "", "type": "text", "value": "苹果"}]
     },
     "urgency": 1.0
   },
@@ -692,8 +692,8 @@
       "due_date": 1763269702,
       "hidden": false,
       "created_at": 1763269700,
-      "front": [{"field": "Word", "text": "Apple"}],
-      "back": [{"field": "Translation", "text": "苹果"}]
+      "front": [{"field": "Word", "type": "text", "value": "Apple"}],
+      "back": [{"field": "Translation", "type": "text", "value": "苹果"}]
     },
     "urgency": 2.598
   },
@@ -703,7 +703,7 @@
 }
 ```
 
-`front` 和 `back` 为段对象数组（每段含可选 `field`，以及至多一个 `text`、`audio` 或 `image`）。可直接据此渲染卡片，无需再请求 fact。
+`front` 和 `back` 为段对象数组。每段包含 **`field`**（标签或空字符串）、**`type`**（`text`、`audio`、`image` 或 `video`）和 **`value`**（文本内容或媒体 id）。可直接据此渲染卡片，无需再请求 fact。
 
 **仅正面卡片（背面为空，如 template `[[0], []]`）：**
 
@@ -718,7 +718,7 @@
       "due_date": 1763269800,
       "hidden": false,
       "created_at": 1763269600,
-      "front": [{"field": "Question", "text": "Only front text"}],
+      "front": [{"field": "Question", "type": "text", "value": "Only front text"}],
       "back": []
     },
     "urgency": 1.0
@@ -727,7 +727,7 @@
 }
 ```
 
-**含音频与图片段的卡片（每种内容类型单独一段）：**
+**含音频、图片与视频段的卡片（每种内容类型单独一段）：**
 
 ```json
 {
@@ -741,12 +741,13 @@
       "hidden": false,
       "created_at": 1763269600,
       "front": [
-        {"field": "Front", "text": "Word"},
-        {"field": "Pronunciation", "audio": "abc123"}
+        {"field": "Front", "type": "text", "value": "Word"},
+        {"field": "Pronunciation", "type": "audio", "value": "abc123"}
       ],
       "back": [
-        {"field": "Picture", "image": "def456"},
-        {"field": "Back", "text": "Translation"}
+        {"field": "Picture", "type": "image", "value": "def456"},
+        {"field": "Clip", "type": "video", "value": "vid789"},
+        {"field": "Back", "type": "text", "value": "Translation"}
       ]
     },
     "urgency": 1.2
@@ -928,7 +929,7 @@
 
 ## 5. 媒体（音频 / 图片）
 
-可为词条附加音频和图片。词条字段通过标记 `[audio:id]` 和 `[image:id]` 按 ID 引用媒体。
+可为词条附加音频、图片和视频。词条字段通过标记 `[audio:id]`、`[image:id]` 和 `[video:id]` 按 ID 引用媒体。
 
 ### 上传媒体
 
@@ -1012,7 +1013,7 @@
 
 ### 在词条中使用媒体（开发中）
 
-在 `entries` 中加入标记，例如 `["Word", "[audio:abc123]", "[image:def456]", "Translation"]`。可选用 `template` 指定每词条的正/背面布局；省略则使用默认（正面第一条、背面其余）。仅以纯文本展示词条时（如列表中），界面显示为 `audio:id` 和 `image:id`（无方括号）。存储与 API 使用 `[type:id]`。
+在 `entries` 中加入标记，例如 `["Word", "[audio:abc123]", "[image:def456]", "[video:vid789]", "Translation"]`。可选用 `template` 指定每词条的正/背面布局；省略则使用默认（正面第一条、背面其余）。仅以纯文本展示词条时（如列表中），界面显示为 `audio:id`、`image:id`、`video:id`（无方括号）。存储与 API 使用 `[type:id]`。
 
 完整设计（上传、删除、展示、同步）见 **[媒体上传设计文档](../design-doc/media-upload.md)**。
 

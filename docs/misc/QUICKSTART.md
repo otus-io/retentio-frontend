@@ -661,8 +661,8 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
       "due_date": 1763269800,
       "hidden": false,
       "created_at": 1763269600,
-      "front": [{"text": "Apple"}],
-      "back": [{"text": "苹果"}]
+      "front": [{"field": "", "type": "text", "value": "Apple"}],
+      "back": [{"field": "", "type": "text", "value": "苹果"}]
     },
     "urgency": 1.0
   },
@@ -685,8 +685,8 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
       "due_date": 1763269702,
       "hidden": false,
       "created_at": 1763269700,
-      "front": [{"field": "Word", "text": "Apple"}],
-      "back": [{"field": "Translation", "text": "苹果"}]
+      "front": [{"field": "Word", "type": "text", "value": "Apple"}],
+      "back": [{"field": "Translation", "type": "text", "value": "苹果"}]
     },
     "urgency": 2.598
   },
@@ -696,7 +696,7 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 }
 ```
 
-`front` and `back` are arrays of segment objects (each with optional `field`, and at most one of `text`, `audio`, or `image`). You can render the card from these without fetching the fact separately.
+`front` and `back` are arrays of segment objects. Each segment has **`field`** (label or empty string), **`type`** (`text`, `audio`, `image`, or `video`), and **`value`** (text content or media id). You can render the card from these without fetching the fact separately.
 
 **Front-only card (template with empty back, e.g. `[[0], []]`):**
 
@@ -711,7 +711,7 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
       "due_date": 1763269800,
       "hidden": false,
       "created_at": 1763269600,
-      "front": [{"field": "Question", "text": "Only front text"}],
+      "front": [{"field": "Question", "type": "text", "value": "Only front text"}],
       "back": []
     },
     "urgency": 1.0
@@ -720,7 +720,7 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 }
 ```
 
-**Card with audio and image segments (each content type in its own segment):**
+**Card with audio, image, and video segments (each content type in its own segment):**
 
 ```json
 {
@@ -734,12 +734,13 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
       "hidden": false,
       "created_at": 1763269600,
       "front": [
-        {"field": "Front", "text": "Word"},
-        {"field": "Pronunciation", "audio": "abc123"}
+        {"field": "Front", "type": "text", "value": "Word"},
+        {"field": "Pronunciation", "type": "audio", "value": "abc123"}
       ],
       "back": [
-        {"field": "Picture", "image": "def456"},
-        {"field": "Back", "text": "Translation"}
+        {"field": "Picture", "type": "image", "value": "def456"},
+        {"field": "Clip", "type": "video", "value": "vid789"},
+        {"field": "Back", "type": "text", "value": "Translation"}
       ]
     },
     "urgency": 1.2
@@ -922,7 +923,7 @@ Permanently remove a single card from a deck. The fact and any other cards for t
 
 ## 5. Media (Audio / Images)
 
-You can attach audio and images to facts. Fact fields reference media by ID using markers `[audio:id]` and `[image:id]`.
+You can attach audio, images, and video to facts. Fact fields reference media by ID using markers `[audio:id]`, `[image:id]`, and `[video:id]`.
 
 ### Upload media
 
@@ -1006,7 +1007,7 @@ Returns the media file (binary) for user-owned media by ID.
 
 ### Using media in facts (work in progress)
 
-Include markers in `entries`, e.g. `["Word", "[audio:abc123]", "[image:def456]", "Translation"]`. Use optional `template` for custom front/back layout per fact; omit for default (front = first entry, back = rest). When displaying fact text only (e.g. in a list), the UI shows markers as `audio:id` and `image:id` (no brackets). Storage and API use `[type:id]`.
+Include markers in `entries`, e.g. `["Word", "[audio:abc123]", "[image:def456]", "[video:vid789]", "Translation"]`. Use optional `template` for custom front/back layout per fact; omit for default (front = first entry, back = rest). When displaying fact text only (e.g. in a list), the UI shows markers as `audio:id`, `image:id`, `video:id` (no brackets). Storage and API use `[type:id]`.
 
 For full design (upload, delete, display, sync), see **[Media Upload design doc](../design-doc/media-upload.md)**.
 

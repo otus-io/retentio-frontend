@@ -2,6 +2,58 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wordupx/models/card.dart';
 
 void main() {
+  group('FrontBackSegment', () {
+    test('fromJson parses field, type, value', () {
+      final seg = FrontBackSegment.fromJson({
+        'field': 'Word',
+        'type': 'text',
+        'value': 'Apple',
+      });
+      expect(seg, isNotNull);
+      expect(seg!.field, 'Word');
+      expect(seg.type, 'text');
+      expect(seg.value, 'Apple');
+    });
+
+    test('fromJson treats missing field as empty string', () {
+      final seg = FrontBackSegment.fromJson({'type': 'audio', 'value': 'aid1'});
+      expect(seg, isNotNull);
+      expect(seg!.field, '');
+    });
+
+    test('fromJson treats missing type as text', () {
+      final seg = FrontBackSegment.fromJson({'field': 'X', 'value': 'Y'});
+      expect(seg, isNotNull);
+      expect(seg!.type, 'text');
+    });
+
+    test('fromJson returns null for non-map input', () {
+      expect(FrontBackSegment.fromJson(null), isNull);
+      expect(FrontBackSegment.fromJson('string'), isNull);
+      expect(FrontBackSegment.fromJson([]), isNull);
+    });
+
+    test('listFromJson parses array of segments and skips invalid', () {
+      final raw = [
+        {'field': 'A', 'type': 'text', 'value': 'One'},
+        null,
+        {'field': '', 'type': 'image', 'value': 'img1'},
+      ];
+      final list = FrontBackSegment.listFromJson(raw);
+      expect(list.length, 2);
+      expect(list[0].field, 'A');
+      expect(list[0].type, 'text');
+      expect(list[0].value, 'One');
+      expect(list[1].type, 'image');
+      expect(list[1].value, 'img1');
+    });
+
+    test('listFromJson returns empty list for non-list input', () {
+      expect(FrontBackSegment.listFromJson(null), isEmpty);
+      expect(FrontBackSegment.listFromJson({}), isEmpty);
+    });
+  });
+
   group('CardDetail', () {
     group('fromJson', () {
       test('parses full JSON with all fields', () {
@@ -105,11 +157,11 @@ void main() {
           "hidden": false,
           "created_at": 1704067200,
           "front": [
-            {"field": "Word", "text": "Apple"},
-            {"field": "Pronunciation", "audio": "abc123"},
+            {"field": "Word", "type": "text", "value": "Apple"},
+            {"field": "Pronunciation", "type": "audio", "value": "abc123"},
           ],
           "back": [
-            {"field": "Translation", "text": "苹果"},
+            {"field": "Translation", "type": "text", "value": "苹果"},
           ],
         };
         final card = Card.fromJson(json);
@@ -130,7 +182,7 @@ void main() {
           "hidden": false,
           "created_at": 0,
           "front": [
-            {"field": "Question", "text": "Only front"},
+            {"field": "Question", "type": "text", "value": "Only front"},
           ],
           "back": [],
         };
@@ -155,6 +207,56 @@ void main() {
         );
         expect(card.front, 'Hello');
         expect(card.back, '世界');
+      });
+
+      test('front getter uses only type text segments', () {
+        final json = {
+          'id': 'c1',
+          'fact_id': 'f1',
+          'template': [
+            [0],
+            [1],
+          ],
+          'last_review': 0,
+          'due_date': 0,
+          'hidden': false,
+          'created_at': 0,
+          'front': [
+            {'field': 'Word', 'type': 'text', 'value': 'Hello'},
+            {'field': 'Pron', 'type': 'audio', 'value': 'aud123'},
+          ],
+          'back': [
+            {'field': 'Def', 'type': 'text', 'value': 'Definition'},
+          ],
+        };
+        final card = Card.fromJson(json);
+        expect(card.front, 'Hello');
+        expect(card.back, 'Definition');
+      });
+
+      test('back getter ignores non-text segments', () {
+        final json = {
+          'id': 'c1',
+          'fact_id': 'f1',
+          'template': [
+            [0],
+            [1],
+          ],
+          'last_review': 0,
+          'due_date': 0,
+          'hidden': false,
+          'created_at': 0,
+          'front': [
+            {'field': 'Q', 'type': 'text', 'value': 'Question'},
+          ],
+          'back': [
+            {'field': '', 'type': 'image', 'value': 'img1'},
+            {'field': 'A', 'type': 'text', 'value': 'Answer'},
+          ],
+        };
+        final card = Card.fromJson(json);
+        expect(card.front, 'Question');
+        expect(card.back, 'Answer');
       });
     });
 

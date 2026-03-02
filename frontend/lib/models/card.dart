@@ -1,22 +1,23 @@
 import 'package:equatable/equatable.dart';
 
-/// One segment in front/back: at most one of text, audio, image; optional field.
+/// One segment in front/back: field (label or ""), type (text|audio|image|video), value (content or media id).
 class FrontBackSegment extends Equatable {
-  final String? field;
-  final String? text;
-  final String? audio;
-  final String? image;
+  final String field;
+  final String type;
+  final String value;
 
-  const FrontBackSegment({this.field, this.text, this.audio, this.image});
+  const FrontBackSegment({
+    required this.field,
+    required this.type,
+    required this.value,
+  });
 
   static FrontBackSegment? fromJson(dynamic raw) {
     if (raw is! Map<String, dynamic>) return null;
-    return FrontBackSegment(
-      field: raw['field']?.toString(),
-      text: raw['text']?.toString(),
-      audio: raw['audio']?.toString(),
-      image: raw['image']?.toString(),
-    );
+    final field = raw['field']?.toString() ?? '';
+    final type = raw['type']?.toString() ?? 'text';
+    final value = raw['value']?.toString() ?? '';
+    return FrontBackSegment(field: field, type: type, value: value);
   }
 
   static List<FrontBackSegment> listFromJson(dynamic raw) {
@@ -28,7 +29,7 @@ class FrontBackSegment extends Equatable {
   }
 
   @override
-  List<Object?> get props => [field, text, audio, image];
+  List<Object?> get props => [field, type, value];
 }
 
 class CardDetail extends Equatable {
@@ -152,12 +153,13 @@ class Card extends Equatable {
   /// 是否是新卡片（从未复习过）
   bool get isNew => lastReview == 0;
 
-  /// 获取卡片正面内容（优先使用 API 返回的 front 段，否则用 fact）
+  /// 获取卡片正面内容（优先使用 API 返回的 front 段中 type==text 的 value，否则用 fact）
   String get front {
     if (frontSegments != null && frontSegments!.isNotEmpty) {
       final texts = frontSegments!
-          .map((s) => s.text)
-          .whereType<String>()
+          .where((s) => s.type == 'text')
+          .map((s) => s.value)
+          .where((v) => v.isNotEmpty)
           .toList();
       return texts.isNotEmpty ? texts.join(' ') : '';
     }
@@ -165,12 +167,13 @@ class Card extends Equatable {
     return '';
   }
 
-  /// 获取卡片背面内容（优先使用 API 返回的 back 段，否则用 fact）
+  /// 获取卡片背面内容（优先使用 API 返回的 back 段中 type==text 的 value，否则用 fact）
   String get back {
     if (backSegments != null && backSegments!.isNotEmpty) {
       final texts = backSegments!
-          .map((s) => s.text)
-          .whereType<String>()
+          .where((s) => s.type == 'text')
+          .map((s) => s.value)
+          .where((v) => v.isNotEmpty)
           .toList();
       return texts.isNotEmpty ? texts.join(' ') : '';
     }
