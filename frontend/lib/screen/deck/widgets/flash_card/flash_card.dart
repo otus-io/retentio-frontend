@@ -207,7 +207,7 @@ class AnimatedCard extends StatelessWidget {
         child: Card(
           elevation: 4,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(10),
           ),
           borderOnForeground: false,
           child: child,

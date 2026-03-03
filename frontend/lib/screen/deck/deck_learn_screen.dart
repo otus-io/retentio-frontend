@@ -8,6 +8,7 @@ import 'package:wordupx/l10n/app_localizations.dart';
 import 'package:wordupx/models/deck.dart';
 import 'package:wordupx/screen/deck/providers/card_provider.dart';
 import 'package:wordupx/screen/deck/providers/edit_fact_provider.dart';
+import 'package:wordupx/screen/deck/widgets/card_widget.dart';
 import 'package:wordupx/screen/deck/widgets/edit_fact_widget.dart';
 import 'package:wordupx/screen/deck/widgets/flash_card/flash_card.dart';
 
@@ -169,12 +170,7 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
                     .read(cardProvider(widget.deck).notifier)
                     .flashCardController,
                 width: double.infinity,
-                frontWidget: _buildCardFace(
-                  context,
-                  card.card.front.first.value,
-                  'Question',
-                  Colors.blue,
-                ),
+                frontWidget: CardWidget(deck: widget.deck),
                 backWidget: _buildCardFace(
                   context,
                   card.card.back.first.value,

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:wordupx/providers/loading_state_provider.dart';
 import 'package:wordupx/screen/deck/widgets/flash_card/flash_card_controller.dart';
 import 'package:wordupx/utils/log.dart';
@@ -12,6 +13,11 @@ final cardProvider = NotifierProvider.autoDispose
 
 class CardNotifier extends Notifier<CardState> {
   final Deck deck;
+  final icons = {
+    'text': LucideIcons.fileText,
+    'image': LucideIcons.fileImage,
+    'audio': LucideIcons.fileSignal,
+  };
 
   /// 本次学习会话的总卡片数
   int get totalCardsInSession => deck.stats.unseenCards + deck.reviewCards;
