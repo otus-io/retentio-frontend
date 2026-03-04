@@ -12,7 +12,6 @@ import 'package:wordupx/screen/deck/widgets/card_widget.dart';
 import 'package:wordupx/screen/deck/widgets/edit_fact_widget.dart';
 import 'package:wordupx/screen/deck/widgets/flash_card/flash_card.dart';
 
-import '../../providers/loading_state_provider.dart';
 import '../../widgets/common_bottom_sheet.dart';
 
 class DeckLearnScreen extends ConsumerStatefulWidget {
@@ -170,13 +169,8 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
                     .read(cardProvider(widget.deck).notifier)
                     .flashCardController,
                 width: double.infinity,
-                frontWidget: CardWidget(deck: widget.deck),
-                backWidget: _buildCardFace(
-                  context,
-                  card.card.back.first.value,
-                  'Answer',
-                  Colors.green,
-                ),
+                frontWidget: CardWidget(deck: widget.deck, isFront: true),
+                backWidget: CardWidget(deck: widget.deck, isFront: false),
                 onFlip: (value) {
                   ref
                       .read(cardProvider(widget.deck).notifier)
@@ -195,50 +189,6 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
           child: _buildBottomButtons(theme, loc),
         ),
       ],
-    );
-  }
-
-  Widget _buildCardFace(
-    BuildContext context,
-    String content,
-    String label,
-    Color color,
-  ) {
-    final loadingState = ref.watch(
-      cardProvider(widget.deck).select((value) => value.loadingState),
-    );
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 200),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            loadingState == LoadingState.initial ? '' : content,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
     );
   }
 

@@ -1,36 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:pull_down_button/pull_down_button.dart';
 import 'package:wordupx/extensions/widget_extension.dart';
 
+import '../../../extensions/context_extension.dart';
 import '../../../models/deck.dart';
 import '../providers/card_provider.dart';
 import 'buttons_tabbar/buttons_tab_bar_widget.dart';
 
 class CardWidget extends ConsumerWidget {
-  const CardWidget({super.key, required this.deck});
+  const CardWidget({super.key, required this.deck, required this.isFront});
 
   final Deck deck;
+  final bool isFront;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cardDetail = ref.watch(
-      cardProvider(deck).select((value) => value.cardDetail),
+    final cards = ref.watch(
+      cardProvider(deck).select(
+        (value) => isFront
+            ? value.cardDetail?.card.front
+            : value.cardDetail?.card.back,
+      ),
     );
+    final color = isFront ? Colors.blue : Colors.green;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.blue.withValues(alpha: 0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.blue.withValues(alpha: 0.3), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: DefaultTabController(
-        length: cardDetail?.card.front.length ?? 0,
+        length: cards?.length ?? 0,
         child: Column(
           children: [
             Container(
               decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(width: 0.3, color: Colors.blue),
-                ),
+                border: Border(bottom: BorderSide(width: 0.3, color: color)),
               ),
               child: Row(
                 mainAxisSize: .max,
@@ -43,7 +50,7 @@ class CardWidget extends ConsumerWidget {
                     borderColor: Colors.transparent,
                     unselectedBorderColor: Colors.transparent,
                     labelStyle: TextStyle(
-                      color: Colors.blue,
+                      color: color,
                       fontWeight: FontWeight.bold,
                     ),
                     unselectedLabelStyle: TextStyle(
@@ -52,7 +59,7 @@ class CardWidget extends ConsumerWidget {
                     ),
                     // Add your tabs here
                     tabs:
-                        cardDetail?.card.front.map((e) {
+                        cards?.map((e) {
                           return Tab(
                             icon: Icon(
                               ref
@@ -63,13 +70,45 @@ class CardWidget extends ConsumerWidget {
                         }).toList() ??
                         [],
                   ).expanded(),
-                  SizedBox(width: 50, height: 46),
+                  SizedBox(
+                    width: 50,
+                    height: 46,
+                    child: PullDownButton(
+                      routeTheme: PullDownMenuRouteTheme(
+                        width: 150,
+                        backgroundColor: context.colorScheme.surface,
+                      ),
+                      itemBuilder: (context) => [
+                        PullDownMenuItem(
+                          title: 'Edit Fact',
+                          onTap: () {
+                            // showCommonBottomSheet(
+                            //   context: context,
+                            //   initialChildSize: 0.4,
+                            //   minChildSize: 0.3,
+                            //   maxChildSize: 0.5,
+                            //   title: 'Edit Fact',
+                            //   child: ProviderScope(
+                            //     overrides: [deckProvider.overrideWithValue(widget.deck)],
+                            //     child: EditFactWidget(deck: widget.deck),
+                            //   ),
+                            // );
+                          },
+                          icon: LucideIcons.pencil,
+                        ),
+                      ],
+                      buttonBuilder: (context, showMenu) => IconButton(
+                        onPressed: showMenu,
+                        icon: Icon(LucideIcons.ellipsisVertical, color: color),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
             TabBarView(
               children:
-                  cardDetail?.card.front.map((e) {
+                  cards?.map((e) {
                     return Center(
                       child: Text(
                         e.value,
@@ -77,7 +116,7 @@ class CardWidget extends ConsumerWidget {
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1.2,
-                          color: Colors.blue,
+                          color: color,
                         ),
                       ),
                     );
@@ -89,46 +128,4 @@ class CardWidget extends ConsumerWidget {
       ),
     );
   }
-
-  // Widget _buildCardFace(
-  //     WidgetRef ref,
-  //     Color color
-  //     ) {
-  //   final loadingState = ref.watch(
-  //     cardProvider(deck).select((value) => value.loadingState),
-  //   );
-  //   return Container(
-  //     width: double.infinity,
-  //     constraints: const BoxConstraints(minHeight: 200),
-  //     padding: const EdgeInsets.all(24),
-  //     decoration: BoxDecoration(
-  //       color: color.withValues(alpha: 0.1),
-  //       borderRadius: BorderRadius.circular(16),
-  //       border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
-  //     ),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Text(
-  //           label,
-  //           style: TextStyle(
-  //             fontSize: 12,
-  //             fontWeight: FontWeight.w600,
-  //             color: color,
-  //             letterSpacing: 1.2,
-  //           ),
-  //         ),
-  //         const SizedBox(height: 12),
-  //         Text(
-  //           loadingState == LoadingState.initial ? '' : content,
-  //           style: const TextStyle(
-  //             fontSize: 24,
-  //             fontWeight: FontWeight.w500,
-  //             height: 1.4,
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 }
