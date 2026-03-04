@@ -70,39 +70,43 @@ class CardWidget extends ConsumerWidget {
                         }).toList() ??
                         [],
                   ).expanded(),
-                  SizedBox(
-                    width: 50,
-                    height: 46,
-                    child: PullDownButton(
-                      routeTheme: PullDownMenuRouteTheme(
-                        width: 150,
-                        backgroundColor: context.colorScheme.surface,
-                      ),
-                      itemBuilder: (context) => [
-                        PullDownMenuItem(
-                          title: 'Edit Fact',
-                          onTap: () {
-                            // showCommonBottomSheet(
-                            //   context: context,
-                            //   initialChildSize: 0.4,
-                            //   minChildSize: 0.3,
-                            //   maxChildSize: 0.5,
-                            //   title: 'Edit Fact',
-                            //   child: ProviderScope(
-                            //     overrides: [deckProvider.overrideWithValue(widget.deck)],
-                            //     child: EditFactWidget(deck: widget.deck),
-                            //   ),
-                            // );
-                          },
-                          icon: LucideIcons.pencil,
+                  if (cards?.isNotEmpty == true)
+                    SizedBox(
+                      width: 50,
+                      height: 46,
+                      child: PullDownButton(
+                        routeTheme: PullDownMenuRouteTheme(
+                          width: 150,
+                          backgroundColor: context.colorScheme.surface,
                         ),
-                      ],
-                      buttonBuilder: (context, showMenu) => IconButton(
-                        onPressed: showMenu,
-                        icon: Icon(LucideIcons.ellipsisVertical, color: color),
+                        itemBuilder: (context) => [
+                          PullDownMenuItem(
+                            title: 'Edit Fact',
+                            onTap: () {
+                              // showCommonBottomSheet(
+                              //   context: context,
+                              //   initialChildSize: 0.4,
+                              //   minChildSize: 0.3,
+                              //   maxChildSize: 0.5,
+                              //   title: 'Edit Fact',
+                              //   child: ProviderScope(
+                              //     overrides: [deckProvider.overrideWithValue(widget.deck)],
+                              //     child: EditFactWidget(deck: widget.deck),
+                              //   ),
+                              // );
+                            },
+                            icon: LucideIcons.pencil,
+                          ),
+                        ],
+                        buttonBuilder: (context, showMenu) => IconButton(
+                          onPressed: showMenu,
+                          icon: Icon(
+                            LucideIcons.ellipsisVertical,
+                            color: color,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
