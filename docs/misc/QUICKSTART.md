@@ -698,7 +698,7 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 }
 ```
 
-`front` and `back` are arrays of segment objects. Each segment has **`field`** (label or empty string), **`type`** (`text`, `audio`, `image`, or `video`), and **`value`** (text content or media id). You can render the card from these without fetching the fact separately.
+`front` and `back` are arrays of segment objects. Each segment has **`field`** (label or empty string), **`type`** (`text`, `audio`, `image`, or `video`), and **`value`** (text content, or **full media URL** for audio/image/video — e.g. `https://api.example.com/api/media/abc123`). Use the URL with the same `Authorization: Bearer <token>` to download the file; no need to build the URL from an id. You can render the card from these without fetching the fact separately.
 
 **Front-only card (template with empty back, e.g. `[[0], []]`):**
 
@@ -722,7 +722,7 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 }
 ```
 
-**Card with audio, image, and video segments (each content type in its own segment):**
+**Card with audio, image, and video segments (each content type in its own segment; media segments have full URL in `value`):**
 
 ```json
 {
@@ -737,11 +737,11 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
       "created_at": 1763269600,
       "front": [
         {"field": "Front", "type": "text", "value": "Word"},
-        {"field": "Pronunciation", "type": "audio", "value": "abc123"}
+        {"field": "Pronunciation", "type": "audio", "value": "https://api.example.com/api/media/abc123"}
       ],
       "back": [
-        {"field": "Picture", "type": "image", "value": "def456"},
-        {"field": "Clip", "type": "video", "value": "vid789"},
+        {"field": "Picture", "type": "image", "value": "https://api.example.com/api/media/def456"},
+        {"field": "Clip", "type": "video", "value": "https://api.example.com/api/media/vid789"},
         {"field": "Back", "type": "text", "value": "Translation"}
       ]
     },
@@ -927,6 +927,10 @@ Permanently remove a single card from a deck. The fact and any other cards for t
 
 You can attach audio, images, and video to facts. Fact fields reference media by ID using markers `[audio:id]`, `[image:id]`, and `[video:id]`.
 
+**Size limits:** Images max **5 MB**; audio and video max **200 MB** each. Env overrides: `MEDIA_MAX_SIZE_IMAGE`, `MEDIA_MAX_SIZE_VIDEO`, `MEDIA_MAX_SIZE_AUDIO`.
+
+**Formats and conversion:** Supported input: image (JPEG, PNG, GIF, HEIC, HEIF, WebP), audio (MPEG/MP3, WAV, OGG, MP4/AAC), video (MP4, QuickTime, WebM). Only **PNG, HEIC, HEIF** are converted to WebP and **WAV** to AAC; all other formats are stored as-is. Download returns the stored file (binary).
+
 ### Upload media
 
 **Endpoint:** `POST /api/media` — multipart/form-data, field `file`.
@@ -981,7 +985,7 @@ Returns metadata only (id, owner, filename, mime, size, checksum, created_at), n
 
 **Endpoint:** `GET /api/media/{id}`
 
-Returns the media file (binary) for user-owned media by ID.
+Returns the media file (binary) for user-owned media by ID. Requires `Authorization: Bearer <token>`. The **Get Next Card** response gives full URLs for audio/image/video segments (e.g. `https://your-api.com/api/media/{id}`); use that URL with the same auth header to load the file.
 
 ### Delete media
 

@@ -705,7 +705,7 @@
 }
 ```
 
-`front` 和 `back` 为段对象数组。每段包含 **`field`**（标签或空字符串）、**`type`**（`text`、`audio`、`image` 或 `video`）和 **`value`**（文本内容或媒体 id）。可直接据此渲染卡片，无需再请求 fact。
+`front` 和 `back` 为段对象数组。每段包含 **`field`**（标签或空字符串）、**`type`**（`text`、`audio`、`image` 或 `video`）和 **`value`**（文本内容，或音频/图片/视频的**完整媒体 URL**，如 `https://api.example.com/api/media/abc123`）。使用该 URL 并携带相同 `Authorization: Bearer <token>` 即可下载文件，无需根据 id 拼 URL。可直接据此渲染卡片，无需再请求 fact。
 
 **仅正面卡片（背面为空，如 template `[[0], []]`）：**
 
@@ -729,7 +729,7 @@
 }
 ```
 
-**含音频、图片与视频段的卡片（每种内容类型单独一段）：**
+**含音频、图片与视频段的卡片（每种内容类型单独一段；媒体段的 `value` 为完整 URL）：**
 
 ```json
 {
@@ -744,11 +744,11 @@
       "created_at": 1763269600,
       "front": [
         {"field": "Front", "type": "text", "value": "Word"},
-        {"field": "Pronunciation", "type": "audio", "value": "abc123"}
+        {"field": "Pronunciation", "type": "audio", "value": "https://api.example.com/api/media/abc123"}
       ],
       "back": [
-        {"field": "Picture", "type": "image", "value": "def456"},
-        {"field": "Clip", "type": "video", "value": "vid789"},
+        {"field": "Picture", "type": "image", "value": "https://api.example.com/api/media/def456"},
+        {"field": "Clip", "type": "video", "value": "https://api.example.com/api/media/vid789"},
         {"field": "Back", "type": "text", "value": "Translation"}
       ]
     },
@@ -933,6 +933,10 @@
 
 可为词条附加音频、图片和视频。词条字段通过标记 `[audio:id]`、`[image:id]` 和 `[video:id]` 按 ID 引用媒体。
 
+**大小限制：** 图片最大 **5 MB**；音频与视频各最大 **200 MB**。可通过环境变量覆盖：`MEDIA_MAX_SIZE_IMAGE`、`MEDIA_MAX_SIZE_VIDEO`、`MEDIA_MAX_SIZE_AUDIO`。
+
+**格式与转换：** 支持的输入：图片（JPEG、PNG、GIF、HEIC、HEIF、WebP），音频（MPEG/MP3、WAV、OGG、MP4/AAC），视频（MP4、QuickTime、WebM）。仅 **PNG、HEIC、HEIF** 会转换为 WebP，**WAV** 会转换为 AAC；其余格式原样存储。下载时返回存储后的文件（二进制）。
+
 ### 上传媒体
 
 **接口：** `POST /api/media` — multipart/form-data，字段 `file`。
@@ -987,7 +991,7 @@
 
 **接口：** `GET /api/media/{id}`
 
-按 ID 返回用户拥有的媒体文件（二进制）。
+按 ID 返回用户拥有的媒体文件（二进制）。需在请求头中携带 `Authorization: Bearer <token>`。**获取下一张卡片** 接口会在音频/图片/视频段的 `value` 中返回完整 URL（如 `https://your-api.com/api/media/{id}`）；使用该 URL 并携带相同认证头即可加载文件。
 
 ### 删除媒体
 
