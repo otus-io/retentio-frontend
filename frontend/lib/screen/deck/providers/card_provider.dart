@@ -23,18 +23,42 @@ class CardNotifier extends Notifier<CardState> {
   int get totalCardsInSession => deck.stats.unseenCards + deck.reviewCards;
 
   final FlashCardController flashCardController = FlashCardController();
-  final List<int> scope = [60, 600];
+  late List<double> scope;
 
   CardNotifier(this.deck);
 
+  void calculateScope() {
+    if (state.cardDetail == null) {
+      return;
+    }
+    final dueDate = state.cardDetail!.card.dueDate;
+    final lastReview = state.cardDetail!.card.lastReview;
+    final currentInterval = dueDate - lastReview;
+    final urgency =
+        (DateTime.now().microsecondsSinceEpoch ~/ 1000 - lastReview) /
+        (dueDate - lastReview);
+    final minInterval = urgency >= 1
+        ? currentInterval * 0.5
+        : currentInterval * ((0.5 - 1) * urgency + 1);
+    final maxInterval = urgency >= 1
+        ? currentInterval * 4.0
+        : currentInterval * ((4.0 - 1) * urgency + 1);
+    scope = [minInterval, maxInterval];
+    // 设置初始间隔为范围的中间值
+    final midInterval = (minInterval + maxInterval) / 2;
+    state = state.copyWith(selectedInterval: midInterval);
+    logger.d('scope:$currentInterval $scope, midInterval: $midInterval');
+  }
+
   @override
   CardState build() {
+    scope = [0, 0];
     getCardDetail();
     ref.onDispose(() {
-      logger.e('CardNotifier onDispose');
+      logger.w('CardNotifier onDispose');
       flashCardController.dispose();
     });
-    return CardState(isLoading: true, selectedInterval: scope.last * 0.5);
+    return CardState(isLoading: true, selectedInterval: 0);
   }
 
   void selectInterval(double interval) {
@@ -79,6 +103,7 @@ class CardNotifier extends Notifier<CardState> {
         isLoading: false,
         isHide: false,
       );
+      calculateScope();
     }
   }
 }
