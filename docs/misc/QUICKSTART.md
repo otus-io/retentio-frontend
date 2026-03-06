@@ -929,11 +929,16 @@ You can attach audio, images, and video to facts. Fact fields reference media by
 
 **Size limits:** Images max **5 MB**; audio and video max **200 MB** each. Env overrides: `MEDIA_MAX_SIZE_IMAGE`, `MEDIA_MAX_SIZE_VIDEO`, `MEDIA_MAX_SIZE_AUDIO`.
 
-**Formats and conversion:** Supported input: image (JPEG, PNG, GIF, HEIC, HEIF, WebP), audio (MPEG/MP3, WAV, OGG, MP4/AAC), video (MP4, QuickTime, WebM). Only **PNG, HEIC, HEIF** are converted to WebP and **WAV** to AAC; all other formats are stored as-is. Download returns the stored file (binary).
+**Formats and conversion:** Supported input: image (JPEG, PNG, GIF, HEIC, HEIF, WebP), audio (MPEG/MP3, WAV, OGG, MP4/AAC), video (MP4, QuickTime, WebM). Only **PNG, HEIC, HEIF** are converted to WebP and **WAV** to AAC; all other formats are stored as-is. Download returns the stored file (binary). **Size limits:** images 5 MB, audio and video 200 MB each.
 
 ### Upload media
 
-**Endpoint:** `POST /api/media` — multipart/form-data, field `file`.
+**Endpoint:** `POST /api/media` — multipart/form-data.
+
+| Field        | Required | Description |
+| ------------ | -------- | ----------- |
+| `file`       | Yes      | The media file (image, audio, or video). |
+| `client_id`  | No       | Client-generated ID for idempotent upload; if the media already exists for this user, the server returns 201 with the existing record. |
 
 **Response:**
 
@@ -954,7 +959,13 @@ You can attach audio, images, and video to facts. Fact fields reference media by
 
 ### List media
 
-**Endpoint:** `GET /api/media` — returns the current user's media (sync manifest).
+**Endpoint:** `GET /api/media` — returns the current user's media (paginated).
+
+| Query   | Description |
+| ------- | ----------- |
+| `since` | Optional. Unix timestamp (number); return only media created after this time. |
+| `limit` | Optional. Max items (default 200, max 1000). |
+| `offset`| Optional. Number of items to skip (default 0). |
 
 **Response:**
 
@@ -985,7 +996,7 @@ Returns metadata only (id, owner, filename, mime, size, checksum, created_at), n
 
 **Endpoint:** `GET /api/media/{id}`
 
-Returns the media file (binary) for user-owned media by ID. Requires `Authorization: Bearer <token>`. The **Get Next Card** response gives full URLs for audio/image/video segments (e.g. `https://your-api.com/api/media/{id}`); use that URL with the same auth header to load the file.
+Returns the media file (binary) for user-owned media by ID. Requires `Authorization: Bearer <token>`. Response headers include `Content-Type`, `Content-Length`, and `ETag` (same as `checksum`). Send `If-None-Match: <ETag>` to get `304 Not Modified` when the file is unchanged. The **Get Next Card** response gives full URLs for audio/image/video segments (e.g. `https://your-api.com/api/media/{id}`); use that URL with the same auth header to load the file.
 
 ### Delete media
 

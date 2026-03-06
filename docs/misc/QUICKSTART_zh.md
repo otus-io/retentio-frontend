@@ -939,7 +939,12 @@
 
 ### 上传媒体
 
-**接口：** `POST /api/media` — multipart/form-data，字段 `file`。
+**接口：** `POST /api/media` — multipart/form-data。
+
+| 字段         | 必填 | 说明 |
+| ------------ | ---- | ---- |
+| `file`       | 是   | 媒体文件（图片、音频或视频）。 |
+| `client_id`  | 否   | 客户端生成的 ID，用于幂等上传；若该用户下该媒体已存在，则返回 201 及已有记录。 |
 
 **响应：**
 
@@ -960,7 +965,13 @@
 
 ### 列出媒体
 
-**接口：** `GET /api/media` — 返回当前用户的媒体（同步清单）。
+**接口：** `GET /api/media` — 返回当前用户的媒体（分页）。
+
+| 查询参数   | 说明 |
+| ---------- | ---- |
+| `since`    | 可选。Unix 时间戳；仅返回该时间之后创建的媒体。 |
+| `limit`    | 可选。每页条数（默认 200，最大 1000）。 |
+| `offset`   | 可选。跳过条数（默认 0）。 |
 
 **响应：**
 
@@ -991,7 +1002,7 @@
 
 **接口：** `GET /api/media/{id}`
 
-按 ID 返回用户拥有的媒体文件（二进制）。需在请求头中携带 `Authorization: Bearer <token>`。**获取下一张卡片** 接口会在音频/图片/视频段的 `value` 中返回完整 URL（如 `https://your-api.com/api/media/{id}`）；使用该 URL 并携带相同认证头即可加载文件。
+按 ID 返回用户拥有的媒体文件（二进制）。需在请求头中携带 `Authorization: Bearer <token>`。响应头包含 `Content-Type`、`Content-Length` 和 `ETag`（与 `checksum` 一致）。请求头中携带 `If-None-Match: <ETag>` 可在文件未变更时获得 `304 Not Modified`。**获取下一张卡片** 接口会在音频/图片/视频段的 `value` 中返回完整 URL（如 `https://your-api.com/api/media/{id}`）；使用该 URL 并携带相同认证头即可加载文件。
 
 ### 删除媒体
 
