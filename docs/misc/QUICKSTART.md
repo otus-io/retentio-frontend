@@ -56,7 +56,7 @@ This guide walks you through using the WordUpX API via Swagger UI.
 
 - Open Swagger UI at:
   - **Local**: <http://localhost:8080/docs>
-  - **Production**: <https://api.wordupx.com/docs>
+  - **Production**: <https://api.wordupx.com:8443/docs>
 
 > **Timestamp convention:** All timestamps in the API use **UTC**.
 > ISO 8601 strings use the `Z` suffix (e.g., `2026-02-08T12:00:00Z`).
@@ -698,7 +698,7 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 }
 ```
 
-`front` and `back` are arrays of segment objects. Each segment has **`field`** (label or empty string), **`type`** (`text`, `audio`, `image`, or `video`), and **`value`** (text content, or **full media URL** for audio/image/video — e.g. `https://api.example.com/api/media/abc123`). Use the URL with the same `Authorization: Bearer <token>` to download the file; no need to build the URL from an id. You can render the card from these without fetching the fact separately.
+`front` and `back` are arrays of segment objects. Each segment has **`field`** (label or empty string), **`type`** (`text`, `audio`, `image`, or `video`), and **`value`** (text content, or **full media URL** for audio/image/video — e.g. `https://api.wordupx.com:8443/api/media/abc123`). Use the URL with the same `Authorization: Bearer <token>` to download the file; no need to build the URL from an id. You can render the card from these without fetching the fact separately.
 
 **Front-only card (template with empty back, e.g. `[[0], []]`):**
 
@@ -737,11 +737,11 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
       "created_at": 1763269600,
       "front": [
         {"field": "Front", "type": "text", "value": "Word"},
-        {"field": "Pronunciation", "type": "audio", "value": "https://api.example.com/api/media/abc123"}
+        {"field": "Pronunciation", "type": "audio", "value": "https://api.wordupx.com:8443/api/media/abc123"}
       ],
       "back": [
-        {"field": "Picture", "type": "image", "value": "https://api.example.com/api/media/def456"},
-        {"field": "Clip", "type": "video", "value": "https://api.example.com/api/media/vid789"},
+        {"field": "Picture", "type": "image", "value": "https://api.wordupx.com:8443/api/media/def456"},
+        {"field": "Clip", "type": "video", "value": "https://api.wordupx.com:8443/api/media/vid789"},
         {"field": "Back", "type": "text", "value": "Translation"}
       ]
     },
@@ -996,7 +996,7 @@ Returns metadata only (id, owner, filename, mime, size, checksum, created_at), n
 
 **Endpoint:** `GET /api/media/{id}`
 
-Returns the media file (binary) for user-owned media by ID. Requires `Authorization: Bearer <token>`. Response headers include `Content-Type`, `Content-Length`, and `ETag` (same as `checksum`). Send `If-None-Match: <ETag>` to get `304 Not Modified` when the file is unchanged. The **Get Next Card** response gives full URLs for audio/image/video segments (e.g. `https://your-api.com/api/media/{id}`); use that URL with the same auth header to load the file.
+Returns the media file (binary) for user-owned media by ID. Requires `Authorization: Bearer <token>`. Response headers include `Content-Type`, `Content-Length`, and `ETag` (same as `checksum`). Send `If-None-Match: <ETag>` to get `304 Not Modified` when the file is unchanged. The **Get Next Card** response gives full URLs for audio/image/video segments (e.g. `https://api.wordupx.com:8443/api/media/{id}`); use that URL with the same auth header to load the file.
 
 ### Delete media
 

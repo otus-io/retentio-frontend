@@ -57,7 +57,7 @@
 
 - 打开 Swagger UI：
   - **本地**: <http://localhost:8080/docs>
-  - **生产环境**: <https://api.wordupx.com/docs>
+  - **生产环境**: <https://api.wordupx.com:8443/docs>
 
 > **时间戳规范：** API 中所有时间戳均使用 **UTC** 时区。
 > ISO 8601 字符串使用 `Z` 后缀（例如 `2026-02-08T12:00:00Z`）。
@@ -705,7 +705,7 @@
 }
 ```
 
-`front` 和 `back` 为段对象数组。每段包含 **`field`**（标签或空字符串）、**`type`**（`text`、`audio`、`image` 或 `video`）和 **`value`**（文本内容，或音频/图片/视频的**完整媒体 URL**，如 `https://api.example.com/api/media/abc123`）。使用该 URL 并携带相同 `Authorization: Bearer <token>` 即可下载文件，无需根据 id 拼 URL。可直接据此渲染卡片，无需再请求 fact。
+`front` 和 `back` 为段对象数组。每段包含 **`field`**（标签或空字符串）、**`type`**（`text`、`audio`、`image` 或 `video`）和 **`value`**（文本内容，或音频/图片/视频的**完整媒体 URL**，如 `https://api.wordupx.com:8443/api/media/abc123`）。使用该 URL 并携带相同 `Authorization: Bearer <token>` 即可下载文件，无需根据 id 拼 URL。可直接据此渲染卡片，无需再请求 fact。
 
 **仅正面卡片（背面为空，如 template `[[0], []]`）：**
 
@@ -744,11 +744,11 @@
       "created_at": 1763269600,
       "front": [
         {"field": "Front", "type": "text", "value": "Word"},
-        {"field": "Pronunciation", "type": "audio", "value": "https://api.example.com/api/media/abc123"}
+        {"field": "Pronunciation", "type": "audio", "value": "https://api.wordupx.com:8443/api/media/abc123"}
       ],
       "back": [
-        {"field": "Picture", "type": "image", "value": "https://api.example.com/api/media/def456"},
-        {"field": "Clip", "type": "video", "value": "https://api.example.com/api/media/vid789"},
+        {"field": "Picture", "type": "image", "value": "https://api.wordupx.com:8443/api/media/def456"},
+        {"field": "Clip", "type": "video", "value": "https://api.wordupx.com:8443/api/media/vid789"},
         {"field": "Back", "type": "text", "value": "Translation"}
       ]
     },
@@ -1002,7 +1002,7 @@
 
 **接口：** `GET /api/media/{id}`
 
-按 ID 返回用户拥有的媒体文件（二进制）。需在请求头中携带 `Authorization: Bearer <token>`。响应头包含 `Content-Type`、`Content-Length` 和 `ETag`（与 `checksum` 一致）。请求头中携带 `If-None-Match: <ETag>` 可在文件未变更时获得 `304 Not Modified`。**获取下一张卡片** 接口会在音频/图片/视频段的 `value` 中返回完整 URL（如 `https://your-api.com/api/media/{id}`）；使用该 URL 并携带相同认证头即可加载文件。
+按 ID 返回用户拥有的媒体文件（二进制）。需在请求头中携带 `Authorization: Bearer <token>`。响应头包含 `Content-Type`、`Content-Length` 和 `ETag`（与 `checksum` 一致）。请求头中携带 `If-None-Match: <ETag>` 可在文件未变更时获得 `304 Not Modified`。**获取下一张卡片** 接口会在音频/图片/视频段的 `value` 中返回完整 URL（如 `https://api.wordupx.com:8443/api/media/{id}`）；使用该 URL 并携带相同认证头即可加载文件。
 
 ### 删除媒体
 
