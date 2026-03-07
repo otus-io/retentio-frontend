@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 import 'package:wordupx/extensions/widget_extension.dart';
+import 'package:wordupx/widgets/common_net_image.dart';
 
 import '../../../extensions/context_extension.dart';
 import '../../../models/deck.dart';
 import '../providers/card_provider.dart';
 import 'buttons_tabbar/buttons_tab_bar_widget.dart';
+import 'card_audio_widget.dart';
 
 class CardWidget extends ConsumerWidget {
   const CardWidget({super.key, required this.deck, required this.isFront});
@@ -114,17 +116,27 @@ class CardWidget extends ConsumerWidget {
             TabBarView(
               children:
                   cards?.map((e) {
-                    return Center(
-                      child: Text(
-                        e.value,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 1.2,
-                          color: color,
+                    final type = e.type;
+
+                    return switch (type) {
+                      'audio' => CardAudioWidget(
+                        audioUrl: e.value,
+                        color: color,
+                      ),
+                      'text' => Center(
+                        child: Text(
+                          e.value,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1.2,
+                            color: color,
+                          ),
                         ),
                       ),
-                    );
+                      'image' => Center(child: CommonNetImage(url: e.value)),
+                      String() => throw UnimplementedError(),
+                    };
                   }).toList() ??
                   [],
             ).expanded(),

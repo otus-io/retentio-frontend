@@ -7,12 +7,8 @@ import 'package:wordupx/extensions/widget_extension.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
 import 'package:wordupx/models/deck.dart';
 import 'package:wordupx/screen/deck/providers/card_provider.dart';
-import 'package:wordupx/screen/deck/providers/edit_fact_provider.dart';
 import 'package:wordupx/screen/deck/widgets/card_widget.dart';
-import 'package:wordupx/screen/deck/widgets/edit_fact_widget.dart';
 import 'package:wordupx/screen/deck/widgets/flash_card/flash_card.dart';
-
-import '../../widgets/common_bottom_sheet.dart';
 
 class DeckLearnScreen extends ConsumerStatefulWidget {
   final Deck deck;
@@ -39,23 +35,23 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
               backgroundColor: theme.colorScheme.surface,
             ),
             itemBuilder: (context) => [
-              PullDownMenuItem(
-                title: 'Edit Fact',
-                onTap: () {
-                  showCommonBottomSheet(
-                    context: context,
-                    initialChildSize: 0.4,
-                    minChildSize: 0.3,
-                    maxChildSize: 0.5,
-                    title: 'Edit Fact',
-                    child: ProviderScope(
-                      overrides: [deckProvider.overrideWithValue(widget.deck)],
-                      child: EditFactWidget(deck: widget.deck),
-                    ),
-                  );
-                },
-                icon: LucideIcons.pencil,
-              ),
+              // PullDownMenuItem(
+              //   title: 'Edit Fact',
+              //   onTap: () {
+              //     showCommonBottomSheet(
+              //       context: context,
+              //       initialChildSize: 0.4,
+              //       minChildSize: 0.3,
+              //       maxChildSize: 0.5,
+              //       title: 'Edit Fact',
+              //       child: ProviderScope(
+              //         overrides: [deckProvider.overrideWithValue(widget.deck)],
+              //         child: EditFactWidget(deck: widget.deck),
+              //       ),
+              //     );
+              //   },
+              //   icon: LucideIcons.pencil,
+              // ),
               PullDownMenuItem(
                 title: 'Hide Card',
                 onTap: () async {
@@ -165,6 +161,7 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               FlashCard(
+                height: context.width - 48 - 46,
                 flashCardController: ref
                     .read(cardProvider(widget.deck).notifier)
                     .flashCardController,

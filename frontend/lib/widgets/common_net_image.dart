@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:wordupx/services/apis/api_service.dart';
 import 'package:wordupx/utils/log.dart';
 
 class CommonNetImage extends StatefulWidget {
@@ -18,8 +19,8 @@ class CommonNetImage extends StatefulWidget {
     super.key,
     this.height,
     this.width,
-    this.compressionRatio = 0.8,
-    this.fit,
+    this.compressionRatio = 1,
+    this.fit = BoxFit.contain,
     required this.url,
     this.errorWidgetBuilder,
     this.placeholder,
@@ -542,6 +543,7 @@ class ExtendedNetworkImageSSLProvider
     headers?.forEach((String name, String value) {
       request.headers.add(name, value);
     });
+    request.headers.add('Authorization', 'Bearer ${ApiService.authorization}');
     final HttpClientResponse response = await request.close();
     if (timeLimit != null) {
       response.timeout(timeLimit!);

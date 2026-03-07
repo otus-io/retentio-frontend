@@ -32,6 +32,8 @@ dependencies:
   equatable: ^2.0.8
   extended_image: ^10.0.1
   path: ^1.9.1
+  just_audio: ^0.10.5
+  audio_waveforms: ^2.0.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

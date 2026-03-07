@@ -8,6 +8,8 @@ import '../../providers/auth_provider.dart';
 class ApiService {
   static String? _token;
 
+  static String get authorization => _token ?? '';
+
   /// 初始化时加载 token
   static Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -87,5 +89,9 @@ class ApiService {
       // 忽略错误
     }
     providerContainer.read(isLoginProvider.notifier);
+  }
+
+  static Future<String?> downloadFile(String audioUrl, String path) async {
+    return dioClient.downLoadFile(audioUrl, path, (value) {}, () {});
   }
 }
