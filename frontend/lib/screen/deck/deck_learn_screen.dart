@@ -225,10 +225,18 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
                           widget.deck,
                         ).notifier.select((value) => value.scope),
                       );
+                      var label = '${(interval).ceil() ~/ 60}m';
+
+                      ///超过 60m 就可以显示 1h （小时）， 超过 24 小时显示 1d
+                      if (interval > 60 * 60) {
+                        label = '${(interval ~/ 60 / 60).toStringAsFixed(1)}h';
+                      } else if (interval > 24 * 60 * 60) {
+                        label = '${(interval ~/ 60 / 60 / 24).ceil()}d';
+                      }
                       return Row(
                         children: [
                           Text(
-                            'Easy',
+                            'Hard',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -239,7 +247,7 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
                             min: scope.first.roundToDouble(),
                             max: scope.last.roundToDouble(),
                             divisions: 100,
-                            label: '${(interval).ceil() ~/ 60}m',
+                            label: label,
                             onChanged: (double value) {
                               ref
                                   .read(cardProvider(widget.deck).notifier)
@@ -247,7 +255,7 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
                             },
                           ).expanded(),
                           Text(
-                            'Hard',
+                            'Easy',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
