@@ -228,10 +228,10 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
                       var label = '${(interval).ceil() ~/ 60}m';
 
                       ///超过 60m 就可以显示 1h （小时）， 超过 24 小时显示 1d
-                      if (interval > 60 * 60) {
-                        label = '${(interval ~/ 60 / 60).toStringAsFixed(1)}h';
-                      } else if (interval > 24 * 60 * 60) {
+                      if (interval > 24 * 60 * 60) {
                         label = '${(interval ~/ 60 / 60 / 24).ceil()}d';
+                      } else if (interval > 60 * 60) {
+                        label = '${(interval ~/ 60 / 60).toStringAsFixed(1)}h';
                       }
                       return Row(
                         children: [
