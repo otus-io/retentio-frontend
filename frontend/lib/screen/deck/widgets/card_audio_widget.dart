@@ -56,7 +56,8 @@ class _CardAudioWidgetState extends State<CardAudioWidget>
                 audioPlayerProvider.select((value) => value.isPlaying),
               )) ...[
                 Positioned.fill(
-                  child: ClipRect(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                       child: SizedBox(),
