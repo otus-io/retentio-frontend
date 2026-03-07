@@ -68,7 +68,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
   Future<void> _loadAudio() async {
     try {
       final dir = await getTemporaryDirectory();
-      final path = '${dir.path}/${state.audioUrl.split('/').last}.mp3';
+      final path = '${dir.path}/audio/${state.audioUrl.split('/').last}.mp3';
       if (!File(path).existsSync()) {
         logger.i("开始下载音频...");
         final file = await ApiService.downloadFile(state.audioUrl, path);

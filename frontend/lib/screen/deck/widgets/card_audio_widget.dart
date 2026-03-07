@@ -32,9 +32,9 @@ class _CardAudioWidgetState extends State<CardAudioWidget>
             children: [
               !isReady
                   ? SizedBox(
-                      width: 50,
-                      height: 50,
-                      child: const CircularProgressIndicator(),
+                      width: 20,
+                      height: 20,
+                      child: const CircularProgressIndicator(strokeWidth: 2),
                     )
                   : AudioFileWaveforms(
                       size: Size(context.width, 50),
@@ -53,8 +53,9 @@ class _CardAudioWidgetState extends State<CardAudioWidget>
                       ),
                     ),
               if (!ref.watch(
-                audioPlayerProvider.select((value) => value.isPlaying),
-              )) ...[
+                    audioPlayerProvider.select((value) => value.isPlaying),
+                  ) &&
+                  isReady) ...[
                 Positioned.fill(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
@@ -66,9 +67,7 @@ class _CardAudioWidgetState extends State<CardAudioWidget>
                 ),
                 IconButton(
                   padding: EdgeInsets.all(10),
-
                   iconSize: 30,
-
                   color: widget.color,
                   onPressed: ref.read(audioPlayerProvider.notifier).playPause,
                   icon: Icon(LucideIcons.play),
