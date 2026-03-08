@@ -17,33 +17,49 @@ class DeckOwner {
 }
 
 class DeckStats {
-  final int unseenCards;
-  final int factsCount;
-  final int dueCards;
   final int cardsCount;
+  final int factsCount;
+  final int unseenCards;
+  final int reviewedCards;
+  final int dueCards;
+  final int hiddenCards;
+  final int newCardsToday;
+  final int lastReviewedAt;
 
   DeckStats({
-    required this.unseenCards,
-    required this.factsCount,
-    required this.dueCards,
     required this.cardsCount,
+    required this.factsCount,
+    required this.unseenCards,
+    required this.reviewedCards,
+    required this.dueCards,
+    required this.hiddenCards,
+    required this.newCardsToday,
+    required this.lastReviewedAt,
   });
 
   factory DeckStats.fromJson(Map<String, dynamic> json) {
     return DeckStats(
-      unseenCards: json['unseen_cards'] as int? ?? 0,
-      factsCount: json['facts_count'] as int? ?? 0,
-      dueCards: json['due_cards'] as int? ?? 0,
       cardsCount: json['cards_count'] as int? ?? 0,
+      factsCount: json['facts_count'] as int? ?? 0,
+      unseenCards: json['unseen_cards'] as int? ?? 0,
+      reviewedCards: json['reviewed_cards'] as int? ?? 0,
+      dueCards: json['due_cards'] as int? ?? 0,
+      hiddenCards: json['hidden_cards'] as int? ?? 0,
+      newCardsToday: json['new_cards_today'] as int? ?? 0,
+      lastReviewedAt: (json['last_reviewed_at'] as num?)?.toInt() ?? 0,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'unseen_cards': unseenCards,
-      'facts_count': factsCount,
-      'due_cards': dueCards,
       'cards_count': cardsCount,
+      'facts_count': factsCount,
+      'unseen_cards': unseenCards,
+      'reviewed_cards': reviewedCards,
+      'due_cards': dueCards,
+      'hidden_cards': hiddenCards,
+      'new_cards_today': newCardsToday,
+      'last_reviewed_at': lastReviewedAt,
     };
   }
 }

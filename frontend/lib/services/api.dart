@@ -1,29 +1,25 @@
 part of 'index.dart';
 
 class Api {
-  /// 登录页面的路由路径。
   static const String login = '/auth/login';
-
-  /// 注册页面的路由路径。
   static const String register = '/auth/register';
+  static const String logout = '/auth/logout';
+  static const String forgotPassword = '/auth/forgot-password';
+  static const String resetPassword = '/auth/reset-password';
 
-  /// 获取卡牌组列表的API端点路径。
   static const String decks = '/api/decks';
-
-  /// 获取卡牌组列表的API端点路径。
   static const String deck = '/api/decks/{id}';
-
   static const String profile = '/api/profile';
 
-  /// Returns the most urgent card for a deck
   static const String card = '/api/decks/{id}/card';
-
-  ///Returns card statistics including total count, hidden count, and hidden facts
   static const String cards = '/api/decks/{id}/cards';
+  static const String cardById = '/api/decks/{id}/cards/{cardId}';
+  static const String reschedule = '/api/decks/{id}/reschedule';
 
-  /// Returns a fact for the specified deck
+  static const String facts = '/api/decks/{id}/facts';
+  static const String factsWithOperation = '/api/decks/{id}/facts/{operation}';
   static const String fact = '/api/decks/{id}/facts/{factId}';
 
-  ///Returns all facts for the specified deck
-  static const String facts = '/api/decks/{id}/facts';
+  static const String media = '/api/media';
+  static const String mediaById = '/api/media/{id}';
 }
