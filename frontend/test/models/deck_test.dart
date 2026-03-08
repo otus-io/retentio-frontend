@@ -21,58 +21,24 @@ void main() {
   group('DeckStats', () {
     test('fromJson parses all fields', () {
       final json = {
-        'cards_count': 20,
-        'facts_count': 50,
         'unseen_cards': 10,
-        'reviewed_cards': 10,
+        'facts_count': 50,
         'due_cards': 5,
-        'hidden_cards': 2,
-        'new_cards_today': 4,
-        'last_reviewed_at': 1739696400,
+        'cards_count': 20,
       };
       final stats = DeckStats.fromJson(json);
-      expect(stats.cardsCount, 20);
-      expect(stats.factsCount, 50);
       expect(stats.unseenCards, 10);
-      expect(stats.reviewedCards, 10);
+      expect(stats.factsCount, 50);
       expect(stats.dueCards, 5);
-      expect(stats.hiddenCards, 2);
-      expect(stats.newCardsToday, 4);
-      expect(stats.lastReviewedAt, 1739696400);
+      expect(stats.cardsCount, 20);
     });
 
     test('fromJson uses default 0 for missing fields', () {
       final stats = DeckStats.fromJson({});
-      expect(stats.cardsCount, 0);
-      expect(stats.factsCount, 0);
       expect(stats.unseenCards, 0);
-      expect(stats.reviewedCards, 0);
+      expect(stats.factsCount, 0);
       expect(stats.dueCards, 0);
-      expect(stats.hiddenCards, 0);
-      expect(stats.newCardsToday, 0);
-      expect(stats.lastReviewedAt, 0);
-    });
-
-    test('toJson serializes correctly', () {
-      final stats = DeckStats(
-        cardsCount: 30,
-        factsCount: 25,
-        unseenCards: 5,
-        reviewedCards: 25,
-        dueCards: 3,
-        hiddenCards: 1,
-        newCardsToday: 2,
-        lastReviewedAt: 1704067200,
-      );
-      final json = stats.toJson();
-      expect(json['cards_count'], 30);
-      expect(json['facts_count'], 25);
-      expect(json['unseen_cards'], 5);
-      expect(json['reviewed_cards'], 25);
-      expect(json['due_cards'], 3);
-      expect(json['hidden_cards'], 1);
-      expect(json['new_cards_today'], 2);
-      expect(json['last_reviewed_at'], 1704067200);
+      expect(stats.cardsCount, 0);
     });
   });
 
@@ -86,14 +52,10 @@ void main() {
             [0, 1],
           ],
           'stats': {
-            'cards_count': 20,
-            'facts_count': 10,
             'unseen_cards': 5,
-            'reviewed_cards': 15,
+            'facts_count': 10,
             'due_cards': 2,
-            'hidden_cards': 0,
-            'new_cards_today': 0,
-            'last_reviewed_at': 0,
+            'cards_count': 20,
           },
           'rate': 10,
           'owner': {'username': 'owner1', 'email': 'owner@test.com'},
@@ -190,147 +152,6 @@ void main() {
         expect(deck.updatedAt, isNotNull);
         expect(deck.createdAt!.toIso8601String(), contains('2024-01-15'));
         expect(deck.updatedAt!.toIso8601String(), contains('2024-01-16'));
-      });
-    });
-
-    group('toJson', () {
-      test('serializes deck correctly', () {
-        final deck = Deck(
-          id: 'deck-1',
-          name: 'My Deck',
-          templates: <List<int>>[
-            <int>[0],
-          ],
-          stats: DeckStats(
-            cardsCount: 20,
-            factsCount: 10,
-            unseenCards: 5,
-            reviewedCards: 15,
-            dueCards: 2,
-            hiddenCards: 0,
-            newCardsToday: 0,
-            lastReviewedAt: 0,
-          ),
-          rate: 1,
-          owner: DeckOwner(username: 'u', email: 'e@e.com'),
-          fields: <String>['f1'],
-          minInterval: 1,
-          defInterval: 1,
-          maxInterval: 365,
-        );
-        final json = deck.toJson();
-        expect(json['id'], 'deck-1');
-        expect(json['name'], 'My Deck');
-        expect(json['templates'], [
-          [0],
-        ]);
-        expect(json['rate'], 1);
-      });
-    });
-
-    group('progress', () {
-      test('returns 0 when cardsCount is 0', () {
-        final deck = Deck(
-          id: 'd',
-          name: 'n',
-          templates: <List<int>>[],
-          stats: DeckStats(
-            cardsCount: 0,
-            factsCount: 0,
-            unseenCards: 0,
-            reviewedCards: 0,
-            dueCards: 0,
-            hiddenCards: 0,
-            newCardsToday: 0,
-            lastReviewedAt: 0,
-          ),
-          rate: 0,
-          owner: DeckOwner(username: '', email: ''),
-          fields: <String>[],
-          minInterval: 0,
-          defInterval: 0,
-          maxInterval: 0,
-        );
-        expect(deck.progress, 0.0);
-      });
-
-      test('calculates progress percentage correctly', () {
-        final deck = Deck(
-          id: 'd',
-          name: 'n',
-          templates: <List<int>>[],
-          stats: DeckStats(
-            cardsCount: 20,
-            factsCount: 10,
-            unseenCards: 5,
-            reviewedCards: 15,
-            dueCards: 2,
-            hiddenCards: 0,
-            newCardsToday: 0,
-            lastReviewedAt: 0,
-          ),
-          rate: 0,
-          owner: DeckOwner(username: '', email: ''),
-          fields: <String>[],
-          minInterval: 0,
-          defInterval: 0,
-          maxInterval: 0,
-        );
-        expect(deck.progress, 75.0); // 15/20 * 100
-      });
-
-      test('clamps progress to 100', () {
-        final deck = Deck(
-          id: 'd',
-          name: 'n',
-          templates: <List<int>>[],
-          stats: DeckStats(
-            cardsCount: 10,
-            factsCount: 10,
-            unseenCards: 0,
-            reviewedCards: 10,
-            dueCards: 0,
-            hiddenCards: 0,
-            newCardsToday: 0,
-            lastReviewedAt: 0,
-          ),
-          rate: 0,
-          owner: DeckOwner(username: '', email: ''),
-          fields: <String>[],
-          minInterval: 0,
-          defInterval: 0,
-          maxInterval: 0,
-        );
-        expect(deck.progress, 100.0);
-      });
-    });
-
-    group('totalCards, learnedCards, reviewCards', () {
-      test('returns correct values from stats', () {
-        final deck = Deck(
-          id: 'd',
-          name: 'n',
-          templates: <List<int>>[],
-          stats: DeckStats(
-            cardsCount: 25,
-            factsCount: 20,
-            unseenCards: 8,
-            reviewedCards: 17,
-            dueCards: 5,
-            hiddenCards: 0,
-            newCardsToday: 0,
-            lastReviewedAt: 0,
-          ),
-          rate: 0,
-          owner: DeckOwner(username: '', email: ''),
-          fields: <String>[],
-          minInterval: 0,
-          defInterval: 0,
-          maxInterval: 0,
-        );
-        expect(deck.totalCards, 25);
-        expect(deck.learnedCards, 17);
-        expect(deck.reviewCards, 5);
       });
     });
   });

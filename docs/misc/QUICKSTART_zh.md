@@ -6,65 +6,16 @@
 
 本指南将帮助您通过 Swagger UI 使用 WordUpX API。
 
-## 目录
-
-- [前提条件](#前提条件)
-- [API 接口参考](#api-接口参考)
-- [1. 身份验证](#1-身份验证)
-  - [创建用户](#创建用户)
-  - [登录](#登录)
-  - [授权](#授权)
-  - [登出](#登出)
-  - [忘记密码](#忘记密码)
-  - [重置密码](#重置密码)
-- [1.1 用户资料](#11-用户资料)
-- [2. 卡组](#2-卡组)
-  - [创建卡组](#创建卡组)
-  - [获取单个卡组](#获取单个卡组)
-  - [获取所有卡组](#获取所有卡组)
-  - [更新卡组](#更新卡组)
-  - [删除卡组](#删除卡组)
-  - [假期模式（平移复习计划）](#假期模式平移复习计划)
-- [3. 词条](#3-词条)
-  - [添加词条](#添加词条)
-  - [获取所有词条](#获取所有词条)
-  - [获取单个词条](#获取单个词条)
-  - [更新词条](#更新词条)
-  - [删除词条](#删除词条)
-- [4. 卡片](#4-卡片)
-  - [为已有词条添加一张卡（如反向卡）](#为已有词条添加一张卡如反向卡)
-  - [获取下一张最紧急卡片](#获取下一张最紧急卡片)
-  - [复习卡片](#复习卡片)
-  - [隐藏卡片](#隐藏卡片)
-  - [删除卡片](#删除卡片)
-  - [获取卡片统计](#获取卡片统计)
-- [5. 媒体（音频 / 图片）](#5-媒体音频--图片)
-  - [上传媒体](#上传媒体)
-  - [列出媒体](#列出媒体)
-  - [获取媒体元数据](#获取媒体元数据)
-  - [下载媒体](#下载媒体)
-  - [删除媒体](#删除媒体)
-  - [列出或查询共享媒体（开发中）](#列出或查询共享媒体开发中)
-  - [下载共享媒体（开发中）](#下载共享媒体开发中)
-  - [管理端共享媒体（开发中）](#管理端共享媒体开发中)
-  - [在词条中使用媒体（开发中）](#在词条中使用媒体开发中)
-- [响应示例速查](#响应示例速查)
-- [后续步骤](#后续步骤)
-
----
-
 ## 前提条件
 
 - 打开 Swagger UI：
   - **本地**: <http://localhost:8080/docs>
-  - **生产环境**: <https://api.wordupx.com:8443/docs>
+  - **生产环境**: <https://api.wordupx.com/docs>
 
 > **时间戳规范：** API 中所有时间戳均使用 **UTC** 时区。
 > ISO 8601 字符串使用 `Z` 后缀（例如 `2026-02-08T12:00:00Z`）。
 > Unix 时间戳为自 Unix 纪元（1970-01-01T00:00:00Z）以来的秒数。
 > 客户端需自行进行本地时间的转换。
->
-> **ID 格式：** 卡组、词条、卡片 ID 均为随机 **小写字母数字** 字符串（无下划线或连字符）。后端生成：**deck_id** 12 位、**fact_id** 与 **card_id** 各 8 位。媒体 ID（如 `[audio:id]` 中的 id）为 10 位。本指南中的示例 ID 均符合上述长度。
 
 ---
 
@@ -77,35 +28,19 @@
 | `/auth/logout` | POST | 登出（使令牌失效） |
 | `/auth/forgot-password` | POST | 请求密码重置令牌 |
 | `/auth/reset-password` | POST | 使用令牌重置密码 |
-| `/api/profile` | GET | 获取当前用户资料 |
 | `/api/decks` | POST | 创建卡组 |
 | `/api/decks` | GET | 获取所有卡组 |
 | `/api/decks/{id}` | GET | 获取卡组详情 |
 | `/api/decks/{id}` | PATCH | 更新卡组 |
 | `/api/decks/{id}` | DELETE | 删除卡组 |
-| `/api/decks/{id}/facts/{operation}` | POST | 添加词条：operation 为 append/prepend/shuffle/spread。请求体：facts（必填）及可选 template。为已有词条添加一张卡请使用 POST `/api/decks/{id}/card`。 |
+| `/api/decks/{id}/facts/{operation}` | POST | 添加词条 (operation: `append`, `prepend`, `shuffle`, `spread`) |
 | `/api/decks/{id}/facts` | GET | 获取所有词条 |
 | `/api/decks/{id}/facts/{factId}` | GET | 获取单个词条 |
 | `/api/decks/{id}/facts/{factId}` | PATCH | 更新词条 |
 | `/api/decks/{id}/facts/{factId}` | DELETE | 删除词条 |
 | `/api/decks/{id}/card` | GET | 获取最紧急卡片 |
-| `/api/decks/{id}/card` | POST | 为已有词条添加一张卡（如反向卡）。请求体：fact_id、template，可选 operation。 |
-| `/api/decks/{id}/card` | PATCH | 更新卡片间隔或可见性（按 card_id） |
-| `/api/decks/{id}/cards` | GET | 获取卡片统计 |
-| `/api/decks/{id}/cards/{cardId}` | DELETE | 删除单张卡片（词条及其他卡片不变） |
-| `/api/decks/{id}/reschedule` | POST | 假期模式：按天数平移卡片复习计划 |
-| `/api/media` | POST | 上传媒体（音频/图片） |
-| `/api/media` | GET | 列出用户媒体（同步清单） |
-| `/api/media/shared` | GET | 列出或查询共享媒体（`?word=...&lang=...`） |
-| `/api/media/shared/{id}` | GET | 下载共享媒体文件 |
-| `/api/media/{id}/meta` | GET | 获取媒体元数据（不含文件体） |
-| `/api/media/{id}` | GET | 下载媒体文件 |
-| `/api/media/{id}` | DELETE | 删除媒体 |
-| `/api/admin/media/shared` | POST | **（管理端）** 上传共享媒体 |
-| `/api/admin/media/shared/{id}` | DELETE | **（管理端）** 删除共享媒体 |
-| `/api/admin/decks/import` | POST | **（管理端）** 导入共享卡组（zip + manifest） |
-
-> **说明：** 管理端媒体相关接口为**开发中**，行为可能变更。
+| `/api/decks/{id}/card` | PATCH | 更新卡片间隔或可见性（按 card_id 查找） |
+| `/api/decks/{id}/cards` | GET | 获取卡片统计（总数、隐藏数量、隐藏事实） |
 
 ---
 
@@ -223,17 +158,7 @@
 
 ---
 
-## 1.1 用户资料
-
-**接口：** `GET /api/profile`
-
-需在请求头中携带 `Authorization: Bearer <token>`。返回当前用户的资料（如用户名、邮箱）。
-
----
-
-## 2. 卡组
-
-### 创建卡组
+## 2. 创建卡组
 
 **接口:** `POST /api/decks`
 
@@ -244,9 +169,35 @@
     "Japanese"
   ],
   "name": "English Japanese IELTS Deck",
-  "rate": 20
+  "rate": 20,
+  "templates": [
+    [0, 1]
+  ]
 }
 ```
+
+> **理解 `templates`（模板）：**
+>
+> 模板定义了如何将词条转化为卡片。每个模板是一个字段索引数组，决定了卡片正面和背面显示哪些字段。
+>
+> - `fields` 定义了可用的列：索引 `0` = "English"，索引 `1` = "Japanese"
+> - `[0, 1]` 表示：正面显示 **English** → 背面显示 **Japanese**
+>
+> 您可以添加多个模板来创建双向卡片：
+>
+> ```json
+> "templates": [
+>   [0, 1],
+>   [1, 0]
+> ]
+> ```
+>
+> - `[0, 1]` → 英语 → 日语（看英文，回忆日语）
+> - `[1, 0]` → 日语 → 英语（看日语，回忆英文）
+>
+> 使用 2 个模板时，每个词条会生成 **2 张卡片** — 每个方向各一张。
+
+<!-- -->
 
 > **理解 `rate`（速率）：**
 >
@@ -263,7 +214,7 @@
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3d4e5f6"
+    "deck_id": "a1b2c3"
   },
   "meta": {
     "msg": "Deck created successfully"
@@ -272,9 +223,12 @@
 ```
 
 > 📝 保存 `deck_id` - 后续步骤需要用到。
-> **为什么卡组没有 template？** 模板不存储在卡组上。添加词条时可传入可选参数 `template`（每个词条一个 `[[正面索引], [背面索引]]`）。服务端将该布局写入每张**卡片**的 `template`。**默认不生成兄弟卡（反向卡）**，每词条仅一张卡（正面第一条、背面其余）。省略 `template` 即使用该默认。
 
 ---
+
+## 3. 查看卡组详情
+
+您可以查看单个卡组或列出所有卡组。两个接口的响应都包含一个 `stats` 对象，提供卡片统计信息。
 
 ### 获取单个卡组
 
@@ -282,17 +236,18 @@
 
 **参数:**
 
-- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
+- `id`: `a1b2c3`（您的卡组 ID）
 
 **响应:**
 
 ```json
 {
   "data": {
-    "id": "a1b2c3d4e5f6",
+    "id": "a1b2c3",
     "name": "English Japanese IELTS Deck",
     "owner": "swagger",
     "field": ["English", "Japanese"],
+    "templates": [[0, 1]],
     "rate": 20,
     "stats": {
       "cards_count": 0,
@@ -324,10 +279,11 @@
   "data": {
     "decks": [
       {
-        "id": "a1b2c3d4e5f6",
+        "id": "a1b2c3",
         "name": "English Japanese IELTS Deck",
         "owner": "swagger",
         "field": ["English", "Japanese"],
+        "templates": [[0, 1]],
         "rate": 20,
         "stats": {
           "cards_count": 0,
@@ -377,7 +333,9 @@
 > 添加词条后，`cards_count` 和 `unseen_cards` 会增加。
 > 随着复习的进行，`reviewed_cards` 会增长，`unseen_cards` 会减少。
 >
-> 卡组卡片总数默认等于词条数：**每词条一张卡，默认不生成兄弟卡**。若需为某词条增加第二张卡（如反向卡），请调用 `POST /api/decks/{id}/card`，body 传 `{"fact_id": "<factId>", "template": [[1], [0]]}`。若该 template 已存在则返回 400。
+> 卡片总数取决于词条数和模板数：
+> `cards_count = facts_count × 模板数量`。
+> 例如，20 个词条搭配 2 个模板（`[0,1]` 和 `[1,0]`）会生成 40 张卡片。
 >
 > 客户端计算学习进度百分比：`reviewed_cards / cards_count * 100`。
 
@@ -387,7 +345,7 @@
 
 **参数:**
 
-- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
+- `id`: `a1b2c3`（您的卡组 ID）
 
 **请求体:**
 
@@ -395,6 +353,7 @@
 {
   "name": "更新后的卡组名称",
   "fields": ["English", "Japanese"],
+  "templates": [[0, 1], [1, 0]],
   "rate": 30
 }
 ```
@@ -406,7 +365,7 @@
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3d4e5f6"
+    "deck_id": "a1b2c3"
   },
   "meta": {
     "msg": "Deck updated successfully",
@@ -421,16 +380,16 @@
 
 **参数:**
 
-- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
+- `id`: `a1b2c3`（您的卡组 ID）
 
-> 此操作会永久删除卡组及其所有关联的词条和卡片。
+> 此操作会永久删除卡组及其所有关联的词条、卡片和模板。
 
 **响应:**
 
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3d4e5f6"
+    "deck_id": "a1b2c3"
   },
   "meta": {
     "msg": "Deck deleted successfully"
@@ -438,84 +397,45 @@
 }
 ```
 
-### 假期模式（平移复习计划）
-
-**接口：** `POST /api/decks/{id}/reschedule`
-
-将卡组内所有卡片的 due_date 与 last_review 按 N 天（1–365）平移。仅当卡组存在逾期卡片时允许调用。
-
-**请求体：**
-
-```json
-{ "days": 5 }
-```
-
-**响应示例：**
-
-```json
-{
-  "data": {
-    "cards_shifted": 42,
-    "days": 5,
-    "max_days_away": 10
-  },
-  "meta": { "msg": "Successfully rescheduled 42 cards by 5 days" }
-}
-```
-
 ---
 
-## 3. 词条
-
-### 添加词条
+## 4. 添加词条
 
 **接口:** `POST /api/decks/{id}/facts/{operation}`
 
 **参数:**
 
-- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
+- `id`: `a1b2c3`（您的卡组 ID）
 - `operation`: `append`
 
-**请求体：** 词条数组（每项含 `entries`）及可选的 `template`。服务端为每个词条生成唯一 ID，并为每个词条创建**一张卡片**（默认不生成反向/兄弟卡）。卡片的正/背面布局由 `template[i]` 指定（词条索引 `i`），省略或长度不足时使用默认 `[[0], [1, 2, ...]]`。
+**请求体:**
 
 ```json
 {
   "facts": [
-    { "entries": ["Apple", "りんご"] },
-    { "entries": ["Book", "本"] },
-    { "entries": ["Water", "水"] },
-    { "entries": ["Hello", "こんにちは"] },
-    { "entries": ["Thank you", "ありがとう"] },
-    { "entries": ["Good morning", "おはよう"] },
-    { "entries": ["Cat", "猫"] },
-    { "entries": ["Dog", "犬"] },
-    { "entries": ["House", "家"] },
-    { "entries": ["Car", "車"] },
-    { "entries": ["Friend", "友達"] },
-    { "entries": ["School", "学校"] },
-    { "entries": ["Teacher", "先生"] },
-    { "entries": ["Student", "学生"] },
-    { "entries": ["Food", "食べ物"] },
-    { "entries": ["Time", "時間"] },
-    { "entries": ["Love", "愛"] },
-    { "entries": ["Peace", "平和"] },
-    { "entries": ["Beautiful", "美しい"] },
-    { "entries": ["Happy", "幸せ"] }
+    ["Apple", "りんご"],
+    ["Book", "本"],
+    ["Water", "水"],
+    ["Hello", "こんにちは"],
+    ["Thank you", "ありがとう"],
+    ["Good morning", "おはよう"],
+    ["Cat", "猫"],
+    ["Dog", "犬"],
+    ["House", "家"],
+    ["Car", "車"],
+    ["Friend", "友達"],
+    ["School", "学校"],
+    ["Teacher", "先生"],
+    ["Student", "学生"],
+    ["Food", "食べ物"],
+    ["Time", "時間"],
+    ["Love", "愛"],
+    ["Peace", "平和"],
+    ["Beautiful", "美しい"],
+    ["Happy", "幸せ"]
   ]
 }
 ```
-
-可选 **`template`**：布局数组，与词条一一对应。每项为 `[[正面索引], [背面索引]]`（如 `[[0], [1]]`）。省略或长度不足时，对应词条使用默认布局。例如两个词条、第二个为反向：
-
-```json
-"template": [ [[0], [1]], [[1], [0]] ]
-```
-
-> **理解请求体：**
->
-> - **`entries`**：该词条的内容（与卡组列一一对应），如 `["Apple", "りんご"]`。
-> - **`fields`**（可选）：该词条各列的显示名称；第 `i` 个条目对应 `fields[i]`。省略则使用卡组默认 `fields`。若提供，长度须与 `entries` 一致（如三列可为 `["Word", "Translation", "Example sentence"]`）。
-> - **`template`**（可选）：按词条的布局。每词条一个 `[][]int`；省略或 `i >= len(template)` 时使用默认 `[[0], [1, 2, ...]]`。使用三维数组（每词条一个布局）是为了让不同词条可有不同正/背面布局，并为将来「一词条多张卡」（如主卡 + 反向 + 第三种变体）预留扩展；当前接口仍为每词条只创建一张卡。
 
 **响应:**
 
@@ -530,158 +450,17 @@
 }
 ```
 
-### 获取所有词条
-
-**接口：** `GET /api/decks/{id}/facts`
-
-**响应示例：**
-
-```json
-{
-  "data": {
-    "facts": [
-      { "id": "x9k2m4np", "entries": ["Apple", "りんご"], "fields": ["English", "Japanese"] },
-      { "id": "b00k1ab2", "entries": ["Book", "本"] }
-    ]
-  },
-  "meta": { "msg": "Facts retrieved successfully" }
-}
-```
-
-### 获取单个词条
-
-**接口：** `GET /api/decks/{id}/facts/{factId}`
-
-**响应示例：**
-
-```json
-{
-  "data": {
-    "fact": {
-      "id": "x9k2m4np",
-      "entries": ["Apple", "りんご"],
-      "fields": ["English", "Japanese"]
-    }
-  }
-}
-```
-
-### 更新词条
-
-**接口：** `PATCH /api/decks/{id}/facts/{factId}`
-
-**参数：** `id`（卡组 ID）、`factId`（词条 ID，来自 GET 词条或添加词条响应）。
-
-**请求体：** 可选 `entries` 与 `fields`。若提供 `entries` 则替换该词条内容；若提供 `fields`，其长度须与 `entries` 一致。
-
-```json
-{
-  "entries": ["Apple", "りんご"],
-  "fields": ["English", "Japanese"]
-}
-```
-
-**响应：**
-
-```json
-{
-  "data": { "fact_id": "x9k2m4np" },
-  "meta": { "msg": "Fact updated successfully" }
-}
-```
-
-### 删除词条
-
-**接口：** `DELETE /api/decks/{id}/facts/{factId}`
-
-**参数：** `id`（卡组 ID）、`factId`（词条 ID）。
-
-永久删除该词条及其衍生出的所有卡片。
-
-**响应：**
-
-```json
-{
-  "data": { "fact_id": "x9k2m4np" },
-  "meta": { "msg": "Fact deleted successfully" }
-}
-```
-
 ---
 
-## 4. 卡片
-
-### 为已有词条添加一张卡（如反向卡）
-
-默认**每词条一张卡**。若要为某词条再增加一张卡（如反向卡：先显示背面再显示正面），请使用 **POST /api/decks/{id}/card**，请求体传 `fact_id` 与 `template`。此接口与「添加词条」分开。
-
-**接口:** `POST /api/decks/{id}/card`
-
-**参数:**
-
-- `id`: 卡组 ID
-
-**请求体:**
-
-```json
-{
-  "fact_id": "x9k2m4np",
-  "template": [[1], [0]]
-}
-```
-
-- **`fact_id`**（必填）：词条 ID（来自 `GET /api/decks/{id}/facts` 或添加词条后的数据）。
-- **`template`**（必填）：`[[正面索引], [背面索引]]`，指定卡片如何展示词条各列。两列词条：`[[0],[1]]` = 正面第 0 列、背面第 1 列；`[[1],[0]]` = 反向。索引须在 `0..(n-1)` 内、互不重复且覆盖所有列。若该 fact 下已有卡片使用相同 template 则返回 400。
-- **`operation`**（可选）：`append`、`prepend`、`shuffle` 或 `spread`，表示新卡在未复习卡中的位置，默认为 `append`。
-
-**响应:**
-
-```json
-{
-  "data": {
-    "card_id": "n3w4c5a6"
-  },
-  "meta": {
-    "msg": "Card added successfully"
-  }
-}
-```
-
----
-
-### 获取下一张最紧急卡片
+## 5. 获取下一张最紧急卡片
 
 **接口:** `GET /api/decks/{id}/card`
 
 **参数:**
 
-- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
+- `id`: `a1b2c3`（您的卡组 ID）
 
-**响应（无字段名 — 当卡组或词条未配置字段名时，段中 `field` 为空字符串）：**
-
-```json
-{
-  "data": {
-    "card": {
-      "id": "k7m2n9p1",
-      "fact_id": "a3b4c5d6",
-      "template": [[0], [1]],
-      "last_review": 1763269700,
-      "due_date": 1763269800,
-      "hidden": false,
-      "created_at": 1763269600,
-      "front": [{"field": "", "type": "text", "value": "Apple"}],
-      "back": [{"field": "", "type": "text", "value": "苹果"}]
-    },
-    "urgency": 1.0
-  },
-  "meta": {
-    "msg": "Next urgent card retrieved successfully"
-  }
-}
-```
-
-**响应（含字段名）：**
+**响应:**
 
 ```json
 {
@@ -689,15 +468,13 @@
     "card": {
       "id": "xyz12345",
       "fact_id": "x9k2m4np",
-      "template": [[0], [1]],
+      "template_index": 0,
       "last_review": 1763269701,
       "due_date": 1763269702,
       "hidden": false,
-      "created_at": 1763269700,
-      "front": [{"field": "Word", "type": "text", "value": "Apple"}],
-      "back": [{"field": "Translation", "type": "text", "value": "苹果"}]
+      "created_at": 1763269700
     },
-    "urgency": 2.598
+    "urgency": 2598
   },
   "meta": {
     "msg": "Next urgent card retrieved successfully"
@@ -705,64 +482,11 @@
 }
 ```
 
-`front` 和 `back` 为段对象数组。每段包含 **`field`**（标签或空字符串）、**`type`**（`text`、`audio`、`image` 或 `video`）和 **`value`**（文本内容，或音频/图片/视频的**完整媒体 URL**，如 `https://api.wordupx.com:8443/api/media/abc123`）。使用该 URL 并携带相同 `Authorization: Bearer <token>` 即可下载文件，无需根据 id 拼 URL。可直接据此渲染卡片，无需再请求 fact。
-
-**仅正面卡片（背面为空，如 template `[[0], []]`）：**
-
-```json
-{
-  "data": {
-    "card": {
-      "id": "p4q5r6s7",
-      "fact_id": "w1x2y3z4",
-      "template": [[0], []],
-      "last_review": 0,
-      "due_date": 1763269800,
-      "hidden": false,
-      "created_at": 1763269600,
-      "front": [{"field": "Question", "type": "text", "value": "Only front text"}],
-      "back": []
-    },
-    "urgency": 1.0
-  },
-  "meta": { "msg": "Next urgent card retrieved successfully" }
-}
-```
-
-**含音频、图片与视频段的卡片（每种内容类型单独一段；媒体段的 `value` 为完整 URL）：**
-
-```json
-{
-  "data": {
-    "card": {
-      "id": "m8n9o0p1",
-      "fact_id": "f2a3b4c5",
-      "template": [[0, 1], [2, 3]],
-      "last_review": 1763269700,
-      "due_date": 1763269800,
-      "hidden": false,
-      "created_at": 1763269600,
-      "front": [
-        {"field": "Front", "type": "text", "value": "Word"},
-        {"field": "Pronunciation", "type": "audio", "value": "https://api.wordupx.com:8443/api/media/abc123"}
-      ],
-      "back": [
-        {"field": "Picture", "type": "image", "value": "https://api.wordupx.com:8443/api/media/def456"},
-        {"field": "Clip", "type": "video", "value": "https://api.wordupx.com:8443/api/media/vid789"},
-        {"field": "Back", "type": "text", "value": "Translation"}
-      ]
-    },
-    "urgency": 1.2
-  },
-  "meta": { "msg": "Next urgent card retrieved successfully" }
-}
-```
-
 > 请保存 `card.id` — 更新卡片时（步骤 6）需要用到。
 
 ---
 
-### 复习卡片
+## 6. 复习卡片
 
 查看卡片后，您需要根据记忆程度更新复习间隔。
 
@@ -770,7 +494,7 @@
 
 **参数:**
 
-- `id`: `a1b2c3d4e5f6`（您的卡组 ID）
+- `id`: `a1b2c3`（您的卡组 ID）
 
 **请求体:**
 
@@ -847,7 +571,7 @@
 
 ---
 
-### 隐藏卡片
+## 7. 隐藏卡片（可选）
 
 如果您想暂时从复习中隐藏某张卡片：
 
@@ -855,7 +579,7 @@
 
 **参数:**
 
-- `id`: `a1b2c3d4e5f6`
+- `id`: `a1b2c3`
 
 **请求体:**
 
@@ -881,170 +605,8 @@
 
 ---
 
-### 删除卡片
-
-从卡组中永久删除单张卡片。该词条及该词条的其他卡片（如反向卡）不受影响。
-
-**接口：** `DELETE /api/decks/{id}/cards/{cardId}`
-
-**参数：**
-
-- `id`：卡组 ID（如 `a1b2c3d4e5f6`）
-- `cardId`：卡片 ID（来自获取下一张卡片或卡片统计的响应）
-
-**请求体：** 无。
-
-**响应：**
-
-```json
-{
-  "data": {
-    "card_id": "xyz12345"
-  },
-  "meta": {
-    "msg": "Card deleted successfully"
-  }
-}
-```
-
-### 获取卡片统计
-
-**接口：** `GET /api/decks/{id}/cards`
-
-**响应示例：**
-
-```json
-{
-  "data": {
-    "total_cards": 20,
-    "hidden_count": 3,
-    "hidden_facts": [
-      { "id": "h1d2e3n4", "entries": ["Hidden word", "隠れた語"], "fields": ["English", "Japanese"] }
-    ],
-    "orphaned_hidden_cards": 0
-  },
-  "meta": { "msg": "Card stats retrieved successfully" }
-}
-```
-
----
-
-## 5. 媒体（音频 / 图片）
-
-可为词条附加音频、图片和视频。词条字段通过标记 `[audio:id]`、`[image:id]` 和 `[video:id]` 按 ID 引用媒体。
-
-**大小限制：** 图片最大 **5 MB**；音频与视频各最大 **200 MB**。可通过环境变量覆盖：`MEDIA_MAX_SIZE_IMAGE`、`MEDIA_MAX_SIZE_VIDEO`、`MEDIA_MAX_SIZE_AUDIO`。
-
-**格式与转换：** 支持的输入：图片（JPEG、PNG、GIF、HEIC、HEIF、WebP），音频（MPEG/MP3、WAV、OGG、MP4/AAC），视频（MP4、QuickTime、WebM）。仅 **PNG、HEIC、HEIF** 会转换为 WebP，**WAV** 会转换为 AAC；其余格式原样存储。下载时返回存储后的文件（二进制）。
-
-### 上传媒体
-
-**接口：** `POST /api/media` — multipart/form-data。
-
-| 字段         | 必填 | 说明 |
-| ------------ | ---- | ---- |
-| `file`       | 是   | 媒体文件（图片、音频或视频）。 |
-| `client_id`  | 否   | 客户端生成的 ID，用于幂等上传；若该用户下该媒体已存在，则返回 201 及已有记录。 |
-
-**响应：**
-
-```json
-{
-  "data": {
-    "id": "abc1234def0",
-    "owner": "swagger",
-    "filename": "pronunciation.mp3",
-    "mime": "audio/mpeg",
-    "size": 51200,
-    "checksum": "sha256:e3b0c44298fc1c149afbf4c8996fb924",
-    "created_at": 1704067200
-  },
-  "meta": { "msg": "media uploaded" }
-}
-```
-
-### 列出媒体
-
-**接口：** `GET /api/media` — 返回当前用户的媒体（分页）。
-
-| 查询参数   | 说明 |
-| ---------- | ---- |
-| `since`    | 可选。Unix 时间戳；仅返回该时间之后创建的媒体。 |
-| `limit`    | 可选。每页条数（默认 200，最大 1000）。 |
-| `offset`   | 可选。跳过条数（默认 0）。 |
-
-**响应：**
-
-```json
-{
-  "data": [
-    {
-      "id": "abc1234def0",
-      "owner": "swagger",
-      "filename": "pronunciation.mp3",
-      "mime": "audio/mpeg",
-      "size": 51200,
-      "checksum": "sha256:e3b0c44298fc1c149afbf4c8996fb924",
-      "created_at": 1704067200
-    }
-  ],
-  "meta": { "count": 1, "has_more": false }
-}
-```
-
-### 获取媒体元数据
-
-**接口：** `GET /api/media/{id}/meta`
-
-仅返回元数据（id、owner、filename、mime、size、checksum、created_at），不含文件体。
-
-### 下载媒体
-
-**接口：** `GET /api/media/{id}`
-
-按 ID 返回用户拥有的媒体文件（二进制）。需在请求头中携带 `Authorization: Bearer <token>`。响应头包含 `Content-Type`、`Content-Length` 和 `ETag`（与 `checksum` 一致）。请求头中携带 `If-None-Match: <ETag>` 可在文件未变更时获得 `304 Not Modified`。**获取下一张卡片** 接口会在音频/图片/视频段的 `value` 中返回完整 URL（如 `https://api.wordupx.com:8443/api/media/{id}`）；使用该 URL 并携带相同认证头即可加载文件。
-
-### 删除媒体
-
-**接口：** `DELETE /api/media/{id}`
-
-**响应：**
-
-```json
-{
-  "data": { "msg": "media deleted" }
-}
-```
-
-### 列出或查询共享媒体（开发中）
-
-**接口：** `GET /api/media/shared` — 列出共享发音资源；可选查询参数 `?word=...&lang=...` 进行查询。
-
-### 下载共享媒体（开发中）
-
-**接口：** `GET /api/media/shared/{id}` — 按 ID 下载共享媒体文件。
-
-### 管理端共享媒体（开发中）
-
-**接口：** `POST /api/admin/media/shared`（上传）、`DELETE /api/admin/media/shared/{id}`（删除）。仅管理端。
-
-### 在词条中使用媒体（开发中）
-
-在 `entries` 中加入标记，例如 `["Word", "[audio:abc123]", "[image:def456]", "[video:vid789]", "Translation"]`。可选用 `template` 指定每词条的正/背面布局；省略则使用默认（正面第一条、背面其余）。仅以纯文本展示词条时（如列表中），界面显示为 `audio:id`、`image:id`、`video:id`（无方括号）。存储与 API 使用 `[type:id]`。
-
-完整设计（上传、删除、展示、同步）见 **[媒体上传设计文档](../design-doc/media-upload.md)**。
-
----
-
-## 响应示例速查
-
-上述各节均包含完整 JSON 示例。接口与响应结构对应关系与 [Response examples reference](QUICKSTART.md#response-examples-reference)（英文版）一致，此处不重复列表。
-
----
-
 ## 后续步骤
 
 - 重复步骤 5-6 继续复习卡片
-- **标签系统** — 用标签管理卡组与词条（规划中）
-- **离线同步** — 恢复联网后同步数据（规划中）
-- **本地存储** — 缓存卡组与卡片供离线使用（规划中）
+- 创建更多不同字段配置的卡组
+- 在 Swagger UI 中探索其他接口

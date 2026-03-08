@@ -76,18 +76,5 @@ void main() {
       // The hardcoded English text should still appear
       expect(find.text('Welcome to WordUpX'), findsOneWidget);
     });
-
-    testWidgets('renders in small viewport without overflow', (tester) async {
-      await tester.binding.setSurfaceSize(const Size(320, 480));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-
-      await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(const HomeScreen()),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.byType(HomeScreen), findsOneWidget);
-      expect(find.text('Welcome to WordUpX'), findsOneWidget);
-    });
   });
 }

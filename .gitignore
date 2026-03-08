@@ -58,9 +58,9 @@ app.*.map.json
 /android/app/release
 /frontend/ios/Podfile.lock
 
-# Debug logs and dev binaries at repo root (run.sh, dev-run.sh write to logs/; folder kept via logs/.gitkeep)
-logs/*
-!logs/.gitkeep
+# Go compiled binaries (dev-run.sh, run.sh)
+backend-api/wordupx
+backend-api/backend-api
 
 # Design docs (English only, not tracked)
 docs/design-doc/

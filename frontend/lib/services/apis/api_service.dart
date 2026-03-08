@@ -8,6 +8,8 @@ import '../../providers/auth_provider.dart';
 class ApiService {
   static String? _token;
 
+  static String get authorization => _token ?? '';
+
   /// 初始化时加载 token
   static Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -32,13 +34,9 @@ class ApiService {
   static Future<ResBaseModel?> post(
     String endpoint, {
     Map<String, dynamic>? body,
-    Map<String, String>? pathParams,
   }) async {
-    final response = await dioClient.post(
-      endpoint,
-      params: body,
-      pathParams: pathParams,
-    );
+    final response = await dioClient.post(endpoint, params: body);
+
     return response;
   }
 
@@ -54,13 +52,8 @@ class ApiService {
   static Future<ResBaseModel?> get(
     String endpoint, {
     Map<String, String>? pathParams,
-    Map<String, dynamic>? queryParams,
   }) async {
-    final response = await dioClient.get(
-      endpoint,
-      pathParams: pathParams,
-      params: queryParams,
-    );
+    final response = await dioClient.get(endpoint, pathParams: pathParams);
     return response;
   }
 
@@ -96,5 +89,9 @@ class ApiService {
       // 忽略错误
     }
     providerContainer.read(isLoginProvider.notifier);
+  }
+
+  static Future<String?> downloadFile(String audioUrl, String path) async {
+    return dioClient.downLoadFile(audioUrl, path, (value) {}, () {});
   }
 }

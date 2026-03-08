@@ -22,10 +22,10 @@ class EditFactNotifier extends Notifier {
   @override
   build() {
     final deck = ref.watch(deckProvider);
-    final fact = ref.read(cardProvider(deck)).cardDetail?.card.fact;
+    final fact = ref.read(cardProvider(deck)).cardDetail?.card;
     if (fact != null) {
-      questionController.text = fact.fields.first;
-      answerController.text = fact.fields.last;
+      questionController.text = fact.front.first.value;
+      answerController.text = fact.back.last.value;
     }
     ref.onDispose(() {
       answerController.dispose();
@@ -35,12 +35,12 @@ class EditFactNotifier extends Notifier {
 
   Future<bool> updateFact() async {
     final deck = ref.read(deckProvider);
-    final fact = ref.read(cardProvider(deck)).cardDetail?.card.fact;
+    final fact = ref.read(cardProvider(deck)).cardDetail?.card;
     final facts = [questionController.text, answerController.text];
     final res = await CardService.updateFact(deck.id, fact!.id, facts);
     bool success = res?.isSuccess == true;
     if (success) {
-      ref.read(cardProvider(deck).notifier).refreshFact();
+      ref.read(cardProvider(deck).notifier).getCardDetail();
     }
     return success;
   }

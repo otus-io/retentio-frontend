@@ -20,7 +20,6 @@ echo ""
 # Detect which areas have staged changes
 BACKEND_CHANGED=$(git diff --cached --name-only -- 'backend-api/' | head -1)
 FRONTEND_CHANGED=$(git diff --cached --name-only -- 'frontend/' | head -1)
-WEBAPP_CHANGED=$(git diff --cached --name-only -- 'webapp/' | head -1)
 # Exclude auto-generated swagger.yaml from YAML lint
 YAML_FILES=$(git diff --cached --name-only --diff-filter=ACM -- '*.yml' '*.yaml' | grep -v 'backend-api/docs/swagger.yaml' || true)
 MD_FILES=$(git diff --cached --name-only --diff-filter=ACM -- '*.md' '*.mdc' || true)
@@ -127,7 +126,7 @@ if [ -n "$BACKEND_CHANGED" ]; then
     # --- golangci-lint ---
     echo "🔎 Running golangci-lint..."
     if command -v golangci-lint &> /dev/null; then
-        if (cd backend-api && GOFLAGS="-buildvcs=false" golangci-lint run ./...); then
+        if (cd backend-api && golangci-lint run ./...); then
             echo -e "${GREEN}  ✓ golangci-lint OK${NC}"
         else
             echo -e "${RED}  ✗ golangci-lint found issues${NC}"
@@ -205,36 +204,9 @@ if [ -n "$FRONTEND_CHANGED" ]; then
 fi
 
 # =============================================================================
-# Webapp checks (only if webapp files changed)
-# =============================================================================
-if [ -n "$WEBAPP_CHANGED" ]; then
-    echo -e "${YELLOW}━━━ Webapp Checks ━━━${NC}"
-
-    # --- TypeScript type check ---
-    echo "🔧 Checking TypeScript types..."
-    if (cd webapp && npx tsc --noEmit); then
-        echo -e "${GREEN}  ✓ TypeScript OK${NC}"
-    else
-        echo -e "${RED}  ✗ TypeScript errors found${NC}"
-        FAILED=1
-    fi
-
-    # --- Vitest ---
-    echo "🧪 Running webapp tests..."
-    if (cd webapp && npm run test:run); then
-        echo -e "${GREEN}  ✓ Webapp tests passed${NC}"
-    else
-        echo -e "${RED}  ✗ Webapp tests failed${NC}"
-        FAILED=1
-    fi
-
-    echo ""
-fi
-
-# =============================================================================
 # Final result
 # =============================================================================
-if [ -z "$BACKEND_CHANGED" ] && [ -z "$FRONTEND_CHANGED" ] && [ -z "$WEBAPP_CHANGED" ] && [ -z "$YAML_FILES" ] && [ -z "$MD_FILES" ]; then
+if [ -z "$BACKEND_CHANGED" ] && [ -z "$FRONTEND_CHANGED" ] && [ -z "$YAML_FILES" ] && [ -z "$MD_FILES" ]; then
     echo -e "${GREEN}No backend, frontend, or YAML changes — skipping checks.${NC}"
 fi
 

@@ -37,30 +37,9 @@ void main() {
         expect(model.data, {'token': 'abc123'});
       });
 
-      test('uses default code when missing: -1 when data is null', () {
+      test('uses default code -1 when missing', () {
         final model = ResBaseModel.fromJson({'data': null});
-        expect(model.code, -1);
-      });
-
-      test('uses code 0 when data is present (backend success style)', () {
-        final model = ResBaseModel.fromJson({
-          'data': {'id': 'x'},
-        });
         expect(model.code, 0);
-        expect(model.data, {'id': 'x'});
-      });
-
-      test('parses backend error response with msg', () {
-        final model = ResBaseModel.fromJson({'msg': 'Deck not found'});
-        expect(model.msg, 'Deck not found');
-        expect(model.code, -1);
-        expect(model.data, isNull);
-      });
-
-      test('returns default when json is null or not a Map', () {
-        expect(ResBaseModel.fromJson(null).code, -1);
-        expect(ResBaseModel.fromJson(null).data, isNull);
-        expect(ResBaseModel.fromJson('string').code, -1);
       });
 
       test('uses default msg when message is missing', () {

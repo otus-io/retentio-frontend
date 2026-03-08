@@ -7,12 +7,8 @@ import 'package:wordupx/extensions/widget_extension.dart';
 import 'package:wordupx/l10n/app_localizations.dart';
 import 'package:wordupx/models/deck.dart';
 import 'package:wordupx/screen/deck/providers/card_provider.dart';
-import 'package:wordupx/screen/deck/providers/edit_fact_provider.dart';
-import 'package:wordupx/screen/deck/widgets/edit_fact_widget.dart';
+import 'package:wordupx/screen/deck/widgets/card_widget.dart';
 import 'package:wordupx/screen/deck/widgets/flash_card/flash_card.dart';
-
-import '../../providers/loading_state_provider.dart';
-import '../../widgets/common_bottom_sheet.dart';
 
 class DeckLearnScreen extends ConsumerStatefulWidget {
   final Deck deck;
@@ -39,23 +35,23 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
               backgroundColor: theme.colorScheme.surface,
             ),
             itemBuilder: (context) => [
-              PullDownMenuItem(
-                title: 'Edit Fact',
-                onTap: () {
-                  showCommonBottomSheet(
-                    context: context,
-                    initialChildSize: 0.4,
-                    minChildSize: 0.3,
-                    maxChildSize: 0.5,
-                    title: 'Edit Fact',
-                    child: ProviderScope(
-                      overrides: [deckProvider.overrideWithValue(widget.deck)],
-                      child: EditFactWidget(deck: widget.deck),
-                    ),
-                  );
-                },
-                icon: LucideIcons.pencil,
-              ),
+              // PullDownMenuItem(
+              //   title: 'Edit Fact',
+              //   onTap: () {
+              //     showCommonBottomSheet(
+              //       context: context,
+              //       initialChildSize: 0.4,
+              //       minChildSize: 0.3,
+              //       maxChildSize: 0.5,
+              //       title: 'Edit Fact',
+              //       child: ProviderScope(
+              //         overrides: [deckProvider.overrideWithValue(widget.deck)],
+              //         child: EditFactWidget(deck: widget.deck),
+              //       ),
+              //     );
+              //   },
+              //   icon: LucideIcons.pencil,
+              // ),
               PullDownMenuItem(
                 title: 'Hide Card',
                 onTap: () async {
@@ -165,22 +161,13 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               FlashCard(
+                height: context.width - 48 - 46,
                 flashCardController: ref
                     .read(cardProvider(widget.deck).notifier)
                     .flashCardController,
                 width: double.infinity,
-                frontWidget: _buildCardFace(
-                  context,
-                  card.card.front,
-                  'Question',
-                  Colors.blue,
-                ),
-                backWidget: _buildCardFace(
-                  context,
-                  card.card.back,
-                  'Answer',
-                  Colors.green,
-                ),
+                frontWidget: CardWidget(deck: widget.deck, isFront: true),
+                backWidget: CardWidget(deck: widget.deck, isFront: false),
                 onFlip: (value) {
                   ref
                       .read(cardProvider(widget.deck).notifier)
@@ -199,50 +186,6 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
           child: _buildBottomButtons(theme, loc),
         ),
       ],
-    );
-  }
-
-  Widget _buildCardFace(
-    BuildContext context,
-    String content,
-    String label,
-    Color color,
-  ) {
-    final loadingState = ref.watch(
-      cardProvider(widget.deck).select((value) => value.loadingState),
-    );
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 200),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            loadingState == LoadingState.initial ? '' : content,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -269,50 +212,59 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
             return Column(
               spacing: 8,
               children: [
-                Consumer(
-                  builder: (context, ref, child) {
-                    final interval = ref.watch(
-                      cardProvider(
-                        widget.deck,
-                      ).select((value) => value.selectedInterval),
-                    );
-                    final scope = ref.read(
-                      cardProvider(
-                        widget.deck,
-                      ).notifier.select((value) => value.scope),
-                    );
-                    return Row(
-                      children: [
-                        Text(
-                          'Easy',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                if (!showAnswer)
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final interval = ref.watch(
+                        cardProvider(
+                          widget.deck,
+                        ).select((value) => value.selectedInterval),
+                      );
+                      final scope = ref.read(
+                        cardProvider(
+                          widget.deck,
+                        ).notifier.select((value) => value.scope),
+                      );
+                      var label = '${(interval).ceil() ~/ 60}m';
+
+                      ///超过 60m 就可以显示 1h （小时）， 超过 24 小时显示 1d
+                      if (interval > 24 * 60 * 60) {
+                        label = '${(interval ~/ 60 / 60 / 24).ceil()}d';
+                      } else if (interval > 60 * 60) {
+                        label = '${(interval ~/ 60 / 60).toStringAsFixed(1)}h';
+                      }
+                      return Row(
+                        children: [
+                          Text(
+                            'Hard',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                        Slider(
-                          value: interval.ceilToDouble(),
-                          min: scope.first.roundToDouble(),
-                          max: scope.last.roundToDouble(),
-                          divisions: 100,
-                          label: '${(interval).ceil() ~/ 60}m',
-                          onChanged: (double value) {
-                            ref
-                                .read(cardProvider(widget.deck).notifier)
-                                .selectInterval(value);
-                          },
-                        ).expanded(),
-                        Text(
-                          'Hard',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                          Slider(
+                            value: interval.ceilToDouble(),
+                            min: scope.first.roundToDouble(),
+                            max: scope.last.roundToDouble(),
+                            divisions: 100,
+                            label: label,
+                            onChanged: (double value) {
+                              ref
+                                  .read(cardProvider(widget.deck).notifier)
+                                  .selectInterval(value);
+                            },
+                          ).expanded(),
+                          Text(
+                            'Easy',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
+                        ],
+                      );
+                    },
+                  ),
                 ElevatedButton(
                   onPressed: () async {
                     final isFond = ref
