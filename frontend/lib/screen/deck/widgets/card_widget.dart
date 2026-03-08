@@ -10,6 +10,7 @@ import '../../../models/deck.dart';
 import '../providers/card_provider.dart';
 import 'buttons_tabbar/buttons_tab_bar_widget.dart';
 import 'card_audio_widget.dart';
+import 'card_video_widget.dart';
 
 class CardWidget extends ConsumerWidget {
   const CardWidget({super.key, required this.deck, required this.isFront});
@@ -123,6 +124,7 @@ class CardWidget extends ConsumerWidget {
                         audioUrl: e.value,
                         color: color,
                       ),
+                      'video' => CardVideoWidget(url: e.value),
                       'text' => Center(
                         child: Text(
                           e.value,
