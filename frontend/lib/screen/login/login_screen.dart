@@ -1,16 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:wordupx/constants.dart';
-import 'package:wordupx/l10n/app_localizations.dart';
-import 'package:wordupx/main.dart';
-import 'package:wordupx/providers/theme_provider.dart';
+import 'package:retentio/constants.dart';
+import 'package:retentio/l10n/app_localizations.dart';
+import 'package:retentio/main.dart';
+import 'package:retentio/providers/theme_provider.dart';
 
-import 'package:wordupx/providers/locale_provider.dart';
-import 'package:wordupx/screen/register/register_screen.dart';
-import 'package:wordupx/utils/util.dart';
-import 'package:wordupx/widgets/bottom_popup.dart';
-import 'package:wordupx/screen/login/widgets/forgot_password.dart';
+import 'package:retentio/providers/locale_provider.dart';
+import 'package:retentio/screen/register/register_screen.dart';
+import 'package:retentio/utils/util.dart';
+import 'package:retentio/widgets/bottom_popup.dart';
+import 'package:retentio/screen/login/widgets/forgot_password.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../services/apis/auth_service.dart';

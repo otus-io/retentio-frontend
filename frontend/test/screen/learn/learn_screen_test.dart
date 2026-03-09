@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wordupx/screen/learn/learn_screen.dart';
-import 'package:wordupx/services/storage/hydrated_storage.dart';
+import 'package:retentio/screen/learn/learn_screen.dart';
+import 'package:retentio/services/storage/hydrated_storage.dart';
 
 import '../../helpers/in_memory_hydrated_storage.dart';
 import '../../helpers/test_wrapper.dart';

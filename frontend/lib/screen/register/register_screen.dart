@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:wordupx/l10n/app_localizations.dart';
-import 'package:wordupx/utils/util.dart';
+import 'package:retentio/l10n/app_localizations.dart';
+import 'package:retentio/utils/util.dart';
 
 import '../../services/apis/auth_service.dart';
 part 'register_controller.dart';

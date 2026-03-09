@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:wordupx/services/apis/api_service.dart';
-import 'package:wordupx/utils/log.dart';
+import 'package:retentio/services/apis/api_service.dart';
+import 'package:retentio/utils/log.dart';
 
 final audioPlayerProvider = NotifierProvider(
   AudioPlayerNotifier.new,

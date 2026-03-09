@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordupx/models/deck.dart';
-import 'package:wordupx/screen/deck/deck_detail_screen.dart';
+import 'package:retentio/models/deck.dart';
+import 'package:retentio/screen/deck/deck_detail_screen.dart';
 
 import '../../helpers/test_wrapper.dart';
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:wordupx/screen/profile/profile_screen.dart';
+import 'package:retentio/screen/profile/profile_screen.dart';
 
 import '../../helpers/test_wrapper.dart';
 

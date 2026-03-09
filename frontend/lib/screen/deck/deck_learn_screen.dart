@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:pull_down_button/pull_down_button.dart';
-import 'package:wordupx/extensions/context_extension.dart';
-import 'package:wordupx/extensions/widget_extension.dart';
-import 'package:wordupx/l10n/app_localizations.dart';
-import 'package:wordupx/models/deck.dart';
-import 'package:wordupx/screen/deck/providers/card_provider.dart';
-import 'package:wordupx/screen/deck/widgets/card_widget.dart';
-import 'package:wordupx/screen/deck/widgets/flash_card/flash_card.dart';
+import 'package:retentio/extensions/context_extension.dart';
+import 'package:retentio/extensions/widget_extension.dart';
+import 'package:retentio/l10n/app_localizations.dart';
+import 'package:retentio/models/deck.dart';
+import 'package:retentio/screen/deck/providers/card_provider.dart';
+import 'package:retentio/screen/deck/widgets/card_widget.dart';
+import 'package:retentio/screen/deck/widgets/flash_card/flash_card.dart';
 
 class DeckLearnScreen extends ConsumerStatefulWidget {
   final Deck deck;

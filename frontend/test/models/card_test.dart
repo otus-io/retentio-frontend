@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordupx/models/card.dart';
+import 'package:retentio/models/card.dart';
 
 void main() {
   group('CardDetail', () {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordupx/widgets/bottom_popup.dart';
+import 'package:retentio/widgets/bottom_popup.dart';
 
 void main() {
   group('BottomPopup Widget', () {

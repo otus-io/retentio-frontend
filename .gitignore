@@ -59,7 +59,7 @@ app.*.map.json
 /frontend/ios/Podfile.lock
 
 # Go compiled binaries (dev-run.sh, run.sh)
-backend-api/wordupx
+backend-api/retentio
 backend-api/backend-api
 
 # Design docs (English only, not tracked)

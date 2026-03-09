@@ -1,8 +1,8 @@
 // auth_service.dart
-import 'package:wordupx/main.dart';
-import 'package:wordupx/models/res_base_model.dart';
-import 'package:wordupx/providers/auth_provider.dart';
-import 'package:wordupx/services/index.dart';
+import 'package:retentio/main.dart';
+import 'package:retentio/models/res_base_model.dart';
+import 'package:retentio/providers/auth_provider.dart';
+import 'package:retentio/services/index.dart';
 import 'api_service.dart';
 
 class AuthService {

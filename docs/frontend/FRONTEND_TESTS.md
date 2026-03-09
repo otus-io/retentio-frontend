@@ -1,6 +1,6 @@
 # Frontend Tests
 
-Blackbox tests for the Wordupx Flutter frontend. These tests verify the behavior of developer-written code without modifying it. Developers should update their implementation to make tests pass.
+Blackbox tests for the Retentio Flutter frontend. These tests verify the behavior of developer-written code without modifying it. Developers should update their implementation to make tests pass.
 
 ## Running Tests
 

@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordupx/constants.dart';
+import 'package:retentio/constants.dart';
 
 void main() {
   group('constants', () {
-    test('kAppName is Wordupx', () {
-      expect(kAppName, 'Wordupx');
+    test('kAppName is Retentio', () {
+      expect(kAppName, 'Retentio');
     });
   });
 }

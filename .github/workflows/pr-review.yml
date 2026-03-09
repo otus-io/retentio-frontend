@@ -1,0 +1,644 @@
+---
+name: Claude PR Assistant
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+concurrency:
+  group: claude-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # Job 1: Auto-fill PR description (only on opened)
+  summarize:
+    if: github.event.action == 'opened'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Auto-fill PR description
+        uses: actions/github-script@v7
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        with:
+          script: |
+            // --- Preflight ---
+            if (!process.env.ANTHROPIC_API_KEY) {
+              core.setFailed('ANTHROPIC_API_KEY secret is not set.');
+              return;
+            }
+
+            const pull_number = context.payload.pull_request.number;
+            const prTitle = context.payload.pull_request.title;
+            const prBody = context.payload.pull_request.body || '';
+
+            // Skip Claude auto-fill if the PR body has already been filled out (not just the template),
+            // but still update the stats table below.
+            const hasContent = prBody.includes('[x]') ||
+              (prBody.includes('## Description') &&
+               prBody.split('## Description')[1]?.split('##')[0]?.replace(/<!--[\s\S]*?-->/g, '').trim().length > 0);
+            if (hasContent) {
+              console.log('PR body already has content, skipping Claude auto-fill — updating stats only');
+
+              // --- Fetch commits and files for stats ---
+              const { data: commits } = await github.rest.pulls.listCommits({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number,
+                per_page: 100
+              });
+              const { data: files } = await github.rest.pulls.listFiles({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number,
+                per_page: 100
+              });
+
+              const totalCommits = commits.length;
+              const totalFilesChanged = files.length;
+              const totalAdditions = files.reduce((sum, f) => sum + f.additions, 0);
+              const totalDeletions = files.reduce((sum, f) => sum + f.deletions, 0);
+
+              const statsTable = [
+                '| Metric | Count |',
+                '|--------|-------|',
+                `| Commits | ${totalCommits} |`,
+                `| Files changed | ${totalFilesChanged} |`,
+                `| Lines added | +${totalAdditions} |`,
+                `| Lines deleted | -${totalDeletions} |`
+              ].join('\n');
+
+              const overviewRe = /((?:^|\n)## (?:Changes Overview|变更概览)[^\n]*)\n[\s\S]*?(?=\n## |\s*$)/;
+              let updatedBody = prBody;
+              if (overviewRe.test(updatedBody)) {
+                updatedBody = updatedBody.replace(overviewRe, `$1\n\n${statsTable}`);
+              }
+
+              if (updatedBody !== prBody) {
+                await github.rest.pulls.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number,
+                  body: updatedBody
+                });
+                console.log(`PR #${pull_number} stats updated (Claude auto-fill skipped)`);
+              }
+
+              return;
+            }
+
+            // --- Fetch commits ---
+            const { data: commits } = await github.rest.pulls.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number,
+              per_page: 100
+            });
+            const commitMessages = commits.map(c => `- ${c.commit.message}`).join('\n');
+
+            // --- Fetch changed files with diffs ---
+            const SKIP_PATTERNS = [
+              /\.lock$/, /package-lock\.json$/, /yarn\.lock$/,
+              /go\.sum$/, /\.min\.(js|css)$/, /\.generated\./,
+              /\.pb\.go$/, /\/vendor\//, /\/docs\/(docs\.go|swagger\.(json|yaml))$/
+            ];
+            const MAX_DIFF_SIZE = 12000;
+
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number,
+              per_page: 100
+            });
+
+            const reviewable = files.filter(f =>
+              f.patch &&
+              !SKIP_PATTERNS.some(p => p.test(f.filename))
+            );
+
+            let diff = '';
+            for (const file of reviewable) {
+              diff += `=== ${file.filename} (${file.status}, +${file.additions} -${file.deletions}) ===\n${file.patch}\n\n`;
+            }
+            if (diff.length > MAX_DIFF_SIZE) {
+              diff = diff.substring(0, MAX_DIFF_SIZE) + '\n\n... (diff truncated)';
+            }
+
+            // --- Compute PR stats ---
+            const totalAdditions = files.reduce((sum, f) => sum + f.additions, 0);
+            const totalDeletions = files.reduce((sum, f) => sum + f.deletions, 0);
+            const totalFilesChanged = files.length;
+            const totalCommits = commits.length;
+
+            // --- Call Claude ---
+            // Note: Stats table, unchecked boxes, and Guidelines section are handled
+            // programmatically after Claude responds — no need to include them in the prompt.
+            const prompt = [
+              'Auto-fill a PR description. Analyze the title, commits, and diff below.',
+              '',
+              `PR Title: ${prTitle}`,
+              '',
+              'Commits:',
+              commitMessages,
+              '',
+              'Diff:',
+              diff,
+              '',
+              'Return ONLY markdown with these sections (do NOT add any text before the first ## header):',
+              '',
+              '## What type of PR is this?',
+              'Mark applicable types with [x]: feat, fix, docs, refactor, test, ci, chore',
+              '(Use format: - [x] `type` - Description)',
+              '',
+              '## Description',
+              '2-4 sentences on what changed and why.',
+              '',
+              '## Changes Overview',
+              'Output ONLY the section header, nothing else. Do NOT add any table, stats, or text here. CI will inject the stats automatically.',
+              '',
+              '## How Has This Been Tested?',
+              'Mark applicable with [x]: Unit tests, Manual testing, N/A',
+              '(Use format: - [x] Item)',
+              '',
+              '## Checklist',
+              'Mark applicable with [x]: code style, self-review, tests added, tests pass, docs updated',
+              '(Use format: - [x] Item)'
+            ].join('\n');
+
+            let apiResult;
+            try {
+              const resp = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-api-key': process.env.ANTHROPIC_API_KEY,
+                  'anthropic-version': '2023-06-01'
+                },
+                body: JSON.stringify({
+                  model: 'claude-sonnet-4-5-20250929',
+                  max_tokens: 2048,
+                  messages: [{ role: 'user', content: prompt }]
+                })
+              });
+              if (!resp.ok) {
+                const errorText = await resp.text();
+                throw new Error(`HTTP ${resp.status}: ${errorText}`);
+              }
+              apiResult = await resp.json();
+            } catch (e) {
+              core.setFailed(`Claude API request failed: ${e.message}`);
+              return;
+            }
+
+            let body = apiResult.content?.[0]?.text;
+            if (!body) {
+              core.warning('Empty response from Claude API');
+              return;
+            }
+
+            // --- Move any preamble text (before the first ## header) into the Description section ---
+            const firstHeaderIdx = body.search(/^## /m);
+            if (firstHeaderIdx > 0) {
+              const preamble = body.substring(0, firstHeaderIdx).trim();
+              body = body.substring(firstHeaderIdx);
+              if (preamble) {
+                body = body.replace(/(## Description[^\n]*\n)/, `$1\n${preamble}\n`);
+              }
+            }
+
+            // --- Inject Changes Overview stats table ---
+            // Claude is told to leave this section empty; we fill it programmatically.
+            const statsTable = [
+              '| Metric | Count |',
+              '|--------|-------|',
+              `| Commits | ${totalCommits} |`,
+              `| Files changed | ${totalFilesChanged} |`,
+              `| Lines added | +${totalAdditions} |`,
+              `| Lines deleted | -${totalDeletions} |`
+            ].join('\n');
+
+            // Find the Changes Overview section and replace everything between its header
+            // and the next ## section (or end of string) with our stats table.
+            // NOTE: No `m` flag — `$` must only match end-of-string, not end-of-line,
+            // otherwise the non-greedy [\s\S]*? stops too early and causes duplicates.
+            const overviewRe = /((?:^|\n)## (?:Changes Overview|变更概览)[^\n]*)\n[\s\S]*?(?=\n## |\s*$)/;
+            if (overviewRe.test(body)) {
+              body = body.replace(overviewRe, `$1\n\n${statsTable}`);
+            } else {
+              // No section found at all — append before the next likely section
+              const insertPoint = body.search(/\n## (How Has This Been Tested|Checklist)/);
+              const section = `\n\n## Changes Overview\n\n${statsTable}`;
+              if (insertPoint !== -1) {
+                body = body.slice(0, insertPoint) + section + body.slice(insertPoint);
+              } else {
+                body += section;
+              }
+            }
+
+            // --- Remove unchecked checkboxes ---
+            // Keep only checked items ([x]), remove unchecked ones ([ ])
+            body = body.replace(/^- \[ \] .+\n?/gm, '');
+
+            // --- Clean up excessive blank lines left behind ---
+            body = body.replace(/\n{3,}/g, '\n\n').trim();
+
+            // --- Update PR body ---
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number,
+              body
+            });
+
+            console.log(`PR #${pull_number} description auto-filled by Claude`);
+
+  # Job 1b: Update stats table (runs after summarize as a safety net on both opened and synchronize)
+  update-stats:
+    needs: [summarize]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Update Changes Overview stats
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pull_number = context.payload.pull_request.number;
+
+            // --- Fetch commits ---
+            const { data: commits } = await github.rest.pulls.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number,
+              per_page: 100
+            });
+
+            // --- Fetch changed files ---
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number,
+              per_page: 100
+            });
+
+            // --- Compute stats ---
+            const totalCommits = commits.length;
+            const totalFilesChanged = files.length;
+            const totalAdditions = files.reduce((sum, f) => sum + f.additions, 0);
+            const totalDeletions = files.reduce((sum, f) => sum + f.deletions, 0);
+
+            // --- Get current PR body ---
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number
+            });
+
+            let body = pr.body || '';
+            if (!body) {
+              console.log('PR body is empty, skipping stats update');
+              return;
+            }
+
+            // --- Replace stats in the table ---
+            // Match any variation of the Changes Overview section header and replace content.
+            const statsTable = [
+              '| Metric | Count |',
+              '|--------|-------|',
+              `| Commits | ${totalCommits} |`,
+              `| Files changed | ${totalFilesChanged} |`,
+              `| Lines added | +${totalAdditions} |`,
+              `| Lines deleted | -${totalDeletions} |`
+            ].join('\n');
+
+            // NOTE: No `m` flag — `$` must only match end-of-string, not end-of-line.
+            const overviewRe = /((?:^|\n)## (?:Changes Overview|变更概览)[^\n]*)\n[\s\S]*?(?=\n## |\s*$)/;
+            let updated;
+            if (overviewRe.test(body)) {
+              updated = body.replace(overviewRe, `$1\n\n${statsTable}`);
+            } else {
+              console.log('No Changes Overview section found, skipping stats update');
+              return;
+            }
+
+            if (updated === body) {
+              console.log('Stats values unchanged, skipping update');
+              return;
+            }
+
+            // --- Update PR body ---
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number,
+              body: updated
+            });
+
+            console.log(`PR #${pull_number} stats updated: ${totalCommits} commits, ${totalFilesChanged} files, +${totalAdditions} -${totalDeletions}`);
+
+  # Job 2: Code review (runs after update-stats, which itself runs after summarize)
+  review:
+    needs: [update-stats]
+    if: always() && (needs.update-stats.result == 'success' || needs.update-stats.result == 'skipped')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Claude Review with Inline Suggestions
+        uses: actions/github-script@v7
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        with:
+          script: |
+            // --- Preflight check ---
+            if (!process.env.ANTHROPIC_API_KEY) {
+              core.setFailed('ANTHROPIC_API_KEY secret is not set. Add it in Settings > Secrets.');
+              return;
+            }
+
+            // --- Config ---
+            const SKIP_PATTERNS = [
+              /\.lock$/, /package-lock\.json$/, /yarn\.lock$/,
+              /go\.sum$/, /\.min\.(js|css)$/, /\.generated\./,
+              /\.pb\.go$/, /\/vendor\//, /\.sum$/
+            ];
+            const MAX_DIFF_SIZE = 15000;
+            const pull_number = context.payload.pull_request.number;
+            const REVIEW_MARKER = '🤖 Claude Code Review';
+
+            // --- Find existing Claude review comment to update (avoid duplicates) ---
+            let existingCommentId = null;
+            for (let page = 1; !existingCommentId; page++) {
+              const { data: batch } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pull_number,
+                per_page: 100,
+                page
+              });
+              if (batch.length === 0) break;
+              for (const c of batch) {
+                if (c.body && c.body.includes(REVIEW_MARKER)) {
+                  existingCommentId = c.id;
+                  break;
+                }
+              }
+            }
+
+            // Helper: create or update the single Claude review comment
+            async function upsertReviewComment(body) {
+              if (existingCommentId) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existingCommentId,
+                  body
+                });
+                console.log(`Updated existing review comment #${existingCommentId}`);
+              } else {
+                const { data: created } = await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pull_number,
+                  body
+                });
+                existingCommentId = created.id;
+                console.log(`Created new review comment #${created.id}`);
+              }
+            }
+
+            // --- 1. Fetch changed files ---
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number,
+              per_page: 100
+            });
+
+            const reviewable = files.filter(f =>
+              f.patch &&
+              f.status !== 'removed' &&
+              !SKIP_PATTERNS.some(p => p.test(f.filename))
+            );
+
+            if (reviewable.length === 0) {
+              console.log('No reviewable file changes found');
+              return;
+            }
+
+            // --- 2. Parse diffs and annotate with line numbers ---
+            const validLines = {};  // { filename: Set<lineNumber> }
+            let annotatedDiff = '';
+
+            for (const file of reviewable) {
+              validLines[file.filename] = new Set();
+              const patchLines = file.patch.split('\n');
+              const annotated = [];
+              let newLine = 0;
+
+              for (const pl of patchLines) {
+                const hunk = pl.match(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+                if (hunk) {
+                  newLine = parseInt(hunk[1]);
+                  annotated.push(pl);
+                  continue;
+                }
+                if (pl.startsWith('+')) {
+                  validLines[file.filename].add(newLine);
+                  annotated.push(`[L${newLine}] ${pl}`);
+                  newLine++;
+                } else if (pl.startsWith('-')) {
+                  annotated.push(pl);
+                } else {
+                  validLines[file.filename].add(newLine);
+                  annotated.push(`[L${newLine}]  ${pl}`);
+                  newLine++;
+                }
+              }
+
+              annotatedDiff += `=== ${file.filename} (${file.status}) ===\n${annotated.join('\n')}\n\n`;
+            }
+
+            if (annotatedDiff.length > MAX_DIFF_SIZE) {
+              annotatedDiff = annotatedDiff.substring(0, MAX_DIFF_SIZE) + '\n\n... (diff truncated)';
+            }
+
+            // --- 3. Call Claude API ---
+            const prompt = [
+              'You are an expert code reviewer. Your primary job is to provide a clear, useful change summary. Only flag inline suggestions for actual bugs.',
+              '',
+              'Each changed line is annotated with [L<number>] showing its line number in the new version of the file.',
+              'Lines prefixed with + are additions, - are deletions, and others are context.',
+              '',
+              'Respond with a JSON object in this exact format:',
+              '{',
+              '  "summary": "Structured bullet-point summary: what files changed, what behavior changed, why.",',
+              '  "suggestions": [',
+              '    {',
+              '      "file": "path/to/file.ext",',
+              '      "line": 42,',
+              '      "end_line": 43,',
+              '      "suggested_code": "your improved replacement code",',
+              '      "reason": "Concise explanation of the bug"',
+              '    }',
+              '  ]',
+              '}',
+              '',
+              'Important rules:',
+              '- The summary is the MOST IMPORTANT part. Make it detailed and useful. Use markdown bullet points.',
+              '- ONLY add inline suggestions for REAL BUGS: crashes, data corruption, security vulnerabilities, logic errors that produce wrong results',
+              '- Do NOT suggest style changes, naming preferences, minor refactors, or "nice to have" improvements',
+              '- Do NOT suggest adding error handling unless the missing handling would cause a crash or data loss',
+              '- When in doubt, do NOT add a suggestion. Fewer suggestions = better. An empty suggestions array is perfectly fine.',
+              '- Use the [L<number>] annotations for line/end_line values',
+              '- For single-line changes: set line == end_line',
+              '- For multi-line changes: line is the first line, end_line is the last line',
+              '- Only target added (+) or context lines, never removed (-) lines',
+              '- Return ONLY valid JSON, no markdown fences, no extra text',
+              '',
+              'Here is the diff:',
+              '',
+              annotatedDiff
+            ].join('\n');
+
+            let apiResult;
+            try {
+              const resp = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-api-key': process.env.ANTHROPIC_API_KEY,
+                  'anthropic-version': '2023-06-01'
+                },
+                body: JSON.stringify({
+                  model: 'claude-sonnet-4-5-20250929',
+                  max_tokens: 4096,
+                  messages: [{ role: 'user', content: prompt }]
+                })
+              });
+              if (!resp.ok) {
+                const errorText = await resp.text();
+                throw new Error(`HTTP ${resp.status}: ${errorText}`);
+              }
+              apiResult = await resp.json();
+            } catch (e) {
+              core.setFailed(`Claude API request failed: ${e.message}`);
+              return;
+            }
+
+            const reviewText = apiResult.content?.[0]?.text;
+            if (!reviewText) {
+              core.warning('Empty response from Claude API');
+              console.log('API response:', JSON.stringify(apiResult, null, 2));
+              return;
+            }
+
+            // --- 4. Parse JSON response ---
+            let review;
+            try {
+              const cleaned = reviewText
+                .replace(/^```(?:json)?\s*/m, '')
+                .replace(/```\s*$/m, '')
+                .trim();
+              review = JSON.parse(cleaned);
+            } catch (e) {
+              console.log('JSON parse failed, posting as plain comment');
+              await upsertReviewComment(`## ${REVIEW_MARKER}\n\n${reviewText}`);
+              return;
+            }
+
+            // --- 5. Build inline review comments ---
+            const comments = [];
+            const skipped = [];
+
+            for (const s of (review.suggestions || [])) {
+              const fileLines = validLines[s.file];
+              if (!fileLines) {
+                skipped.push(`${s.file}: file not in diff`);
+                continue;
+              }
+
+              const endLine = parseInt(s.end_line || s.line);
+              const startLine = parseInt(s.line);
+
+              if (isNaN(startLine) || isNaN(endLine)) {
+                skipped.push(`${s.file}: invalid line numbers ${s.line}-${s.end_line}`);
+                continue;
+              }
+
+              if (!fileLines.has(endLine)) {
+                skipped.push(`${s.file}:${endLine}: line not in diff`);
+                continue;
+              }
+
+              const body = s.suggested_code != null
+                ? `${s.reason}\n\n\`\`\`suggestion\n${s.suggested_code}\n\`\`\``
+                : s.reason;
+
+              const comment = {
+                path: s.file,
+                line: endLine,
+                side: 'RIGHT',
+                body
+              };
+
+              if (startLine !== endLine && !isNaN(startLine)) {
+                comment.start_line = startLine;
+                comment.start_side = 'RIGHT';
+              }
+
+              comments.push(comment);
+            }
+
+            if (skipped.length > 0) {
+              console.log('Skipped suggestions:', skipped);
+            }
+
+            // --- 6. Submit review ---
+            const summary = review.summary || 'Review complete.';
+            const badge = comments.length > 0
+              ? `\n\n📝 **${comments.length} inline suggestion${comments.length !== 1 ? 's' : ''}** posted below.`
+              : '\n\n✅ No issues found — the code looks good!';
+            const reviewBody = `## ${REVIEW_MARKER}\n\n${summary}${badge}`;
+
+            // Always upsert the summary as a single issue comment (avoids duplicates)
+            await upsertReviewComment(reviewBody);
+
+            // Post inline suggestions as a pull request review (separate from the summary comment)
+            if (comments.length > 0) {
+              try {
+                await github.rest.pulls.createReview({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number,
+                  event: 'COMMENT',
+                  body: '',
+                  comments
+                });
+                console.log(`Inline review posted with ${comments.length} suggestions`);
+              } catch (e) {
+                console.log(`Batch review failed (${e.message}), falling back to individual comments...`);
+                for (const c of comments) {
+                  try {
+                    await github.rest.pulls.createReviewComment({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      pull_number,
+                      commit_id: context.payload.pull_request.head.sha,
+                      ...c
+                    });
+                  } catch (ce) {
+                    console.log(`Inline comment failed on ${c.path}:${c.line}: ${ce.message}`);
+                  }
+                }
+              }
+            }

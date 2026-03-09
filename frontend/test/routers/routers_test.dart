@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordupx/routers/routers.dart';
+import 'package:retentio/routers/routers.dart';
 
 void main() {
   group('AppRoutes', () {

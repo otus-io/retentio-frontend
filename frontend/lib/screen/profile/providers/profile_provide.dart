@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:wordupx/models/user.dart';
-import 'package:wordupx/services/apis/api_service.dart';
+import 'package:retentio/models/user.dart';
+import 'package:retentio/services/apis/api_service.dart';
 
 import '../../../services/index.dart';
 

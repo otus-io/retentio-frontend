@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:wordupx/extensions/context_extension.dart';
-import 'package:wordupx/extensions/widget_extension.dart';
-import 'package:wordupx/screen/learn/providers/create_deck_provider.dart';
+import 'package:retentio/extensions/context_extension.dart';
+import 'package:retentio/extensions/widget_extension.dart';
+import 'package:retentio/screen/learn/providers/create_deck_provider.dart';
 
 import 'loading_state_widget.dart';
 

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:wordupx/l10n/app_localizations.dart';
-import 'package:wordupx/pre_config.dart';
-import 'package:wordupx/providers/auth_provider.dart';
-import 'package:wordupx/routers/app_pages.dart';
+import 'package:retentio/l10n/app_localizations.dart';
+import 'package:retentio/pre_config.dart';
+import 'package:retentio/providers/auth_provider.dart';
+import 'package:retentio/routers/app_pages.dart';
 
 import 'extensions/context_extension.dart';
 import 'providers/locale_provider.dart';

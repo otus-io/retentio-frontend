@@ -1,4 +1,4 @@
-import 'package:wordupx/services/storage/hydrated_storage.dart';
+import 'package:retentio/services/storage/hydrated_storage.dart';
 
 /// In-memory implementation of [HydratedStorage] for testing.
 class InMemoryHydratedStorage implements HydratedStorage {

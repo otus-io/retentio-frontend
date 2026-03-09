@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordupx/screen/login/widgets/forgot_password.dart';
+import 'package:retentio/screen/login/widgets/forgot_password.dart';
 
 import '../../../helpers/test_wrapper.dart';
 

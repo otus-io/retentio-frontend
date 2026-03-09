@@ -8,7 +8,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 
-import 'package:wordupx/utils/log.dart';
+import 'package:retentio/utils/log.dart';
 
 import '../models/res_base_model.dart';
 import 'apis/api_service.dart';

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================================
-# Setup script to install git hooks for WordUpX
+# Setup script to install git hooks for Retentio Frontend
 # Run this once after cloning the repo: ./utils/scripts/setup-hooks.sh
 # =============================================================================
 
@@ -16,11 +16,6 @@ cp "$SCRIPT_DIR/pre-commit" "$HOOKS_DIR/pre-commit"
 chmod +x "$HOOKS_DIR/pre-commit"
 echo "✓ pre-commit hook installed"
 
-# Copy pre-push hook
-cp "$SCRIPT_DIR/pre-push" "$HOOKS_DIR/pre-push"
-chmod +x "$HOOKS_DIR/pre-push"
-echo "✓ pre-push hook installed"
-
 echo ""
 echo "Done. Hooks are installed in .git/hooks/"
-echo "To skip hooks temporarily: git commit --no-verify / git push --no-verify"
+echo "To skip hooks temporarily: git commit --no-verify"

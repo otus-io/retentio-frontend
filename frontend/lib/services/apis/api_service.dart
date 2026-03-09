@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wordupx/models/res_base_model.dart';
-import 'package:wordupx/services/index.dart';
+import 'package:retentio/models/res_base_model.dart';
+import 'package:retentio/services/index.dart';
 
 import '../../main.dart';
 import '../../providers/auth_provider.dart';

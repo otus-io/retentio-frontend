@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordupx/utils/index.dart';
+import 'package:retentio/utils/index.dart';
 
 void main() {
   group('DebounceUtil', () {

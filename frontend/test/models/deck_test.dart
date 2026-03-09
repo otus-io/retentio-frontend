@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordupx/models/deck.dart';
+import 'package:retentio/models/deck.dart';
 
 void main() {
   group('DeckOwner', () {

@@ -6,22 +6,25 @@ alwaysApply: true
 # Git Workflow
 
 ## Branch Protection
+
 - **Never push directly to `main`** — all changes must go through a pull request
-- A pre-push hook enforces this locally; GitHub branch protection enforces it remotely
+- GitHub branch protection enforces this remotely
 - If you need to commit, always create a feature branch first
 
 ## Branch Naming
-- Use descriptive branch names: `<scope>-<feature>` (e.g., `backend-card-rescheduling`, `frontend-auth-flow`)
+
+- Use descriptive branch names: `<scope>-<feature>` (e.g., `frontend-auth-flow`, `deck-card-ui`)
 - Keep branch names lowercase with hyphens
 
 ## Workflow
+
 1. Create a feature branch from `main`: `git checkout -b <branch-name>`
 2. Make commits on the feature branch (pre-commit hook runs checks)
 3. Push the branch: `git push -u origin <branch-name>`
-4. Create a PR: `gh pr create --repo wordupx/wordupx --base main`
+4. Create a PR against `main`
 5. Squash and merge after review and CI passes
 
 ## Hooks
+
 - **pre-commit**: Runs formatting, linting, and tests for changed files
-- **pre-push**: Blocks direct pushes to `main`
 - Install hooks: `./utils/scripts/setup-hooks.sh`

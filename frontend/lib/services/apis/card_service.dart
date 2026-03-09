@@ -1,7 +1,7 @@
-import 'package:wordupx/models/card.dart';
-import 'package:wordupx/models/res_base_model.dart';
-import 'package:wordupx/services/apis/api_service.dart';
-import 'package:wordupx/services/index.dart';
+import 'package:retentio/models/card.dart';
+import 'package:retentio/models/res_base_model.dart';
+import 'package:retentio/services/apis/api_service.dart';
+import 'package:retentio/services/index.dart';
 
 class CardService {
   /// 获取下一张需要学习的卡片

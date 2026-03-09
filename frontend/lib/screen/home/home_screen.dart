@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:wordupx/l10n/app_localizations.dart';
+import 'package:retentio/l10n/app_localizations.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -21,7 +21,7 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Welcome to WordUpX',
+              'Welcome to Retentio',
               style: Theme.of(
                 context,
               ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),

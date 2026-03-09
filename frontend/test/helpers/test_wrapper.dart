@@ -3,10 +3,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wordupx/l10n/app_localizations.dart';
-import 'package:wordupx/services/index.dart';
-import 'package:wordupx/services/storage/hydrated_storage.dart';
-import 'package:wordupx/utils/log.dart';
+import 'package:retentio/l10n/app_localizations.dart';
+import 'package:retentio/services/index.dart';
+import 'package:retentio/services/storage/hydrated_storage.dart';
+import 'package:retentio/utils/log.dart';
 
 import 'path_provider_mock.dart';
 import 'shared_preferences_mock.dart';

@@ -1,7 +1,7 @@
 import 'package:path_provider/path_provider.dart';
-import 'package:wordupx/services/apis/api_service.dart';
-import 'package:wordupx/services/index.dart';
-import 'package:wordupx/services/storage/hydrated_storage.dart';
+import 'package:retentio/services/apis/api_service.dart';
+import 'package:retentio/services/index.dart';
+import 'package:retentio/services/storage/hydrated_storage.dart';
 
 /// Created on 2026/2/5
 /// Description: 预配置类，用于初始化应用所需的全局配置和服务。

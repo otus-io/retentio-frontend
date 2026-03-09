@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:wordupx/providers/loading_state_provider.dart';
+import 'package:retentio/providers/loading_state_provider.dart';
 
 import '../../../main.dart';
 import '../../../mixins/notifier_mixin.dart';

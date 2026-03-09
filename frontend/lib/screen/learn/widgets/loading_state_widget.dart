@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:wordupx/providers/loading_state_provider.dart';
+import 'package:retentio/providers/loading_state_provider.dart';
 
 class LoadingStateWidget extends ConsumerWidget {
   const LoadingStateWidget({super.key, required this.child, this.size});

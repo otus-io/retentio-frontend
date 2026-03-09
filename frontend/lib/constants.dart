@@ -1,1 +1,1 @@
-const String kAppName = 'Wordupx';
+const String kAppName = 'Retentio';

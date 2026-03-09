@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
-import 'package:wordupx/widgets/common_refresher.dart';
+import 'package:retentio/widgets/common_refresher.dart';
 
 void main() {
   group('CommonRefresher Widget', () {

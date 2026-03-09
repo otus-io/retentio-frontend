@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:wordupx/providers/theme_provider.dart';
-import 'package:wordupx/services/storage/hydrated_storage.dart';
+import 'package:retentio/providers/theme_provider.dart';
+import 'package:retentio/services/storage/hydrated_storage.dart';
 import '../helpers/in_memory_hydrated_storage.dart';
 
 void main() {

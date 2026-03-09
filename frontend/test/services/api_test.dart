@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordupx/services/index.dart';
+import 'package:retentio/services/index.dart';
 
 void main() {
   group('Api', () {

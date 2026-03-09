@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordupx/screen/home/home_screen.dart';
+import 'package:retentio/screen/home/home_screen.dart';
 
 import '../../helpers/test_wrapper.dart';
 
@@ -21,7 +21,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Welcome to WordUpX'), findsOneWidget);
+      expect(find.text('Welcome to Retentio'), findsOneWidget);
     });
 
     testWidgets('displays instruction text', (tester) async {
@@ -74,7 +74,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // The hardcoded English text should still appear
-      expect(find.text('Welcome to WordUpX'), findsOneWidget);
+      expect(find.text('Welcome to Retentio'), findsOneWidget);
     });
   });
 }

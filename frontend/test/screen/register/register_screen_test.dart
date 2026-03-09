@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordupx/screen/register/register_screen.dart';
+import 'package:retentio/screen/register/register_screen.dart';
 
 import '../../helpers/test_wrapper.dart';
 

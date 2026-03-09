@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wordupx/screen/login/login_screen.dart';
-import 'package:wordupx/services/storage/hydrated_storage.dart';
+import 'package:retentio/screen/login/login_screen.dart';
+import 'package:retentio/services/storage/hydrated_storage.dart';
 
 import '../../helpers/in_memory_hydrated_storage.dart';
 import '../../helpers/test_wrapper.dart';
@@ -29,7 +29,7 @@ void main() {
       await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
       await tester.pumpAndSettle();
 
-      expect(find.text('Wordupx'), findsOneWidget);
+      expect(find.text('Retentio'), findsOneWidget);
     });
 
     testWidgets('displays username and password fields', (tester) async {

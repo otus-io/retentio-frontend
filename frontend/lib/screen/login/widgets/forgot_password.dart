@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:wordupx/l10n/app_localizations.dart';
+import 'package:retentio/l10n/app_localizations.dart';
 
 class ForgotPassword extends StatefulWidget {
   const ForgotPassword({super.key});

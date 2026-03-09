@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordupx/services/storage/storage_exception.dart';
+import 'package:retentio/services/storage/storage_exception.dart';
 
 void main() {
   group('StorageException', () {

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordupx/models/res_base_model.dart';
+import 'package:retentio/models/res_base_model.dart';
 
 void main() {
   group('ResBaseModel', () {

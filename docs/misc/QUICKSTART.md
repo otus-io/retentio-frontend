@@ -4,7 +4,7 @@
 
 # Quick Start Guide - Swagger UI Tutorial
 
-This guide walks you through using the WordUpX API via Swagger UI.
+This guide walks you through using the Retentio API via Swagger UI.
 
 ## Prerequisites
 

@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:wordupx/providers/loading_state_provider.dart';
-import 'package:wordupx/screen/deck/widgets/flash_card/flash_card_controller.dart';
-import 'package:wordupx/utils/log.dart';
+import 'package:retentio/providers/loading_state_provider.dart';
+import 'package:retentio/screen/deck/widgets/flash_card/flash_card_controller.dart';
+import 'package:retentio/utils/log.dart';
 
 import '../../../models/card.dart';
 import '../../../models/deck.dart';

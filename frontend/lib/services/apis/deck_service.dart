@@ -1,4 +1,4 @@
-import 'package:wordupx/services/index.dart';
+import 'package:retentio/services/index.dart';
 
 import '../../models/res_base_model.dart';
 import 'api_service.dart';

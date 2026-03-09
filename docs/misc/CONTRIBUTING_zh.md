@@ -4,7 +4,7 @@
 
 # 代码规范与贡献指南
 
-本文档概述了 WordUpX 项目的代码质量标准和 Pull Request (PR) 规范，参考 Kubernetes 贡献指南。
+本文档概述了 Retentio 项目的代码质量标准和 Pull Request (PR) 规范，参考 Kubernetes 贡献指南。
 
 ## 目录
 

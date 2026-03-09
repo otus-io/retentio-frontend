@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:pull_down_button/pull_down_button.dart';
-import 'package:wordupx/extensions/widget_extension.dart';
-import 'package:wordupx/widgets/common_net_image.dart';
+import 'package:retentio/extensions/widget_extension.dart';
+import 'package:retentio/widgets/common_net_image.dart';
 
 import '../../../extensions/context_extension.dart';
 import '../../../models/deck.dart';

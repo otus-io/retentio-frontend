@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:wordupx/l10n/app_localizations.dart';
-import 'package:wordupx/screen/learn/providers/create_deck_provider.dart';
-import 'package:wordupx/screen/learn/providers/deck_provider.dart';
-import 'package:wordupx/models/deck.dart';
-import 'package:wordupx/screen/deck/deck_detail_screen.dart';
-import 'package:wordupx/screen/deck/deck_learn_screen.dart';
-import 'package:wordupx/screen/learn/widgets/create_deck_widget.dart';
-import 'package:wordupx/widgets/common_refresher.dart';
+import 'package:retentio/l10n/app_localizations.dart';
+import 'package:retentio/screen/learn/providers/create_deck_provider.dart';
+import 'package:retentio/screen/learn/providers/deck_provider.dart';
+import 'package:retentio/models/deck.dart';
+import 'package:retentio/screen/deck/deck_detail_screen.dart';
+import 'package:retentio/screen/deck/deck_learn_screen.dart';
+import 'package:retentio/screen/learn/widgets/create_deck_widget.dart';
+import 'package:retentio/widgets/common_refresher.dart';
 
 import '../../widgets/common_bottom_sheet.dart';
 

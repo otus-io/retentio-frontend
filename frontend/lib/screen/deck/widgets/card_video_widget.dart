@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:native_cache_video_player/native_cache_video_player.dart';
 import 'package:video_player/video_player.dart';
-import 'package:wordupx/services/apis/api_service.dart';
+import 'package:retentio/services/apis/api_service.dart';
 import '../../../widgets/video_player/src/custom_video_player.dart';
 import '../../../widgets/video_player/src/custom_video_player_controller.dart';
 import '../../../widgets/video_player/src/models/custom_video_player_settings.dart';
@@ -17,14 +16,12 @@ class CardVideoWidget extends StatefulWidget {
 
 class _CardVideoWidgetState extends State<CardVideoWidget>
     with AutomaticKeepAliveClientMixin {
-  late final NativeCacheVideoPlayer _player;
+  late final VideoPlayerController _controller;
   late CustomVideoPlayerController _customVideoPlayerController;
-
-  VideoPlayerController get _controller => _player.controller;
 
   @override
   dispose() {
-    _player.dispose();
+    _controller.dispose();
     _customVideoPlayerController.dispose();
     super.dispose();
   }
@@ -34,12 +31,12 @@ class _CardVideoWidgetState extends State<CardVideoWidget>
   @override
   void initState() {
     super.initState();
-    _player = NativeCacheVideoPlayer.networkUrl(
+    _controller = VideoPlayerController.networkUrl(
       Uri.parse(widget.url),
       httpHeaders: {'Authorization': ApiService.authorization},
     );
 
-    _player.initialize().then((value) {
+    _controller.initialize().then((value) {
       setState(() {
         isInit = true;
         _customVideoPlayerController = CustomVideoPlayerController(

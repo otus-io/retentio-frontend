@@ -39,5 +39,5 @@ alwaysApply: true
 
 - For docs: generate English first, then Chinese in one pass —
   don't split across conversations
-- For tests: follow existing test patterns (see `go-testing` rule) instead of inventing new structures each time
+- For tests: follow existing test patterns (see `testing` rule) instead of inventing new structures each time
 - For boilerplate (handlers, models): use the codebase's existing patterns as a template — don't over-engineer

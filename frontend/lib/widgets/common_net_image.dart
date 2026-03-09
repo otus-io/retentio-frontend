@@ -11,8 +11,8 @@ import 'package:flutter/material.dart';
 
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:wordupx/services/apis/api_service.dart';
-import 'package:wordupx/utils/log.dart';
+import 'package:retentio/services/apis/api_service.dart';
+import 'package:retentio/utils/log.dart';
 
 class CommonNetImage extends StatefulWidget {
   const CommonNetImage({

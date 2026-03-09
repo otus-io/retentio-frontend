@@ -4,7 +4,7 @@
 
 # Design Decisions
 
-This document records key design decisions made in the WordUpX project and the reasoning behind them.
+This document records key design decisions made in the Retentio project and the reasoning behind them.
 
 ---
 

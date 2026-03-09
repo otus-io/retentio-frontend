@@ -1,5 +1,6 @@
-name: wordupx
-description: "A Wordupx project."
+---
+name: retentio
+description: "A Retentio project."
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -34,7 +35,6 @@ dependencies:
   path: ^1.9.1
   just_audio: ^0.10.5
   audio_waveforms: ^2.0.2
-  native_cache_video_player: ^0.1.3
   video_player: ^2.9.1
 dev_dependencies:
   flutter_test:

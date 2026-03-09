@@ -4,7 +4,7 @@
 
 # Code Conduct and Contribution Guidelines
 
-This document outlines the code quality standards and Pull Request (PR) conventions for the WordUpX project, inspired by Kubernetes contribution guidelines.
+This document outlines the code quality standards and Pull Request (PR) conventions for the Retentio project, inspired by Kubernetes contribution guidelines.
 
 ## Table of Contents
 

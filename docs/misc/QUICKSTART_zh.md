@@ -4,7 +4,7 @@
 
 # 快速入门指南 - Swagger UI 教程
 
-本指南将帮助您通过 Swagger UI 使用 WordUpX API。
+本指南将帮助您通过 Swagger UI 使用 Retentio API。
 
 ## 前提条件
 

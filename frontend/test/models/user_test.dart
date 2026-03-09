@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordupx/models/user.dart';
+import 'package:retentio/models/user.dart';
 
 void main() {
   group('User', () {
