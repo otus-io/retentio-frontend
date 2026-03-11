@@ -11,7 +11,7 @@
 | 规则 | 文件 | 适用范围 | 说明 |
 |------|------|----------|------|
 | 项目规范 | `project-conventions.mdc` | 始终生效 | 项目级标准：提交、PR、文档、代码风格 |
-| Go 后端 | `go-backend.mdc` | `backend-api/**/*.go` | Go 编码模式、Redis、JWT、中间件、Swagger |
+| Go 后端 | `go-backend.mdc` | `api/**/*.go` | Go 编码模式、Redis、JWT、中间件、Swagger |
 | Flutter 前端 | `flutter-frontend.mdc` | `frontend/lib/**/*.dart` | Riverpod、go_router、Dio、模型与页面规范 |
 | 测试 | `testing.mdc` | `frontend/test/**/*.dart` | 黑盒测试原则与 Flutter 测试规范 |
 | CI/CD 工作流 | `ci-workflows.mdc` | `.github/workflows/**` | GitHub Actions 工作流规范 |
@@ -36,7 +36,7 @@
 
 ### Go 后端
 
-编辑 `backend-api/` 中的文件时激活：
+编辑 `api/` 中的文件时激活：
 
 - 架构概览：gorilla/mux 路由、Redis 存储、JWT 认证
 - 中间件链：CorsMiddleware → JwtAuthMiddleware → 处理函数

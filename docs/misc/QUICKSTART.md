@@ -6,17 +6,65 @@
 
 This guide walks you through using the Retentio API via Swagger UI.
 
+## Table of Contents
+
+- [Prerequisites](#prerequisites)
+- [API Reference](#api-reference)
+- [1. Authentication](#1-authentication)
+  - [Create a User](#create-a-user)
+  - [Login](#login)
+  - [Authorize](#authorize)
+  - [Logout](#logout)
+  - [Forgot Password](#forgot-password)
+  - [Reset Password](#reset-password)
+- [2. Decks](#2-decks)
+  - [Create a Deck](#create-a-deck)
+  - [Get a Single Deck](#get-a-single-deck)
+  - [List All Decks](#list-all-decks)
+  - [Update a Deck](#update-a-deck)
+  - [Delete a Deck](#delete-a-deck)
+  - [Reschedule deck](#reschedule-deck)
+- [3. Facts](#3-facts)
+  - [Add Facts](#add-facts)
+  - [Get all facts](#get-all-facts)
+  - [Get one fact](#get-one-fact)
+  - [Update a fact](#update-a-fact)
+  - [Delete a fact](#delete-a-fact)
+- [4. Cards](#4-cards)
+  - [Add a card for an existing fact (e.g. reversed)](#add-a-card-for-an-existing-fact-eg-reversed)
+  - [Get Next Urgent Card](#get-next-urgent-card)
+  - [Review a Card](#review-a-card)
+  - [Hide a Card](#hide-a-card)
+  - [Delete a Card](#delete-a-card)
+  - [Get card stats](#get-card-stats)
+- [5. Media (Audio / Images)](#5-media-audio--images)
+  - [Upload media](#upload-media)
+  - [List media](#list-media)
+  - [Get media metadata](#get-media-metadata)
+  - [Download media](#download-media)
+  - [Delete media](#delete-media)
+  - [List or lookup shared media (work in progress)](#list-or-lookup-shared-media-work-in-progress)
+  - [Download shared media (work in progress)](#download-shared-media-work-in-progress)
+  - [Admin shared media (work in progress)](#admin-shared-media-work-in-progress)
+  - [Using media in facts (work in progress)](#using-media-in-facts-work-in-progress)
+- [Response examples reference](#response-examples-reference)
+- [Next Steps](#next-steps)
+
+---
+
 ## Prerequisites
 
 - Open Swagger UI at:
   - **Local**: <http://localhost:8080/docs>
-  - **Production**: <https://api.wordupx.com/docs>
+  - **Production**: <https://api.wordupx.com:8443/docs>
 
 > **Timestamp convention:** All timestamps in the API use **UTC**.
 > ISO 8601 strings use the `Z` suffix (e.g., `2026-02-08T12:00:00Z`).
 > Unix timestamps are seconds since the Unix epoch
 > (1970-01-01T00:00:00Z). Clients must convert to/from local time
 > on their side.
+>
+> **ID format:** Deck, fact, and card IDs are random **lowercase alphanumeric** strings (no underscores or hyphens). Backend generates: **deck_id** 12 characters, **fact_id** and **card_id** 8 characters each. Media IDs (e.g. in `[audio:id]`) are 10 characters. Example IDs in this guide follow these lengths.
 
 ---
 
@@ -29,19 +77,33 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/auth/logout` | POST | Logout (invalidate token) |
 | `/auth/forgot-password` | POST | Request password reset token |
 | `/auth/reset-password` | POST | Reset password with token |
+| `/api/profile` | GET | Get current user profile |
 | `/api/decks` | POST | Create deck |
 | `/api/decks` | GET | List all decks |
 | `/api/decks/{id}` | GET | Get deck details |
 | `/api/decks/{id}` | PATCH | Update deck |
 | `/api/decks/{id}` | DELETE | Delete deck |
-| `/api/decks/{id}/facts/{operation}` | POST | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`) |
+| `/api/decks/{id}/facts/{operation}` | POST | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`). Body: `facts` (required) and optional `template`. To add a card for an existing fact, use POST `/api/decks/{id}/card` instead. |
 | `/api/decks/{id}/facts` | GET | Get all facts |
 | `/api/decks/{id}/facts/{factId}` | GET | Get a specific fact |
 | `/api/decks/{id}/facts/{factId}` | PATCH | Update a fact |
 | `/api/decks/{id}/facts/{factId}` | DELETE | Delete a fact |
 | `/api/decks/{id}/card` | GET | Get most urgent card |
+| `/api/decks/{id}/card` | POST | Add one card from an existing fact (e.g. reversed). Body: `fact_id`, `template`, optional `operation`. |
 | `/api/decks/{id}/card` | PATCH | Update card interval or visibility (by card_id) |
 | `/api/decks/{id}/cards` | GET | Get card stats (total, hidden count, hidden facts) |
+| `/api/decks/{id}/cards/{cardId}` | DELETE | Delete a single card (fact and other cards unchanged) |
+| `/api/decks/{id}/reschedule` | POST | Reschedule deck cards (shift due dates by N days) |
+| `/api/media` | POST | Upload media (audio/image) |
+| `/api/media` | GET | List user's media (sync manifest) |
+| `/api/media/shared` | GET | List or lookup shared media (`?word=...&lang=...`) |
+| `/api/media/shared/{id}` | GET | Download shared media file |
+| `/api/media/{id}/meta` | GET | Get media metadata (no file body) |
+| `/api/media/{id}` | GET | Download media file |
+| `/api/media/{id}` | DELETE | Delete media |
+| `/api/admin/media/shared` | POST | **(Admin)** Upload shared media |
+| `/api/admin/media/shared/{id}` | DELETE | **(Admin)** Delete shared media |
+| `/api/admin/decks/import` | POST | **(Admin)** Import shared deck (zip with manifest) |
 
 ---
 
@@ -159,7 +221,9 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 
 ---
 
-## 2. Create a Deck
+## 2. Decks
+
+### Create a Deck
 
 **Endpoint:** `POST /api/decks`
 
@@ -170,37 +234,9 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
     "Japanese"
   ],
   "name": "English Japanese IELTS Deck",
-  "rate": 20,
-  "templates": [
-    [0, 1]
-  ]
+  "rate": 20
 }
 ```
-
-> **Understanding `templates`:**
->
-> Templates define how facts are turned into cards. Each template
-> is an array of field indices that determines which fields appear
-> on the front and back of a card.
->
-> - `fields` defines the available columns: index `0` = "English", index `1` = "Japanese"
-> - `[0, 1]` means: show **English** (front) → **Japanese** (back)
->
-> You can add multiple templates to create cards in both directions:
->
-> ```json
-> "templates": [
->   [0, 1],
->   [1, 0]
-> ]
-> ```
->
-> - `[0, 1]` → English → Japanese (reading the English word, recall the Japanese)
-> - `[1, 0]` → Japanese → English (reading the Japanese word, recall the English)
->
-> With 2 templates, each fact generates **2 cards** — one for each direction.
-
-<!-- -->
 
 > **Understanding `rate`:**
 >
@@ -217,7 +253,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3"
+    "deck_id": "a1b2c3d4e5f6"
   },
   "meta": {
     "msg": "Deck created successfully"
@@ -226,12 +262,9 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 ```
 
 > 📝 Save the `deck_id` - you'll need it for the next steps.
+> **Why no template on deck?** Templates are not stored on the deck. When you add facts, you can pass an optional `template` array (one `[[front indices], [back indices]]` per fact). The server writes that layout onto each **card**. By default, **no sibling (reversed) card is created**—only one card per fact (front = first entry, back = rest). Omit `template` to use that default.
 
 ---
-
-## 3. View Deck Details
-
-You can view a single deck or list all your decks. Both responses include a `stats` object with card statistics.
 
 ### Get a Single Deck
 
@@ -239,18 +272,17 @@ You can view a single deck or list all your decks. Both responses include a `sta
 
 **Parameters:**
 
-- `id`: `a1b2c3` (your deck ID)
+- `id`: `a1b2c3d4e5f6` (your deck ID)
 
 **Response:**
 
 ```json
 {
   "data": {
-    "id": "a1b2c3",
+    "id": "a1b2c3d4e5f6",
     "name": "English Japanese IELTS Deck",
     "owner": "swagger",
     "field": ["English", "Japanese"],
-    "templates": [[0, 1]],
     "rate": 20,
     "stats": {
       "cards_count": 0,
@@ -282,11 +314,10 @@ You can view a single deck or list all your decks. Both responses include a `sta
   "data": {
     "decks": [
       {
-        "id": "a1b2c3",
+        "id": "a1b2c3d4e5f6",
         "name": "English Japanese IELTS Deck",
         "owner": "swagger",
         "field": ["English", "Japanese"],
-        "templates": [[0, 1]],
         "rate": 20,
         "stats": {
           "cards_count": 0,
@@ -337,10 +368,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 > `unseen_cards` will increase. As you review cards,
 > `reviewed_cards` grows and `unseen_cards` decreases.
 >
-> The total cards in a deck depends on the number of facts and
-> templates: `cards_count = facts_count × number_of_templates`.
-> For example, 20 facts with 2 templates (`[0,1]` and `[1,0]`)
-> produces 40 cards.
+> The total cards in a deck equals the number of facts: **one card per fact by default, no sibling card**. To add a second card for a fact (e.g. reversed), use `POST /api/decks/{id}/card` with body `{"fact_id": "<factId>", "template": [[1], [0]]}`. The backend rejects 400 if that template already exists for the fact.
 >
 > To calculate a progress percentage on the client side: `reviewed_cards / cards_count * 100`.
 
@@ -350,7 +378,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 
 **Parameters:**
 
-- `id`: `a1b2c3` (your deck ID)
+- `id`: `a1b2c3d4e5f6` (your deck ID)
 
 **Request Body:**
 
@@ -358,7 +386,6 @@ You can view a single deck or list all your decks. Both responses include a `sta
 {
   "name": "Updated Deck Name",
   "fields": ["English", "Japanese"],
-  "templates": [[0, 1], [1, 0]],
   "rate": 30
 }
 ```
@@ -372,7 +399,7 @@ You can view a single deck or list all your decks. Both responses include a `sta
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3"
+    "deck_id": "a1b2c3d4e5f6"
   },
   "meta": {
     "msg": "Deck updated successfully",
@@ -387,16 +414,16 @@ You can view a single deck or list all your decks. Both responses include a `sta
 
 **Parameters:**
 
-- `id`: `a1b2c3` (your deck ID)
+- `id`: `a1b2c3d4e5f6` (your deck ID)
 
-> This permanently deletes the deck and all its associated facts, cards, and templates.
+> This permanently deletes the deck and all its associated facts and cards.
 
 **Response:**
 
 ```json
 {
   "data": {
-    "deck_id": "a1b2c3"
+    "deck_id": "a1b2c3d4e5f6"
   },
   "meta": {
     "msg": "Deck deleted successfully"
@@ -404,45 +431,84 @@ You can view a single deck or list all your decks. Both responses include a `sta
 }
 ```
 
+### Reschedule deck
+
+**Endpoint:** `POST /api/decks/{id}/reschedule`
+
+Shifts due dates and last_review of all cards in the deck by N days (1–365). Only allowed when the deck has overdue cards.
+
+**Request:**
+
+```json
+{ "days": 5 }
+```
+
+**Response:**
+
+```json
+{
+  "data": {
+    "cards_shifted": 42,
+    "days": 5,
+    "max_days_away": 10
+  },
+  "meta": { "msg": "Successfully rescheduled 42 cards by 5 days" }
+}
+```
+
 ---
 
-## 4. Add Facts
+## 3. Facts
+
+### Add Facts
 
 **Endpoint:** `POST /api/decks/{id}/facts/{operation}`
 
 **Parameters:**
 
-- `id`: `a1b2c3` (your deck ID)
+- `id`: `a1b2c3d4e5f6` (your deck ID)
 - `operation`: `append`
 
-**Request Body:**
+**Request Body:** An array of fact items (each with `entries`) and optional `template`. The server generates a unique fact ID for each fact and creates **one card per fact** (no sibling/reversed card by default). Each card's front/back layout is given by `template[i]` for fact index `i`, or the default `[[0], [1, 2, ...]]` when omitted.
 
 ```json
 {
   "facts": [
-    ["Apple", "りんご"],
-    ["Book", "本"],
-    ["Water", "水"],
-    ["Hello", "こんにちは"],
-    ["Thank you", "ありがとう"],
-    ["Good morning", "おはよう"],
-    ["Cat", "猫"],
-    ["Dog", "犬"],
-    ["House", "家"],
-    ["Car", "車"],
-    ["Friend", "友達"],
-    ["School", "学校"],
-    ["Teacher", "先生"],
-    ["Student", "学生"],
-    ["Food", "食べ物"],
-    ["Time", "時間"],
-    ["Love", "愛"],
-    ["Peace", "平和"],
-    ["Beautiful", "美しい"],
-    ["Happy", "幸せ"]
+    { "entries": ["Apple", "りんご"] },
+    { "entries": ["Book", "本"] },
+    { "entries": ["Water", "水"] },
+    { "entries": ["Hello", "こんにちは"] },
+    { "entries": ["Thank you", "ありがとう"] },
+    { "entries": ["Good morning", "おはよう"] },
+    { "entries": ["Cat", "猫"] },
+    { "entries": ["Dog", "犬"] },
+    { "entries": ["House", "家"] },
+    { "entries": ["Car", "車"] },
+    { "entries": ["Friend", "友達"] },
+    { "entries": ["School", "学校"] },
+    { "entries": ["Teacher", "先生"] },
+    { "entries": ["Student", "学生"] },
+    { "entries": ["Food", "食べ物"] },
+    { "entries": ["Time", "時間"] },
+    { "entries": ["Love", "愛"] },
+    { "entries": ["Peace", "平和"] },
+    { "entries": ["Beautiful", "美しい"] },
+    { "entries": ["Happy", "幸せ"] }
   ]
 }
 ```
+
+Optional **`template`**: array of layouts, one per fact. Each element is `[[front indices], [back indices]]` (e.g. `[[0], [1]]` = front entry 0, back entry 1). If `template` is omitted or shorter than `facts`, missing facts use the default layout. Example with two facts, second fact reversed:
+
+```json
+"template": [ [[0], [1]], [[1], [0]] ]
+```
+
+> **Understanding the request:**
+>
+> - **`entries`**: The content values for this fact (one per deck column), e.g. `["Apple", "りんご"]` for English/Japanese.
+> - **`fields`** (optional): Column names for this fact; entry `i` is shown under `fields[i]`. If omitted, use the deck's default `fields`. When provided, length must equal `len(entries)` (e.g. `["Word", "Translation", "Example sentence"]` for three entries).
+> - **`template`** (optional): Per-fact layout. One `[][]int` per fact; when empty or `i >= len(template)`, that fact gets default `[[0], [1, 2, ...]]`. The array is 3D (one layout per fact) so each fact can have a different front/back layout, and to allow for one fact with multiple cards later (e.g. primary + reversed + a third variant)—today the API still creates only one card per fact.
 
 **Response:**
 
@@ -457,31 +523,150 @@ You can view a single deck or list all your decks. Both responses include a `sta
 }
 ```
 
----
+### Get all facts
 
-## 5. Get Next Urgent Card
-
-**Endpoint:** `GET /api/decks/{id}/card`
-
-**Parameters:**
-
-- `id`: `a1b2c3` (your deck ID)
+**Endpoint:** `GET /api/decks/{id}/facts`
 
 **Response:**
 
 ```json
 {
   "data": {
+    "facts": [
+      { "id": "x9k2m4np", "entries": ["Apple", "りんご"], "fields": ["English", "Japanese"] },
+      { "id": "b00k1ab2", "entries": ["Book", "本"] }
+    ]
+  },
+  "meta": { "msg": "Facts retrieved successfully" }
+}
+```
+
+### Get one fact
+
+**Endpoint:** `GET /api/decks/{id}/facts/{factId}`
+
+**Response:**
+
+```json
+{
+  "data": {
+    "fact": {
+      "id": "x9k2m4np",
+      "entries": ["Apple", "りんご"],
+      "fields": ["English", "Japanese"]
+    }
+  }
+}
+```
+
+### Update a fact
+
+**Endpoint:** `PATCH /api/decks/{id}/facts/{factId}`
+
+**Parameters:** `id` (deck ID), `factId` (fact ID from GET facts or add-facts).
+
+**Request Body:** Optional `entries` and `fields`. If `entries` is provided it replaces the fact's entries; if `fields` is provided its length must equal `len(entries)`.
+
+```json
+{
+  "entries": ["Apple", "りんご"],
+  "fields": ["English", "Japanese"]
+}
+```
+
+**Response:**
+
+```json
+{
+  "data": { "fact_id": "x9k2m4np" },
+  "meta": { "msg": "Fact updated successfully" }
+}
+```
+
+### Delete a fact
+
+**Endpoint:** `DELETE /api/decks/{id}/facts/{factId}`
+
+**Parameters:** `id` (deck ID), `factId` (fact ID).
+
+Permanently deletes the fact and all cards derived from it.
+
+**Response:**
+
+```json
+{
+  "data": { "fact_id": "x9k2m4np" },
+  "meta": { "msg": "Fact deleted successfully" }
+}
+```
+
+---
+
+## 4. Cards
+
+### Add a card for an existing fact (e.g. reversed)
+
+By default there is **one card per fact**. To add a second card for a fact (e.g. a reversed card so the back side is shown first), use **POST /api/decks/{id}/card** with body `fact_id` and `template`. This is a separate endpoint from adding facts.
+
+**Endpoint:** `POST /api/decks/{id}/card`
+
+**Parameters:**
+
+- `id`: your deck ID
+
+**Request Body:**
+
+```json
+{
+  "fact_id": "x9k2m4np",
+  "template": [[1], [0]]
+}
+```
+
+- **`fact_id`** (required): The fact's ID (from `GET /api/decks/{id}/facts` or the add-facts response).
+- **`template`** (required): `[[front indices], [back indices]]` defining how the card shows the fact's entries. For a 2-entry fact: `[[0],[1]]` = front entry 0, back entry 1; `[[1],[0]]` = reversed. All indices must be in `0..(n-1)`, disjoint, and cover every entry. The backend returns 400 if this exact template already exists for another card of this fact.
+- **`operation`** (optional): `append`, `prepend`, `shuffle`, or `spread` — where to place the new card among unseen cards. Default is `append`.
+
+**Response:**
+
+```json
+{
+  "data": {
+    "card_id": "n3w4c5a6"
+  },
+  "meta": {
+    "msg": "Card added successfully"
+  }
+}
+```
+
+---
+
+### Get Next Urgent Card
+
+**Endpoint:** `GET /api/decks/{id}/card`
+
+**Parameters:**
+
+- `id`: `a1b2c3d4e5f6` (your deck ID)
+
+**Response (segments without field names — when deck or fact have no field names):**
+
+```json
+{
+  "data": {
     "card": {
-      "id": "xyz12345",
-      "fact_id": "x9k2m4np",
-      "template_index": 0,
-      "last_review": 1763269701,
-      "due_date": 1763269702,
+      "id": "k7m2n9p1",
+      "fact_id": "a3b4c5d6",
+      "template": [[0], [1]],
+      "last_review": 1763269700,
+      "due_date": 1763269800,
       "hidden": false,
-      "created_at": 1763269700
+      "created_at": 1763269600,
+      "front": [{"field": "", "type": "text", "value": "Apple"}],
+      "back": [{"field": "", "type": "text", "value": "苹果"}]
     },
-    "urgency": 2598
+    "urgency": 1.0
   },
   "meta": {
     "msg": "Next urgent card retrieved successfully"
@@ -489,11 +674,88 @@ You can view a single deck or list all your decks. Both responses include a `sta
 }
 ```
 
+**Response (with field names):**
+
+```json
+{
+  "data": {
+    "card": {
+      "id": "xyz12345",
+      "fact_id": "x9k2m4np",
+      "template": [[0], [1]],
+      "last_review": 1763269701,
+      "due_date": 1763269702,
+      "hidden": false,
+      "created_at": 1763269700,
+      "front": [{"field": "Word", "type": "text", "value": "Apple"}],
+      "back": [{"field": "Translation", "type": "text", "value": "苹果"}]
+    },
+    "urgency": 2.598
+  },
+  "meta": {
+    "msg": "Next urgent card retrieved successfully"
+  }
+}
+```
+
+`front` and `back` are arrays of segment objects. Each segment has **`field`** (label or empty string), **`type`** (`text`, `audio`, `image`, or `video`), and **`value`** (text content, or **full media URL** for audio/image/video — e.g. `https://api.wordupx.com:8443/api/media/abc123`). Use the URL with the same `Authorization: Bearer <token>` to download the file; no need to build the URL from an id. You can render the card from these without fetching the fact separately.
+
+**Front-only card (template with empty back, e.g. `[[0], []]`):**
+
+```json
+{
+  "data": {
+    "card": {
+      "id": "p4q5r6s7",
+      "fact_id": "w1x2y3z4",
+      "template": [[0], []],
+      "last_review": 0,
+      "due_date": 1763269800,
+      "hidden": false,
+      "created_at": 1763269600,
+      "front": [{"field": "Question", "type": "text", "value": "Only front text"}],
+      "back": []
+    },
+    "urgency": 1.0
+  },
+  "meta": { "msg": "Next urgent card retrieved successfully" }
+}
+```
+
+**Card with audio, image, and video segments (each content type in its own segment; media segments have full URL in `value`):**
+
+```json
+{
+  "data": {
+    "card": {
+      "id": "m8n9o0p1",
+      "fact_id": "f2a3b4c5",
+      "template": [[0, 1], [2, 3]],
+      "last_review": 1763269700,
+      "due_date": 1763269800,
+      "hidden": false,
+      "created_at": 1763269600,
+      "front": [
+        {"field": "Front", "type": "text", "value": "Word"},
+        {"field": "Pronunciation", "type": "audio", "value": "https://api.wordupx.com:8443/api/media/abc123"}
+      ],
+      "back": [
+        {"field": "Picture", "type": "image", "value": "https://api.wordupx.com:8443/api/media/def456"},
+        {"field": "Clip", "type": "video", "value": "https://api.wordupx.com:8443/api/media/vid789"},
+        {"field": "Back", "type": "text", "value": "Translation"}
+      ]
+    },
+    "urgency": 1.2
+  },
+  "meta": { "msg": "Next urgent card retrieved successfully" }
+}
+```
+
 > Save the `card.id` — you'll need it when updating the card (step 6).
 
 ---
 
-## 6. Review a Card
+### Review a Card
 
 After viewing a card, you need to update its interval based on how well you remembered it.
 
@@ -501,7 +763,7 @@ After viewing a card, you need to update its interval based on how well you reme
 
 **Parameters:**
 
-- `id`: `a1b2c3` (your deck ID)
+- `id`: `a1b2c3d4e5f6` (your deck ID)
 
 **Request Body:**
 
@@ -579,7 +841,7 @@ After viewing a card, you need to update its interval based on how well you reme
 
 ---
 
-## 7. Hide a Card (Optional)
+### Hide a Card
 
 If you want to temporarily hide a card from reviews:
 
@@ -587,7 +849,7 @@ If you want to temporarily hide a card from reviews:
 
 **Parameters:**
 
-- `id`: `a1b2c3`
+- `id`: `a1b2c3d4e5f6`
 
 **Request Body:**
 
@@ -613,8 +875,205 @@ If you want to temporarily hide a card from reviews:
 
 ---
 
+### Delete a Card
+
+Permanently remove a single card from a deck. The fact and any other cards for that fact (e.g. a sibling/reversed card) are unchanged.
+
+**Endpoint:** `DELETE /api/decks/{id}/cards/{cardId}`
+
+**Parameters:**
+
+- `id`: deck ID (e.g. `a1b2c3d4e5f6`)
+- `cardId`: card ID (from get-next-card response or card stats)
+
+**Request Body:** None.
+
+**Response:**
+
+```json
+{
+  "data": {
+    "card_id": "xyz12345"
+  },
+  "meta": {
+    "msg": "Card deleted successfully"
+  }
+}
+```
+
+### Get card stats
+
+**Endpoint:** `GET /api/decks/{id}/cards`
+
+**Response:**
+
+```json
+{
+  "data": {
+    "total_cards": 20,
+    "hidden_count": 3,
+    "hidden_facts": [
+      { "id": "h1d2e3n4", "entries": ["Hidden word", "隠れた語"], "fields": ["English", "Japanese"] }
+    ],
+    "orphaned_hidden_cards": 0
+  },
+  "meta": { "msg": "Card stats retrieved successfully" }
+}
+```
+
+---
+
+## 5. Media (Audio / Images)
+
+You can attach audio, images, and video to facts. Fact fields reference media by ID using markers `[audio:id]`, `[image:id]`, and `[video:id]`.
+
+**Size limits:** Images max **5 MB**; audio and video max **200 MB** each. Env overrides: `MEDIA_MAX_SIZE_IMAGE`, `MEDIA_MAX_SIZE_VIDEO`, `MEDIA_MAX_SIZE_AUDIO`.
+
+**Formats and conversion:** Supported input: image (JPEG, PNG, GIF, HEIC, HEIF, WebP), audio (MPEG/MP3, WAV, OGG, MP4/AAC), video (MP4, QuickTime, WebM). Only **PNG, HEIC, HEIF** are converted to WebP and **WAV** to AAC; all other formats are stored as-is. Download returns the stored file (binary). **Size limits:** images 5 MB, audio and video 200 MB each.
+
+### Upload media
+
+**Endpoint:** `POST /api/media` — multipart/form-data.
+
+| Field        | Required | Description |
+| ------------ | -------- | ----------- |
+| `file`       | Yes      | The media file (image, audio, or video). |
+| `client_id`  | No       | Client-generated ID for idempotent upload; if the media already exists for this user, the server returns 201 with the existing record. |
+
+**Response:**
+
+```json
+{
+  "data": {
+    "id": "abc1234def0",
+    "owner": "swagger",
+    "filename": "pronunciation.mp3",
+    "mime": "audio/mpeg",
+    "size": 51200,
+    "checksum": "sha256:e3b0c44298fc1c149afbf4c8996fb924",
+    "created_at": 1704067200
+  },
+  "meta": { "msg": "media uploaded" }
+}
+```
+
+### List media
+
+**Endpoint:** `GET /api/media` — returns the current user's media (paginated).
+
+| Query   | Description |
+| ------- | ----------- |
+| `since` | Optional. Unix timestamp (number); return only media created after this time. |
+| `limit` | Optional. Max items (default 200, max 1000). |
+| `offset`| Optional. Number of items to skip (default 0). |
+
+**Response:**
+
+```json
+{
+  "data": [
+    {
+      "id": "abc1234def0",
+      "owner": "swagger",
+      "filename": "pronunciation.mp3",
+      "mime": "audio/mpeg",
+      "size": 51200,
+      "checksum": "sha256:e3b0c44298fc1c149afbf4c8996fb924",
+      "created_at": 1704067200
+    }
+  ],
+  "meta": { "count": 1, "has_more": false }
+}
+```
+
+### Get media metadata
+
+**Endpoint:** `GET /api/media/{id}/meta`
+
+Returns metadata only (id, owner, filename, mime, size, checksum, created_at), no file body.
+
+### Download media
+
+**Endpoint:** `GET /api/media/{id}`
+
+Returns the media file (binary) for user-owned media by ID. Requires `Authorization: Bearer <token>`. Response headers include `Content-Type`, `Content-Length`, and `ETag` (same as `checksum`). Send `If-None-Match: <ETag>` to get `304 Not Modified` when the file is unchanged. The **Get Next Card** response gives full URLs for audio/image/video segments (e.g. `https://api.wordupx.com:8443/api/media/{id}`); use that URL with the same auth header to load the file.
+
+### Delete media
+
+**Endpoint:** `DELETE /api/media/{id}`
+
+**Response:**
+
+```json
+{
+  "data": { "msg": "media deleted" }
+}
+```
+
+### List or lookup shared media (work in progress)
+
+**Endpoint:** `GET /api/media/shared` — list shared pronunciation assets; optional `?word=...&lang=...` to lookup.
+
+### Download shared media (work in progress)
+
+**Endpoint:** `GET /api/media/shared/{id}` — download shared media file by ID.
+
+### Admin shared media (work in progress)
+
+**Endpoints:** `POST /api/admin/media/shared` (upload), `DELETE /api/admin/media/shared/{id}` (delete). Admin-only.
+
+### Using media in facts (work in progress)
+
+Include markers in `entries`, e.g. `["Word", "[audio:abc123]", "[image:def456]", "[video:vid789]", "Translation"]`. Use optional `template` for custom front/back layout per fact; omit for default (front = first entry, back = rest). When displaying fact text only (e.g. in a list), the UI shows markers as `audio:id`, `image:id`, `video:id` (no brackets). Storage and API use `[type:id]`.
+
+For full design (upload, delete, display, sync), see **[Media Upload design doc](../design-doc/media-upload.md)**.
+
+---
+
+## Response examples reference
+
+| Endpoint | Method | Response shape |
+| -------- | ------ | ---------------- |
+| `/auth/register` | POST | `{ "data": { … }, "meta": { "msg": "..." } }` — see [Create a User](#create-a-user) |
+| `/auth/login` | POST | `{ "data": { "token", "expires" }, "meta": { "expires" } }` |
+| `/auth/logout` | POST | `{ "data": { "msg": "Logged out successfully" }, "meta": null }` |
+| `/auth/forgot-password` | POST | `{ "data": { "reset_token" }, "meta": { "expires_in" } }` |
+| `/auth/reset-password` | POST | `{ "data": { "msg": "Password reset successfully" }, "meta": null }` |
+| `/api/profile` | GET | `{ "data": { user profile }, "meta": { "msg" } }` |
+| `/api/decks` | POST | `{ "data": { "deck_id" }, "meta": { "msg" } }` |
+| `/api/decks` | GET | `{ "data": { "decks": [ … ] }, "meta": { "total", "msg" } }` |
+| `/api/decks/{id}` | GET | `{ "data": { deck + stats }, "meta": { "msg" } }` |
+| `/api/decks/{id}` | PATCH | `{ "data": { "deck_id" }, "meta": { "msg", "updated_at" } }` |
+| `/api/decks/{id}` | DELETE | `{ "data": { "deck_id" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/facts/{op}` | POST | Add facts: `{ "data": { "fact_length" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/card` | POST | Add card from existing fact: `{ "data": { "card_id" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/facts` | GET | `{ "data": { "facts": [ … ] }, "meta": { "msg" } }` |
+| `/api/decks/{id}/facts/{factId}` | GET | `{ "data": { "fact": { … } } }` |
+| `/api/decks/{id}/facts/{factId}` | PATCH | `{ "data": { "fact_id" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/facts/{factId}` | DELETE | `{ "data": { "fact_id" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/card` | GET | `{ "data": { "card": { id, fact_id, template, …, front[], back[] }, "urgency" }, "meta": { "msg", … } }` |
+| `/api/decks/{id}/card` | PATCH | Interval: `{ "data": { "last_review", "due_date", "new_interval" }, "meta": { "msg" } }`; visibility: `{ "data": { "hidden_status" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/cards` | GET | `{ "data": { "total_cards", "hidden_count", "hidden_facts", "orphaned_hidden_cards" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/cards/{cardId}` | DELETE | `{ "data": { "card_id" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/reschedule` | POST | `{ "data": { "cards_shifted", "days", "max_days_away" }, "meta": { "msg" } }` |
+| `/api/media` | POST | `{ "data": { id, owner, filename, mime, size, checksum, created_at }, "meta": { "msg" } }` |
+| `/api/media` | GET | `{ "data": [ MediaSwagger, … ], "meta": { "count", "has_more" } }` |
+| `/api/media/shared` | GET | List or lookup shared media (query: `word`, `lang`) |
+| `/api/media/shared/{id}` | GET | Download shared media (binary) |
+| `/api/media/{id}/meta` | GET | `{ "data": { id, owner, filename, mime, size, checksum, created_at }, "meta": { "msg" } }` |
+| `/api/media/{id}` | GET | Download media (binary) |
+| `/api/media/{id}` | DELETE | `{ "data": { "msg": "media deleted" } }` |
+| `/api/admin/media/shared` | POST | **(Admin)** Upload shared media |
+| `/api/admin/media/shared/{id}` | DELETE | **(Admin)** Delete shared media |
+| `/api/admin/decks/import` | POST | **(Admin)** Import shared deck |
+
+Full JSON examples for each are in the sections above.
+
+---
+
 ## Next Steps
 
 - Keep reviewing cards by repeating steps 5-6
-- Create more decks with different field configurations
-- Explore other endpoints in Swagger UI
+- **Tagging system** — organize decks and facts with tags (planned)
+- **Offline sync** — sync data when back online (planned)
+- **Local storage** — cache decks and cards for offline use (planned)

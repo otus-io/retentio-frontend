@@ -11,7 +11,7 @@ This project uses [Cursor Rules](https://docs.cursor.com/context/rules-for-ai) t
 | Rule | File | Scope | Description |
 |------|------|-------|-------------|
 | Project Conventions | `project-conventions.mdc` | Always active | Project-wide standards for commits, PRs, docs, and code style |
-| Go Backend | `go-backend.mdc` | `backend-api/**/*.go` | Go coding patterns, Redis, JWT, middleware, Swagger |
+| Go Backend | `go-backend.mdc` | `api/**/*.go` | Go coding patterns, Redis, JWT, middleware, Swagger |
 | Flutter Frontend | `flutter-frontend.mdc` | `frontend/lib/**/*.dart` | Riverpod, go_router, Dio, model and screen patterns |
 | Testing | `testing.mdc` | `frontend/test/**/*.dart` | Blackbox testing principles and Flutter test conventions |
 | CI/CD Workflows | `ci-workflows.mdc` | `.github/workflows/**` | GitHub Actions workflow conventions |
@@ -36,7 +36,7 @@ Core standards that apply everywhere:
 
 ### Go Backend
 
-Activated when editing files in `backend-api/`:
+Activated when editing files in `api/`:
 
 - Architecture overview: gorilla/mux router, Redis storage, JWT auth
 - Middleware chain: CorsMiddleware → JwtAuthMiddleware → Handlers

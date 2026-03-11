@@ -18,7 +18,7 @@ The hook only runs checks relevant to the files you're committing:
 
 > If `yamllint` is not installed, the check is skipped with a warning. Install with: `pip install yamllint`
 
-### Backend (`backend-api/` files changed)
+### Backend (`api/` files changed)
 
 | Check | Command | Purpose |
 |-------|---------|---------|

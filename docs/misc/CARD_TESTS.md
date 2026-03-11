@@ -1,6 +1,6 @@
 # Card Integration Tests
 
-All tests are in `backend-api/tests/integration/card_test.go`.
+All tests are in `api/tests/integration/card_test.go`.
 
 Run: `go test ./tests/integration/... -v`
 
