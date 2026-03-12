@@ -10,6 +10,7 @@ import '../../../models/deck.dart';
 import '../providers/card_provider.dart';
 import 'buttons_tabbar/buttons_tab_bar_widget.dart';
 import 'card_audio_widget.dart';
+import 'card_image_widget.dart';
 import 'card_video_widget.dart';
 
 class CardWidget extends ConsumerWidget {
@@ -64,13 +65,7 @@ class CardWidget extends ConsumerWidget {
                     // Add your tabs here
                     tabs:
                         cards?.map((e) {
-                          return Tab(
-                            icon: Icon(
-                              ref
-                                  .read(cardProvider(deck).notifier)
-                                  .icons[e.type],
-                            ),
-                          );
+                          return Tab(text: e.field);
                         }).toList() ??
                         [],
                   ).expanded(),
@@ -117,27 +112,36 @@ class CardWidget extends ConsumerWidget {
             TabBarView(
               children:
                   cards?.map((e) {
-                    final type = e.type;
+                    final type = e.field.toLowerCase();
 
                     return switch (type) {
                       'audio' => CardAudioWidget(
-                        audioUrl: e.value,
+                        audioUrl: e.items
+                            .firstWhere((item) => item.type == 'audio')
+                            .value,
                         color: color,
                       ),
-                      'video' => CardVideoWidget(url: e.value),
-                      'text' => Center(
-                        child: Text(
-                          e.value,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 1.2,
-                            color: color,
-                          ),
+                      'video' => CardVideoWidget(
+                        url: e.items
+                            .firstWhere((item) => item.type == 'video')
+                            .value,
+                      ),
+                      'image' => Center(
+                        child: CardImageWidget(
+                          url: e.items
+                              .firstWhere((item) => item.type == 'image')
+                              .value,
                         ),
                       ),
-                      'image' => Center(child: CommonNetImage(url: e.value)),
-                      String() => throw UnimplementedError(),
+                      String() => Text(
+                        e.items.firstWhere((item) => item.type == 'text').value,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.2,
+                          color: color,
+                        ),
+                      ),
                     };
                   }).toList() ??
                   [],

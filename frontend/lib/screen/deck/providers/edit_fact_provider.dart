@@ -24,8 +24,8 @@ class EditFactNotifier extends Notifier {
     final deck = ref.watch(deckProvider);
     final fact = ref.read(cardProvider(deck)).cardDetail?.card;
     if (fact != null) {
-      questionController.text = fact.front.first.value;
-      answerController.text = fact.back.last.value;
+      questionController.text = fact.front.first.items.first.value;
+      answerController.text = fact.back.last.items.first.value;
     }
     ref.onDispose(() {
       answerController.dispose();
