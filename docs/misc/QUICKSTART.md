@@ -469,32 +469,33 @@ Shifts due dates and last_review of all cards in the deck by N days (1–365). O
 - `id`: `a1b2c3d4e5f6` (your deck ID)
 - `operation`: `append`
 
-**Request Body:** An array of fact items (each with `entries`) and optional `template`. The server generates a unique fact ID for each fact and creates **one card per fact** (no sibling/reversed card by default). Each card's front/back layout is given by `template[i]` for fact index `i`, or the default `[[0], [1, 2, ...]]` when omitted.
+**Request Body:** An array of fact items (each with `entries`) and optional `template`. Each **entry** is an object with optional `text`, `audio`, `image`, `video` (at least one required). The server generates a unique fact ID for each fact and creates **one card per fact** (no sibling/reversed card by default). Each card's front/back layout is given by `template[i]` for fact index `i`, or the default `[[0], [1, 2, ...]]` when omitted.
 
 ```json
 {
   "facts": [
-    { "entries": ["Apple", "りんご"] },
-    { "entries": ["Book", "本"] },
-    { "entries": ["Water", "水"] },
-    { "entries": ["Hello", "こんにちは"] },
-    { "entries": ["Thank you", "ありがとう"] },
-    { "entries": ["Good morning", "おはよう"] },
-    { "entries": ["Cat", "猫"] },
-    { "entries": ["Dog", "犬"] },
-    { "entries": ["House", "家"] },
-    { "entries": ["Car", "車"] },
-    { "entries": ["Friend", "友達"] },
-    { "entries": ["School", "学校"] },
-    { "entries": ["Teacher", "先生"] },
-    { "entries": ["Student", "学生"] },
-    { "entries": ["Food", "食べ物"] },
-    { "entries": ["Time", "時間"] },
-    { "entries": ["Love", "愛"] },
-    { "entries": ["Peace", "平和"] },
-    { "entries": ["Beautiful", "美しい"] },
-    { "entries": ["Happy", "幸せ"] }
+    { "entries": [{ "text": "Apple" }, { "text": "りんご" }] },
+    { "entries": [{ "text": "Book" }, { "text": "本" }] },
+    { "entries": [{ "text": "Water" }, { "text": "水" }] },
+    { "entries": [{ "text": "School" }, { "text": "学校" }] }
   ]
+}
+```
+
+Example with media and multiple example sentences (each with its own audio):
+
+```json
+{
+  "entries": [
+    { "text": "School" },
+    { "text": "学校" },
+    { "audio": "pron123" },
+    { "image": "img456" },
+    { "video": "vid789" },
+    { "text": "I go to school every day.", "audio": "ex1aud" },
+    { "text": "School starts at nine.", "audio": "ex2aud" }
+  ],
+  "fields": ["Word", "Translation", "Pronunciation", "Picture", "Clip", "Example 1", "Example 2"]
 }
 ```
 
@@ -506,9 +507,9 @@ Optional **`template`**: array of layouts, one per fact. Each element is `[[fron
 
 > **Understanding the request:**
 >
-> - **`entries`**: The content values for this fact (one per deck column), e.g. `["Apple", "りんご"]` for English/Japanese.
-> - **`fields`** (optional): Column names for this fact; entry `i` is shown under `fields[i]`. If omitted, use the deck's default `fields`. When provided, length must equal `len(entries)` (e.g. `["Word", "Translation", "Example sentence"]` for three entries).
-> - **`template`** (optional): Per-fact layout. One `[][]int` per fact; when empty or `i >= len(template)`, that fact gets default `[[0], [1, 2, ...]]`. The array is 3D (one layout per fact) so each fact can have a different front/back layout, and to allow for one fact with multiple cards later (e.g. primary + reversed + a third variant)—today the API still creates only one card per fact.
+> - **`entries`**: Array of entry objects. Each entry has optional `text`, `audio`, `image`, `video` (at least one required). Entry `i` corresponds to deck column `i`; use `fields[i]` as its label. Putting text and audio in the same entry (e.g. `{ "text": "I go to school.", "audio": "ex1id" }`) keeps that audio clearly associated with that sentence.
+> - **`fields`** (optional): Column names for this fact; entry `i` is shown under `fields[i]`. If omitted, use the deck's default `fields`. When provided, length must equal `len(entries)`.
+> - **`template`** (optional): Per-fact layout. One `[][]int` per fact; when empty or `i >= len(template)`, that fact gets default `[[0], [1, 2, ...]]`. The array is 3D (one layout per fact) so each fact can have a different front/back layout.
 
 **Response:**
 
@@ -533,8 +534,8 @@ Optional **`template`**: array of layouts, one per fact. Each element is `[[fron
 {
   "data": {
     "facts": [
-      { "id": "x9k2m4np", "entries": ["Apple", "りんご"], "fields": ["English", "Japanese"] },
-      { "id": "b00k1ab2", "entries": ["Book", "本"] }
+      { "id": "x9k2m4np", "entries": [{ "text": "Apple" }, { "text": "りんご" }], "fields": ["English", "Japanese"] },
+      { "id": "b00k1ab2", "entries": [{ "text": "Book" }, { "text": "本" }] }
     ]
   },
   "meta": { "msg": "Facts retrieved successfully" }
@@ -552,7 +553,7 @@ Optional **`template`**: array of layouts, one per fact. Each element is `[[fron
   "data": {
     "fact": {
       "id": "x9k2m4np",
-      "entries": ["Apple", "りんご"],
+      "entries": [{ "text": "Apple" }, { "text": "りんご" }],
       "fields": ["English", "Japanese"]
     }
   }
@@ -565,11 +566,11 @@ Optional **`template`**: array of layouts, one per fact. Each element is `[[fron
 
 **Parameters:** `id` (deck ID), `factId` (fact ID from GET facts or add-facts).
 
-**Request Body:** Optional `entries` and `fields`. If `entries` is provided it replaces the fact's entries; if `fields` is provided its length must equal `len(entries)`.
+**Request Body:** Optional `entries` (array of entry objects with optional `text`, `audio`, `image`, `video`) and `fields`. If `entries` is provided it replaces the fact's entries; if `fields` is provided its length must equal `len(entries)`.
 
 ```json
 {
-  "entries": ["Apple", "りんご"],
+  "entries": [{ "text": "Apple" }, { "text": "りんご" }],
   "fields": ["English", "Japanese"]
 }
 ```
@@ -650,7 +651,9 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 
 - `id`: `a1b2c3d4e5f6` (your deck ID)
 
-**Response (segments without field names — when deck or fact have no field names):**
+**Response shape:** `front` and `back` are arrays of **entry objects** in **template order**. Each entry has an optional **`field`** (label) and **`items`**: an array of `{ "type": "text"|"audio"|"image"|"video", "value": string }`. Items per entry are in fixed order: text, then audio, then image, then video (only present types). One entry can have multiple items of different types. For media types, `value` is the **full media URL** when the server can determine a base URL (e.g. `https://api.wordupx.com:8443/api/media/abc123`). Use the URL with the same `Authorization: Bearer <token>` to download the file.
+
+**Response (no field names):**
 
 ```json
 {
@@ -663,8 +666,12 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
       "due_date": 1763269800,
       "hidden": false,
       "created_at": 1763269600,
-      "front": [{"field": "", "type": "text", "value": "Apple"}],
-      "back": [{"field": "", "type": "text", "value": "苹果"}]
+      "front": [
+        {"items": [{"type": "text", "value": "Apple"}]}
+      ],
+      "back": [
+        {"items": [{"type": "text", "value": "苹果"}]}
+      ]
     },
     "urgency": 1.0
   },
@@ -687,8 +694,12 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
       "due_date": 1763269702,
       "hidden": false,
       "created_at": 1763269700,
-      "front": [{"field": "Word", "type": "text", "value": "Apple"}],
-      "back": [{"field": "Translation", "type": "text", "value": "苹果"}]
+      "front": [
+        {"field": "Word", "items": [{"type": "text", "value": "Apple"}]}
+      ],
+      "back": [
+        {"field": "Translation", "items": [{"type": "text", "value": "苹果"}]}
+      ]
     },
     "urgency": 2.598
   },
@@ -698,7 +709,81 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 }
 ```
 
-`front` and `back` are arrays of segment objects. Each segment has **`field`** (label or empty string), **`type`** (`text`, `audio`, `image`, or `video`), and **`value`** (text content, or **full media URL** for audio/image/video — e.g. `https://api.wordupx.com:8443/api/media/abc123`). Use the URL with the same `Authorization: Bearer <token>` to download the file; no need to build the URL from an id. You can render the card from these without fetching the fact separately.
+**Response (one entry with text + audio + image):**
+
+```json
+{
+  "data": {
+    "card": {
+      "id": "m8n9p0q1",
+      "fact_id": "e7f8g9h0",
+      "template": [[0], [1]],
+      "last_review": 1763269700,
+      "due_date": 1763269800,
+      "hidden": false,
+      "created_at": 1763269600,
+      "front": [
+        {
+          "field": "Word",
+          "items": [
+            {"type": "text", "value": "Hello"},
+            {"type": "audio", "value": "https://api.example.com/api/media/aud001"},
+            {"type": "image", "value": "https://api.example.com/api/media/img002"}
+          ]
+        }
+      ],
+      "back": [
+        {"field": "Translation", "items": [{"type": "text", "value": "你好"}]}
+      ]
+    },
+    "urgency": 1.0
+  },
+  "meta": {
+    "msg": "Next urgent card retrieved successfully"
+  }
+}
+```
+
+**Response (multiple entries on front — e.g. two example sentences with text + audio each):**
+
+```json
+{
+  "data": {
+    "card": {
+      "id": "k7m2n9p1",
+      "fact_id": "a3b4c5d6",
+      "template": [[0, 1], [2]],
+      "last_review": 1763269700,
+      "due_date": 1763269800,
+      "hidden": false,
+      "created_at": 1763269600,
+      "front": [
+        {
+          "field": "Example",
+          "items": [
+            {"type": "text", "value": "First sentence."},
+            {"type": "audio", "value": "https://api.example.com/api/media/aud001"}
+          ]
+        },
+        {
+          "field": "Example",
+          "items": [
+            {"type": "text", "value": "Second sentence."},
+            {"type": "audio", "value": "https://api.example.com/api/media/aud002"}
+          ]
+        }
+      ],
+      "back": [
+        {"field": "Translation", "items": [{"type": "text", "value": "翻译"}]}
+      ]
+    },
+    "urgency": 1.0
+  },
+  "meta": {
+    "msg": "Next urgent card retrieved successfully"
+  }
+}
+```
 
 **Front-only card (template with empty back, e.g. `[[0], []]`):**
 
@@ -713,7 +798,9 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
       "due_date": 1763269800,
       "hidden": false,
       "created_at": 1763269600,
-      "front": [{"field": "Question", "type": "text", "value": "Only front text"}],
+      "front": [
+        {"field": "Question", "items": [{"type": "text", "value": "Only front text"}]}
+      ],
       "back": []
     },
     "urgency": 1.0
@@ -722,7 +809,7 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 }
 ```
 
-**Card with audio, image, and video segments (each content type in its own segment; media segments have full URL in `value`):**
+**Card with multiple entries and media (template [[0, 1], [2, 3]]; media items have full URL in `value`):**
 
 ```json
 {
@@ -736,13 +823,12 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
       "hidden": false,
       "created_at": 1763269600,
       "front": [
-        {"field": "Front", "type": "text", "value": "Word"},
-        {"field": "Pronunciation", "type": "audio", "value": "https://api.wordupx.com:8443/api/media/abc123"}
+        {"field": "Front", "items": [{"type": "text", "value": "Word"}]},
+        {"field": "Pronunciation", "items": [{"type": "audio", "value": "https://api.wordupx.com:8443/api/media/abc123"}]}
       ],
       "back": [
-        {"field": "Picture", "type": "image", "value": "https://api.wordupx.com:8443/api/media/def456"},
-        {"field": "Clip", "type": "video", "value": "https://api.wordupx.com:8443/api/media/vid789"},
-        {"field": "Back", "type": "text", "value": "Translation"}
+        {"field": "Picture", "items": [{"type": "image", "value": "https://api.wordupx.com:8443/api/media/def456"}]},
+        {"field": "Clip", "items": [{"type": "video", "value": "https://api.wordupx.com:8443/api/media/vid789"}, {"type": "text", "value": "Translation"}]}
       ]
     },
     "urgency": 1.2
@@ -1022,9 +1108,9 @@ Returns the media file (binary) for user-owned media by ID. Requires `Authorizat
 
 **Endpoints:** `POST /api/admin/media/shared` (upload), `DELETE /api/admin/media/shared/{id}` (delete). Admin-only.
 
-### Using media in facts (work in progress)
+### Using media in facts
 
-Include markers in `entries`, e.g. `["Word", "[audio:abc123]", "[image:def456]", "[video:vid789]", "Translation"]`. Use optional `template` for custom front/back layout per fact; omit for default (front = first entry, back = rest). When displaying fact text only (e.g. in a list), the UI shows markers as `audio:id`, `image:id`, `video:id` (no brackets). Storage and API use `[type:id]`.
+Each entry is an object with optional `text`, `audio`, `image`, `video`. Use a dedicated entry for media (e.g. `{ "audio": "abc123" }`) or combine with text in one entry (e.g. `{ "text": "Example sentence.", "audio": "ex1id" }`) so the audio is clearly for that sentence. Use optional `template` for custom front/back layout per fact; omit for default (front = first entry, back = rest).
 
 For full design (upload, delete, display, sync), see **[Media Upload design doc](../design-doc/media-upload.md)**.
 

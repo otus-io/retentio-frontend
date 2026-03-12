@@ -476,32 +476,33 @@
 - `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 - `operation`: `append`
 
-**请求体：** 词条数组（每项含 `entries`）及可选的 `template`。服务端为每个词条生成唯一 ID，并为每个词条创建**一张卡片**（默认不生成反向/兄弟卡）。卡片的正/背面布局由 `template[i]` 指定（词条索引 `i`），省略或长度不足时使用默认 `[[0], [1, 2, ...]]`。
+**请求体：** 词条数组（每项含 `entries`）及可选的 `template`。每条 **entry** 为对象，含可选字段 `text`、`audio`、`image`、`video`（至少填一项）。服务端为每个词条生成唯一 ID，并为每个词条创建**一张卡片**（默认不生成反向/兄弟卡）。卡片的正/背面布局由 `template[i]` 指定（词条索引 `i`），省略或长度不足时使用默认 `[[0], [1, 2, ...]]`。
 
 ```json
 {
   "facts": [
-    { "entries": ["Apple", "りんご"] },
-    { "entries": ["Book", "本"] },
-    { "entries": ["Water", "水"] },
-    { "entries": ["Hello", "こんにちは"] },
-    { "entries": ["Thank you", "ありがとう"] },
-    { "entries": ["Good morning", "おはよう"] },
-    { "entries": ["Cat", "猫"] },
-    { "entries": ["Dog", "犬"] },
-    { "entries": ["House", "家"] },
-    { "entries": ["Car", "車"] },
-    { "entries": ["Friend", "友達"] },
-    { "entries": ["School", "学校"] },
-    { "entries": ["Teacher", "先生"] },
-    { "entries": ["Student", "学生"] },
-    { "entries": ["Food", "食べ物"] },
-    { "entries": ["Time", "時間"] },
-    { "entries": ["Love", "愛"] },
-    { "entries": ["Peace", "平和"] },
-    { "entries": ["Beautiful", "美しい"] },
-    { "entries": ["Happy", "幸せ"] }
+    { "entries": [{ "text": "Apple" }, { "text": "りんご" }] },
+    { "entries": [{ "text": "Book" }, { "text": "本" }] },
+    { "entries": [{ "text": "Water" }, { "text": "水" }] },
+    { "entries": [{ "text": "School" }, { "text": "学校" }] }
   ]
+}
+```
+
+带媒体与多条例句（每句可有独立音频）示例：
+
+```json
+{
+  "entries": [
+    { "text": "School" },
+    { "text": "学校" },
+    { "audio": "pron123" },
+    { "image": "img456" },
+    { "video": "vid789" },
+    { "text": "I go to school every day.", "audio": "ex1aud" },
+    { "text": "School starts at nine.", "audio": "ex2aud" }
+  ],
+  "fields": ["Word", "Translation", "Pronunciation", "Picture", "Clip", "Example 1", "Example 2"]
 }
 ```
 
@@ -513,9 +514,9 @@
 
 > **理解请求体：**
 >
-> - **`entries`**：该词条的内容（与卡组列一一对应），如 `["Apple", "りんご"]`。
-> - **`fields`**（可选）：该词条各列的显示名称；第 `i` 个条目对应 `fields[i]`。省略则使用卡组默认 `fields`。若提供，长度须与 `entries` 一致（如三列可为 `["Word", "Translation", "Example sentence"]`）。
-> - **`template`**（可选）：按词条的布局。每词条一个 `[][]int`；省略或 `i >= len(template)` 时使用默认 `[[0], [1, 2, ...]]`。使用三维数组（每词条一个布局）是为了让不同词条可有不同正/背面布局，并为将来「一词条多张卡」（如主卡 + 反向 + 第三种变体）预留扩展；当前接口仍为每词条只创建一张卡。
+> - **`entries`**：entry 对象数组。每个 entry 含可选 `text`、`audio`、`image`、`video`（至少一项）。第 `i` 个 entry 对应第 `i` 列，可用 `fields[i]` 作为标签。在同一 entry 中同时写文本与音频（如 `{ "text": "I go to school.", "audio": "ex1id" }`）可明确该音频对应该句。
+> - **`fields`**（可选）：该词条各列的显示名称；第 `i` 个条目对应 `fields[i]`。省略则使用卡组默认 `fields`。若提供，长度须与 `entries` 一致。
+> - **`template`**（可选）：按词条的布局。每词条一个 `[][]int`；省略或 `i >= len(template)` 时使用默认 `[[0], [1, 2, ...]]`。
 
 **响应:**
 
@@ -540,8 +541,8 @@
 {
   "data": {
     "facts": [
-      { "id": "x9k2m4np", "entries": ["Apple", "りんご"], "fields": ["English", "Japanese"] },
-      { "id": "b00k1ab2", "entries": ["Book", "本"] }
+      { "id": "x9k2m4np", "entries": [{ "text": "Apple" }, { "text": "りんご" }], "fields": ["English", "Japanese"] },
+      { "id": "b00k1ab2", "entries": [{ "text": "Book" }, { "text": "本" }] }
     ]
   },
   "meta": { "msg": "Facts retrieved successfully" }
@@ -559,7 +560,7 @@
   "data": {
     "fact": {
       "id": "x9k2m4np",
-      "entries": ["Apple", "りんご"],
+      "entries": [{ "text": "Apple" }, { "text": "りんご" }],
       "fields": ["English", "Japanese"]
     }
   }
@@ -576,7 +577,7 @@
 
 ```json
 {
-  "entries": ["Apple", "りんご"],
+  "entries": [{ "text": "Apple" }, { "text": "りんご" }],
   "fields": ["English", "Japanese"]
 }
 ```
@@ -657,7 +658,9 @@
 
 - `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 
-**响应（无字段名 — 当卡组或词条未配置字段名时，段中 `field` 为空字符串）：**
+**响应结构：** `front` 与 `back` 为**词条对象数组**，顺序按 **template**。每个词条有可选 **`field`**（标签）和 **`items`**：`{ "type": "text"|"audio"|"image"|"video", "value": string }` 的数组。每项内 item 顺序固定：text → audio → image → video（仅存在的类型）。一项可有多种类型的多个 item。媒体类型的 `value` 在服务端能解析 base URL 时为**完整媒体 URL**（如 `https://api.wordupx.com:8443/api/media/abc123`）。使用该 URL 并携带相同 `Authorization: Bearer <token>` 即可下载。
+
+**响应（无字段名）：**
 
 ```json
 {
@@ -670,8 +673,12 @@
       "due_date": 1763269800,
       "hidden": false,
       "created_at": 1763269600,
-      "front": [{"field": "", "type": "text", "value": "Apple"}],
-      "back": [{"field": "", "type": "text", "value": "苹果"}]
+      "front": [
+        {"items": [{"type": "text", "value": "Apple"}]}
+      ],
+      "back": [
+        {"items": [{"type": "text", "value": "苹果"}]}
+      ]
     },
     "urgency": 1.0
   },
@@ -694,8 +701,12 @@
       "due_date": 1763269702,
       "hidden": false,
       "created_at": 1763269700,
-      "front": [{"field": "Word", "type": "text", "value": "Apple"}],
-      "back": [{"field": "Translation", "type": "text", "value": "苹果"}]
+      "front": [
+        {"field": "Word", "items": [{"type": "text", "value": "Apple"}]}
+      ],
+      "back": [
+        {"field": "Translation", "items": [{"type": "text", "value": "苹果"}]}
+      ]
     },
     "urgency": 2.598
   },
@@ -705,7 +716,81 @@
 }
 ```
 
-`front` 和 `back` 为段对象数组。每段包含 **`field`**（标签或空字符串）、**`type`**（`text`、`audio`、`image` 或 `video`）和 **`value`**（文本内容，或音频/图片/视频的**完整媒体 URL**，如 `https://api.wordupx.com:8443/api/media/abc123`）。使用该 URL 并携带相同 `Authorization: Bearer <token>` 即可下载文件，无需根据 id 拼 URL。可直接据此渲染卡片，无需再请求 fact。
+**响应（一项含 text + audio + image）：**
+
+```json
+{
+  "data": {
+    "card": {
+      "id": "m8n9p0q1",
+      "fact_id": "e7f8g9h0",
+      "template": [[0], [1]],
+      "last_review": 1763269700,
+      "due_date": 1763269800,
+      "hidden": false,
+      "created_at": 1763269600,
+      "front": [
+        {
+          "field": "Word",
+          "items": [
+            {"type": "text", "value": "Hello"},
+            {"type": "audio", "value": "https://api.example.com/api/media/aud001"},
+            {"type": "image", "value": "https://api.example.com/api/media/img002"}
+          ]
+        }
+      ],
+      "back": [
+        {"field": "Translation", "items": [{"type": "text", "value": "你好"}]}
+      ]
+    },
+    "urgency": 1.0
+  },
+  "meta": {
+    "msg": "Next urgent card retrieved successfully"
+  }
+}
+```
+
+**响应（正面多词条 — 如两句例句各有 text + audio）：**
+
+```json
+{
+  "data": {
+    "card": {
+      "id": "k7m2n9p1",
+      "fact_id": "a3b4c5d6",
+      "template": [[0, 1], [2]],
+      "last_review": 1763269700,
+      "due_date": 1763269800,
+      "hidden": false,
+      "created_at": 1763269600,
+      "front": [
+        {
+          "field": "Example",
+          "items": [
+            {"type": "text", "value": "First sentence."},
+            {"type": "audio", "value": "https://api.example.com/api/media/aud001"}
+          ]
+        },
+        {
+          "field": "Example",
+          "items": [
+            {"type": "text", "value": "Second sentence."},
+            {"type": "audio", "value": "https://api.example.com/api/media/aud002"}
+          ]
+        }
+      ],
+      "back": [
+        {"field": "Translation", "items": [{"type": "text", "value": "翻译"}]}
+      ]
+    },
+    "urgency": 1.0
+  },
+  "meta": {
+    "msg": "Next urgent card retrieved successfully"
+  }
+}
+```
 
 **仅正面卡片（背面为空，如 template `[[0], []]`）：**
 
@@ -720,7 +805,9 @@
       "due_date": 1763269800,
       "hidden": false,
       "created_at": 1763269600,
-      "front": [{"field": "Question", "type": "text", "value": "Only front text"}],
+      "front": [
+        {"field": "Question", "items": [{"type": "text", "value": "Only front text"}]}
+      ],
       "back": []
     },
     "urgency": 1.0
@@ -729,7 +816,7 @@
 }
 ```
 
-**含音频、图片与视频段的卡片（每种内容类型单独一段；媒体段的 `value` 为完整 URL）：**
+**多词条且含媒体的卡片（template [[0, 1], [2, 3]]；媒体 item 的 `value` 为完整 URL）：**
 
 ```json
 {
@@ -743,13 +830,12 @@
       "hidden": false,
       "created_at": 1763269600,
       "front": [
-        {"field": "Front", "type": "text", "value": "Word"},
-        {"field": "Pronunciation", "type": "audio", "value": "https://api.wordupx.com:8443/api/media/abc123"}
+        {"field": "Front", "items": [{"type": "text", "value": "Word"}]},
+        {"field": "Pronunciation", "items": [{"type": "audio", "value": "https://api.wordupx.com:8443/api/media/abc123"}]}
       ],
       "back": [
-        {"field": "Picture", "type": "image", "value": "https://api.wordupx.com:8443/api/media/def456"},
-        {"field": "Clip", "type": "video", "value": "https://api.wordupx.com:8443/api/media/vid789"},
-        {"field": "Back", "type": "text", "value": "Translation"}
+        {"field": "Picture", "items": [{"type": "image", "value": "https://api.wordupx.com:8443/api/media/def456"}]},
+        {"field": "Clip", "items": [{"type": "video", "value": "https://api.wordupx.com:8443/api/media/vid789"}, {"type": "text", "value": "Translation"}]}
       ]
     },
     "urgency": 1.2
@@ -931,7 +1017,7 @@
 
 ## 5. 媒体（音频 / 图片）
 
-可为词条附加音频、图片和视频。词条字段通过标记 `[audio:id]`、`[image:id]` 和 `[video:id]` 按 ID 引用媒体。
+可为词条附加音频、图片和视频。每条 entry 为对象，含可选 `text`、`audio`、`image`、`video`；可单独用一项媒体（如 `{ "audio": "abc123" }`），或与文本合在同一 entry（如 `{ "text": "例文。", "audio": "ex1id" }`）以明确该音频对应该句。
 
 **大小限制：** 图片最大 **5 MB**；音频与视频各最大 **200 MB**。可通过环境变量覆盖：`MEDIA_MAX_SIZE_IMAGE`、`MEDIA_MAX_SIZE_VIDEO`、`MEDIA_MAX_SIZE_AUDIO`。
 
@@ -1030,7 +1116,7 @@
 
 ### 在词条中使用媒体（开发中）
 
-在 `entries` 中加入标记，例如 `["Word", "[audio:abc123]", "[image:def456]", "[video:vid789]", "Translation"]`。可选用 `template` 指定每词条的正/背面布局；省略则使用默认（正面第一条、背面其余）。仅以纯文本展示词条时（如列表中），界面显示为 `audio:id`、`image:id`、`video:id`（无方括号）。存储与 API 使用 `[type:id]`。
+每条 entry 为对象，含可选 `text`、`audio`、`image`、`video`。可选用 `template` 指定每词条的正/背面布局；省略则使用默认（正面第一条、背面其余）。
 
 完整设计（上传、删除、展示、同步）见 **[媒体上传设计文档](../design-doc/media-upload.md)**。
 
