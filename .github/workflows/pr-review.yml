@@ -12,7 +12,7 @@ concurrency:
 jobs:
   # Job 1: Auto-fill PR description (only on opened)
   summarize:
-    if: github.event.action == 'opened'
+    if: github.event.pull_request.draft == false && github.event.action == 'opened'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -258,7 +258,7 @@ jobs:
   # Job 1b: Update stats table (runs after summarize as a safety net on both opened and synchronize)
   update-stats:
     needs: [summarize]
-    if: always()
+    if: github.event.pull_request.draft == false && always()
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -345,7 +345,7 @@ jobs:
   # Job 2: Code review (runs after update-stats, which itself runs after summarize)
   review:
     needs: [update-stats]
-    if: always() && (needs.update-stats.result == 'success' || needs.update-stats.result == 'skipped')
+    if: github.event.pull_request.draft == false && always() && (needs.update-stats.result == 'success' || needs.update-stats.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: read
