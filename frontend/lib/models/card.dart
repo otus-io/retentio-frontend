@@ -4,7 +4,8 @@
 
 import 'dart:convert';
 
-CardDetail cardDetailFromJson(String str) => CardDetail.fromJson(json.decode(str));
+CardDetail cardDetailFromJson(String str) =>
+    CardDetail.fromJson(json.decode(str));
 
 String cardDetailToJson(CardDetail data) => json.encode(data.toJson());
 
@@ -12,29 +13,15 @@ class CardDetail {
   Card card;
   int urgency;
 
-  CardDetail({
-    required this.card,
-    required this.urgency,
-  });
+  CardDetail({required this.card, required this.urgency});
 
-  CardDetail copyWith({
-    Card? card,
-    int? urgency,
-  }) =>
-      CardDetail(
-        card: card ?? this.card,
-        urgency: urgency ?? this.urgency,
-      );
+  CardDetail copyWith({Card? card, int? urgency}) =>
+      CardDetail(card: card ?? this.card, urgency: urgency ?? this.urgency);
 
-  factory CardDetail.fromJson(Map<String, dynamic> json) => CardDetail(
-    card: Card.fromJson(json["card"]),
-    urgency: json["urgency"],
-  );
+  factory CardDetail.fromJson(Map<String, dynamic> json) =>
+      CardDetail(card: Card.fromJson(json["card"]), urgency: json["urgency"]);
 
-  Map<String, dynamic> toJson() => {
-    "card": card.toJson(),
-    "urgency": urgency,
-  };
+  Map<String, dynamic> toJson() => {"card": card.toJson(), "urgency": urgency};
 }
 
 class Card {
@@ -70,18 +57,17 @@ class Card {
     String? id,
     int? lastReview,
     List<List<int>>? template,
-  }) =>
-      Card(
-        back: back ?? this.back,
-        createdAt: createdAt ?? this.createdAt,
-        dueDate: dueDate ?? this.dueDate,
-        factId: factId ?? this.factId,
-        front: front ?? this.front,
-        hidden: hidden ?? this.hidden,
-        id: id ?? this.id,
-        lastReview: lastReview ?? this.lastReview,
-        template: template ?? this.template,
-      );
+  }) => Card(
+    back: back ?? this.back,
+    createdAt: createdAt ?? this.createdAt,
+    dueDate: dueDate ?? this.dueDate,
+    factId: factId ?? this.factId,
+    front: front ?? this.front,
+    hidden: hidden ?? this.hidden,
+    id: id ?? this.id,
+    lastReview: lastReview ?? this.lastReview,
+    template: template ?? this.template,
+  );
 
   factory Card.fromJson(Map<String, dynamic> json) => Card(
     back: List<Back>.from(json["back"].map((x) => Back.fromJson(x))),
@@ -92,7 +78,9 @@ class Card {
     hidden: json["hidden"],
     id: json["id"],
     lastReview: json["last_review"],
-    template: List<List<int>>.from(json["template"].map((x) => List<int>.from(x.map((x) => x)))),
+    template: List<List<int>>.from(
+      json["template"].map((x) => List<int>.from(x.map((x) => x))),
+    ),
   );
 
   Map<String, dynamic> toJson() => {
@@ -104,7 +92,9 @@ class Card {
     "hidden": hidden,
     "id": id,
     "last_review": lastReview,
-    "template": List<dynamic>.from(template.map((x) => List<dynamic>.from(x.map((x) => x)))),
+    "template": List<dynamic>.from(
+      template.map((x) => List<dynamic>.from(x.map((x) => x))),
+    ),
   };
 }
 
@@ -112,19 +102,10 @@ class Back {
   String field;
   List<Item> items;
 
-  Back({
-    required this.field,
-    required this.items,
-  });
+  Back({required this.field, required this.items});
 
-  Back copyWith({
-    String? field,
-    List<Item>? items,
-  }) =>
-      Back(
-        field: field ?? this.field,
-        items: items ?? this.items,
-      );
+  Back copyWith({String? field, List<Item>? items}) =>
+      Back(field: field ?? this.field, items: items ?? this.items);
 
   factory Back.fromJson(Map<String, dynamic> json) => Back(
     field: json["field"],
@@ -141,27 +122,13 @@ class Item {
   String type;
   String value;
 
-  Item({
-    required this.type,
-    required this.value,
-  });
+  Item({required this.type, required this.value});
 
-  Item copyWith({
-    String? type,
-    String? value,
-  }) =>
-      Item(
-        type: type ?? this.type,
-        value: value ?? this.value,
-      );
+  Item copyWith({String? type, String? value}) =>
+      Item(type: type ?? this.type, value: value ?? this.value);
 
-  factory Item.fromJson(Map<String, dynamic> json) => Item(
-    type: json["type"],
-    value: json["value"],
-  );
+  factory Item.fromJson(Map<String, dynamic> json) =>
+      Item(type: json["type"], value: json["value"]);
 
-  Map<String, dynamic> toJson() => {
-    "type": type,
-    "value": value,
-  };
+  Map<String, dynamic> toJson() => {"type": type, "value": value};
 }

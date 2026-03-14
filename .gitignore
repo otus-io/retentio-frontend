@@ -64,3 +64,5 @@ backend-api/backend-api
 
 # Design docs (English only, not tracked)
 docs/design-doc/
+
+/frontend/ios/.symlinks/
