@@ -61,6 +61,3 @@ app.*.map.json
 # Go compiled binaries (dev-run.sh, run.sh)
 backend-api/retentio
 backend-api/backend-api
-
-# Design docs (English only, not tracked)
-docs/design-doc/
