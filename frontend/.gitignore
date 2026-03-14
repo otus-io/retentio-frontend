@@ -28,3 +28,6 @@ doc/api/
 .flutter-plugins-dependencies
 
 !/ios/Podfile.lock
+
+# Ignore Xcode user workspace state
+ios/Runner.xcworkspace/xcuserdata/
