@@ -3,14 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 import 'package:retentio/extensions/widget_extension.dart';
-import 'package:retentio/widgets/common_net_image.dart';
 
 import '../../../extensions/context_extension.dart';
 import '../../../models/deck.dart';
 import '../providers/card_provider.dart';
 import 'buttons_tabbar/buttons_tab_bar_widget.dart';
-import 'card_audio_widget.dart';
-import 'card_video_widget.dart';
+import 'field_content_widget.dart';
 
 class CardWidget extends ConsumerWidget {
   const CardWidget({super.key, required this.deck, required this.isFront});
@@ -64,13 +62,7 @@ class CardWidget extends ConsumerWidget {
                     // Add your tabs here
                     tabs:
                         cards?.map((e) {
-                          return Tab(
-                            icon: Icon(
-                              ref
-                                  .read(cardProvider(deck).notifier)
-                                  .icons[e.type],
-                            ),
-                          );
+                          return Tab(text: e.field);
                         }).toList() ??
                         [],
                   ).expanded(),
@@ -117,28 +109,7 @@ class CardWidget extends ConsumerWidget {
             TabBarView(
               children:
                   cards?.map((e) {
-                    final type = e.type;
-
-                    return switch (type) {
-                      'audio' => CardAudioWidget(
-                        audioUrl: e.value,
-                        color: color,
-                      ),
-                      'video' => CardVideoWidget(url: e.value),
-                      'text' => Center(
-                        child: Text(
-                          e.value,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 1.2,
-                            color: color,
-                          ),
-                        ),
-                      ),
-                      'image' => Center(child: CommonNetImage(url: e.value)),
-                      String() => throw UnimplementedError(),
-                    };
+                    return FieldContentWidget(items: e.items, color: color);
                   }).toList() ??
                   [],
             ).expanded(),
