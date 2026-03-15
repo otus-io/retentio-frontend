@@ -16,7 +16,7 @@ extension MapExtension<T> on Map<T, T> {
   ///print(map.has("id", 1)); // true
   ///print(map.has("id", 2)); // false
   ///```
-  bool has(String key, dynamic value) => containsKey(key) && this[key] == value;
+  bool has(T key, dynamic value) => containsKey(key) && this[key] == value;
 
   ///If this map does not contains the given [key]/[value] pair.
   ///
@@ -29,7 +29,7 @@ extension MapExtension<T> on Map<T, T> {
   ///
   /// print(map.doesntHave("gender", null)); // true
   ///```
-  bool doesntHave(String key, T value) => !has(key, value);
+  bool doesntHave(T key, T value) => !has(key, value);
 
   /// Removes the key/value pairs from the map whose keys are not present in the given [keys] list.
   ///
@@ -190,9 +190,9 @@ extension MapExtension<T> on Map<T, T> {
   /// map.getList<double>('prices') // returns [20.0, 30.0, 40.0]
   /// map.getList<int>('invalidKey') // returns []
   /// ```
-  List<T> getList<K>(String key) => containsKey(key) && this[key] is List
-      ? (this[key]! as List).cast<T>()
-      : <T>[];
+  List<K> getList<K>(String key) => containsKey(key) && this[key] is List
+      ? (this[key]! as List).cast<K>()
+      : <K>[];
 
   /// This method retrieves the value associated with the given key from the map.
   /// The match() function also works similarly to switch
