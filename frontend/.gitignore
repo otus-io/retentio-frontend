@@ -24,7 +24,16 @@ doc/api/
 *.js.deps
 *.js.map
 
-.flutter-plugins
+!.flutter-plugins
 .flutter-plugins-dependencies
 
-!/ios/Podfile.lock
+/ios/Podfile.lock
+
+# Ignore symlinks directory in iOS
+/ios/.symlinks/
+
+# Ignore Pods directory in iOS
+/ios/Pods/
+
+# Ignore Xcode project file
+/ios/Runner.xcodeproj/
