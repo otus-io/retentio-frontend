@@ -16,7 +16,7 @@ extension MapExtension<T> on Map<T, T> {
   ///print(map.has("id", 1)); // true
   ///print(map.has("id", 2)); // false
   ///```
-  bool has(String key, dynamic value) => containsKey(key) && this[key] == value;
+  bool has(T key, dynamic value) => containsKey(key) && this[key] == value;
 
   ///If this map does not contains the given [key]/[value] pair.
   ///
@@ -29,7 +29,7 @@ extension MapExtension<T> on Map<T, T> {
   ///
   /// print(map.doesntHave("gender", null)); // true
   ///```
-  bool doesntHave(String key, T value) => !has(key, value);
+  bool doesntHave(T key, T value) => !has(key, value);
 
   /// Removes the key/value pairs from the map whose keys are not present in the given [keys] list.
   ///
