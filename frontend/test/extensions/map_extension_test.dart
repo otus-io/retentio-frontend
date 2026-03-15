@@ -45,11 +45,7 @@ void main() {
 
   group('MapExtension retainKeys', () {
     test('retainKeys keeps only specified keys', () {
-      final map = <String, dynamic>{
-        'id': 1,
-        'name': 'John',
-        'age': 30,
-      };
+      final map = <String, dynamic>{'id': 1, 'name': 'John', 'age': 30};
       final result = map.retainKeys(['id', 'name']);
       expect(result, {'id': 1, 'name': 'John'});
       expect(map, same(result));
@@ -123,9 +119,7 @@ void main() {
 
   group('MapExtension getJsonMap', () {
     test('getJsonMap decodes JSON string to map', () {
-      final map = <String, dynamic>{
-        'payload': '{"foo": "bar", "n": 42}',
-      };
+      final map = <String, dynamic>{'payload': '{"foo": "bar", "n": 42}'};
       expect(map.getJsonMap('payload'), {'foo': 'bar', 'n': 42});
     });
 
@@ -142,9 +136,7 @@ void main() {
 
   group('MapExtension getJsonMapList', () {
     test('getJsonMapList decodes JSON array of objects', () {
-      final map = <String, dynamic>{
-        'items': '[{"a":1},{"b":2}]',
-      };
+      final map = <String, dynamic>{'items': '[{"a":1},{"b":2}]'};
       final result = map.getJsonMapList('items');
       expect(result, isNotNull);
       expect(result!.length, 2);
@@ -234,7 +226,9 @@ void main() {
     });
 
     test('getList returns empty list for missing key', () {
-      final map = <String, dynamic>{'items': [1, 2, 3]};
+      final map = <String, dynamic>{
+        'items': [1, 2, 3],
+      };
       expect(map.getList<int>('invalidKey'), isEmpty);
     });
 
@@ -242,6 +236,20 @@ void main() {
       final map = <String, dynamic>{'items': 'not a list'};
       expect(map.getList<int>('items'), isEmpty);
     });
+
+    // Type parameter K test: getList<K> should return List<K> so this assignment
+    // type-checks. With current bug (return type List<T>), this fails to compile
+    // because List<dynamic> is not assignable to List<int>.
+    test(
+      'getList<K> returns List<K> so result can be assigned to List<int>',
+      () {
+        final map = <String, dynamic>{
+          'items': [1, 2, 3],
+        };
+        List<int> result = map.getList<int>('items');
+        expect(result, [1, 2, 3]);
+      },
+    );
   });
 
   group('MapExtension match', () {
