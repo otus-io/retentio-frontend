@@ -10,6 +10,7 @@ import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/deck/providers/card_provider.dart';
 import 'package:retentio/screen/deck/widgets/card_widget.dart';
 import 'package:retentio/screen/deck/widgets/flash_card/flash_card.dart';
+import 'package:retentio/utils/log.dart';
 
 import '../../mixins/delayed_init_mixin.dart';
 import '../../widgets/common_bottom_sheet.dart';
@@ -72,7 +73,7 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen>
                     title: 'Edit Deck',
                     child: CreateDeckWidget(),
                   ).then((value) {
-                    if (value.isNotEmpty) {
+                    if (value != null && value.isNotEmpty) {
                       ref
                           .read(createDeckParamsProvider.notifier)
                           .update((state) => state.copyWith(name: value));
@@ -134,6 +135,7 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen>
     final card = ref.watch(
       cardProvider(widget.deck).select((value) => value.cardDetail),
     );
+    logger.w(card);
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }

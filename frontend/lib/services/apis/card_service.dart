@@ -2,6 +2,7 @@ import 'package:retentio/models/card.dart';
 import 'package:retentio/models/res_base_model.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/index.dart';
+import 'package:retentio/utils/log.dart';
 
 class CardService {
   /// 获取下一张需要学习的卡片
@@ -15,6 +16,7 @@ class CardService {
 
       return CardDetail.fromJson(res?.data);
     } catch (e) {
+      logger.e(e);
       return null;
     }
   }
@@ -33,6 +35,7 @@ class CardService {
 
       return CardDetail.fromJson(res?.data);
     } catch (e) {
+      logger.e(e);
       return null;
     }
   }

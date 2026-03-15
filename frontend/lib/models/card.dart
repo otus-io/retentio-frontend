@@ -108,7 +108,7 @@ class Back {
       Back(field: field ?? this.field, items: items ?? this.items);
 
   factory Back.fromJson(Map<String, dynamic> json) => Back(
-    field: json["field"],
+    field: json["field"] ?? "Text",
     items: List<Item>.from(json["items"].map((x) => Item.fromJson(x))),
   );
 
