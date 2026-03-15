@@ -1,12 +1,13 @@
 #!/bin/bash
+set -e
 
 # =============================================================================
 # Setup script to install git hooks for Retentio Frontend
-# Run this once after cloning the repo: ./utils/scripts/setup-hooks.sh
+# Run this once after cloning the repo: ./utils/setup-hooks.sh
 # =============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && git rev-parse --show-toplevel)"
 HOOKS_DIR="$REPO_ROOT/.git/hooks"
 
 echo "Installing git hooks..."
