@@ -27,13 +27,9 @@ doc/api/
 !.flutter-plugins
 .flutter-plugins-dependencies
 
-/ios/Podfile.lock
 
-# Ignore symlinks directory in iOS
-/ios/.symlinks/
+!/ios/Podfile.lock
 
-# Ignore Pods directory in iOS
-/ios/Pods/
+# Ignore Xcode user workspace state
+ios/Runner.xcworkspace/xcuserdata/
 
-# Ignore Xcode project file
-/ios/Runner.xcodeproj/
