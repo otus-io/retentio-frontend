@@ -104,22 +104,29 @@ extension MapExtension<T> on Map<T, T> {
   bool getBool(String key) =>
       (containsKey(key) ? bool.tryParse('${this[key]}') : false) ?? false;
 
-  Map<String, dynamic> getJsonMap(String key) =>
-      containsKey(key) && this[key] != null
-      ? jsonDecode(this[key].toString())
-      : null;
+  Map<String, dynamic>? getJsonMap(String key) {
+    if (!containsKey(key) || this[key] == null) return null;
+    try {
+      return jsonDecode(this[key].toString());
+    } catch (e) {
+      return null;
+    }
+  }
 
-  List<dynamic>? getJsonMapList(String key) =>
-      containsKey(key) && this[key] != null
-      ? List<dynamic>.from(jsonDecode(this[key].toString())).map((value) {
-          // logger.i(e.runtimeType);
-          try {
-            return jsonDecode(value);
-          } catch (e) {
-            return value;
-          }
-        }).toList()
-      : null;
+  List<dynamic>? getJsonMapList(String key) {
+    if (!containsKey(key) || this[key] == null) return null;
+    try {
+      return List<dynamic>.from(jsonDecode(this[key].toString())).map((value) {
+        try {
+          return jsonDecode(value);
+        } catch (e) {
+          return value;
+        }
+      }).toList();
+    } catch (e) {
+      return null;
+    }
+  }
 
   /// Reads a [key] value of [int] type from [Map].
   ///
@@ -184,7 +191,7 @@ extension MapExtension<T> on Map<T, T> {
   /// map.getList<int>('invalidKey') // returns []
   /// ```
   List<T> getList<K>(String key) =>
-      containsKey(key) && this[key] is List<T> ? this[key]! as List<T> : <T>[];
+      containsKey(key) && this[key] is List ? (this[key]! as List).cast<T>() : <T>[];
 
   /// This method retrieves the value associated with the given key from the map.
   /// The match() function also works similarly to switch
