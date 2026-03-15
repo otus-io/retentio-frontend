@@ -190,8 +190,9 @@ extension MapExtension<T> on Map<T, T> {
   /// map.getList<double>('prices') // returns [20.0, 30.0, 40.0]
   /// map.getList<int>('invalidKey') // returns []
   /// ```
-  List<T> getList<K>(String key) =>
-      containsKey(key) && this[key] is List ? (this[key]! as List).cast<T>() : <T>[];
+  List<T> getList<K>(String key) => containsKey(key) && this[key] is List
+      ? (this[key]! as List).cast<T>()
+      : <T>[];
 
   /// This method retrieves the value associated with the given key from the map.
   /// The match() function also works similarly to switch
