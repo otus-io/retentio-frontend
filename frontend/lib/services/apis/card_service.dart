@@ -21,7 +21,7 @@ class CardService {
     }
   }
 
-  static Future<CardDetail?> updateCard(String deckId, dynamic params) async {
+  static Future<bool?> updateCard(String deckId, dynamic params) async {
     try {
       final res = await ApiService.patch(
         Api.card,
@@ -33,7 +33,7 @@ class CardService {
         return null; // 没有需要学习的卡片
       }
 
-      return CardDetail.fromJson(res?.data);
+      return res?.isSuccess == true;
     } catch (e) {
       logger.e(e);
       return null;

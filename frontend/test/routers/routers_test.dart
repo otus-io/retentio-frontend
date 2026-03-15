@@ -20,7 +20,6 @@ void main() {
       expect(AppRoutes.values, contains(AppRoutes.login));
       expect(AppRoutes.values, contains(AppRoutes.main));
       expect(AppRoutes.values, contains(AppRoutes.register));
-
     });
   });
 }

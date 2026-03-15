@@ -135,7 +135,6 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen>
     final card = ref.watch(
       cardProvider(widget.deck).select((value) => value.cardDetail),
     );
-    logger.w(card);
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -165,6 +164,9 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen>
     final cardsStudied = ref.watch(
       cardProvider(widget.deck).select((value) => value.cardsStudied),
     );
+    logger.w(
+      'cardsStudied: $cardsStudied totalCardsInSession: $totalCardsInSession',
+    );
     if (totalCardsInSession == 0) {
       return Center(
         child: Column(
@@ -186,7 +188,7 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen>
         ),
       );
     }
-    if (card == null) {
+    if (card == null || cardsStudied == totalCardsInSession) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -303,6 +305,8 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen>
                         label = '${(interval ~/ 60 / 60 / 24).ceil()}d';
                       } else if (interval > 60 * 60) {
                         label = '${(interval ~/ 60 / 60).toStringAsFixed(1)}h';
+                      } else {
+                        label = '${(interval).toStringAsFixed(1)}m';
                       }
                       return Row(
                         children: [
