@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 import 'package:retentio/extensions/context_extension.dart';
@@ -9,6 +10,13 @@ import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/deck/providers/card_provider.dart';
 import 'package:retentio/screen/deck/widgets/card_widget.dart';
 import 'package:retentio/screen/deck/widgets/flash_card/flash_card.dart';
+import 'package:retentio/utils/log.dart';
+
+import '../../mixins/delayed_init_mixin.dart';
+import '../../widgets/common_bottom_sheet.dart';
+import '../learn/providers/create_deck_provider.dart';
+import '../learn/providers/deck_provider.dart';
+import '../learn/widgets/create_deck_widget.dart';
 
 class DeckLearnScreen extends ConsumerStatefulWidget {
   final Deck deck;
@@ -19,7 +27,24 @@ class DeckLearnScreen extends ConsumerStatefulWidget {
   ConsumerState<DeckLearnScreen> createState() => _DeckLearnScreenState();
 }
 
-class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
+class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen>
+    with DelayedInitMixin {
+  @override
+  void afterFirstLayout() {
+    ref
+        .read(createDeckParamsProvider.notifier)
+        .update(
+          (state) => CreateDeckParams(
+            fields: widget.deck.fields,
+            name: widget.deck.name,
+            templates: widget.deck.templates,
+            rate: widget.deck.rate,
+            type: DeckCardType.edit,
+            id: widget.deck.id,
+          ),
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -27,44 +52,69 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.deck.name),
+        title: Text(ref.watch(createDeckParamsProvider).name),
         actions: [
           PullDownButton(
             routeTheme: PullDownMenuRouteTheme(
-              width: 150,
+              width: 200,
               backgroundColor: theme.colorScheme.surface,
             ),
             itemBuilder: (context) => [
               // PullDownMenuItem(
-              //   title: 'Edit Fact',
-              //   onTap: () {
-              //     showCommonBottomSheet(
-              //       context: context,
-              //       initialChildSize: 0.4,
-              //       minChildSize: 0.3,
-              //       maxChildSize: 0.5,
-              //       title: 'Edit Fact',
-              //       child: ProviderScope(
-              //         overrides: [deckProvider.overrideWithValue(widget.deck)],
-              //         child: EditFactWidget(deck: widget.deck),
-              //       ),
-              //     );
-              //   },
-              //   icon: LucideIcons.pencil,
+              //   title: 'Add Fact',
+              //   onTap: () {},
+              //   icon: LucideIcons.layersPlus,
               // ),
               PullDownMenuItem(
-                title: 'Hide Card',
+                title: 'Edit Deck',
+                onTap: () {
+                  showCommonBottomSheet(
+                    context: ref.context,
+                    title: 'Edit Deck',
+                    child: CreateDeckWidget(),
+                  ).then((value) {
+                    if (value != null && value.isNotEmpty) {
+                      ref
+                          .read(createDeckParamsProvider.notifier)
+                          .update((state) => state.copyWith(name: value));
+                    }
+                  });
+                },
+                icon: LucideIcons.squarePen,
+              ),
+              if (ref
+                      .watch(cardProvider(widget.deck).notifier)
+                      .totalCardsInSession >
+                  0)
+                PullDownMenuItem(
+                  title: 'Hide Card',
+                  onTap: () async {
+                    await ref
+                        .read(cardProvider(widget.deck).notifier)
+                        .nextCard(isHide: true);
+                    ref
+                        .read(cardProvider(widget.deck).notifier)
+                        .flashCardController
+                        .showFront();
+                    ref.read(cardProvider(widget.deck).notifier).showAnswer();
+                  },
+                  icon: LucideIcons.eyeOff,
+                ),
+              PullDownMenuItem(
+                title: 'Delete Deck',
                 onTap: () async {
                   await ref
-                      .read(cardProvider(widget.deck).notifier)
-                      .nextCard(isHide: true);
-                  ref
-                      .read(cardProvider(widget.deck).notifier)
-                      .flashCardController
-                      .showFront();
-                  ref.read(cardProvider(widget.deck).notifier).showAnswer();
+                      .read(deckListProvider.notifier)
+                      .deleteDeck(widget.deck);
+                  if (ref.context.mounted) {
+                    ref.context.pop();
+                  }
                 },
-                icon: LucideIcons.eyeOff,
+                icon: LucideIcons.delete,
+                iconColor: Colors.red,
+                itemTheme: PullDownMenuItemTheme(
+                  textStyle: TextStyle(color: Colors.red),
+                ),
               ),
             ],
             buttonBuilder: (context, showMenu) => IconButton(
@@ -79,7 +129,7 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
   }
 
   Widget _buildBody(ThemeData theme, AppLocalizations loc) {
-    final isLoading = ref.read(
+    final isLoading = ref.watch(
       cardProvider(widget.deck).select((value) => value.isLoading),
     );
     final card = ref.watch(
@@ -114,14 +164,37 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
     final cardsStudied = ref.watch(
       cardProvider(widget.deck).select((value) => value.cardsStudied),
     );
-
-    if (card == null) {
+    logger.w(
+      'cardsStudied: $cardsStudied totalCardsInSession: $totalCardsInSession',
+    );
+    if (totalCardsInSession == 0) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.check_circle_outline,
+              LucideIcons.circleQuestionMark,
+              size: 80,
+              color: theme.primaryColor,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No cards in this deck',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    if (card == null || cardsStudied == totalCardsInSession) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              LucideIcons.circleCheckBig,
               size: 80,
               color: theme.primaryColor,
             ),
@@ -232,6 +305,8 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen> {
                         label = '${(interval ~/ 60 / 60 / 24).ceil()}d';
                       } else if (interval > 60 * 60) {
                         label = '${(interval ~/ 60 / 60).toStringAsFixed(1)}h';
+                      } else {
+                        label = '${(interval).toStringAsFixed(1)}m';
                       }
                       return Row(
                         children: [

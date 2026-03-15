@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:retentio/extensions/object_extension.dart';
 import 'package:retentio/routers/routers.dart';
 import 'package:go_router/go_router.dart';
 import 'package:retentio/screen/login/login_screen.dart';
@@ -6,6 +7,7 @@ import 'package:retentio/screen/register/register_screen.dart';
 
 import '../main.dart';
 import '../providers/auth_provider.dart';
+import '../screen/deck/deck_learn_screen.dart';
 
 /// Created on 2026/2/6
 /// Description:
@@ -30,6 +32,11 @@ class AppPages {
       GoRoute(
         path: AppRoutes.main.path,
         builder: (context, state) => const MainTabScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.learn.path,
+        builder: (context, state) =>
+            DeckLearnScreen(deck: state.extra.asMap()['deck']),
       ),
     ],
     redirect: (context, state) {

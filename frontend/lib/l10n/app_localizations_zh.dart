@@ -203,4 +203,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get next => '下一个';
+
+  @override
+  String get noNetworkConnection => '网络连接不可用，请检查网络设置';
 }

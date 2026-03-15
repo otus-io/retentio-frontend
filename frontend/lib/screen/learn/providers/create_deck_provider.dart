@@ -46,6 +46,21 @@ class CreateDeckParams {
     required this.type,
     required this.id,
   });
+  CreateDeckParams copyWith({
+    List<String>? fields,
+    String? name,
+    List<List<int>>? templates,
+    int? rate,
+    DeckCardType? type,
+    String? id,
+  }) => CreateDeckParams(
+    fields: fields ?? this.fields,
+    name: name ?? this.name,
+    rate: rate ?? this.rate,
+    type: type ?? this.type,
+    id: id ?? this.id,
+    templates: templates ?? this.templates,
+  );
 }
 
 enum Rate {
@@ -185,7 +200,7 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
       if (res?.isSuccess == true) {
         ref.read(loadingStateProvider.notifier).showLoading();
         await ref.read(deckListProvider.notifier).onRefresh();
-        navigatorKey.currentContext?.pop();
+        navigatorKey.currentContext?.pop(name);
       } else {
         ref.read(loadingStateProvider.notifier).showInitial();
         if (res?.msg.isNotEmpty == true && context.mounted) {

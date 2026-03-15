@@ -2,6 +2,7 @@ import 'package:retentio/models/card.dart';
 import 'package:retentio/models/res_base_model.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/index.dart';
+import 'package:retentio/utils/log.dart';
 
 class CardService {
   /// 获取下一张需要学习的卡片
@@ -15,11 +16,12 @@ class CardService {
 
       return CardDetail.fromJson(res?.data);
     } catch (e) {
+      logger.e(e);
       return null;
     }
   }
 
-  static Future<CardDetail?> updateCard(String deckId, dynamic params) async {
+  static Future<bool?> updateCard(String deckId, dynamic params) async {
     try {
       final res = await ApiService.patch(
         Api.card,
@@ -31,8 +33,9 @@ class CardService {
         return null; // 没有需要学习的卡片
       }
 
-      return CardDetail.fromJson(res?.data);
+      return res?.isSuccess == true;
     } catch (e) {
+      logger.e(e);
       return null;
     }
   }

@@ -481,6 +481,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Next'**
   String get next;
+
+  /// Error message when there is no network connection
+  ///
+  /// In en, this message translates to:
+  /// **'No network connection. Please check your internet settings.'**
+  String get noNetworkConnection;
 }
 
 class _AppLocalizationsDelegate

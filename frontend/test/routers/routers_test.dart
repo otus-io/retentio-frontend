@@ -16,7 +16,7 @@ void main() {
     });
 
     test('all enum values are defined', () {
-      expect(AppRoutes.values.length, 3);
+      expect(AppRoutes.values.length, 4);
       expect(AppRoutes.values, contains(AppRoutes.login));
       expect(AppRoutes.values, contains(AppRoutes.main));
       expect(AppRoutes.values, contains(AppRoutes.register));

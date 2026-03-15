@@ -93,6 +93,22 @@ class Deck {
     this.updatedAt,
   });
 
+  ///copyWith
+  Deck copyWith({required String name}) => Deck(
+    id: id,
+    name: name,
+    templates: templates,
+    stats: stats,
+    rate: rate,
+    owner: owner,
+    fields: fields,
+    minInterval: minInterval,
+    defInterval: defInterval,
+    maxInterval: maxInterval,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+  );
+
   /// 从 JSON 创建 Deck 对象
   factory Deck.fromJson(Map<String, dynamic> json) {
     // 兼容处理 owner, API可能返回 "username" 或 { "username": "...", "email": "..." }

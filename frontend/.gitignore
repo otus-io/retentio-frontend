@@ -24,10 +24,12 @@ doc/api/
 *.js.deps
 *.js.map
 
-.flutter-plugins
+!.flutter-plugins
 .flutter-plugins-dependencies
+
 
 !/ios/Podfile.lock
 
 # Ignore Xcode user workspace state
 ios/Runner.xcworkspace/xcuserdata/
+

@@ -3,14 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/l10n/app_localizations.dart';
+import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/learn/providers/create_deck_provider.dart';
 import 'package:retentio/screen/learn/providers/deck_provider.dart';
-import 'package:retentio/models/deck.dart';
-import 'package:retentio/screen/deck/deck_detail_screen.dart';
-import 'package:retentio/screen/deck/deck_learn_screen.dart';
 import 'package:retentio/screen/learn/widgets/create_deck_widget.dart';
 import 'package:retentio/widgets/common_refresher.dart';
 
+import '../../routers/routers.dart';
 import '../../widgets/common_bottom_sheet.dart';
 
 class LearnScreen extends ConsumerStatefulWidget {
@@ -134,225 +133,113 @@ class _DeckCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    deck.name,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+    return GestureDetector(
+      onTap: () {
+        context.push(AppRoutes.learn.path, extra: {'deck': deck});
+      },
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      deck.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).primaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${deck.totalCards} ${loc.cards}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).primaryColor,
-                      fontWeight: FontWeight.w500,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
                     ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                _InfoChip(
-                  icon: Icons.auto_awesome,
-                  label: loc.newCards,
-                  value: deck.stats.unseenCards.toString(),
-                  color: Colors.blue,
-                ),
-                const SizedBox(width: 8),
-                _InfoChip(
-                  icon: Icons.refresh,
-                  label: loc.review,
-                  value: deck.reviewCards.toString(),
-                  color: Colors.orange,
-                ),
-                const SizedBox(width: 8),
-                _InfoChip(
-                  icon: Icons.library_books,
-                  label: loc.facts,
-                  value: deck.stats.factsCount.toString(),
-                  color: Colors.green,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      loc.progress,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    Text(
-                      '${deck.learnedCards}/${deck.totalCards} (${deck.progress.toStringAsFixed(0)}%)',
+                    child: Text(
+                      '${deck.totalCards} ${loc.cards}',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).primaryColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: deck.progress / 100,
-                    minHeight: 8,
-                    backgroundColor: isDark
-                        ? Colors.grey[800]
-                        : Colors.grey[200],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // 三个操作按钮
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => DeckDetailScreen(deck: deck),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _InfoChip(
+                    icon: Icons.auto_awesome,
+                    label: loc.newCards,
+                    value: deck.stats.unseenCards.toString(),
+                    color: Colors.blue,
+                  ),
+                  const SizedBox(width: 8),
+                  _InfoChip(
+                    icon: Icons.refresh,
+                    label: loc.review,
+                    value: deck.reviewCards.toString(),
+                    color: Colors.orange,
+                  ),
+                  const SizedBox(width: 8),
+                  _InfoChip(
+                    icon: Icons.library_books,
+                    label: loc.facts,
+                    value: deck.stats.factsCount.toString(),
+                    color: Colors.green,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        loc.progress,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                      Text(
+                        '${deck.learnedCards}/${deck.totalCards} (${deck.progress.toStringAsFixed(0)}%)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.visibility, size: 18),
-                    label: Text(loc.viewCards),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: deck.progress / 100,
+                      minHeight: 8,
+                      backgroundColor: isDark
+                          ? Colors.grey[800]
+                          : Colors.grey[200],
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => DeckLearnScreen(deck: deck),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.school, size: 18),
-                    label: Text(loc.learnButton),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      _showManageBottomSheet(ref, deck, loc);
-                    },
-                    icon: const Icon(Icons.settings, size: 18),
-                    label: Text(loc.manage),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  void _showManageBottomSheet(WidgetRef ref, Deck deck, AppLocalizations loc) {
-    showCommonBottomSheet(
-      context: ref.context,
-      isScrollControlled: true,
-      title: deck.name,
-      initialChildSize: 0.4,
-      minChildSize: 0.35,
-      child: Column(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.edit),
-            title: const Text('Edit Deck'),
-            subtitle: const Text('Modify deck settings'),
-            onTap: () {
-              ref.context.pop();
-              ref
-                  .read(createDeckParamsProvider.notifier)
-                  .update(
-                    (state) => CreateDeckParams(
-                      fields: deck.fields,
-                      name: deck.name,
-                      templates: deck.templates,
-                      rate: deck.rate,
-                      type: DeckCardType.edit,
-                      id: deck.id,
-                    ),
-                  );
-              showCommonBottomSheet(
-                context: ref.context,
-                title: 'Edit Deck',
-                child: CreateDeckWidget(),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.add),
-            title: const Text('Add Cards'),
-            subtitle: const Text('Add new cards to this deck'),
-            onTap: () {
-              ref.context.pop();
-              // TODO: 导航到添加卡片页面
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.delete, color: Colors.red),
-            title: const Text(
-              'Delete Deck',
-              style: TextStyle(color: Colors.red),
-            ),
-            subtitle: const Text('Permanently delete this deck'),
-            onTap: () async {
-              await ref.read(deckListProvider.notifier).deleteDeck(deck);
-              if (ref.context.mounted) {
-                ref.context.pop();
-              }
-            },
-          ),
-        ],
       ),
     );
   }

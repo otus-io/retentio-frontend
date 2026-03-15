@@ -11,7 +11,7 @@ final cardProvider = NotifierProvider.autoDispose
     .family<CardNotifier, CardState, Deck>(CardNotifier.new);
 
 class CardNotifier extends Notifier<CardState> {
-  final Deck deck;
+  Deck deck;
 
   /// 本次学习会话的总卡片数
   int get totalCardsInSession => deck.stats.unseenCards + deck.reviewCards;
@@ -98,6 +98,8 @@ class CardNotifier extends Notifier<CardState> {
         isHide: false,
       );
       calculateScope();
+    } else {
+      state = state.copyWith(cardDetail: null, isLoading: false, isHide: false);
     }
   }
 }

@@ -1,6 +1,0 @@
-framework module audio_waveforms {
-  umbrella header "audio_waveforms-umbrella.h"
-
-  export *
-  module * { export * }
-}
