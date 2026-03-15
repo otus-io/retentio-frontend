@@ -4,6 +4,6 @@ extension ObjectExtension on Object? {
   }
 
   Map asMap() {
-    return this as Map? ?? {};
+    return this is Map ? this as Map : {};
   }
 }
