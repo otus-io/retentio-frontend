@@ -17,7 +17,7 @@ class CreateDeckWidget extends ConsumerStatefulWidget {
 class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget> {
   @override
   Widget build(BuildContext context) {
-    // final desk = ref.watch(createDeckProvider);
+    ref.watch(createDeckProvider);
     // final languages = ref.read(createDeckProvider.notifier).languages;
     return Column(
       spacing: 20,

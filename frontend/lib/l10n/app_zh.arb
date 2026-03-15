@@ -64,5 +64,6 @@
     "unidirectional": "单向",
     "bidirectional": "双向",
     "template": "模版",
-    "next": "下一个"
+    "next": "下一个",
+    "noNetworkConnection": "网络连接不可用，请检查网络设置"
 }

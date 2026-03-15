@@ -203,4 +203,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get next => 'Next';
+
+  @override
+  String get noNetworkConnection =>
+      'No network connection. Please check your internet settings.';
 }
