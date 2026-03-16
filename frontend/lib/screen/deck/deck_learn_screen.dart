@@ -158,9 +158,7 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen>
     //   );
     // }
 
-    final totalCardsInSession = ref
-        .read(cardProvider(widget.deck).notifier)
-        .totalCardsInSession;
+    final totalCardsInSession = 11;
     final cardsStudied = ref.watch(
       cardProvider(widget.deck).select((value) => value.cardsStudied),
     );
@@ -188,7 +186,7 @@ class _DeckLearnScreenState extends ConsumerState<DeckLearnScreen>
         ),
       );
     }
-    if (card == null || cardsStudied == totalCardsInSession) {
+    if (card == null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

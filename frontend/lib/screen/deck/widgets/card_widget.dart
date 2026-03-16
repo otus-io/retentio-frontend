@@ -18,7 +18,7 @@ class CardWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cards = ref.watch(
+    final cards = ref.read(
       cardProvider(deck).select(
         (value) => isFront
             ? value.cardDetail?.card.front
