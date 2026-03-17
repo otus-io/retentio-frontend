@@ -487,6 +487,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No network connection. Please check your internet settings.'**
   String get noNetworkConnection;
+
+  /// Button text to start reviewing again
+  ///
+  /// In en, this message translates to:
+  /// **'Review Again'**
+  String get reviewAgain;
 }
 
 class _AppLocalizationsDelegate

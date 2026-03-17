@@ -275,5 +275,9 @@
   "noNetworkConnection": "No network connection. Please check your internet settings.",
   "@noNetworkConnection": {
     "description": "Error message when there is no network connection"
+  },
+  "reviewAgain": "Review Again",
+  "@reviewAgain": {
+    "description": "Button text to start reviewing again"
   }
 }

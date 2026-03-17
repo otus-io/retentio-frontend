@@ -10,7 +10,6 @@ import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/deck/providers/card_provider.dart';
 import 'package:retentio/screen/deck/widgets/card_widget.dart';
 import 'package:retentio/screen/deck/widgets/flash_card/flash_card.dart';
-import 'package:retentio/utils/log.dart';
 
 import '../../widgets/common_bottom_sheet.dart';
 import '../learn/providers/create_deck_provider.dart';
@@ -69,7 +68,7 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
                         showCommonBottomSheet(
                           context: ref.context,
                           title: 'Edit Deck',
-                          child: CreateDeckWidget(),
+                          child: CreateDeckWidget(deck: widget.deck),
                         ).then((value) {
                           if (value != null && value.isNotEmpty) {
                             ref
@@ -131,29 +130,9 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
     final isLoading = ref.watch(
       cardProvider.select((value) => value.isLoading),
     );
-    final card = ref.watch(cardProvider.select((value) => value.cardDetail));
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-
-    // if (_error != null) {
-    //   return Center(
-    //     child: Column(
-    //       mainAxisAlignment: MainAxisAlignment.center,
-    //       children: [
-    //         const Icon(Icons.error_outline, size: 64, color: Colors.grey),
-    //         const SizedBox(height: 16),
-    //         Text(
-    //           'Error: $_error',
-    //           style: const TextStyle(color: Colors.grey),
-    //           textAlign: TextAlign.center,
-    //         ),
-    //         const SizedBox(height: 16),
-    //         ElevatedButton(onPressed: _loadNextCard, child: Text(loc.retry)),
-    //       ],
-    //     ),
-    //   );
-    // }
 
     final totalCardsInSession = ref.watch(
       cardProvider.notifier.select((value) => value.totalCardsInSession),
@@ -161,9 +140,7 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
     final cardsStudied = ref.watch(
       cardProvider.select((value) => value.cardsStudied),
     );
-    logger.w(
-      'cardsStudied: $cardsStudied totalCardsInSession: $totalCardsInSession',
-    );
+    final bool isCompleted = totalCardsInSession == cardsStudied;
     if (totalCardsInSession == 0) {
       return Center(
         child: Column(
@@ -185,7 +162,8 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
         ),
       );
     }
-    if (card == null) {
+
+    if (isCompleted) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -204,8 +182,10 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(loc.backToDeck),
+              onPressed: () {
+                ref.read(cardProvider.notifier).reviewAgain();
+              },
+              child: Text(loc.reviewAgain),
             ),
           ],
         ),
@@ -236,8 +216,8 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
                     .read(cardProvider.notifier)
                     .flashCardController,
                 width: double.infinity,
-                frontWidget: CardWidget(deck: widget.deck, isFront: true),
-                backWidget: CardWidget(deck: widget.deck, isFront: false),
+                frontWidget: CardWidget(isFront: true),
+                backWidget: CardWidget(isFront: false),
                 onFlip: (value) {
                   ref.read(cardProvider.notifier).toggleShowAnswer();
                 },

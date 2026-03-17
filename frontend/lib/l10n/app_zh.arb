@@ -65,5 +65,6 @@
     "bidirectional": "双向",
     "template": "模版",
     "next": "下一个",
-    "noNetworkConnection": "网络连接不可用，请检查网络设置"
+    "noNetworkConnection": "网络连接不可用，请检查网络设置",
+    "reviewAgain": "再次复习"
 }

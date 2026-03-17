@@ -8,6 +8,7 @@ final editFactProvider = NotifierProvider.autoDispose(
   EditFactNotifier.new,
   dependencies: [deckProvider],
 );
+
 class EditFactNotifier extends Notifier {
   final TextEditingController answerController = TextEditingController();
   final TextEditingController questionController = TextEditingController();

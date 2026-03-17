@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:retentio/providers/loading_state_provider.dart';
+import 'package:retentio/utils/log.dart';
 
 import '../../../main.dart';
 import '../../../mixins/notifier_mixin.dart';
@@ -15,6 +16,8 @@ final createDeckParamsProvider =
     );
 
 class DeckParamsNotifier extends Notifier<CreateDeckParams> with NotifierMixin {
+  DeckParamsNotifier();
+
   @override
   CreateDeckParams build() {
     return CreateDeckParams(
@@ -46,6 +49,7 @@ class CreateDeckParams {
     required this.type,
     required this.id,
   });
+
   CreateDeckParams copyWith({
     List<String>? fields,
     String? name,
@@ -99,7 +103,8 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
 
   @override
   CreateDeckState build() {
-    final params = ref.read(createDeckParamsProvider);
+    final params = ref.watch(createDeckParamsProvider);
+    logger.w(params.name);
     var fields = params.fields;
     var name = params.name;
     var template = 0;

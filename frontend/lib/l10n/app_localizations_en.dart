@@ -207,4 +207,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get noNetworkConnection =>
       'No network connection. Please check your internet settings.';
+
+  @override
+  String get reviewAgain => 'Review Again';
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:retentio/utils/log.dart';
+import 'package:retentio/screen/deck/providers/card_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import '../../../mixins/delayed_init_mixin.dart';
@@ -24,19 +24,29 @@ class _CardVideoWidgetState extends ConsumerState<CardVideoWidget>
   late CustomVideoPlayerController _customVideoPlayerController;
   late TabController _tabController;
   int _currentIndex = 0;
+  bool _currentIsBack = false;
+
   void _handleController() {
     final index = _tabController.index;
-    if(index!=_currentIndex){
+    if (index != _currentIndex) {
       _controller.pause();
     }
   }
 
   @override
   void afterFirstLayout() {
-    logger.w('afterFirstLayout');
-    _tabController=  DefaultTabController.of(context);
-    _currentIndex=_tabController.index;
+    _tabController = DefaultTabController.of(context);
+    _currentIndex = _tabController.index;
     _tabController.addListener(_handleController);
+    _currentIsBack = ref.read(cardProvider.select((value) => value.showAnswer));
+    ref.listenManual(cardProvider.select((value) => value.showAnswer), (
+      previous,
+      next,
+    ) {
+      if (_currentIsBack != next) {
+        _controller.pause();
+      }
+    });
   }
 
   @override

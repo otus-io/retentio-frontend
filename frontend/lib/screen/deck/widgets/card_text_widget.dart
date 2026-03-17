@@ -22,5 +22,3 @@ class CardTextWidget extends ConsumerWidget {
     );
   }
 }
-
-

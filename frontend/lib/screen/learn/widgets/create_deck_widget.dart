@@ -3,83 +3,61 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/extensions/context_extension.dart';
 import 'package:retentio/extensions/widget_extension.dart';
+import 'package:retentio/mixins/delayed_init_mixin.dart';
+import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/learn/providers/create_deck_provider.dart';
 
 import 'loading_state_widget.dart';
 
 class CreateDeckWidget extends ConsumerStatefulWidget {
-  const CreateDeckWidget({super.key});
+  const CreateDeckWidget({super.key, this.deck});
+
+  final Deck? deck;
 
   @override
   ConsumerState createState() => _CreateDeckWidgetState();
 }
 
-class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget> {
+class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget>
+    with DelayedInitMixin {
+  @override
+  void afterFirstLayout() {
+    if (widget.deck != null) {
+      ref
+          .read(createDeckParamsProvider.notifier)
+          .update(
+            (state) => CreateDeckParams(
+              fields: widget.deck!.fields,
+              name: widget.deck!.name,
+              templates: widget.deck!.templates,
+              rate: widget.deck!.rate,
+              type: DeckCardType.edit,
+              id: widget.deck!.id,
+            ),
+          );
+    } else {
+      ref
+          .read(createDeckParamsProvider.notifier)
+          .update(
+            (state) => CreateDeckParams(
+              fields: ['English', 'Chinese'],
+              name: '',
+              rate: 10,
+              templates: [
+                [0, 1],
+              ],
+              type: DeckCardType.add,
+              id: '',
+            ),
+          );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    ref.watch(createDeckProvider);
-    // final languages = ref.read(createDeckProvider.notifier).languages;
     return Column(
       spacing: 20,
       children: [
-        // Row(
-        //   spacing: 16,
-        //   children: [
-        //     Icon(LucideIcons.languages),
-        //     Text('${context.loc.language}:'),
-        //     DropdownButtonHideUnderline(
-        //       child: DropdownButton<String>(
-        //         value: desk.fields.first,
-        //         icon: const Icon(Icons.arrow_drop_down),
-        //         padding: .zero,
-        //         borderRadius: BorderRadius.circular(4),
-        //
-        //         items: languages
-        //             .map(
-        //               (e) => DropdownMenuItem(
-        //                 value: e,
-        //                 child: Text(e, style: TextStyle(fontSize: 13)),
-        //               ),
-        //             )
-        //             .toList(),
-        //
-        //         // 语言切换
-        //         onChanged: (String? newLocale) {
-        //           if (newLocale != null) {
-        //             ref
-        //                 .read(createDeckProvider.notifier)
-        //                 .changeField(0, newLocale);
-        //           }
-        //         },
-        //       ),
-        //     ),
-        //     DropdownButtonHideUnderline(
-        //       child: DropdownButton<String>(
-        //         value: desk.fields.last,
-        //         padding: .symmetric(horizontal: 5),
-        //         icon: const Icon(Icons.arrow_drop_down),
-        //         borderRadius: BorderRadius.circular(4),
-        //         items: languages
-        //             .map(
-        //               (e) => DropdownMenuItem(
-        //                 value: e,
-        //                 child: Text(e, style: TextStyle(fontSize: 13)),
-        //               ),
-        //             )
-        //             .toList(),
-        //
-        //         // 语言切换
-        //         onChanged: (String? newLocale) {
-        //           if (newLocale != null) {
-        //             ref
-        //                 .read(createDeckProvider.notifier)
-        //                 .changeField(1, newLocale);
-        //           }
-        //         },
-        //       ),
-        //     ),
-        //   ],
-        // ),
         Row(
           spacing: 16,
           mainAxisSize: .max,
@@ -100,7 +78,7 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget> {
                         ref.read(createDeckProvider.notifier).changeRate(value);
                       }
                     },
-                    groupValue: ref.read(
+                    groupValue: ref.watch(
                       createDeckProvider.select((value) => value.rate),
                     ),
                     child: RadioListTile<Rate>(
@@ -113,7 +91,7 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget> {
                 SizedBox(
                   width: 200,
                   child: RadioGroup(
-                    groupValue: ref.read(
+                    groupValue: ref.watch(
                       createDeckProvider.select((value) => value.rate),
                     ),
                     onChanged: (value) {
@@ -167,7 +145,7 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget> {
                 SizedBox(
                   width: 200,
                   child: RadioGroup(
-                    groupValue: ref.read(
+                    groupValue: ref.watch(
                       createDeckProvider.select((value) => value.templates),
                     ),
                     onChanged: (value) {

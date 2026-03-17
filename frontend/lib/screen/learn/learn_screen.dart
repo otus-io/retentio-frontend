@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck.dart';
-import 'package:retentio/screen/learn/providers/create_deck_provider.dart';
 import 'package:retentio/screen/learn/providers/deck_provider.dart';
 import 'package:retentio/screen/learn/widgets/create_deck_widget.dart';
 import 'package:retentio/widgets/common_refresher.dart';
@@ -37,20 +36,6 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
           IconButton(
             icon: const Icon(LucideIcons.squarePlus),
             onPressed: () {
-              ref
-                  .read(createDeckParamsProvider.notifier)
-                  .update(
-                    (state) => CreateDeckParams(
-                      fields: ['English', 'Chinese'],
-                      name: '',
-                      rate: 10,
-                      templates: [
-                        [0, 1],
-                      ],
-                      type: DeckCardType.add,
-                      id: '',
-                    ),
-                  );
               showCommonBottomSheet(
                 context: context,
                 title: loc.createDeck,

@@ -5,15 +5,13 @@ import 'package:pull_down_button/pull_down_button.dart';
 import 'package:retentio/extensions/widget_extension.dart';
 
 import '../../../extensions/context_extension.dart';
-import '../../../models/deck.dart';
 import '../providers/card_provider.dart';
 import 'buttons_tabbar/buttons_tab_bar_widget.dart';
 import 'field_content_widget.dart';
 
 class CardWidget extends ConsumerWidget {
-  const CardWidget({super.key, required this.deck, required this.isFront});
+  const CardWidget({super.key, required this.isFront});
 
-  final Deck deck;
   final bool isFront;
 
   @override
