@@ -8,10 +8,18 @@ import '../../../models/deck.dart';
 import '../../../services/apis/card_service.dart';
 
 final cardProvider = NotifierProvider.autoDispose
-    .family<CardNotifier, CardState, Deck>(CardNotifier.new);
+    <CardNotifier, CardState>(
+      CardNotifier.new,
+      dependencies: [deckProvider],
+    );
+final deckProvider = Provider.autoDispose<Deck>(
+  (ref) => throw UnimplementedError(
+    'deckProvider must be overridden in EditFactNotifier',
+  ),
+);
 
 class CardNotifier extends Notifier<CardState> {
-  Deck deck;
+ late Deck deck;
 
   /// 本次学习会话的总卡片数
   int get totalCardsInSession => deck.stats.unseenCards + deck.reviewCards;
@@ -19,7 +27,6 @@ class CardNotifier extends Notifier<CardState> {
   final FlashCardController flashCardController = FlashCardController();
   late List<double> scope;
 
-  CardNotifier(this.deck);
 
   void calculateScope() {
     if (state.cardDetail == null) {
@@ -46,6 +53,7 @@ class CardNotifier extends Notifier<CardState> {
 
   @override
   CardState build() {
+    deck = ref.watch(deckProvider);
     scope = [0, 0];
     getCardDetail();
     ref.onDispose(() {

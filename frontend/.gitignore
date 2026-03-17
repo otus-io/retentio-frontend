@@ -29,6 +29,7 @@ doc/api/
 
 
 !/ios/Podfile.lock
+/ios/Flutter/Flutter.podspec
 
 # Ignore Xcode user workspace state
 ios/Runner.xcworkspace/xcuserdata/
