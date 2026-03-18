@@ -54,7 +54,7 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget>
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    
+
     return Column(
       spacing: 20,
       children: [
@@ -93,7 +93,14 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget>
               children: [
                 Text(
                   loc.newCardEveryMinutes(
-                    ((86400 / ref.watch(createDeckProvider.select((value) => value.rate))) / 60).toInt(),
+                    ((86400 /
+                                ref.watch(
+                                  createDeckProvider.select(
+                                    (value) => value.rate,
+                                  ),
+                                )) /
+                            60)
+                        .toInt(),
                   ),
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),

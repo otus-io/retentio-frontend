@@ -83,15 +83,12 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
     var name = params.name;
     var rate = params.rate;
     nameController.text = name;
-    fieldController1.text = params.fields.firstOrNull??'';
-    fieldController2.text = params.fields.lastOrNull??'';
+    fieldController1.text = params.fields.firstOrNull ?? '';
+    fieldController2.text = params.fields.lastOrNull ?? '';
     deckId = params.id;
     cardType = params.type;
 
-    return CreateDeckState(
-      name: name,
-      rate: rate,
-    );
+    return CreateDeckState(name: name, rate: rate);
   }
 
   void changeRate(int rate) {
@@ -138,11 +135,7 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
       );
       return;
     }
-    final params = {
-      'name': name,
-      'fields': state.fields,
-      'rate': state.rate,
-    };
+    final params = {'name': name, 'fields': state.fields, 'rate': state.rate};
     ref.read(loadingStateProvider.notifier).showLoading();
     if (cardType == DeckCardType.add) {
       final res = await DeckService.of.createDeck(params);
@@ -196,19 +189,12 @@ class CreateDeckState {
   final String name;
   final int rate;
 
-  CreateDeckState({
-    this.fields = const [],
-    this.name = '',
-    this.rate = 10,
-  });
+  CreateDeckState({this.fields = const [], this.name = '', this.rate = 10});
 
-  CreateDeckState copyWith({
-    List<String>? fields,
-    String? name,
-    int? rate,
-  }) => CreateDeckState(
-    fields: fields ?? this.fields,
-    name: name ?? this.name,
-    rate: rate ?? this.rate,
-  );
+  CreateDeckState copyWith({List<String>? fields, String? name, int? rate}) =>
+      CreateDeckState(
+        fields: fields ?? this.fields,
+        name: name ?? this.name,
+        rate: rate ?? this.rate,
+      );
 }

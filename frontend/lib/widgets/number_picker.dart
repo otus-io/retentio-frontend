@@ -94,7 +94,7 @@ class _NumberPickerState extends State<NumberPicker> {
   void _scrollListener() {
     var indexOfMiddleElement = (_scrollController.offset / itemExtent).round();
 
-      indexOfMiddleElement = indexOfMiddleElement.clamp(0, itemCount - 1);
+    indexOfMiddleElement = indexOfMiddleElement.clamp(0, itemCount - 1);
 
     final intValueInTheMiddle = _intValueFromIndex(
       indexOfMiddleElement + additionalItemsOnEachSide,
@@ -152,14 +152,14 @@ class _NumberPickerState extends State<NumberPicker> {
         },
         child: Stack(
           children: [
-              ListView.builder(
-                itemCount: listItemsCount,
-                scrollDirection: widget.axis,
-                controller: _scrollController,
-                itemExtent: itemExtent,
-                itemBuilder: _itemBuilder,
-                padding: EdgeInsets.zero,
-              ),
+            ListView.builder(
+              itemCount: listItemsCount,
+              scrollDirection: widget.axis,
+              controller: _scrollController,
+              itemExtent: itemExtent,
+              itemBuilder: _itemBuilder,
+              padding: EdgeInsets.zero,
+            ),
             _NumberPickerSelectedItemDecoration(
               axis: widget.axis,
               itemExtent: itemExtent,
@@ -181,8 +181,9 @@ class _NumberPickerState extends State<NumberPicker> {
         );
 
     final value = _intValueFromIndex(index % itemCount);
-    final isExtra =(index < additionalItemsOnEachSide ||
-            index >= listItemsCount - additionalItemsOnEachSide);
+    final isExtra =
+        (index < additionalItemsOnEachSide ||
+        index >= listItemsCount - additionalItemsOnEachSide);
     final itemStyle = value == widget.value ? selectedStyle : defaultStyle;
 
     final child = isExtra
