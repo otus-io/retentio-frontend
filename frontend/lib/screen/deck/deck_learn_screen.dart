@@ -40,6 +40,7 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
             rate: widget.deck.rate,
             type: DeckCardType.edit,
             id: widget.deck.id,
+            fields: widget.deck.fields,
           );
         }),
       ],
@@ -61,11 +62,11 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
                     //   icon: LucideIcons.layersPlus,
                     // ),
                     PullDownMenuItem(
-                      title: 'Edit Deck',
+                      title: loc.editDeck,
                       onTap: () {
                         showCommonBottomSheet(
                           context: ref.context,
-                          title: 'Edit Deck',
+                          title: loc.editDeck,
                           child: CreateDeckWidget(deck: widget.deck),
                         ).then((value) {
                           if (value != null && value.isNotEmpty) {
@@ -80,7 +81,7 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
                     if (ref.watch(cardProvider.notifier).totalCardsInSession >
                         0)
                       PullDownMenuItem(
-                        title: 'Hide Card',
+                        title: loc.hideCard,
                         onTap: () async {
                           await ref
                               .read(cardProvider.notifier)
@@ -94,7 +95,7 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
                         icon: LucideIcons.eyeOff,
                       ),
                     PullDownMenuItem(
-                      title: 'Delete Deck',
+                      title: loc.deleteDeck,
                       onTap: () async {
                         await ref
                             .read(deckListProvider.notifier)
@@ -151,7 +152,7 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'No cards in this deck',
+              loc.noCardsInThisDeck,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -280,7 +281,7 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
                       return Row(
                         children: [
                           Text(
-                            'Hard',
+                            loc.hard,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -299,7 +300,7 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
                             },
                           ).expanded(),
                           Text(
-                            'Easy',
+                            loc.easy,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,

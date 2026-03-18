@@ -279,5 +279,43 @@
   "reviewAgain": "Review Again",
   "@reviewAgain": {
     "description": "Button text to start reviewing again"
+  },
+  "editDeck": "Edit Deck",
+  "@editDeck": {
+    "description": "Menu item to edit deck"
+  },
+  "hideCard": "Hide Card",
+  "@hideCard": {
+    "description": "Menu item to hide card"
+  },
+  "deleteDeck": "Delete Deck",
+  "@deleteDeck": {
+    "description": "Menu item to delete deck"
+  },
+  "noCardsInThisDeck": "No cards in this deck",
+  "@noCardsInThisDeck": {
+    "description": "Message when deck has no cards"
+  },
+  "hard": "Hard",
+  "@hard": {
+    "description": "Difficulty rating: Hard (in slider context)"
+  },
+  "easy": "Easy",
+  "@easy": {
+    "description": "Difficulty rating: Easy (in slider context)"
+  },
+  "save": "Save",
+  "@save": {
+    "description": "Save button text"
+  },
+  "newCardEveryMinutes": "Introduce a new card every {interval} minutes",
+  "@newCardEveryMinutes": {
+    "description": "Description of card introduction interval",
+    "placeholders": {
+      "interval": {
+        "type": "int",
+        "example": "10"
+      }
+    }
   }
 }

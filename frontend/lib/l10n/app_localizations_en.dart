@@ -210,4 +210,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reviewAgain => 'Review Again';
+
+  @override
+  String get editDeck => 'Edit Deck';
+
+  @override
+  String get hideCard => 'Hide Card';
+
+  @override
+  String get deleteDeck => 'Delete Deck';
+
+  @override
+  String get noCardsInThisDeck => 'No cards in this deck';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String newCardEveryMinutes(int interval) {
+    return 'Introduce a new card every $interval minutes';
+  }
 }

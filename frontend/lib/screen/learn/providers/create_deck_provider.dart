@@ -23,6 +23,7 @@ class DeckParamsNotifier extends Notifier<CreateDeckParams> with NotifierMixin {
       rate: 10,
       type: DeckCardType.add,
       id: '',
+      fields: [],
     );
   }
 }
@@ -32,18 +33,18 @@ class CreateDeckParams {
   final int rate;
   final String id;
   final DeckCardType type;
-
+  final List<String> fields;
   CreateDeckParams({
     required this.name,
     required this.rate,
     required this.type,
     required this.id,
+    required this.fields,
   });
 
   CreateDeckParams copyWith({
     List<String>? fields,
     String? name,
-    List<List<int>>? templates,
     int? rate,
     DeckCardType? type,
     String? id,
@@ -52,6 +53,7 @@ class CreateDeckParams {
     rate: rate ?? this.rate,
     type: type ?? this.type,
     id: id ?? this.id,
+    fields: fields ?? this.fields,
   );
 }
 
@@ -70,6 +72,8 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
   //   'Japanese',
   // ];
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController fieldController1 = TextEditingController();
+  final TextEditingController fieldController2 = TextEditingController();
   DeckCardType cardType = DeckCardType.add;
   String deckId = '';
 
@@ -79,6 +83,8 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
     var name = params.name;
     var rate = params.rate;
     nameController.text = name;
+    fieldController1.text = params.fields.first;
+    fieldController2.text = params.fields.last;
     deckId = params.id;
     cardType = params.type;
 
@@ -117,6 +123,9 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
       );
       return;
     }
+    state = state.copyWith(
+      fields: [fieldController1.text, fieldController2.text],
+    );
     if (state.fields.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

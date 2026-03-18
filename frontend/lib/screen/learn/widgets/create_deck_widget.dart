@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/extensions/context_extension.dart';
 import 'package:retentio/extensions/widget_extension.dart';
+import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/mixins/delayed_init_mixin.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/learn/providers/create_deck_provider.dart';
@@ -32,6 +33,7 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget>
               rate: widget.deck!.rate,
               type: DeckCardType.edit,
               id: widget.deck!.id,
+              fields: widget.deck!.fields,
             ),
           );
     } else {
@@ -43,6 +45,7 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget>
               rate: 10,
               type: DeckCardType.add,
               id: '',
+              fields: const [],
             ),
           );
     }
@@ -50,6 +53,8 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget>
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    
     return Column(
       spacing: 20,
       children: [
@@ -87,7 +92,9 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget>
             Row(
               children: [
                 Text(
-                  '每${((86400 / ref.watch(createDeckProvider.select((value) => value.rate))) / 60).toInt()}分钟引入一张新卡片',
+                  loc.newCardEveryMinutes(
+                    ((86400 / ref.watch(createDeckProvider.select((value) => value.rate))) / 60).toInt(),
+                  ),
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
@@ -104,7 +111,34 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget>
                   .nameController),
               decoration: InputDecoration(
                 labelText: context.loc.createInputDeckName,
-                hintText: context.loc.createInputDeckNameHint,
+                //hintText: context.loc.createInputDeckNameHint,
+                border: const OutlineInputBorder(),
+              ),
+            ).expanded(),
+          ],
+        ),
+        Row(
+          spacing: 16,
+          mainAxisSize: .max,
+          mainAxisAlignment: .spaceBetween,
+          children: [
+            TextField(
+              controller: (ref
+                  .read(createDeckProvider.notifier)
+                  .fieldController1),
+              decoration: InputDecoration(
+                labelText: 'field',
+                hintText: 'eg:English',
+                border: const OutlineInputBorder(),
+              ),
+            ).expanded(),
+            TextField(
+              controller: (ref
+                  .read(createDeckProvider.notifier)
+                  .fieldController2),
+              decoration: InputDecoration(
+                labelText: 'field',
+                hintText: 'eg:Chinese',
                 border: const OutlineInputBorder(),
               ),
             ).expanded(),
@@ -123,7 +157,7 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget>
               crossAxisAlignment: .center,
               children: [
                 LoadingStateWidget(child: Icon(LucideIcons.save)),
-                Text('Save'),
+                Text(loc.save),
               ],
             ),
           ),
