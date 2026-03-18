@@ -83,8 +83,8 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
     var name = params.name;
     var rate = params.rate;
     nameController.text = name;
-    fieldController1.text = params.fields.first;
-    fieldController2.text = params.fields.last;
+    fieldController1.text = params.fields.firstOrNull??'';
+    fieldController2.text = params.fields.lastOrNull??'';
     deckId = params.id;
     cardType = params.type;
 

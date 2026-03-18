@@ -67,6 +67,8 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
                         showCommonBottomSheet(
                           context: ref.context,
                           title: loc.editDeck,
+                          initialChildSize: 0.5,
+                          minChildSize: 0.5,
                           child: CreateDeckWidget(deck: widget.deck),
                         ).then((value) {
                           if (value != null && value.isNotEmpty) {
