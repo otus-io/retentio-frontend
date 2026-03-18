@@ -6,6 +6,7 @@ import 'package:retentio/extensions/widget_extension.dart';
 import 'package:retentio/mixins/delayed_init_mixin.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/learn/providers/create_deck_provider.dart';
+import 'package:retentio/widgets/number_picker.dart';
 
 import 'loading_state_widget.dart';
 
@@ -27,9 +28,7 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget>
           .read(createDeckParamsProvider.notifier)
           .update(
             (state) => CreateDeckParams(
-              fields: widget.deck!.fields,
               name: widget.deck!.name,
-              templates: widget.deck!.templates,
               rate: widget.deck!.rate,
               type: DeckCardType.edit,
               id: widget.deck!.id,
@@ -40,12 +39,8 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget>
           .read(createDeckParamsProvider.notifier)
           .update(
             (state) => CreateDeckParams(
-              fields: ['English', 'Chinese'],
               name: '',
               rate: 10,
-              templates: [
-                [0, 1],
-              ],
               type: DeckCardType.add,
               id: '',
             ),
@@ -62,105 +57,38 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget>
           spacing: 16,
           mainAxisSize: .max,
           crossAxisAlignment: .center,
-          mainAxisAlignment: .center,
+          mainAxisAlignment: .start,
           children: [
             Icon(LucideIcons.activity),
             Text('${context.loc.rate}:'),
-            Spacer(),
-            Column(
-              mainAxisSize: .min,
-              children: [
-                SizedBox(
-                  width: 200,
-                  child: RadioGroup(
-                    onChanged: (value) {
-                      if (value != null) {
-                        ref.read(createDeckProvider.notifier).changeRate(value);
-                      }
-                    },
-                    groupValue: ref.watch(
-                      createDeckProvider.select((value) => value.rate),
-                    ),
-                    child: RadioListTile<Rate>(
-                      contentPadding: .zero,
-                      title: Text(context.loc.slow),
-                      value: Rate.slow,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 200,
-                  child: RadioGroup(
-                    groupValue: ref.watch(
-                      createDeckProvider.select((value) => value.rate),
-                    ),
-                    onChanged: (value) {
-                      if (value != null) {
-                        ref.read(createDeckProvider.notifier).changeRate(value);
-                      }
-                    },
-                    child: RadioListTile<Rate>(
-                      contentPadding: .zero,
-                      title: Text(context.loc.fast),
-                      value: Rate.fast,
-                    ),
-                  ),
-                ),
-              ],
+            NumberPicker(
+              minValue: 10,
+              maxValue: 100,
+              itemWidth: 50,
+              itemHeight: 30,
+              step: 10,
+              axis: Axis.vertical,
+              value: ref.watch(
+                createDeckProvider.select((value) => value.rate),
+              ),
+              selectedTextStyle: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.black26),
+              ),
+              onChanged: (value) {
+                ref.read(createDeckProvider.notifier).changeRate(value);
+              },
             ),
-          ],
-        ),
-        Row(
-          spacing: 16,
-          mainAxisSize: .max,
-          mainAxisAlignment: .spaceAround,
-          children: [
-            Icon(LucideIcons.sendToBack),
-            Text('${context.loc.template}:'),
-            Spacer(),
-            Column(
+            Row(
               children: [
-                SizedBox(
-                  width: 200,
-                  child: RadioGroup(
-                    onChanged: (value) {
-                      if (value != null) {
-                        ref
-                            .read(createDeckProvider.notifier)
-                            .changeTemplate(value);
-                      }
-                    },
-                    groupValue: ref.read(
-                      createDeckProvider.select((value) => value.templates),
-                    ),
-                    child: RadioListTile<int>(
-                      hoverColor: Colors.transparent,
-                      overlayColor: WidgetStateProperty.all(Colors.transparent),
-                      contentPadding: .zero,
-                      title: Text(context.loc.unidirectional),
-                      value: 0,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 200,
-                  child: RadioGroup(
-                    groupValue: ref.watch(
-                      createDeckProvider.select((value) => value.templates),
-                    ),
-                    onChanged: (value) {
-                      if (value != null) {
-                        ref
-                            .read(createDeckProvider.notifier)
-                            .changeTemplate(value);
-                      }
-                    },
-                    child: RadioListTile<int>(
-                      contentPadding: .zero,
-                      title: Text(context.loc.bidirectional),
-                      value: 1,
-                    ),
-                  ),
+                Text(
+                  '每${((86400 / ref.watch(createDeckProvider.select((value) => value.rate))) / 60).toInt()}分钟引入一张新卡片',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
             ),

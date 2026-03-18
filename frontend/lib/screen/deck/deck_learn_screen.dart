@@ -36,9 +36,7 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
         deckProvider.overrideWithValue(widget.deck),
         createDeckParamsProvider.overrideWithBuild((ref, notifier) {
           return CreateDeckParams(
-            fields: widget.deck.fields,
             name: widget.deck.name,
-            templates: widget.deck.templates,
             rate: widget.deck.rate,
             type: DeckCardType.edit,
             id: widget.deck.id,
