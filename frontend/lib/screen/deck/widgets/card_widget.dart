@@ -5,21 +5,19 @@ import 'package:pull_down_button/pull_down_button.dart';
 import 'package:retentio/extensions/widget_extension.dart';
 
 import '../../../extensions/context_extension.dart';
-import '../../../models/deck.dart';
 import '../providers/card_provider.dart';
 import 'buttons_tabbar/buttons_tab_bar_widget.dart';
 import 'field_content_widget.dart';
 
 class CardWidget extends ConsumerWidget {
-  const CardWidget({super.key, required this.deck, required this.isFront});
+  const CardWidget({super.key, required this.isFront});
 
-  final Deck deck;
   final bool isFront;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cards = ref.watch(
-      cardProvider(deck).select(
+    final cards = ref.read(
+      cardProvider.select(
         (value) => isFront
             ? value.cardDetail?.card.front
             : value.cardDetail?.card.back,
@@ -33,7 +31,7 @@ class CardWidget extends ConsumerWidget {
         border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: DefaultTabController(
-        key: ValueKey('${ref.read(cardProvider(deck)).cardDetail?.card.id}'),
+        key: ValueKey('${ref.read(cardProvider).cardDetail?.card.id}'),
         length: cards?.length ?? 0,
         child: Column(
           children: [

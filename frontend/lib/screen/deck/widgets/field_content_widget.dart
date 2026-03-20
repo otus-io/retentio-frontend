@@ -23,6 +23,7 @@ class FieldContentWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTabController(
+      key: const ValueKey('field_content_widget'),
       length: items.length,
       child: Column(
         children: [

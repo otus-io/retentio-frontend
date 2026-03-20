@@ -374,7 +374,7 @@ abstract class AppLocalizations {
   /// **'Show Answer'**
   String get showAnswer;
 
-  /// Difficulty rating: Hard
+  /// Difficulty rating: Hard (in slider context)
   ///
   /// In en, this message translates to:
   /// **'Hard'**
@@ -386,7 +386,7 @@ abstract class AppLocalizations {
   /// **'Good'**
   String get good;
 
-  /// Difficulty rating: Easy
+  /// Difficulty rating: Easy (in slider context)
   ///
   /// In en, this message translates to:
   /// **'Easy'**
@@ -487,6 +487,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No network connection. Please check your internet settings.'**
   String get noNetworkConnection;
+
+  /// Button text to start reviewing again
+  ///
+  /// In en, this message translates to:
+  /// **'Review Again'**
+  String get reviewAgain;
+
+  /// Menu item to edit deck
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Deck'**
+  String get editDeck;
+
+  /// Menu item to hide card
+  ///
+  /// In en, this message translates to:
+  /// **'Hide Card'**
+  String get hideCard;
+
+  /// Menu item to delete deck
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Deck'**
+  String get deleteDeck;
+
+  /// Message when deck has no cards
+  ///
+  /// In en, this message translates to:
+  /// **'No cards in this deck'**
+  String get noCardsInThisDeck;
+
+  /// Save button text
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// Description of card introduction interval
+  ///
+  /// In en, this message translates to:
+  /// **'Introduce a new card every {interval} minutes'**
+  String newCardEveryMinutes(int interval);
 }
 
 class _AppLocalizationsDelegate

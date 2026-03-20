@@ -206,4 +206,27 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noNetworkConnection => '网络连接不可用，请检查网络设置';
+
+  @override
+  String get reviewAgain => '再次复习';
+
+  @override
+  String get editDeck => '编辑词本';
+
+  @override
+  String get hideCard => '隐藏卡片';
+
+  @override
+  String get deleteDeck => '删除词本';
+
+  @override
+  String get noCardsInThisDeck => '这个词本中没有卡片';
+
+  @override
+  String get save => '保存';
+
+  @override
+  String newCardEveryMinutes(int interval) {
+    return '每$interval分钟引入一张新卡片';
+  }
 }

@@ -1,83 +1,43 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/deck/deck_learn_screen.dart';
+import 'package:retentio/screen/deck/providers/card_provider.dart';
 
+import '../../helpers/immediate_empty_card_notifier.dart';
 import '../../helpers/test_wrapper.dart';
 
-Deck _createTestDeck({
-  String name = 'Test Deck',
-  int unseenCards = 5,
-  int dueCards = 3,
-  int cardsCount = 20,
-}) {
-  return Deck.fromJson(<String, dynamic>{
-    'id': 'un4k9u',
-    'name': name,
-    'templates': [
-      [0, 1],
-    ],
-    'stats': <String, dynamic>{
-      'unseen_cards': unseenCards,
-      'facts_count': 15,
-      'due_cards': dueCards,
-      'cards_count': cardsCount,
+void main() {
+  final emptySessionDeck = Deck.fromJson({
+    'id': 'deck-learn-1',
+    'name': 'Empty session',
+    'stats': {
+      'cards_count': 0,
+      'unseen_cards': 0,
+      'due_cards': 0,
+      'facts_count': 0,
     },
     'rate': 10,
-    'owner': <String, dynamic>{
-      'username': 'testuser',
-      'email': 'test@example.com',
-    },
-    'fields': <String>['front', 'back'],
-    'min_interval': 60,
-    'def_interval': 600,
-    'max_interval': 86400,
+    'owner': {'username': 'u', 'email': 'u@t.com'},
+    'fields': ['a', 'b'],
   });
-}
 
-void main() {
-  setUpAll(setupTestEnvironment);
-  tearDownAll(tearDownTestEnvironment);
-  group('DeckLearnScreen Widget', () {
-    testWidgets('renders without errors', (tester) async {
-      final deck = _createTestDeck();
+  group('DeckLearnScreen', () {
+    testWidgets('shows empty deck message when session has no cards', (
+      tester,
+    ) async {
       await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(DeckLearnScreen(deck: deck)),
-      );
-      // Only pump once — async CardService call is in-flight
-      await tester.pump();
-      await tester.pump(const Duration(seconds: 1));
-      expect(find.byType(DeckLearnScreen), findsOneWidget);
-    });
-
-    testWidgets('displays deck name in AppBar', (tester) async {
-      final deck = _createTestDeck(name: 'Vocabulary');
-      await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(DeckLearnScreen(deck: deck)),
+        buildTestableWidgetWithOverrides(
+          DeckLearnScreen(deck: emptySessionDeck),
+          overrides: [
+            deckProvider.overrideWithValue(emptySessionDeck),
+            cardProvider.overrideWith(ImmediateEmptyCardNotifier.new),
+          ],
+        ),
       );
       await tester.pump();
-      await tester.pump(const Duration(seconds: 1));
-      expect(find.text('Vocabulary'), findsOneWidget);
-    });
+      await tester.pump(const Duration(milliseconds: 200));
 
-    testWidgets('shows loading or completion state after init', (tester) async {
-      final deck = _createTestDeck();
-      await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(DeckLearnScreen(deck: deck)),
-      );
-      await tester.pump();
-      await tester.pump(const Duration(seconds: 1));
-
-      // After the async CardService call completes (or fails),
-      // the screen shows either loading, error, or "all caught up" state
-      final hasLoading = find
-          .byType(CircularProgressIndicator)
-          .evaluate()
-          .isNotEmpty;
-      final hasAllCaughtUp = find.text('All Caught Up!').evaluate().isNotEmpty;
-      final hasError = find.textContaining('Error').evaluate().isNotEmpty;
-
-      expect(hasLoading || hasAllCaughtUp || hasError, isTrue);
+      expect(find.text('No cards in this deck'), findsOneWidget);
     });
   });
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod/misc.dart' show Override;
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retentio/l10n/app_localizations.dart';
@@ -42,6 +43,43 @@ void tearDownTestEnvironment() {
 
   // Clear hydrated storage
   HydratedStorage.instance = null;
+}
+
+/// Wraps a widget with MaterialApp, localization delegates,
+/// [ProviderScope], and optional Riverpod [overrides].
+Widget buildTestableWidgetWithOverrides(
+  Widget child, {
+  List<Override> overrides = const [],
+  Locale locale = const Locale('en'),
+  ThemeMode themeMode = ThemeMode.light,
+}) {
+  return ProviderScope(
+    overrides: overrides,
+    child: MaterialApp(
+      locale: locale,
+      supportedLocales: const [Locale('en'), Locale('zh')],
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      themeMode: themeMode,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.light,
+        ),
+      ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.dark,
+        ),
+      ),
+      home: child,
+    ),
+  );
 }
 
 /// Wraps a widget with MaterialApp, localization delegates,

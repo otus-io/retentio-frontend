@@ -3,188 +3,107 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/extensions/context_extension.dart';
 import 'package:retentio/extensions/widget_extension.dart';
+import 'package:retentio/l10n/app_localizations.dart';
+import 'package:retentio/mixins/delayed_init_mixin.dart';
+import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/learn/providers/create_deck_provider.dart';
+import 'package:retentio/widgets/number_picker.dart';
 
 import 'loading_state_widget.dart';
 
 class CreateDeckWidget extends ConsumerStatefulWidget {
-  const CreateDeckWidget({super.key});
+  const CreateDeckWidget({super.key, this.deck});
+
+  final Deck? deck;
 
   @override
   ConsumerState createState() => _CreateDeckWidgetState();
 }
 
-class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget> {
+class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget>
+    with DelayedInitMixin {
+  @override
+  void afterFirstLayout() {
+    if (widget.deck != null) {
+      ref
+          .read(createDeckParamsProvider.notifier)
+          .update(
+            (state) => CreateDeckParams(
+              name: widget.deck!.name,
+              rate: widget.deck!.rate,
+              type: DeckCardType.edit,
+              id: widget.deck!.id,
+              fields: widget.deck!.fields,
+            ),
+          );
+    } else {
+      ref
+          .read(createDeckParamsProvider.notifier)
+          .update(
+            (state) => CreateDeckParams(
+              name: '',
+              rate: 10,
+              type: DeckCardType.add,
+              id: '',
+              fields: const [],
+            ),
+          );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    ref.watch(createDeckProvider);
-    // final languages = ref.read(createDeckProvider.notifier).languages;
+    final loc = AppLocalizations.of(context)!;
+
     return Column(
       spacing: 20,
       children: [
-        // Row(
-        //   spacing: 16,
-        //   children: [
-        //     Icon(LucideIcons.languages),
-        //     Text('${context.loc.language}:'),
-        //     DropdownButtonHideUnderline(
-        //       child: DropdownButton<String>(
-        //         value: desk.fields.first,
-        //         icon: const Icon(Icons.arrow_drop_down),
-        //         padding: .zero,
-        //         borderRadius: BorderRadius.circular(4),
-        //
-        //         items: languages
-        //             .map(
-        //               (e) => DropdownMenuItem(
-        //                 value: e,
-        //                 child: Text(e, style: TextStyle(fontSize: 13)),
-        //               ),
-        //             )
-        //             .toList(),
-        //
-        //         // 语言切换
-        //         onChanged: (String? newLocale) {
-        //           if (newLocale != null) {
-        //             ref
-        //                 .read(createDeckProvider.notifier)
-        //                 .changeField(0, newLocale);
-        //           }
-        //         },
-        //       ),
-        //     ),
-        //     DropdownButtonHideUnderline(
-        //       child: DropdownButton<String>(
-        //         value: desk.fields.last,
-        //         padding: .symmetric(horizontal: 5),
-        //         icon: const Icon(Icons.arrow_drop_down),
-        //         borderRadius: BorderRadius.circular(4),
-        //         items: languages
-        //             .map(
-        //               (e) => DropdownMenuItem(
-        //                 value: e,
-        //                 child: Text(e, style: TextStyle(fontSize: 13)),
-        //               ),
-        //             )
-        //             .toList(),
-        //
-        //         // 语言切换
-        //         onChanged: (String? newLocale) {
-        //           if (newLocale != null) {
-        //             ref
-        //                 .read(createDeckProvider.notifier)
-        //                 .changeField(1, newLocale);
-        //           }
-        //         },
-        //       ),
-        //     ),
-        //   ],
-        // ),
-        Row(
-          spacing: 16,
-          mainAxisSize: .max,
-          crossAxisAlignment: .center,
-          mainAxisAlignment: .center,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 8,
           children: [
-            Icon(LucideIcons.activity),
-            Text('${context.loc.rate}:'),
-            Spacer(),
-            Column(
-              mainAxisSize: .min,
+            Row(
+              spacing: 16,
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(
-                  width: 200,
-                  child: RadioGroup(
-                    onChanged: (value) {
-                      if (value != null) {
-                        ref.read(createDeckProvider.notifier).changeRate(value);
-                      }
-                    },
-                    groupValue: ref.read(
-                      createDeckProvider.select((value) => value.rate),
-                    ),
-                    child: RadioListTile<Rate>(
-                      contentPadding: .zero,
-                      title: Text(context.loc.slow),
-                      value: Rate.slow,
-                    ),
+                Icon(LucideIcons.activity),
+                Text('${context.loc.rate}:'),
+                NumberPicker(
+                  minValue: kDeckEditorRateMin,
+                  maxValue: kDeckEditorRateMax,
+                  itemWidth: 50,
+                  itemHeight: 30,
+                  step: 1,
+                  axis: Axis.vertical,
+                  value: ref.watch(
+                    createDeckProvider.select((value) => value.rate),
                   ),
-                ),
-                SizedBox(
-                  width: 200,
-                  child: RadioGroup(
-                    groupValue: ref.read(
-                      createDeckProvider.select((value) => value.rate),
-                    ),
-                    onChanged: (value) {
-                      if (value != null) {
-                        ref.read(createDeckProvider.notifier).changeRate(value);
-                      }
-                    },
-                    child: RadioListTile<Rate>(
-                      contentPadding: .zero,
-                      title: Text(context.loc.fast),
-                      value: Rate.fast,
-                    ),
+                  selectedTextStyle: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.black26),
+                  ),
+                  onChanged: (value) {
+                    ref.read(createDeckProvider.notifier).changeRate(value);
+                  },
                 ),
               ],
             ),
-          ],
-        ),
-        Row(
-          spacing: 16,
-          mainAxisSize: .max,
-          mainAxisAlignment: .spaceAround,
-          children: [
-            Icon(LucideIcons.sendToBack),
-            Text('${context.loc.template}:'),
-            Spacer(),
-            Column(
-              children: [
-                SizedBox(
-                  width: 200,
-                  child: RadioGroup(
-                    onChanged: (value) {
-                      if (value != null) {
-                        ref
-                            .read(createDeckProvider.notifier)
-                            .changeTemplate(value);
-                      }
-                    },
-                    groupValue: ref.read(
-                      createDeckProvider.select((value) => value.templates),
-                    ),
-                    child: RadioListTile<int>(
-                      hoverColor: Colors.transparent,
-                      overlayColor: WidgetStateProperty.all(Colors.transparent),
-                      contentPadding: .zero,
-                      title: Text(context.loc.unidirectional),
-                      value: 0,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 200,
-                  child: RadioGroup(
-                    groupValue: ref.read(
-                      createDeckProvider.select((value) => value.templates),
-                    ),
-                    onChanged: (value) {
-                      if (value != null) {
-                        ref
-                            .read(createDeckProvider.notifier)
-                            .changeTemplate(value);
-                      }
-                    },
-                    child: RadioListTile<int>(
-                      contentPadding: .zero,
-                      title: Text(context.loc.bidirectional),
-                      value: 1,
-                    ),
-                  ),
-                ),
-              ],
+            Text(
+              loc.newCardEveryMinutes(
+                ((86400 /
+                            ref.watch(
+                              createDeckProvider.select((value) => value.rate),
+                            )) /
+                        60)
+                    .toInt(),
+              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
         ),
@@ -198,7 +117,34 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget> {
                   .nameController),
               decoration: InputDecoration(
                 labelText: context.loc.createInputDeckName,
-                hintText: context.loc.createInputDeckNameHint,
+                //hintText: context.loc.createInputDeckNameHint,
+                border: const OutlineInputBorder(),
+              ),
+            ).expanded(),
+          ],
+        ),
+        Row(
+          spacing: 16,
+          mainAxisSize: .max,
+          mainAxisAlignment: .spaceBetween,
+          children: [
+            TextField(
+              controller: (ref
+                  .read(createDeckProvider.notifier)
+                  .fieldController1),
+              decoration: InputDecoration(
+                labelText: 'field',
+                hintText: 'eg:English',
+                border: const OutlineInputBorder(),
+              ),
+            ).expanded(),
+            TextField(
+              controller: (ref
+                  .read(createDeckProvider.notifier)
+                  .fieldController2),
+              decoration: InputDecoration(
+                labelText: 'field',
+                hintText: 'eg:Chinese',
                 border: const OutlineInputBorder(),
               ),
             ).expanded(),
@@ -217,7 +163,7 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget> {
               crossAxisAlignment: .center,
               children: [
                 LoadingStateWidget(child: Icon(LucideIcons.save)),
-                Text('Save'),
+                Text(loc.save),
               ],
             ),
           ),

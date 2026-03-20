@@ -21,6 +21,21 @@ class CardDetail {
   factory CardDetail.fromJson(Map<String, dynamic> json) =>
       CardDetail(card: Card.fromJson(json["card"]), urgency: json["urgency"]);
 
+  /// Parses GET `/decks/:id/card` style payloads. Returns null when the API
+  /// sends `"card": []` (no due card) or `card` is not a JSON object.
+  static CardDetail? tryFromApiData(dynamic data) {
+    if (data == null) return null;
+    if (data is! Map) return null;
+    final map = Map<String, dynamic>.from(data);
+    if (map.isEmpty) return null;
+    final cardRaw = map['card'];
+    if (cardRaw is List) return null;
+    if (cardRaw is! Map) return null;
+    map['card'] = Map<String, dynamic>.from(cardRaw);
+    map['urgency'] ??= 0;
+    return CardDetail.fromJson(map);
+  }
+
   Map<String, dynamic> toJson() => {"card": card.toJson(), "urgency": urgency};
 }
 

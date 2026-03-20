@@ -48,9 +48,6 @@ void main() {
         final json = {
           'id': 'deck-1',
           'name': 'Test Deck',
-          'templates': [
-            [0, 1],
-          ],
           'stats': {
             'unseen_cards': 5,
             'facts_count': 10,
@@ -64,9 +61,6 @@ void main() {
         final deck = Deck.fromJson(json);
         expect(deck.id, 'deck-1');
         expect(deck.name, 'Test Deck');
-        expect(deck.templates, [
-          [0, 1],
-        ]);
         expect(deck.rate, 10);
         expect(deck.owner.username, 'owner1');
         expect(deck.owner.email, 'owner@test.com');
@@ -85,42 +79,6 @@ void main() {
         final deck = Deck.fromJson(json);
         expect(deck.owner.username, 'string_owner');
         expect(deck.owner.email, '');
-      });
-
-      test('parses templates as nested list  [[0,1]]', () {
-        final json = {
-          'id': 'd',
-          'name': 'n',
-          'templates': [
-            [0, 1],
-          ],
-          'stats': <String, dynamic>{},
-          'owner': 'o',
-          'fields': [],
-        };
-        final deck = Deck.fromJson(json);
-        expect(deck.templates, [
-          [0, 1],
-        ]);
-      });
-
-      test('parses templates as flat list [[0.1],[1,0]]', () {
-        final json = {
-          'id': 'd',
-          'name': 'n',
-          'templates': [
-            [0, 1],
-            [1, 0],
-          ],
-          'stats': <String, dynamic>{},
-          'owner': 'o',
-          'fields': [],
-        };
-        final deck = Deck.fromJson(json);
-        expect(deck.templates, [
-          [0, 1],
-          [1, 0],
-        ]);
       });
 
       test('uses field when fields is missing', () {

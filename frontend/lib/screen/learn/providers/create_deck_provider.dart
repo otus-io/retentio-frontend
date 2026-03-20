@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:retentio/providers/loading_state_provider.dart';
-
 import '../../../main.dart';
 import '../../../mixins/notifier_mixin.dart';
 import '../../../services/apis/deck_service.dart';
 import 'deck_provider.dart';
+
+/// Inclusive bounds for the rate field when creating or editing a deck.
+const int kDeckEditorRateMin = 1;
+const int kDeckEditorRateMax = 1000;
+
+int clampDeckEditorRate(int rate) =>
+    rate.clamp(kDeckEditorRateMin, kDeckEditorRateMax);
 
 final createDeckProvider = NotifierProvider.autoDispose(CreateDeckNotifier.new);
 final createDeckParamsProvider =
@@ -15,68 +21,47 @@ final createDeckParamsProvider =
     );
 
 class DeckParamsNotifier extends Notifier<CreateDeckParams> with NotifierMixin {
+  DeckParamsNotifier();
+
   @override
   CreateDeckParams build() {
     return CreateDeckParams(
-      fields: ['English', 'Chinese'],
       name: '',
       rate: 10,
-      templates: [
-        [0, 1],
-      ],
       type: DeckCardType.add,
       id: '',
+      fields: [],
     );
   }
 }
 
 class CreateDeckParams {
-  final List<String> fields;
   final String name;
   final int rate;
   final String id;
-  final List<List<int>> templates;
   final DeckCardType type;
-
+  final List<String> fields;
   CreateDeckParams({
-    required this.fields,
     required this.name,
-    required this.templates,
     required this.rate,
     required this.type,
     required this.id,
+    required this.fields,
   });
+
   CreateDeckParams copyWith({
     List<String>? fields,
     String? name,
-    List<List<int>>? templates,
     int? rate,
     DeckCardType? type,
     String? id,
   }) => CreateDeckParams(
-    fields: fields ?? this.fields,
     name: name ?? this.name,
     rate: rate ?? this.rate,
     type: type ?? this.type,
     id: id ?? this.id,
-    templates: templates ?? this.templates,
+    fields: fields ?? this.fields,
   );
-}
-
-enum Rate {
-  slow(10),
-  fast(20);
-
-  final int value;
-
-  const Rate(this.value);
-
-  static Rate fromValue(int value) {
-    return Rate.values.firstWhere(
-      (element) => element.value == value,
-      orElse: () => Rate.slow,
-    );
-  }
 }
 
 enum DeckCardType { add, edit }
@@ -94,35 +79,27 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
   //   'Japanese',
   // ];
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController fieldController1 = TextEditingController();
+  final TextEditingController fieldController2 = TextEditingController();
   DeckCardType cardType = DeckCardType.add;
   String deckId = '';
 
   @override
   CreateDeckState build() {
-    final params = ref.read(createDeckParamsProvider);
-    var fields = params.fields;
+    final params = ref.watch(createDeckParamsProvider);
     var name = params.name;
-    var template = 0;
-    var rate = Rate.fromValue(params.rate);
+    var rate = clampDeckEditorRate(params.rate);
     nameController.text = name;
+    fieldController1.text = params.fields.firstOrNull ?? '';
+    fieldController2.text = params.fields.lastOrNull ?? '';
     deckId = params.id;
-    if (params.templates.length == 1) {
-      template = 0;
-    } else {
-      template = 1;
-    }
     cardType = params.type;
 
-    return CreateDeckState(
-      fields: fields,
-      name: name,
-      rate: rate,
-      templates: template,
-    );
+    return CreateDeckState(name: name, rate: rate);
   }
 
-  void changeRate(Rate rate) {
-    state = state.copyWith(rate: rate);
+  void changeRate(int rate) {
+    state = state.copyWith(rate: clampDeckEditorRate(rate));
   }
 
   void changeField(int index, String field) {
@@ -134,10 +111,6 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
       return;
     }
     state = state.copyWith(fields: fields);
-  }
-
-  void changeTemplate(int index) {
-    state = state.copyWith(templates: index);
   }
 
   Future<void> createDeck(BuildContext context) async {
@@ -154,6 +127,9 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
       );
       return;
     }
+    state = state.copyWith(
+      fields: [fieldController1.text, fieldController2.text],
+    );
     if (state.fields.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -169,7 +145,7 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
     final params = {
       'name': name,
       'fields': state.fields,
-      'rate': state.rate.value,
+      'rate': clampDeckEditorRate(state.rate),
     };
     ref.read(loadingStateProvider.notifier).showLoading();
     if (cardType == DeckCardType.add) {
@@ -222,25 +198,14 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
 class CreateDeckState {
   final List<String> fields;
   final String name;
-  final int templates;
-  final Rate rate;
+  final int rate;
 
-  CreateDeckState({
-    this.fields = const [],
-    this.name = '',
-    this.templates = 0,
-    this.rate = Rate.slow,
-  });
+  CreateDeckState({this.fields = const [], this.name = '', this.rate = 10});
 
-  CreateDeckState copyWith({
-    List<String>? fields,
-    String? name,
-    int? templates,
-    Rate? rate,
-  }) => CreateDeckState(
-    fields: fields ?? this.fields,
-    name: name ?? this.name,
-    templates: templates ?? this.templates,
-    rate: rate ?? this.rate,
-  );
+  CreateDeckState copyWith({List<String>? fields, String? name, int? rate}) =>
+      CreateDeckState(
+        fields: fields ?? this.fields,
+        name: name ?? this.name,
+        rate: rate ?? this.rate,
+      );
 }

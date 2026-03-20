@@ -7,19 +7,24 @@ import '../../../models/card.dart';
 import '../../../models/deck.dart';
 import '../../../services/apis/card_service.dart';
 
-final cardProvider = NotifierProvider.autoDispose
-    .family<CardNotifier, CardState, Deck>(CardNotifier.new);
+final cardProvider = NotifierProvider.autoDispose<CardNotifier, CardState>(
+  CardNotifier.new,
+  dependencies: [deckProvider],
+);
+final deckProvider = Provider.autoDispose<Deck>(
+  (ref) => throw UnimplementedError(
+    'deckProvider must be overridden in CardNotifier',
+  ),
+);
 
 class CardNotifier extends Notifier<CardState> {
-  Deck deck;
+  late Deck deck;
 
   /// 本次学习会话的总卡片数
-  int get totalCardsInSession => deck.stats.unseenCards + deck.reviewCards;
+  int get totalCardsInSession => deck.stats.cardsCount;
 
   final FlashCardController flashCardController = FlashCardController();
   late List<double> scope;
-
-  CardNotifier(this.deck);
 
   void calculateScope() {
     if (state.cardDetail == null) {
@@ -46,12 +51,10 @@ class CardNotifier extends Notifier<CardState> {
 
   @override
   CardState build() {
+    deck = ref.watch(deckProvider);
     scope = [0, 0];
     getCardDetail();
-    ref.onDispose(() {
-      logger.w('CardNotifier onDispose');
-      flashCardController.dispose();
-    });
+    ref.onDispose(flashCardController.dispose);
     return CardState(isLoading: true, selectedInterval: 0);
   }
 
@@ -75,6 +78,16 @@ class CardNotifier extends Notifier<CardState> {
     await reviewCard(isHide: isHide);
     await getCardDetail();
     state = state.copyWith(cardsStudied: state.cardsStudied + 1);
+  }
+
+  Future<void> reviewAgain() async {
+    state = state.copyWith(
+      loadingState: LoadingState.initial,
+      isHide: false,
+      showAnswer: true,
+      cardsStudied: 0,
+    );
+    getCardDetail();
   }
 
   Future<void> reviewCard({bool isHide = false}) async {

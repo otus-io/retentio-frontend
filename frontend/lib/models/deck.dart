@@ -67,7 +67,6 @@ class DeckStats {
 class Deck {
   final String id;
   final String name;
-  final List<List<int>> templates;
   final DeckStats stats;
   final int rate;
   final DeckOwner owner;
@@ -81,7 +80,6 @@ class Deck {
   Deck({
     required this.id,
     required this.name,
-    required this.templates,
     required this.stats,
     required this.rate,
     required this.owner,
@@ -97,7 +95,6 @@ class Deck {
   Deck copyWith({required String name}) => Deck(
     id: id,
     name: name,
-    templates: templates,
     stats: stats,
     rate: rate,
     owner: owner,
@@ -125,15 +122,9 @@ class Deck {
 
     // 兼容处理 field/fields
     final fieldsData = json['fields'] ?? json['field'];
-    final templates =
-        (json['templates'] as List<dynamic>?)
-            ?.map((x) => List<int>.from(x.map((x) => x as int)))
-            .toList() ??
-        [];
     return Deck(
       id: json['id'] as String,
       name: json['name'] as String,
-      templates: templates,
       stats: DeckStats.fromJson(json['stats'] as Map<String, dynamic>? ?? {}),
       rate: json['rate'] as int? ?? 0,
       owner: parsedOwner,
@@ -157,9 +148,6 @@ class Deck {
     return {
       'id': id,
       'name': name,
-      "templates": List<dynamic>.from(
-        templates.map((x) => List<dynamic>.from(x.map((x) => x))),
-      ),
       'stats': stats.toJson(),
       'rate': rate,
       'owner': owner.toJson(),
