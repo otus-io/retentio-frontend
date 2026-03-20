@@ -10,11 +10,11 @@ class CardService {
     try {
       final res = await ApiService.get(Api.card, pathParams: {'id': deckId});
 
-      if (res?.data.isEmpty) {
-        return null; // 没有需要学习的卡片
+      if (res?.data == null) {
+        return null;
       }
 
-      return CardDetail.fromJson(res?.data);
+      return CardDetail.tryFromApiData(res!.data);
     } catch (e) {
       logger.e(e);
       return null;

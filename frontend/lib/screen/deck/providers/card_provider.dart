@@ -54,10 +54,7 @@ class CardNotifier extends Notifier<CardState> {
     deck = ref.watch(deckProvider);
     scope = [0, 0];
     getCardDetail();
-    ref.onDispose(() {
-      logger.w('CardNotifier onDispose');
-      flashCardController.dispose();
-    });
+    ref.onDispose(flashCardController.dispose);
     return CardState(isLoading: true, selectedInterval: 0);
   }
 
