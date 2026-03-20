@@ -58,53 +58,52 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget>
     return Column(
       spacing: 20,
       children: [
-        Row(
-          spacing: 16,
-          mainAxisSize: .max,
-          crossAxisAlignment: .center,
-          mainAxisAlignment: .start,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 8,
           children: [
-            Icon(LucideIcons.activity),
-            Text('${context.loc.rate}:'),
-            NumberPicker(
-              minValue: 10,
-              maxValue: 100,
-              itemWidth: 50,
-              itemHeight: 30,
-              step: 10,
-              axis: Axis.vertical,
-              value: ref.watch(
-                createDeckProvider.select((value) => value.rate),
-              ),
-              selectedTextStyle: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.black26),
-              ),
-              onChanged: (value) {
-                ref.read(createDeckProvider.notifier).changeRate(value);
-              },
-            ),
             Row(
+              spacing: 16,
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  loc.newCardEveryMinutes(
-                    ((86400 /
-                                ref.watch(
-                                  createDeckProvider.select(
-                                    (value) => value.rate,
-                                  ),
-                                )) /
-                            60)
-                        .toInt(),
+                Icon(LucideIcons.activity),
+                Text('${context.loc.rate}:'),
+                NumberPicker(
+                  minValue: kDeckEditorRateMin,
+                  maxValue: kDeckEditorRateMax,
+                  itemWidth: 50,
+                  itemHeight: 30,
+                  step: 1,
+                  axis: Axis.vertical,
+                  value: ref.watch(
+                    createDeckProvider.select((value) => value.rate),
                   ),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  selectedTextStyle: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.black26),
+                  ),
+                  onChanged: (value) {
+                    ref.read(createDeckProvider.notifier).changeRate(value);
+                  },
                 ),
               ],
+            ),
+            Text(
+              loc.newCardEveryMinutes(
+                ((86400 /
+                            ref.watch(
+                              createDeckProvider.select((value) => value.rate),
+                            )) /
+                        60)
+                    .toInt(),
+              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
         ),
