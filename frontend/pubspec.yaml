@@ -42,6 +42,13 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
 
+# path_provider_foundation 2.6.0+ uses package:objective_c (native assets). That can
+# fail on iOS with missing SdkRoot during tooling and missing objective_c.framework in
+# the app bundle. 2.5.1 keeps the classic plugin implementation until Flutter embeds
+# native assets reliably (see flutter/flutter#180603).
+dependency_overrides:
+  path_provider_foundation: 2.5.1
+
 flutter:
   uses-material-design: true
   generate: true
