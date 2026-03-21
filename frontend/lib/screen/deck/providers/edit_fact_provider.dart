@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../models/card.dart';
 import '../../../services/apis/card_service.dart';
 import 'card_provider.dart';
+
+String _primaryTextFromSlot(Back slot) {
+  for (final i in slot.items) {
+    if (i.type == "text") return i.value;
+  }
+  if (slot.items.isEmpty) return "";
+  return slot.items.first.value;
+}
 
 final editFactProvider = NotifierProvider.autoDispose(
   EditFactNotifier.new,
@@ -17,8 +26,8 @@ class EditFactNotifier extends Notifier {
   build() {
     final fact = ref.read(cardProvider).cardDetail?.card;
     if (fact != null) {
-      questionController.text = fact.front.first.items.first.value;
-      answerController.text = fact.back.last.items.first.value;
+      questionController.text = _primaryTextFromSlot(fact.front.first);
+      answerController.text = _primaryTextFromSlot(fact.back.last);
     }
     ref.onDispose(() {
       answerController.dispose();

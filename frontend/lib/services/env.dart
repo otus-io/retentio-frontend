@@ -21,7 +21,7 @@ class Env {
   static String get host {
     switch (_kApiEnv) {
       case ApiEnv.debug:
-        return 'https://api.wordupx.com';
+        return 'http://localhost:8080';
       case ApiEnv.dev:
         return 'https://api.wordupx.com:8443';
       case ApiEnv.release:
