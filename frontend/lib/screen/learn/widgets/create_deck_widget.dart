@@ -89,23 +89,22 @@ class _CreateDeckWidgetState extends ConsumerState<CreateDeckWidget>
                 ref.read(createDeckProvider.notifier).changeRate(value);
               },
             ),
-            Row(
-              children: [
-                Text(
-                  loc.newCardEveryMinutes(
-                    ((86400 /
-                                ref.watch(
-                                  createDeckProvider.select(
-                                    (value) => value.rate,
-                                  ),
-                                )) /
-                            60)
-                        .toInt(),
-                  ),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            SizedBox(
+              child: Text(
+                loc.newCardEveryMinutes(
+                  ((86400 /
+                              ref.watch(
+                                createDeckProvider.select(
+                                  (value) => value.rate,
+                                ),
+                              )) /
+                          60)
+                      .toInt(),
                 ),
-              ],
-            ),
+                maxLines: 2,
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ).expanded(),
           ],
         ),
 

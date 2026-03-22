@@ -13,15 +13,21 @@ import 'card_video_widget.dart';
 class FieldContentWidget extends ConsumerWidget {
   const FieldContentWidget({
     super.key,
-    required this.items,
+    required this.back,
     required this.color,
   });
 
-  final List<Item> items;
+  final Back back;
   final Color color;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final items = [
+      if (back.text?.isNotEmpty == true) {"text": back.text},
+      if (back.image?.isNotEmpty == true) {"image": back.image},
+      if (back.audio?.isNotEmpty == true) {"audio": back.audio},
+      if (back.video?.isNotEmpty == true) {"video": back.video},
+    ];
     return DefaultTabController(
       key: const ValueKey('field_content_widget'),
       length: items.length,
@@ -29,15 +35,16 @@ class FieldContentWidget extends ConsumerWidget {
         children: [
           TabBarView(
             children: items.map((e) {
-              final type = e.type;
+              final type = e.keys.first;
+              final value = e[type] ?? '';
               return switch (type) {
-                'audio' => CardAudioWidget(audioUrl: e.value, color: color),
-                'video' => CardVideoWidget(url: e.value),
-                'image' => Center(child: CardImageWidget(url: e.value)),
-                'text' => CardTextWidget(text: e.value, color: color),
+                'audio' => CardAudioWidget(audioUrl: value, color: color),
+                'video' => CardVideoWidget(url: value),
+                'image' => Center(child: CardImageWidget(url: value)),
+                'text' => CardTextWidget(text: value, color: color),
                 String() => Center(
                   child: Text(
-                    e.value,
+                    value,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -72,8 +79,9 @@ class FieldContentWidget extends ConsumerWidget {
                   ),
                   // Add your tabs here
                   tabs: items.map((e) {
+                    final type = e.keys.first;
                     return Tab(
-                      icon: Icon(switch (e.type) {
+                      icon: Icon(switch (type) {
                         'audio' => LucideIcons.audioLines,
                         'video' => LucideIcons.video,
                         'image' => LucideIcons.image,

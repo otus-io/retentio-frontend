@@ -60,7 +60,7 @@ class CardWidget extends ConsumerWidget {
                     // Add your tabs here
                     tabs:
                         cards?.map((e) {
-                          return Tab(text: e.field);
+                          return Tab(icon: Icon(LucideIcons.file));
                         }).toList() ??
                         [],
                   ).expanded(),
@@ -107,7 +107,7 @@ class CardWidget extends ConsumerWidget {
             TabBarView(
               children:
                   cards?.map((e) {
-                    return FieldContentWidget(items: e.items, color: color);
+                    return FieldContentWidget(back: e, color: color);
                   }).toList() ??
                   [],
             ).expanded(),

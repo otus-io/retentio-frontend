@@ -80,22 +80,22 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
                       },
                       icon: LucideIcons.squarePen,
                     ),
-                    if (ref.watch(cardProvider.notifier).totalCardsInSession >
-                        0)
-                      PullDownMenuItem(
-                        title: loc.hideCard,
-                        onTap: () async {
-                          await ref
-                              .read(cardProvider.notifier)
-                              .nextCard(isHide: true);
-                          ref
-                              .read(cardProvider.notifier)
-                              .flashCardController
-                              .showFront();
-                          ref.read(cardProvider.notifier).showAnswer();
-                        },
-                        icon: LucideIcons.eyeOff,
-                      ),
+                    // if (ref.watch(cardProvider.notifier).totalCardsInSession >
+                    //     0)
+                    //   PullDownMenuItem(
+                    //     title: loc.hideCard,
+                    //     onTap: () async {
+                    //       await ref
+                    //           .read(cardProvider.notifier)
+                    //           .nextCard(isHide: true);
+                    //       ref
+                    //           .read(cardProvider.notifier)
+                    //           .flashCardController
+                    //           .showFront();
+                    //       ref.read(cardProvider.notifier).showAnswer();
+                    //     },
+                    //     icon: LucideIcons.eyeOff,
+                    //   ),
                     PullDownMenuItem(
                       title: loc.deleteDeck,
                       onTap: () async {

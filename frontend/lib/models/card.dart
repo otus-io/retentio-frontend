@@ -99,36 +99,25 @@ class Card {
 }
 
 class Back {
-  String field;
-  List<Item> items;
+  String? field;
+  String? text;
+  String? image;
+  String? audio;
+  String? video;
 
-  Back({required this.field, required this.items});
-
-  Back copyWith({String? field, List<Item>? items}) =>
-      Back(field: field ?? this.field, items: items ?? this.items);
+  Back({this.field, this.text, this.image, this.audio, this.video});
 
   factory Back.fromJson(Map<String, dynamic> json) => Back(
-    field: json["field"] ?? "Text",
-    items: List<Item>.from(json["items"].map((x) => Item.fromJson(x))),
+    text: json["text"],
+    image: json["image"],
+    audio: json["audio"],
+    video: json["video"],
   );
 
   Map<String, dynamic> toJson() => {
-    "field": field,
-    "items": List<dynamic>.from(items.map((x) => x.toJson())),
+    "text": text,
+    "image": image,
+    "audio": audio,
+    "video": video,
   };
-}
-
-class Item {
-  String type;
-  String value;
-
-  Item({required this.type, required this.value});
-
-  Item copyWith({String? type, String? value}) =>
-      Item(type: type ?? this.type, value: value ?? this.value);
-
-  factory Item.fromJson(Map<String, dynamic> json) =>
-      Item(type: json["type"], value: json["value"]);
-
-  Map<String, dynamic> toJson() => {"type": type, "value": value};
 }

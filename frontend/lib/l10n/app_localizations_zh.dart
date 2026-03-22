@@ -69,7 +69,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profile => '我的';
 
   @override
-  String get noDecksAvailable => '暂无词本';
+  String get noDecksAvailable => '暂无卡组';
 
   @override
   String get retry => '重试';
@@ -90,11 +90,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get review => '复习';
 
   @override
-  String get facts => '知识点';
+  String get facts => '词条';
 
   @override
   String openDeck(String deckName) {
-    return '打开词本：$deckName';
+    return '打开卡组：$deckName';
   }
 
   @override
@@ -134,7 +134,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get learned => '已学习';
 
   @override
-  String get noCardsInDeck => '词本中没有卡片';
+  String get noCardsInDeck => '卡组中没有卡片';
 
   @override
   String get startLearning => '开始学习';
@@ -160,7 +160,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get easy => '简单';
 
   @override
-  String get backToDeck => '返回词本';
+  String get backToDeck => '返回卡组';
 
   @override
   String get viewCards => '查看';
@@ -172,7 +172,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get manage => '管理';
 
   @override
-  String get createDeck => '创建词本';
+  String get createDeck => '创建卡组';
 
   @override
   String get createInputDeckName => '名称';
@@ -211,16 +211,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reviewAgain => '再次复习';
 
   @override
-  String get editDeck => '编辑词本';
+  String get editDeck => '编辑卡组';
 
   @override
   String get hideCard => '隐藏卡片';
 
   @override
-  String get deleteDeck => '删除词本';
+  String get deleteDeck => '删除卡组';
 
   @override
-  String get noCardsInThisDeck => '这个词本中没有卡片';
+  String get noCardsInThisDeck => '这个卡组中没有卡片';
 
   @override
   String get save => '保存';
