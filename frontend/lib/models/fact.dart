@@ -72,7 +72,11 @@ class Fact {
 
   /// Replaces text per slot; keeps audio/image/video from the original entries.
   Fact withMergedTexts(List<String> texts) {
-    assert(texts.length == entries.length);
+    if (texts.length != entries.length) {
+      throw ArgumentError(
+        'texts.length (${texts.length}) must equal entries.length (${entries.length})',
+      );
+    }
     final merged = List<FactEntry>.generate(
       entries.length,
       (i) => entries[i].copyWithText(texts[i]),
