@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:retentio/models/res_base_model.dart';
+import 'package:retentio/models/api_response.dart';
 
 void main() {
-  group('ResBaseModel', () {
+  group('ApiResponse', () {
     group('constructor', () {
       test('uses default code and msg when not provided', () {
-        final model = ResBaseModel();
+        final model = ApiResponse();
         expect(model.code, -1);
         expect(model.msg, 'Unknown error');
         expect(model.data, isNull);
@@ -13,7 +13,7 @@ void main() {
       });
 
       test('accepts custom values', () {
-        final model = ResBaseModel(
+        final model = ApiResponse(
           code: 0,
           msg: 'Success',
           data: {'key': 'value'},
@@ -31,50 +31,50 @@ void main() {
           'message': 'OK',
           'data': {'token': 'abc123'},
         };
-        final model = ResBaseModel.fromJson(json);
+        final model = ApiResponse.fromJson(json);
         expect(model.code, 0);
         expect(model.msg, 'OK');
         expect(model.data, {'token': 'abc123'});
       });
 
-      test('uses default code -1 when missing', () {
-        final model = ResBaseModel.fromJson({'data': null});
+      test('defaults code to 0 when key is missing', () {
+        final model = ApiResponse.fromJson({'data': null});
         expect(model.code, 0);
       });
 
       test('uses default msg when message is missing', () {
-        final model = ResBaseModel.fromJson({'code': 0});
+        final model = ApiResponse.fromJson({'code': 0});
         expect(model.msg, 'Unknown error');
       });
 
       test('converts message to string when not string', () {
-        final model = ResBaseModel.fromJson({'code': 1, 'message': 404});
+        final model = ApiResponse.fromJson({'code': 1, 'message': 404});
         expect(model.msg, '404');
       });
     });
 
     group('isSuccess', () {
-      test('returns true when code is 0 && data isNot null', () {
-        final model = ResBaseModel(code: 0, msg: '', data: null);
+      test('returns false when data is null even if code is 0', () {
+        final model = ApiResponse(code: 0, msg: '', data: null);
         expect(model.isSuccess, false);
       });
 
       test('returns false when code is non-zero', () {
-        final model = ResBaseModel(code: 1, msg: '', data: null);
+        final model = ApiResponse(code: 1, msg: '', data: null);
         expect(model.isSuccess, false);
       });
     });
 
     group('hasException', () {
       test('returns false when exception is null', () {
-        final model = ResBaseModel();
+        final model = ApiResponse();
         expect(model.hasException, false);
       });
     });
 
     group('copyWith', () {
       test('creates copy with updated fields', () {
-        final original = ResBaseModel(code: 0, msg: 'OK', data: null);
+        final original = ApiResponse(code: 0, msg: 'OK', data: null);
         final copy = original.copyWith(code: 1, msg: 'Error');
         expect(copy.code, 1);
         expect(copy.msg, 'Error');
@@ -82,7 +82,7 @@ void main() {
       });
 
       test('preserves unspecified fields', () {
-        final original = ResBaseModel(code: 0, msg: 'OK', data: {'x': 1});
+        final original = ApiResponse(code: 0, msg: 'OK', data: {'x': 1});
         final copy = original.copyWith(code: 1);
         expect(copy.msg, 'OK');
         expect(copy.data, {'x': 1});
@@ -91,7 +91,7 @@ void main() {
 
     group('toJson', () {
       test('serializes to map', () {
-        final model = ResBaseModel(
+        final model = ApiResponse(
           code: 0,
           msg: 'Success',
           data: {'user': 'test'},
@@ -103,11 +103,11 @@ void main() {
       });
     });
 
-    group('defaultRes', () {
-      test('defaultRes has default values', () {
-        expect(ResBaseModel.defaultRes.code, -1);
-        expect(ResBaseModel.defaultRes.msg, 'Unknown error');
-        expect(ResBaseModel.defaultRes.data, isNull);
+    group('defaultResponse', () {
+      test('defaultResponse has default values', () {
+        expect(ApiResponse.defaultResponse.code, -1);
+        expect(ApiResponse.defaultResponse.msg, 'Unknown error');
+        expect(ApiResponse.defaultResponse.data, isNull);
       });
     });
   });

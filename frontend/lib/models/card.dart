@@ -52,11 +52,11 @@ class CardDetail {
 }
 
 class Card {
-  List<Back> back;
+  List<CardSlot> back;
   int createdAt;
   int dueDate;
   String factId;
-  List<Back> front;
+  List<CardSlot> front;
   bool hidden;
   String id;
   int lastReview;
@@ -75,11 +75,11 @@ class Card {
   });
 
   Card copyWith({
-    List<Back>? back,
+    List<CardSlot>? back,
     int? createdAt,
     int? dueDate,
     String? factId,
-    List<Back>? front,
+    List<CardSlot>? front,
     bool? hidden,
     String? id,
     int? lastReview,
@@ -112,26 +112,26 @@ class Card {
 
     return Card(
       back: backJson is List
-          ? List<Back>.from(
+          ? List<CardSlot>.from(
               backJson.map(
-                (x) => Back.fromJson(
+                (x) => CardSlot.fromJson(
                   Map<String, dynamic>.from(x as Map<dynamic, dynamic>),
                 ),
               ),
             )
-          : <Back>[],
+          : <CardSlot>[],
       createdAt: jsonInt(json['created_at']),
       dueDate: jsonInt(json['due_date']),
       factId: jsonStr(json['fact_id']),
       front: frontJson is List
-          ? List<Back>.from(
+          ? List<CardSlot>.from(
               frontJson.map(
-                (x) => Back.fromJson(
+                (x) => CardSlot.fromJson(
                   Map<String, dynamic>.from(x as Map<dynamic, dynamic>),
                 ),
               ),
             )
-          : <Back>[],
+          : <CardSlot>[],
       hidden: json['hidden'] as bool? ?? false,
       id: jsonStr(json['id']),
       lastReview: jsonInt(json['last_review']),
@@ -162,18 +162,18 @@ class Card {
   };
 }
 
-class Back {
+class CardSlot {
   String field;
   List<Item> items;
 
-  Back({required this.field, required this.items});
+  CardSlot({required this.field, required this.items});
 
-  Back copyWith({String? field, List<Item>? items}) =>
-      Back(field: field ?? this.field, items: items ?? this.items);
+  CardSlot copyWith({String? field, List<Item>? items}) =>
+      CardSlot(field: field ?? this.field, items: items ?? this.items);
 
   /// Parses next-card face slots: legacy `{ field, items: [{type,value}] }` or
   /// `{ field?, text?, audio?, image?, video? }` (synthesizes items in text→audio→image→video order).
-  factory Back.fromJson(Map<String, dynamic> json) {
+  factory CardSlot.fromJson(Map<String, dynamic> json) {
     final field = (json["field"] as String?) ?? "Text";
     List<Item> items;
     if (json["items"] is List) {
@@ -200,7 +200,7 @@ class Back {
     if (items.isEmpty) {
       items.add(Item(type: "text", value: ""));
     }
-    return Back(field: field, items: items);
+    return CardSlot(field: field, items: items);
   }
 
   Map<String, dynamic> toJson() => {

@@ -1,6 +1,6 @@
 import 'package:retentio/services/index.dart';
 
-import '../../models/res_base_model.dart';
+import '../../models/api_response.dart';
 import 'api_service.dart';
 import '../../models/deck.dart';
 
@@ -44,16 +44,16 @@ class DeckService {
   }
 
   /// 创建 deck
-  Future<ResBaseModel?> createDeck(dynamic params) async {
+  Future<ApiResponse?> createDeck(dynamic params) async {
     return ApiService.post(Api.decks, body: params);
   }
 
   /// 删除 deck
-  Future<ResBaseModel?> deleteDeck(String deckId) async {
+  Future<ApiResponse?> deleteDeck(String deckId) async {
     return ApiService.delete(Api.deck, pathParams: {'id': deckId});
   }
 
-  Future<ResBaseModel?> updateDeck({
+  Future<ApiResponse?> updateDeck({
     required String deckId,
     required Map<String, dynamic> params,
   }) async {
