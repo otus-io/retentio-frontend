@@ -51,7 +51,7 @@ class DioClient {
   }
 
   /// GET 请求
-  Future<ResBaseModel?> get(
+  Future<ApiResponse?> get(
     String url, {
     Map<String, dynamic>? params,
     Map<String, dynamic>? pathParams,
@@ -65,7 +65,7 @@ class DioClient {
           ? await _dio.get(url, options: options)
           : await _dio.get(url, queryParameters: params, options: options);
 
-      return ResBaseModel.fromJson(response.data);
+      return ApiResponse.fromJson(response.data);
     } on DioException catch (e) {
       return _handleError(e);
     }
@@ -137,7 +137,7 @@ class DioClient {
   }
 
   /// POST 请求
-  Future<ResBaseModel?> post(
+  Future<ApiResponse?> post(
     String url, {
     Map<String, dynamic>? params,
     Map<String, dynamic>? pathParams,
@@ -151,14 +151,14 @@ class DioClient {
 
       final res = response.data as Map<String, dynamic>?;
       if (res == null) return null;
-      return ResBaseModel.fromJson(res);
+      return ApiResponse.fromJson(res);
     } on DioException catch (e) {
       return _handleError(e);
     }
   }
 
   ///Delete 删除请求
-  Future<ResBaseModel?> delete(
+  Future<ApiResponse?> delete(
     String url, {
     Map<String, dynamic>? params,
     Map<String, dynamic>? pathParams,
@@ -171,14 +171,14 @@ class DioClient {
 
       final res = response.data as Map<String, dynamic>?;
       if (res == null) return null;
-      return ResBaseModel.fromJson(res);
+      return ApiResponse.fromJson(res);
     } on DioException catch (e) {
       return _handleError(e);
     }
   }
 
   ///Patch 请求
-  Future<ResBaseModel?> patch(
+  Future<ApiResponse?> patch(
     String url, {
     dynamic params,
     Map<String, dynamic>? pathParams,
@@ -190,7 +190,7 @@ class DioClient {
       response = await _dio.patch(url, data: params);
       final res = response.data as Map<String, dynamic>?;
       if (res == null) return null;
-      return ResBaseModel.fromJson(res);
+      return ApiResponse.fromJson(res);
     } on DioException catch (e) {
       return _handleError(e);
     }
@@ -216,7 +216,7 @@ class DioClient {
   }
 
   /// POST 请求
-  Future<ResBaseModel?> postObj(String url, {dynamic params}) async {
+  Future<ApiResponse?> postObj(String url, {dynamic params}) async {
     assert(_didConfig, 'Please call Dioclient.config(...) first.');
     Response response;
     try {
@@ -224,14 +224,14 @@ class DioClient {
 
       final res = response.data as Map<String, dynamic>?;
       if (res == null) return null;
-      return ResBaseModel.fromJson(res);
+      return ApiResponse.fromJson(res);
     } on DioException catch (e) {
       return _handleError(e);
     }
   }
 
   /// POST Form
-  Future<ResBaseModel?> postForm(
+  Future<ApiResponse?> postForm(
     String url, {
     Map<String, dynamic>? params,
     Options? options,
@@ -249,14 +249,14 @@ class DioClient {
 
       final res = response.data as Map<String, dynamic>?;
       if (res == null) return null;
-      return ResBaseModel.fromJson(res);
+      return ApiResponse.fromJson(res);
     } on DioException catch (e) {
       return _handleError(e);
     }
   }
 
   /// POST 请求
-  Future<ResBaseModel?> uploadFile(
+  Future<ApiResponse?> uploadFile(
     String url, {
     required String filePath,
     String? fileName,
@@ -286,14 +286,14 @@ class DioClient {
       );
       final res = response.data as Map<String, dynamic>?;
       if (res == null) return null;
-      return ResBaseModel.fromJson(res);
+      return ApiResponse.fromJson(res);
     } on DioException catch (e) {
       return _handleError(e);
     }
   }
 
   /// POST 请求
-  Future<ResBaseModel?> uploadBytes(
+  Future<ApiResponse?> uploadBytes(
     String url, {
     required Uint8List bytes,
     required String fileName,
@@ -314,7 +314,7 @@ class DioClient {
       );
       final res = response.data as Map<String, dynamic>?;
       if (res == null) return null;
-      return ResBaseModel.fromJson(res);
+      return ApiResponse.fromJson(res);
     } on DioException catch (e) {
       return _handleError(e);
     }
@@ -363,7 +363,7 @@ class DioClient {
     }
   }
 
-  ResBaseModel? _handleError(DioException e) {
+  ApiResponse? _handleError(DioException e) {
     logger.e('e: $e ${e.requestOptions.uri}');
     String msg = 'Unknown error';
     switch (e.type) {
@@ -388,7 +388,7 @@ class DioClient {
     // DialogUtil.dismiss();
     // DialogUtil.showToast(msg);
     final data = e.response is Map ? e.response?.data : null;
-    return ResBaseModel(msg: data ?? msg, exception: e, code: -1);
+    return ApiResponse(msg: data ?? msg, exception: e, code: -1);
   }
 
   static HttpClient _createHttpClient() {

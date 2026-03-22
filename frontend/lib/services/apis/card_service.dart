@@ -1,6 +1,6 @@
 import 'package:retentio/models/card.dart';
 import 'package:retentio/models/fact.dart';
-import 'package:retentio/models/res_base_model.dart';
+import 'package:retentio/models/api_response.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/index.dart';
 import 'package:retentio/utils/log.dart';
@@ -61,7 +61,7 @@ class CardService {
   }
 
   /// Permanently removes one card; fact and sibling cards are unchanged (API contract).
-  static Future<ResBaseModel?> deleteCard(String deckId, String cardId) async {
+  static Future<ApiResponse?> deleteCard(String deckId, String cardId) async {
     try {
       return await ApiService.delete(
         Api.cardById,
@@ -74,7 +74,7 @@ class CardService {
   }
 
   /// Updates a fact (`entries`, optional `fields` per API contract).
-  static Future<ResBaseModel?> updateFact(
+  static Future<ApiResponse?> updateFact(
     String deckId,
     String factId,
     Map<String, dynamic> body,

@@ -1,5 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:retentio/models/res_base_model.dart';
+import 'package:retentio/models/api_response.dart';
 import 'package:retentio/services/index.dart';
 
 import '../../main.dart';
@@ -31,7 +31,7 @@ class ApiService {
   }
 
   /// 通用 POST 请求
-  static Future<ResBaseModel?> post(
+  static Future<ApiResponse?> post(
     String endpoint, {
     Map<String, dynamic>? body,
   }) async {
@@ -41,7 +41,7 @@ class ApiService {
   }
 
   /// 通用 Delete请求
-  static Future<ResBaseModel?> delete(
+  static Future<ApiResponse?> delete(
     String endpoint, {
     Map<String, String>? pathParams,
   }) {
@@ -49,7 +49,7 @@ class ApiService {
   }
 
   /// 通用 GET 请求
-  static Future<ResBaseModel?> get(
+  static Future<ApiResponse?> get(
     String endpoint, {
     Map<String, String>? pathParams,
   }) async {
@@ -58,7 +58,7 @@ class ApiService {
   }
 
   /// 通用 Patch 请求
-  static Future<ResBaseModel?> patch(
+  static Future<ApiResponse?> patch(
     String endpoint, {
     Map<String, String>? pathParams,
     dynamic params,
