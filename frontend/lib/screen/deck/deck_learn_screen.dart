@@ -16,6 +16,32 @@ import '../learn/providers/create_deck_provider.dart';
 import '../learn/providers/deck_provider.dart';
 import '../learn/widgets/create_deck_widget.dart';
 
+/// [intervalSec] is the review interval in seconds (same as [CardState.selectedInterval]).
+String _formatReviewIntervalLabel(double intervalSec) {
+  const secPerMinute = 60;
+  const secPerHour = 60 * secPerMinute;
+  const secPerDay = 24 * secPerHour;
+  const secPerMonth = 30 * secPerDay;
+  const secPerYear = 12 * secPerMonth;
+
+  if (intervalSec < secPerMinute) {
+    return '${intervalSec.ceil()}s';
+  }
+  if (intervalSec < secPerHour) {
+    return '${(intervalSec / secPerMinute).ceil()}m';
+  }
+  if (intervalSec < secPerDay) {
+    return '${(intervalSec / secPerHour).toStringAsFixed(1)}h';
+  }
+  if (intervalSec < secPerMonth) {
+    return '${(intervalSec / secPerDay).toStringAsFixed(1)}d';
+  }
+  if (intervalSec < secPerYear) {
+    return '${(intervalSec / secPerMonth).toStringAsFixed(1)}mo';
+  }
+  return '${(intervalSec / secPerYear).toStringAsFixed(1)}y';
+}
+
 class DeckLearnScreen extends StatefulWidget {
   final Deck deck;
 
@@ -300,19 +326,12 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
                       final interval = ref.watch(
                         cardProvider.select((value) => value.selectedInterval),
                       );
-                      final scope = ref.read(
-                        cardProvider.notifier.select((value) => value.scope),
+                      final intervalRange = ref.read(
+                        cardProvider.notifier.select(
+                          (value) => value.intervalRange,
+                        ),
                       );
-                      var label = '${(interval).ceil() ~/ 60}m';
-
-                      ///超过 60m 就可以显示 1h （小时）， 超过 24 小时显示 1d
-                      if (interval > 24 * 60 * 60) {
-                        label = '${(interval ~/ 60 / 60 / 24).ceil()}d';
-                      } else if (interval > 60 * 60) {
-                        label = '${(interval ~/ 60 / 60).toStringAsFixed(1)}h';
-                      } else {
-                        label = '${(interval).toStringAsFixed(1)}m';
-                      }
+                      final label = _formatReviewIntervalLabel(interval);
                       return Row(
                         children: [
                           Text(
@@ -324,8 +343,8 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
                           ),
                           Slider(
                             value: interval.ceilToDouble(),
-                            min: scope.first.roundToDouble(),
-                            max: scope.last.roundToDouble(),
+                            min: intervalRange.first,
+                            max: intervalRange.last,
                             divisions: 100,
                             label: label,
                             onChanged: (double value) {

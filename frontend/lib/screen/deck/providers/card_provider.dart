@@ -8,6 +8,7 @@ import '../../../models/card.dart';
 import '../../../models/deck.dart';
 import '../../../services/apis/card_service.dart';
 import '../../../services/apis/deck_service.dart';
+import 'review_interval_range.dart';
 
 final cardProvider = NotifierProvider.autoDispose<CardNotifier, CardState>(
   CardNotifier.new,
@@ -28,35 +29,33 @@ class CardNotifier extends Notifier<CardState> {
   late Deck deck;
 
   final FlashCardController flashCardController = FlashCardController();
-  late List<double> scope;
+  late List<double> intervalRange;
 
-  void calculateScope() {
+  void calculateIntervalRange() {
     if (state.cardDetail == null) {
       return;
     }
     final dueDate = state.cardDetail!.card.dueDate;
     final lastReview = state.cardDetail!.card.lastReview;
-    final currentInterval = dueDate - lastReview;
-    final urgency =
-        (DateTime.now().microsecondsSinceEpoch ~/ 1000 - lastReview) /
-        (dueDate - lastReview);
-    final minInterval = urgency >= 1
-        ? currentInterval * 0.5
-        : currentInterval * ((0.5 - 1) * urgency + 1);
-    final maxInterval = urgency >= 1
-        ? currentInterval * 4.0
-        : currentInterval * ((4.0 - 1) * urgency + 1);
-    scope = [minInterval, maxInterval];
-    // 设置初始间隔为范围的中间值
-    final midInterval = (minInterval + maxInterval) / 2;
-    state = state.copyWith(selectedInterval: midInterval);
-    logger.d('scope:$currentInterval $scope, midInterval: $midInterval');
+    final nowSec = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+    final r = computeReviewIntervalRange(
+      nowSec: nowSec,
+      lastReview: lastReview,
+      dueDate: dueDate,
+    );
+    intervalRange = [r.minInterval, r.maxInterval];
+    state = state.copyWith(selectedInterval: r.midInterval);
+    logger.d(
+      'currentInterval:${r.currentIntervalSec} '
+      'intervalRange:[${r.minInterval.toInt()}, ${r.maxInterval.toInt()}], '
+      'midInterval:${r.midInterval.toInt()}',
+    );
   }
 
   @override
   CardState build() {
     deck = ref.watch(deckProvider);
-    scope = [0, 0];
+    intervalRange = [0, 0];
     getCardDetail();
     ref.onDispose(flashCardController.dispose);
     return CardState(isLoading: true, selectedInterval: 0);
@@ -142,7 +141,7 @@ class CardNotifier extends Notifier<CardState> {
         isHide: false,
         clearRefreshedCardsCount: true,
       );
-      calculateScope();
+      calculateIntervalRange();
     } else {
       int? refreshedCount;
       try {
