@@ -1,12 +1,12 @@
 // auth_service.dart
 import 'package:retentio/main.dart';
-import 'package:retentio/models/res_base_model.dart';
+import 'package:retentio/models/api_response.dart';
 import 'package:retentio/providers/auth_provider.dart';
 import 'package:retentio/services/index.dart';
 import 'api_service.dart';
 
 class AuthService {
-  static Future<ResBaseModel?> register({
+  static Future<ApiResponse?> register({
     required String email,
     required String username,
     required String password,
@@ -38,7 +38,7 @@ class AuthService {
   }
 
   /// Logout: invalidates token on server and clears local state.
-  static Future<ResBaseModel?> logout() async {
+  static Future<ApiResponse?> logout() async {
     final res = await ApiService.post(Api.logout);
     await ApiService.clearToken();
     providerContainer.read(isLoginProvider.notifier).setLogin(false);
@@ -46,12 +46,12 @@ class AuthService {
   }
 
   /// Request password reset; server returns reset_token (e.g. for email flow).
-  static Future<ResBaseModel?> forgotPassword({required String email}) async {
+  static Future<ApiResponse?> forgotPassword({required String email}) async {
     return ApiService.post(Api.forgotPassword, body: {'email': email});
   }
 
   /// Reset password using token from forgot-password.
-  static Future<ResBaseModel?> resetPassword({
+  static Future<ApiResponse?> resetPassword({
     required String token,
     required String newPassword,
   }) async {

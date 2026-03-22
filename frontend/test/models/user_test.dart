@@ -3,6 +3,12 @@ import 'package:retentio/models/user.dart';
 
 void main() {
   group('User', () {
+    test('empty factory has blank email and username', () {
+      final u = User.empty();
+      expect(u.email, '');
+      expect(u.username, '');
+    });
+
     group('fromJson', () {
       test('parses user with all fields', () {
         final json = {

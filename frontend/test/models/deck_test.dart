@@ -40,6 +40,42 @@ void main() {
       expect(stats.dueCards, 0);
       expect(stats.cardsCount, 0);
     });
+
+    test(
+      'fromJson parses reviewed, hidden, new_cards_today, last_reviewed_at',
+      () {
+        final stats = DeckStats.fromJson({
+          'cards_count': 1,
+          'facts_count': 2,
+          'unseen_cards': 3,
+          'reviewed_cards': 4,
+          'due_cards': 5,
+          'hidden_cards': 6,
+          'new_cards_today': 7,
+          'last_reviewed_at': 1700000000,
+        });
+        expect(stats.reviewedCards, 4);
+        expect(stats.hiddenCards, 6);
+        expect(stats.newCardsToday, 7);
+        expect(stats.lastReviewedAt, 1700000000);
+      },
+    );
+
+    test('toJson round-trips with fromJson', () {
+      final original = DeckStats(
+        cardsCount: 1,
+        factsCount: 2,
+        unseenCards: 3,
+        reviewedCards: 4,
+        dueCards: 5,
+        hiddenCards: 6,
+        newCardsToday: 7,
+        lastReviewedAt: 8,
+      );
+      final again = DeckStats.fromJson(original.toJson());
+      expect(again.cardsCount, original.cardsCount);
+      expect(again.lastReviewedAt, original.lastReviewedAt);
+    });
   });
 
   group('Deck', () {
@@ -110,6 +146,102 @@ void main() {
         expect(deck.updatedAt, isNotNull);
         expect(deck.createdAt!.toIso8601String(), contains('2024-01-15'));
         expect(deck.updatedAt!.toIso8601String(), contains('2024-01-16'));
+      });
+
+      test('parses min_interval, def_interval, max_interval', () {
+        final json = {
+          'id': 'd',
+          'name': 'n',
+          'stats': <String, dynamic>{},
+          'owner': 'o',
+          'fields': [],
+          'min_interval': 60,
+          'def_interval': 300,
+          'max_interval': 86400,
+        };
+        final deck = Deck.fromJson(json);
+        expect(deck.minInterval, 60);
+        expect(deck.defInterval, 300);
+        expect(deck.maxInterval, 86400);
+      });
+
+      test('toJson includes intervals and nested stats', () {
+        final deck = Deck(
+          id: 'id1',
+          name: 'N',
+          stats: DeckStats(
+            cardsCount: 10,
+            factsCount: 1,
+            unseenCards: 2,
+            reviewedCards: 3,
+            dueCards: 4,
+            hiddenCards: 0,
+            newCardsToday: 0,
+            lastReviewedAt: 0,
+          ),
+          rate: 5,
+          owner: DeckOwner(username: 'u', email: 'e'),
+          fields: const ['a'],
+          minInterval: 1,
+          defInterval: 2,
+          maxInterval: 3,
+        );
+        final json = deck.toJson();
+        expect(json['min_interval'], 1);
+        expect(json['def_interval'], 2);
+        expect(json['max_interval'], 3);
+        expect(json['stats'], isA<Map<String, dynamic>>());
+      });
+
+      test('progress is 0 when cardsCount is 0', () {
+        final deck = Deck(
+          id: 'd',
+          name: 'n',
+          stats: DeckStats(
+            cardsCount: 0,
+            factsCount: 0,
+            unseenCards: 0,
+            reviewedCards: 0,
+            dueCards: 0,
+            hiddenCards: 0,
+            newCardsToday: 0,
+            lastReviewedAt: 0,
+          ),
+          rate: 0,
+          owner: DeckOwner(username: 'u', email: ''),
+          fields: const [],
+          minInterval: 0,
+          defInterval: 0,
+          maxInterval: 0,
+        );
+        expect(deck.progress, 0.0);
+      });
+
+      test('progress reflects learned fraction', () {
+        final deck = Deck(
+          id: 'd',
+          name: 'n',
+          stats: DeckStats(
+            cardsCount: 100,
+            factsCount: 0,
+            unseenCards: 40,
+            reviewedCards: 0,
+            dueCards: 0,
+            hiddenCards: 0,
+            newCardsToday: 0,
+            lastReviewedAt: 0,
+          ),
+          rate: 0,
+          owner: DeckOwner(username: 'u', email: ''),
+          fields: const [],
+          minInterval: 0,
+          defInterval: 0,
+          maxInterval: 0,
+        );
+        expect(deck.progress, 60.0);
+        expect(deck.learnedCards, 60);
+        expect(deck.totalCards, 100);
+        expect(deck.reviewCards, 0);
       });
     });
   });

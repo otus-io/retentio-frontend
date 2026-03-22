@@ -1,20 +1,17 @@
-/// Created on 2026/2/5
-/// Description:
-library;
-
 import 'package:dio/dio.dart';
 
-class ResBaseModel {
-  ResBaseModel({
+/// Standard API envelope: `code`, `message` (as [msg]), and `data`.
+class ApiResponse {
+  ApiResponse({
     this.code = -1,
     this.msg = 'Unknown error',
     this.data,
     this.exception,
   });
 
-  static ResBaseModel defaultRes = ResBaseModel();
+  static ApiResponse defaultResponse = ApiResponse();
 
-  factory ResBaseModel.fromJson(dynamic json) => ResBaseModel(
+  factory ApiResponse.fromJson(dynamic json) => ApiResponse(
     code: json['code'] ?? 0,
     msg: json['message']?.toString() ?? 'Unknown error',
     data: json['data'],
@@ -29,12 +26,12 @@ class ResBaseModel {
 
   bool get hasException => exception != null;
 
-  ResBaseModel copyWith({
+  ApiResponse copyWith({
     int? code,
     String? msg,
     dynamic data,
     DioException? exception,
-  }) => ResBaseModel(
+  }) => ApiResponse(
     code: code ?? this.code,
     msg: msg ?? this.msg,
     data: data ?? this.data,

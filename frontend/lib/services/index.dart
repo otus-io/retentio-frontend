@@ -10,7 +10,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:retentio/utils/log.dart';
 
-import '../models/res_base_model.dart';
+import '../models/api_response.dart';
 import 'apis/api_service.dart';
 part 'dio_client/dio_client.dart';
 part 'dio_client/interceptors.dart';
