@@ -1,4 +1,5 @@
 import 'package:retentio/models/card.dart';
+import 'package:retentio/models/fact.dart';
 import 'package:retentio/models/res_base_model.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/index.dart';
@@ -15,6 +16,25 @@ class CardService {
       }
 
       return CardDetail.tryFromApiData(res!.data);
+    } catch (e) {
+      logger.e(e);
+      return null;
+    }
+  }
+
+  /// Loads a single fact (entries + fields) for editing.
+  static Future<Fact?> getFact(String deckId, String factId) async {
+    try {
+      final res = await ApiService.get(
+        Api.fact,
+        pathParams: {'id': deckId, 'factId': factId},
+      );
+      if (res?.data == null) return null;
+      final data = res!.data;
+      if (data is! Map) return null;
+      final factRaw = data['fact'];
+      if (factRaw is! Map) return null;
+      return Fact.fromJson(Map<String, dynamic>.from(factRaw));
     } catch (e) {
       logger.e(e);
       return null;
@@ -40,16 +60,29 @@ class CardService {
     }
   }
 
-  /// Updates a fact in a deck
+  /// Permanently removes one card; fact and sibling cards are unchanged (API contract).
+  static Future<ResBaseModel?> deleteCard(String deckId, String cardId) async {
+    try {
+      return await ApiService.delete(
+        Api.cardById,
+        pathParams: {'id': deckId, 'cardId': cardId},
+      );
+    } catch (e) {
+      logger.e(e);
+      return null;
+    }
+  }
+
+  /// Updates a fact (`entries`, optional `fields` per API contract).
   static Future<ResBaseModel?> updateFact(
     String deckId,
     String factId,
-    dynamic params,
+    Map<String, dynamic> body,
   ) async {
     final res = await ApiService.patch(
       Api.fact,
       pathParams: {'id': deckId, 'factId': factId},
-      params: params,
+      params: body,
     );
     return res;
   }

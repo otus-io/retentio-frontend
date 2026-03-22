@@ -46,6 +46,10 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
       ],
       child: Consumer(
         builder: (context, ref, child) {
+          final deck = ref.watch(deckProvider);
+          final cardState = ref.watch(cardProvider);
+          final sessionTotalCards =
+              cardState.refreshedCardsCount ?? deck.stats.cardsCount;
           return Scaffold(
             appBar: AppBar(
               title: Text(ref.watch(createDeckParamsProvider).name),
@@ -80,8 +84,7 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
                       },
                       icon: LucideIcons.squarePen,
                     ),
-                    if (ref.watch(cardProvider.notifier).totalCardsInSession >
-                        0)
+                    if (sessionTotalCards > 0)
                       PullDownMenuItem(
                         title: loc.hideCard,
                         onTap: () async {
@@ -128,19 +131,68 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
   }
 
   Widget _buildBody(ThemeData theme, AppLocalizations loc, WidgetRef ref) {
-    final isLoading = ref.watch(
-      cardProvider.select((value) => value.isLoading),
-    );
-    if (isLoading) {
+    final deck = ref.watch(deckProvider);
+    final cardState = ref.watch(cardProvider);
+    if (cardState.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final totalCardsInSession = ref.watch(
-      cardProvider.notifier.select((value) => value.totalCardsInSession),
-    );
-    final cardsStudied = ref.watch(
-      cardProvider.select((value) => value.cardsStudied),
-    );
+    final totalCardsInSession =
+        cardState.refreshedCardsCount ?? deck.stats.cardsCount;
+    final cardsStudied = cardState.cardsStudied;
+    final cardDetail = cardState.cardDetail;
+
+    // No next due card from API (empty deck, or nothing scheduled) — avoid FlashCard.
+    if (cardDetail == null) {
+      if (totalCardsInSession == 0) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                LucideIcons.circleQuestionMark,
+                size: 80,
+                color: theme.primaryColor,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                loc.noCardsInThisDeck,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              LucideIcons.circleCheckBig,
+              size: 80,
+              color: theme.primaryColor,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              loc.allCaughtUp,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                ref.read(cardProvider.notifier).reviewAgain();
+              },
+              child: Text(loc.reviewAgain),
+            ),
+          ],
+        ),
+      );
+    }
+
     final bool isCompleted = totalCardsInSession == cardsStudied;
     if (totalCardsInSession == 0) {
       return Center(

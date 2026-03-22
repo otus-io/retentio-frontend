@@ -218,6 +218,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hideCard => 'Hide Card';
 
   @override
+  String get deleteCard => 'Delete Card';
+
+  @override
+  String get deleteCardConfirm =>
+      'Only this card will be removed. The fact and other cards for it stay in the deck.';
+
+  @override
+  String get deleteCardFailed => 'Could not delete card';
+
+  @override
   String get deleteDeck => 'Delete Deck';
 
   @override

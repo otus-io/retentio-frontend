@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 import 'package:retentio/extensions/widget_extension.dart';
+import 'package:retentio/l10n/app_localizations.dart';
 
 import '../../../extensions/context_extension.dart';
+import '../../../widgets/common_bottom_sheet.dart';
 import '../providers/card_provider.dart';
 import 'buttons_tabbar/buttons_tab_bar_widget.dart';
+import 'edit_fact_widget.dart';
 import 'field_content_widget.dart';
 
 class CardWidget extends ConsumerWidget {
@@ -70,26 +73,97 @@ class CardWidget extends ConsumerWidget {
                       height: 46,
                       child: PullDownButton(
                         routeTheme: PullDownMenuRouteTheme(
-                          width: 150,
+                          width: 180,
                           backgroundColor: context.colorScheme.surface,
                         ),
                         itemBuilder: (context) => [
                           PullDownMenuItem(
+                            title: AppLocalizations.of(context)!.hideCard,
+                            onTap: () async {
+                              await ref
+                                  .read(cardProvider.notifier)
+                                  .nextCard(isHide: true);
+                              ref
+                                  .read(cardProvider.notifier)
+                                  .flashCardController
+                                  .showFront();
+                              ref.read(cardProvider.notifier).showAnswer();
+                            },
+                            icon: LucideIcons.eyeOff,
+                          ),
+                          PullDownMenuItem(
                             title: 'Edit Fact',
                             onTap: () {
-                              // showCommonBottomSheet(
-                              //   context: context,
-                              //   initialChildSize: 0.4,
-                              //   minChildSize: 0.3,
-                              //   maxChildSize: 0.5,
-                              //   title: 'Edit Fact',
-                              //   child: ProviderScope(
-                              //     overrides: [deckProvider.overrideWithValue(widget.deck)],
-                              //     child: EditFactWidget(deck: widget.deck),
-                              //   ),
-                              // );
+                              final deck = ref.read(deckProvider);
+                              final card =
+                                  ref.read(cardProvider).cardDetail?.card;
+                              if (card == null) return;
+                              showCommonBottomSheet(
+                                context: context,
+                                initialChildSize: 0.4,
+                                minChildSize: 0.3,
+                                maxChildSize: 0.85,
+                                title: 'Edit Fact',
+                                child: EditFactWidget(
+                                  deck: deck,
+                                  factId: card.factId,
+                                  onSaved: () => ref
+                                      .read(cardProvider.notifier)
+                                      .getCardDetail(),
+                                ),
+                              );
                             },
                             icon: LucideIcons.pencil,
+                          ),
+                          PullDownMenuItem(
+                            title: AppLocalizations.of(context)!.deleteCard,
+                            onTap: () async {
+                              final loc = AppLocalizations.of(context)!;
+                              final confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (dialogContext) => AlertDialog(
+                                  title: Text(loc.deleteCard),
+                                  content: Text(loc.deleteCardConfirm),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(
+                                        dialogContext,
+                                      ).pop(false),
+                                      child: Text(loc.cancel),
+                                    ),
+                                    FilledButton(
+                                      onPressed: () => Navigator.of(
+                                        dialogContext,
+                                      ).pop(true),
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                        foregroundColor: Colors.white,
+                                      ),
+                                      child: Text(loc.deleteCard),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirmed != true || !context.mounted) {
+                                return;
+                              }
+                              final ok = await ref
+                                  .read(cardProvider.notifier)
+                                  .deleteCurrentCard();
+                              if (!context.mounted) return;
+                              if (!ok) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(loc.deleteCardFailed),
+                                  ),
+                                );
+                              }
+                            },
+                            icon: LucideIcons.trash2,
+                            iconColor: Colors.red,
+                            itemTheme: PullDownMenuItemTheme(
+                              textStyle: const TextStyle(color: Colors.red),
+                            ),
                           ),
                         ],
                         buttonBuilder: (context, showMenu) => IconButton(

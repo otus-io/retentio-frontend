@@ -3,7 +3,9 @@ import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/deck/deck_learn_screen.dart';
 import 'package:retentio/screen/deck/providers/card_provider.dart';
 
+import '../../helpers/card_test_samples.dart';
 import '../../helpers/immediate_empty_card_notifier.dart';
+import '../../helpers/test_card_notifiers.dart';
 import '../../helpers/test_wrapper.dart';
 
 void main() {
@@ -38,6 +40,32 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('No cards in this deck'), findsOneWidget);
+    });
+
+    testWidgets('Review Again calls getCardDetail on notifier', (tester) async {
+      await setupTestEnvironment();
+      addTearDown(tearDownTestEnvironment);
+
+      final deck = sampleDeck(cardsCount: 5);
+
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          DeckLearnScreen(deck: deck),
+          overrides: [
+            deckProvider.overrideWithValue(deck),
+            cardProvider.overrideWith(
+              () => ReviewAgainHarnessNotifier(deckCardCount: 5),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Review Again'), findsOneWidget);
+      await tester.tap(find.text('Review Again'));
+      await tester.pumpAndSettle();
+
+      expect(ReviewAgainHarnessNotifier.active?.getCardDetailCalls, 1);
     });
   });
 }

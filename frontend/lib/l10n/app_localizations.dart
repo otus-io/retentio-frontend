@@ -506,6 +506,24 @@ abstract class AppLocalizations {
   /// **'Hide Card'**
   String get hideCard;
 
+  /// Menu item to delete current card
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Card'**
+  String get deleteCard;
+
+  /// Confirmation message before deleting a card
+  ///
+  /// In en, this message translates to:
+  /// **'Only this card will be removed. The fact and other cards for it stay in the deck.'**
+  String get deleteCardConfirm;
+
+  /// Snackbar when delete card API fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete card'**
+  String get deleteCardFailed;
+
   /// Menu item to delete deck
   ///
   /// In en, this message translates to:

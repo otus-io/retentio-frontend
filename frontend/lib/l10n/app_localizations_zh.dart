@@ -217,6 +217,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get hideCard => '隐藏卡片';
 
   @override
+  String get deleteCard => '删除卡片';
+
+  @override
+  String get deleteCardConfirm => '只会删除这一张卡片；对应的知识点及其他卡片仍会保留。';
+
+  @override
+  String get deleteCardFailed => '无法删除卡片';
+
+  @override
   String get deleteDeck => '删除词本';
 
   @override

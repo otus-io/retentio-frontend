@@ -288,6 +288,18 @@
   "@hideCard": {
     "description": "Menu item to hide card"
   },
+  "deleteCard": "Delete Card",
+  "@deleteCard": {
+    "description": "Menu item to delete current card"
+  },
+  "deleteCardConfirm": "Only this card will be removed. The fact and other cards for it stay in the deck.",
+  "@deleteCardConfirm": {
+    "description": "Confirmation message before deleting a card"
+  },
+  "deleteCardFailed": "Could not delete card",
+  "@deleteCardFailed": {
+    "description": "Snackbar when delete card API fails"
+  },
   "deleteDeck": "Delete Deck",
   "@deleteDeck": {
     "description": "Menu item to delete deck"
