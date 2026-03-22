@@ -176,7 +176,7 @@ class _DeckCard extends ConsumerWidget {
                   const SizedBox(width: 8),
                   _InfoChip(
                     icon: Icons.refresh,
-                    label: loc.review,
+                    label: loc.dueCards,
                     value: deck.reviewCards.toString(),
                     color: Colors.orange,
                   ),

@@ -55,6 +55,45 @@ void main() {
         final detail = CardDetail.fromJson(json);
         expect(detail.card.id, "unnexyny");
       });
+
+      test(
+        'parses next-card sibling keys (text, audio, image) into items order',
+        () {
+          final json = {
+            "card": {
+              "back": [
+                {"field": "Back", "text": "答え"},
+              ],
+              "created_at": 1,
+              "due_date": 2,
+              "fact_id": "f1",
+              "front": [
+                {
+                  "field": "Word",
+                  "text": "Hello",
+                  "audio": "https://api.example.com/api/media/au1",
+                  "image": "https://api.example.com/api/media/im1",
+                },
+              ],
+              "hidden": false,
+              "id": "c1",
+              "last_review": 0,
+              "template": [
+                [0],
+                [1],
+              ],
+            },
+            "urgency": 1.0,
+          };
+          final detail = CardDetail.fromJson(json);
+          final front = detail.card.front.first;
+          expect(front.items.length, 3);
+          expect(front.items[0].type, "text");
+          expect(front.items[0].value, "Hello");
+          expect(front.items[1].type, "audio");
+          expect(front.items[2].type, "image");
+        },
+      );
     });
 
     group('tryFromApiData', () {

@@ -26,11 +26,11 @@ void main() {
       expect(find.byType(LearnScreen), findsOneWidget);
     });
 
-    testWidgets('displays Learn in AppBar', (tester) async {
+    testWidgets('displays Deck in AppBar', (tester) async {
       await tester.pumpWidget(buildTestableWidget(const LearnScreen()));
       await tester.pump();
 
-      expect(find.text('Learn'), findsOneWidget);
+      expect(find.text('Deck'), findsOneWidget);
     });
 
     testWidgets('shows loading or error state', (tester) async {

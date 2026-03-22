@@ -122,10 +122,35 @@ class Back {
   Back copyWith({String? field, List<Item>? items}) =>
       Back(field: field ?? this.field, items: items ?? this.items);
 
-  factory Back.fromJson(Map<String, dynamic> json) => Back(
-    field: json["field"] ?? "Text",
-    items: List<Item>.from(json["items"].map((x) => Item.fromJson(x))),
-  );
+  /// Parses next-card face slots: legacy `{ field, items: [{type,value}] }` or
+  /// `{ field?, text?, audio?, image?, video? }` (synthesizes items in text→audio→image→video order).
+  factory Back.fromJson(Map<String, dynamic> json) {
+    final field = (json["field"] as String?) ?? "Text";
+    List<Item> items;
+    if (json["items"] is List) {
+      items = List<Item>.from(
+        (json["items"] as List).map(
+          (x) => Item.fromJson(Map<String, dynamic>.from(x as Map)),
+        ),
+      );
+    } else {
+      items = [];
+      void addIf(String type, dynamic v) {
+        if (v is String && v.isNotEmpty) {
+          items.add(Item(type: type, value: v));
+        }
+      }
+
+      addIf("text", json["text"]);
+      addIf("audio", json["audio"]);
+      addIf("image", json["image"]);
+      addIf("video", json["video"]);
+    }
+    if (items.isEmpty) {
+      items.add(Item(type: "text", value: ""));
+    }
+    return Back(field: field, items: items);
+  }
 
   Map<String, dynamic> toJson() => {
     "field": field,
