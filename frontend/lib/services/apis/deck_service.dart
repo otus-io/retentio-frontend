@@ -31,7 +31,13 @@ class DeckService {
   Future<Deck> getDeckDetail(String deckId) async {
     try {
       final res = await ApiService.get(Api.deck, pathParams: {'id': deckId});
-      return Deck.fromJson(res?.data);
+      final raw = res?.data;
+      if (raw is! Map) {
+        throw StateError(
+          'getDeckDetail: response data is missing or not a map',
+        );
+      }
+      return Deck.fromJson(Map<String, dynamic>.from(raw));
     } catch (e) {
       rethrow;
     }

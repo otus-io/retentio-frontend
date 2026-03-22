@@ -43,7 +43,7 @@ class Fact {
     final entriesRaw = json['entries'];
     final fieldsRaw = json['fields'];
     return Fact(
-      id: json['id'] as String,
+      id: json['id'] as String? ?? '',
       entries: entriesRaw is List
           ? entriesRaw
                 .map(
@@ -54,7 +54,7 @@ class Fact {
                 .toList()
           : [],
       fields: fieldsRaw is List
-          ? fieldsRaw.map((e) => e as String).toList()
+          ? fieldsRaw.map((e) => e as String? ?? '').toList()
           : [],
     );
   }

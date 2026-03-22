@@ -18,8 +18,20 @@ class CardDetail {
   CardDetail copyWith({Card? card, double? urgency}) =>
       CardDetail(card: card ?? this.card, urgency: urgency ?? this.urgency);
 
-  factory CardDetail.fromJson(Map<String, dynamic> json) =>
-      CardDetail(card: Card.fromJson(json["card"]), urgency: json["urgency"]);
+  factory CardDetail.fromJson(Map<String, dynamic> json) {
+    final cardRaw = json['card'];
+    if (cardRaw is! Map) {
+      throw ArgumentError.value(
+        cardRaw,
+        'card',
+        'CardDetail.fromJson requires card to be a JSON object',
+      );
+    }
+    return CardDetail(
+      card: Card.fromJson(Map<String, dynamic>.from(cardRaw)),
+      urgency: json['urgency'] as num? ?? 0,
+    );
+  }
 
   /// Parses GET `/decks/:id/card` style payloads. Returns null when the API
   /// sends `"card": []` (no due card) or `card` is not a JSON object.
@@ -84,19 +96,56 @@ class Card {
     template: template ?? this.template,
   );
 
-  factory Card.fromJson(Map<String, dynamic> json) => Card(
-    back: List<Back>.from(json["back"].map((x) => Back.fromJson(x))),
-    createdAt: json["created_at"],
-    dueDate: json["due_date"],
-    factId: json["fact_id"],
-    front: List<Back>.from(json["front"].map((x) => Back.fromJson(x))),
-    hidden: json["hidden"],
-    id: json["id"],
-    lastReview: json["last_review"],
-    template: List<List<int>>.from(
-      json["template"].map((x) => List<int>.from(x.map((x) => x))),
-    ),
-  );
+  factory Card.fromJson(Map<String, dynamic> json) {
+    int jsonInt(dynamic v) {
+      if (v == null) return 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      return int.tryParse('$v') ?? 0;
+    }
+
+    String jsonStr(dynamic v) => v is String ? v : (v?.toString() ?? '');
+
+    final backJson = json['back'];
+    final frontJson = json['front'];
+    final templateJson = json['template'];
+
+    return Card(
+      back: backJson is List
+          ? List<Back>.from(
+              backJson.map(
+                (x) => Back.fromJson(
+                  Map<String, dynamic>.from(x as Map<dynamic, dynamic>),
+                ),
+              ),
+            )
+          : <Back>[],
+      createdAt: jsonInt(json['created_at']),
+      dueDate: jsonInt(json['due_date']),
+      factId: jsonStr(json['fact_id']),
+      front: frontJson is List
+          ? List<Back>.from(
+              frontJson.map(
+                (x) => Back.fromJson(
+                  Map<String, dynamic>.from(x as Map<dynamic, dynamic>),
+                ),
+              ),
+            )
+          : <Back>[],
+      hidden: json['hidden'] as bool? ?? false,
+      id: jsonStr(json['id']),
+      lastReview: jsonInt(json['last_review']),
+      template: templateJson is List
+          ? List<List<int>>.from(
+              templateJson.map(
+                (x) => x is List
+                    ? List<int>.from(x.map((e) => jsonInt(e)))
+                    : <int>[],
+              ),
+            )
+          : <List<int>>[],
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     "back": List<dynamic>.from(back.map((x) => x.toJson())),
@@ -130,7 +179,9 @@ class Back {
     if (json["items"] is List) {
       items = List<Item>.from(
         (json["items"] as List).map(
-          (x) => Item.fromJson(Map<String, dynamic>.from(x as Map)),
+          (x) => Item.fromJson(
+            Map<String, dynamic>.from(x as Map<dynamic, dynamic>),
+          ),
         ),
       );
     } else {
@@ -167,8 +218,10 @@ class Item {
   Item copyWith({String? type, String? value}) =>
       Item(type: type ?? this.type, value: value ?? this.value);
 
-  factory Item.fromJson(Map<String, dynamic> json) =>
-      Item(type: json["type"], value: json["value"]);
+  factory Item.fromJson(Map<String, dynamic> json) => Item(
+    type: json['type'] as String? ?? '',
+    value: json['value'] as String? ?? '',
+  );
 
   Map<String, dynamic> toJson() => {"type": type, "value": value};
 }

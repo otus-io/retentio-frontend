@@ -7,8 +7,8 @@ class User {
   /// 从 JSON 创建 User 对象
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      email: json['email'] as String,
-      username: json['username'] as String,
+      email: json['email'] as String? ?? '',
+      username: json['username'] as String? ?? '',
     );
   }
   factory User.empty() {
