@@ -46,8 +46,6 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
       ],
       child: Consumer(
         builder: (context, ref, child) {
-          final deck = ref.watch(deckProvider);
-          final cardState = ref.watch(cardProvider);
           return Scaffold(
             appBar: AppBar(
               title: Text(ref.watch(createDeckParamsProvider).name),

@@ -90,7 +90,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get review => '复习';
 
   @override
-  String get facts => '知识点';
+  String get facts => '词条';
 
   @override
   String openDeck(String deckName) {
@@ -220,7 +220,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deleteCard => '删除卡片';
 
   @override
-  String get deleteCardConfirm => '只会删除这一张卡片；对应的知识点及其他卡片仍会保留。';
+  String get deleteCardConfirm => '只会删除这一张卡片；对应的词条及其他卡片仍会保留。';
 
   @override
   String get deleteCardFailed => '无法删除卡片';

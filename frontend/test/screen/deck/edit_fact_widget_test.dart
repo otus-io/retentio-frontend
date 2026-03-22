@@ -26,11 +26,11 @@ void main() {
         routes: [
           GoRoute(
             path: '/base',
-            builder: (_, __) => const Scaffold(body: Text('base')),
+            builder: (_, _) => const Scaffold(body: Text('base')),
           ),
           GoRoute(
             path: '/edit',
-            builder: (_, __) => Scaffold(
+            builder: (_, _) => Scaffold(
               body: EditFactWidget(
                 deck: sampleDeck(),
                 factId: 'fact-test-1',
