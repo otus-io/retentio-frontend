@@ -7,6 +7,13 @@ import '../../../mixins/notifier_mixin.dart';
 import '../../../services/apis/deck_service.dart';
 import 'deck_provider.dart';
 
+/// Inclusive bounds for the rate field when creating or editing a deck.
+const int kDeckEditorRateMin = 1;
+const int kDeckEditorRateMax = 1000;
+
+int clampDeckEditorRate(int rate) =>
+    rate.clamp(kDeckEditorRateMin, kDeckEditorRateMax);
+
 final createDeckProvider = NotifierProvider.autoDispose(CreateDeckNotifier.new);
 final createDeckParamsProvider =
     NotifierProvider<DeckParamsNotifier, CreateDeckParams>(
@@ -81,7 +88,7 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
   CreateDeckState build() {
     final params = ref.watch(createDeckParamsProvider);
     var name = params.name;
-    var rate = params.rate;
+    var rate = clampDeckEditorRate(params.rate);
     nameController.text = name;
     fieldController1.text = params.fields.firstOrNull ?? '';
     fieldController2.text = params.fields.lastOrNull ?? '';
@@ -92,7 +99,7 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
   }
 
   void changeRate(int rate) {
-    state = state.copyWith(rate: rate);
+    state = state.copyWith(rate: clampDeckEditorRate(rate));
   }
 
   void changeField(int index, String field) {
@@ -135,7 +142,11 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
       );
       return;
     }
-    final params = {'name': name, 'fields': state.fields, 'rate': state.rate};
+    final params = {
+      'name': name,
+      'fields': state.fields,
+      'rate': clampDeckEditorRate(state.rate),
+    };
     ref.read(loadingStateProvider.notifier).showLoading();
     if (cardType == DeckCardType.add) {
       final res = await DeckService.of.createDeck(params);

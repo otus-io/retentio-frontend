@@ -72,9 +72,9 @@
   "@home": {
     "description": "Home tab label in bottom navigation"
   },
-  "learn": "Learn",
+  "learn": "Deck",
   "@learn": {
-    "description": "Learn tab label in bottom navigation"
+    "description": "Deck tab label in bottom navigation and deck list screen title"
   },
   "profile": "Profile",
   "@profile": {
@@ -287,6 +287,18 @@
   "hideCard": "Hide Card",
   "@hideCard": {
     "description": "Menu item to hide card"
+  },
+  "deleteCard": "Delete Card",
+  "@deleteCard": {
+    "description": "Menu item to delete current card"
+  },
+  "deleteCardConfirm": "Only this card will be removed. The fact and other cards for it stay in the deck.",
+  "@deleteCardConfirm": {
+    "description": "Confirmation message before deleting a card"
+  },
+  "deleteCardFailed": "Could not delete card",
+  "@deleteCardFailed": {
+    "description": "Snackbar when delete card API fails"
   },
   "deleteDeck": "Delete Deck",
   "@deleteDeck": {

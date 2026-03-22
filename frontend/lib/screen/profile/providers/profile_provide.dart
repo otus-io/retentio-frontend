@@ -16,7 +16,10 @@ class ProfileNotifier extends Notifier<UserState> {
   Future<void> getProfile() async {
     final res = await ApiService.get(Api.profile);
     if (res?.isSuccess == true) {
-      final user = User.fromJson(res?.data);
+      final raw = res?.data;
+      final user = raw is Map<String, dynamic>
+          ? User.fromJson(raw)
+          : User.empty();
       state = UserState(user: user);
     } else {
       state = UserState(user: User.empty());

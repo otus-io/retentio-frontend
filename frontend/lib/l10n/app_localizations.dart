@@ -206,10 +206,10 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get home;
 
-  /// Learn tab label in bottom navigation
+  /// Deck tab label in bottom navigation and deck list screen title
   ///
   /// In en, this message translates to:
-  /// **'Learn'**
+  /// **'Deck'**
   String get learn;
 
   /// Profile tab label in bottom navigation
@@ -505,6 +505,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hide Card'**
   String get hideCard;
+
+  /// Menu item to delete current card
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Card'**
+  String get deleteCard;
+
+  /// Confirmation message before deleting a card
+  ///
+  /// In en, this message translates to:
+  /// **'Only this card will be removed. The fact and other cards for it stay in the deck.'**
+  String get deleteCardConfirm;
+
+  /// Snackbar when delete card API fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete card'**
+  String get deleteCardFailed;
 
   /// Menu item to delete deck
   ///

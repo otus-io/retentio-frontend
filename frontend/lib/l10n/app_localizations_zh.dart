@@ -63,7 +63,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get home => '首页';
 
   @override
-  String get learn => '学习';
+  String get learn => '卡组';
 
   @override
   String get profile => '我的';
@@ -215,6 +215,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get hideCard => '隐藏卡片';
+
+  @override
+  String get deleteCard => '删除卡片';
+
+  @override
+  String get deleteCardConfirm => '只会删除这一张卡片；对应的词条及其他卡片仍会保留。';
+
+  @override
+  String get deleteCardFailed => '无法删除卡片';
 
   @override
   String get deleteDeck => '删除卡组';

@@ -12,9 +12,10 @@ class DeckService {
   Future<List<Deck>> getDecks() async {
     try {
       final res = await ApiService.get(Api.decks);
-      // 如果返回的 data 包含 decks 字段
-      if (res?.data['decks'] != null && res?.data['decks'] is List) {
-        final decksList = res?.data['decks'] as List;
+      final data = res?.data;
+      // `res?.data['k']` is parsed as `(res?.data)['k']` — subscript on null throws.
+      if (data is Map && data['decks'] is List) {
+        final decksList = data['decks'] as List;
         return decksList
             .map((deckJson) => Deck.fromJson(deckJson as Map<String, dynamic>))
             .toList();
@@ -30,7 +31,13 @@ class DeckService {
   Future<Deck> getDeckDetail(String deckId) async {
     try {
       final res = await ApiService.get(Api.deck, pathParams: {'id': deckId});
-      return Deck.fromJson(res?.data);
+      final raw = res?.data;
+      if (raw is! Map) {
+        throw StateError(
+          'getDeckDetail: response data is missing or not a map',
+        );
+      }
+      return Deck.fromJson(Map<String, dynamic>.from(raw));
     } catch (e) {
       rethrow;
     }

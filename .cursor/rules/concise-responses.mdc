@@ -1,0 +1,11 @@
+---
+description: Keep assistant replies brief and scannable
+alwaysApply: true
+---
+
+# Concise responses
+
+- Default to **short answers**: lead with the outcome or decision, then minimal supporting detail only when needed.
+- Prefer bullets over long paragraphs; skip preamble (“Certainly!”, “In summary…”).
+- Avoid repeating the question, restating obvious context, or filler transitions.
+- Expand only when the task is inherently complex, ambiguous, or the user asks for depth.

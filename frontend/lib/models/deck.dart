@@ -6,8 +6,8 @@ class DeckOwner {
 
   factory DeckOwner.fromJson(Map<String, dynamic> json) {
     return DeckOwner(
-      username: json['username'] as String,
-      email: json['email'] as String,
+      username: json['username'] as String? ?? '',
+      email: json['email'] as String? ?? '',
     );
   }
 
@@ -111,7 +111,10 @@ class Deck {
     // 兼容处理 owner, API可能返回 "username" 或 { "username": "...", "email": "..." }
     DeckOwner parsedOwner;
     if (json['owner'] is String) {
-      parsedOwner = DeckOwner(username: json['owner'], email: '');
+      parsedOwner = DeckOwner(
+        username: json['owner'] as String? ?? '',
+        email: '',
+      );
     } else if (json['owner'] is Map) {
       parsedOwner = DeckOwner.fromJson(
         json['owner'] as Map<String, dynamic>? ?? {},
@@ -123,13 +126,15 @@ class Deck {
     // 兼容处理 field/fields
     final fieldsData = json['fields'] ?? json['field'];
     return Deck(
-      id: json['id'] as String,
-      name: json['name'] as String,
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
       stats: DeckStats.fromJson(json['stats'] as Map<String, dynamic>? ?? {}),
       rate: json['rate'] as int? ?? 0,
       owner: parsedOwner,
       fields:
-          (fieldsData as List<dynamic>?)?.map((e) => e as String).toList() ??
+          (fieldsData as List<dynamic>?)
+              ?.map((e) => e as String? ?? '')
+              .toList() ??
           [],
       minInterval: json['min_interval'] as int? ?? 0,
       defInterval: json['def_interval'] as int? ?? 0,
