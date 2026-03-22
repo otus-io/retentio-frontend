@@ -684,7 +684,7 @@
 
 - `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 
-**响应结构：** `front` 与 `back` 为**词条对象数组**，顺序按 **template**。每个词条有可选 **`field`**（标签）和 **`items`**：`{ "type": "text"|"audio"|"image"|"video", "value": string }` 的数组。每项内 item 顺序固定：text → audio → image → video（仅存在的类型）。一项可有多种类型的多个 item。媒体类型的 `value` 在服务端能解析 base URL 时为**完整媒体 URL**（如 `https://api.wordupx.com:8443/api/media/abc123`）。使用该 URL 并携带相同 `Authorization: Bearer <token>` 即可下载。
+**响应结构：** `front` 与 `back` 为**词条对象数组**，顺序按 **template**（每个对象对应 template 在该侧的一个词条索引）。每个对象与事实中的**词条（entry）**一致：可选 **`field`**（标签），以及可选的 **`text`**、**`audio`**、**`image`**、**`video`** 字符串键（无内容则省略）。正文与对应读音音频在同一对象上并列（例如 `"text": "Hello"` 与 `"audio": "https://…/api/media/…"`），对应关系明确。`audio` / `image` / `video` 在服务端能解析 base URL 时为**完整媒体 URL**（如 `https://api.wordupx.com:8443/api/media/abc123`）。使用该 URL 并携带相同 `Authorization: Bearer <token>` 即可下载。
 
 **响应（无字段名）：**
 
@@ -700,10 +700,10 @@
       "hidden": false,
       "created_at": 1763269600,
       "front": [
-        {"items": [{"type": "text", "value": "Apple"}]}
+        {"text": "Apple"}
       ],
       "back": [
-        {"items": [{"type": "text", "value": "苹果"}]}
+        {"text": "苹果"}
       ]
     },
     "urgency": 1.0
@@ -728,10 +728,10 @@
       "hidden": false,
       "created_at": 1763269700,
       "front": [
-        {"field": "Word", "items": [{"type": "text", "value": "Apple"}]}
+        {"field": "Word", "text": "Apple"}
       ],
       "back": [
-        {"field": "Translation", "items": [{"type": "text", "value": "苹果"}]}
+        {"field": "Translation", "text": "苹果"}
       ]
     },
     "urgency": 2.598
@@ -758,15 +758,13 @@
       "front": [
         {
           "field": "Word",
-          "items": [
-            {"type": "text", "value": "Hello"},
-            {"type": "audio", "value": "https://api.example.com/api/media/aud001"},
-            {"type": "image", "value": "https://api.example.com/api/media/img002"}
-          ]
+          "text": "Hello",
+          "audio": "https://api.example.com/api/media/aud001",
+          "image": "https://api.example.com/api/media/img002"
         }
       ],
       "back": [
-        {"field": "Translation", "items": [{"type": "text", "value": "你好"}]}
+        {"field": "Translation", "text": "你好"}
       ]
     },
     "urgency": 1.0
@@ -793,21 +791,17 @@
       "front": [
         {
           "field": "Example",
-          "items": [
-            {"type": "text", "value": "First sentence."},
-            {"type": "audio", "value": "https://api.example.com/api/media/aud001"}
-          ]
+          "text": "First sentence.",
+          "audio": "https://api.example.com/api/media/aud001"
         },
         {
           "field": "Example",
-          "items": [
-            {"type": "text", "value": "Second sentence."},
-            {"type": "audio", "value": "https://api.example.com/api/media/aud002"}
-          ]
+          "text": "Second sentence.",
+          "audio": "https://api.example.com/api/media/aud002"
         }
       ],
       "back": [
-        {"field": "Translation", "items": [{"type": "text", "value": "翻译"}]}
+        {"field": "Translation", "text": "翻译"}
       ]
     },
     "urgency": 1.0
@@ -832,7 +826,7 @@
       "hidden": false,
       "created_at": 1763269600,
       "front": [
-        {"field": "Question", "items": [{"type": "text", "value": "Only front text"}]}
+        {"field": "Question", "text": "Only front text"}
       ],
       "back": []
     },
@@ -842,7 +836,7 @@
 }
 ```
 
-**多词条且含媒体的卡片（template [[0, 1], [2, 3]]；媒体 item 的 `value` 为完整 URL）：**
+**多词条且含媒体的卡片（template [[0, 1], [2, 3]]；媒体键的值为完整 URL）：**
 
 ```json
 {
@@ -856,12 +850,12 @@
       "hidden": false,
       "created_at": 1763269600,
       "front": [
-        {"field": "Front", "items": [{"type": "text", "value": "Word"}]},
-        {"field": "Pronunciation", "items": [{"type": "audio", "value": "https://api.wordupx.com:8443/api/media/abc123"}]}
+        {"field": "Front", "text": "Word"},
+        {"field": "Pronunciation", "audio": "https://api.wordupx.com:8443/api/media/abc123"}
       ],
       "back": [
-        {"field": "Picture", "items": [{"type": "image", "value": "https://api.wordupx.com:8443/api/media/def456"}]},
-        {"field": "Clip", "items": [{"type": "video", "value": "https://api.wordupx.com:8443/api/media/vid789"}, {"type": "text", "value": "Translation"}]}
+        {"field": "Picture", "image": "https://api.wordupx.com:8443/api/media/def456"},
+        {"field": "Clip", "video": "https://api.wordupx.com:8443/api/media/vid789", "text": "Translation"}
       ]
     },
     "urgency": 1.2
@@ -1114,7 +1108,7 @@
 
 **接口：** `GET /api/media/{id}`
 
-按 ID 返回用户拥有的媒体文件（二进制）。需在请求头中携带 `Authorization: Bearer <token>`。响应头包含 `Content-Type`、`Content-Length` 和 `ETag`（与 `checksum` 一致）。请求头中携带 `If-None-Match: <ETag>` 可在文件未变更时获得 `304 Not Modified`。**获取下一张卡片** 接口会在音频/图片/视频段的 `value` 中返回完整 URL（如 `https://api.wordupx.com:8443/api/media/{id}`）；使用该 URL 并携带相同认证头即可加载文件。
+按 ID 返回用户拥有的媒体文件（二进制）。需在请求头中携带 `Authorization: Bearer <token>`。响应头包含 `Content-Type`、`Content-Length` 和 `ETag`（与 `checksum` 一致）。请求头中携带 `If-None-Match: <ETag>` 可在文件未变更时获得 `304 Not Modified`。**获取下一张卡片** 接口会在每个正面/背面词条对象的 `audio`、`image`、`video` 字段中给出完整 URL（如 `https://api.wordupx.com:8443/api/media/{id}`）；使用该 URL 并携带相同认证头即可加载文件。
 
 ### 删除媒体
 

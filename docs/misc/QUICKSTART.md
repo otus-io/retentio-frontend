@@ -677,7 +677,9 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 
 - `id`: `a1b2c3d4e5f6` (your deck ID)
 
-**Response shape:** `front` and `back` are arrays of **entry objects** in **template order**. Each entry has an optional **`field`** (label) and **`items`**: an array of `{ "type": "text"|"audio"|"image"|"video", "value": string }`. Items per entry are in fixed order: text, then audio, then image, then video (only present types). One entry can have multiple items of different types. For media types, `value` is the **full media URL** when the server can determine a base URL (e.g. `https://api.wordupx.com:8443/api/media/abc123`). Use the URL with the same `Authorization: Bearer <token>` to download the file.
+**Response shape:** `front` and `back` are arrays of **entry objects** in **template order** (one object per fact entry index on that side). Each object matches a fact **entry**: optional **`field`** (label) and optional **`text`**, **`audio`**, **`image`**, **`video`** string keys (omitted when empty). Text and its pronunciation clip are explicit siblings on the same object (e.g. `"text": "Hello"` and `"audio": "https://…/api/media/…"`). For media keys, values are **full media URLs** when the server can determine a base URL. Use each URL with the same `Authorization: Bearer <token>` to download the file.
+
+Each JSON example below has a matching integration test in [`api/tests/integration/card_test.go`](../../api/tests/integration/card_test.go): `TestGetNextCard` (with field names) and `TestNextCardUrgencySelection` (no field names, text+audio+image, multi-front, front-only, split template `[[0,1],[2,3]]`, and full URL host).
 
 **Response (no field names):**
 
@@ -693,10 +695,10 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
       "hidden": false,
       "created_at": 1763269600,
       "front": [
-        {"items": [{"type": "text", "value": "Apple"}]}
+        {"text": "Apple"}
       ],
       "back": [
-        {"items": [{"type": "text", "value": "苹果"}]}
+        {"text": "苹果"}
       ]
     },
     "urgency": 1.0
@@ -721,10 +723,10 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
       "hidden": false,
       "created_at": 1763269700,
       "front": [
-        {"field": "Word", "items": [{"type": "text", "value": "Apple"}]}
+        {"field": "Word", "text": "Apple"}
       ],
       "back": [
-        {"field": "Translation", "items": [{"type": "text", "value": "苹果"}]}
+        {"field": "Translation", "text": "苹果"}
       ]
     },
     "urgency": 2.598
@@ -751,15 +753,13 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
       "front": [
         {
           "field": "Word",
-          "items": [
-            {"type": "text", "value": "Hello"},
-            {"type": "audio", "value": "https://api.example.com/api/media/aud001"},
-            {"type": "image", "value": "https://api.example.com/api/media/img002"}
-          ]
+          "text": "Hello",
+          "audio": "https://api.example.com/api/media/aud001",
+          "image": "https://api.example.com/api/media/img002"
         }
       ],
       "back": [
-        {"field": "Translation", "items": [{"type": "text", "value": "你好"}]}
+        {"field": "Translation", "text": "你好"}
       ]
     },
     "urgency": 1.0
@@ -786,21 +786,17 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
       "front": [
         {
           "field": "Example",
-          "items": [
-            {"type": "text", "value": "First sentence."},
-            {"type": "audio", "value": "https://api.example.com/api/media/aud001"}
-          ]
+          "text": "First sentence.",
+          "audio": "https://api.example.com/api/media/aud001"
         },
         {
           "field": "Example",
-          "items": [
-            {"type": "text", "value": "Second sentence."},
-            {"type": "audio", "value": "https://api.example.com/api/media/aud002"}
-          ]
+          "text": "Second sentence.",
+          "audio": "https://api.example.com/api/media/aud002"
         }
       ],
       "back": [
-        {"field": "Translation", "items": [{"type": "text", "value": "翻译"}]}
+        {"field": "Translation", "text": "翻译"}
       ]
     },
     "urgency": 1.0
@@ -825,7 +821,7 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
       "hidden": false,
       "created_at": 1763269600,
       "front": [
-        {"field": "Question", "items": [{"type": "text", "value": "Only front text"}]}
+        {"field": "Question", "text": "Only front text"}
       ],
       "back": []
     },
@@ -835,7 +831,7 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 }
 ```
 
-**Card with multiple entries and media (template [[0, 1], [2, 3]]; media items have full URL in `value`):**
+**Card with multiple entries and media (template [[0, 1], [2, 3]]; media keys hold full URLs):**
 
 ```json
 {
@@ -849,12 +845,12 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
       "hidden": false,
       "created_at": 1763269600,
       "front": [
-        {"field": "Front", "items": [{"type": "text", "value": "Word"}]},
-        {"field": "Pronunciation", "items": [{"type": "audio", "value": "https://api.wordupx.com:8443/api/media/abc123"}]}
+        {"field": "Front", "text": "Word"},
+        {"field": "Pronunciation", "audio": "https://api.wordupx.com:8443/api/media/abc123"}
       ],
       "back": [
-        {"field": "Picture", "items": [{"type": "image", "value": "https://api.wordupx.com:8443/api/media/def456"}]},
-        {"field": "Clip", "items": [{"type": "video", "value": "https://api.wordupx.com:8443/api/media/vid789"}, {"type": "text", "value": "Translation"}]}
+        {"field": "Picture", "image": "https://api.wordupx.com:8443/api/media/def456"},
+        {"field": "Clip", "video": "https://api.wordupx.com:8443/api/media/vid789", "text": "Translation"}
       ]
     },
     "urgency": 1.2
@@ -1108,7 +1104,7 @@ Returns metadata only (id, owner, filename, mime, size, checksum, created_at), n
 
 **Endpoint:** `GET /api/media/{id}`
 
-Returns the media file (binary) for user-owned media by ID. Requires `Authorization: Bearer <token>`. Response headers include `Content-Type`, `Content-Length`, and `ETag` (same as `checksum`). Send `If-None-Match: <ETag>` to get `304 Not Modified` when the file is unchanged. The **Get Next Card** response gives full URLs for audio/image/video segments (e.g. `https://api.wordupx.com:8443/api/media/{id}`); use that URL with the same auth header to load the file.
+Returns the media file (binary) for user-owned media by ID. Requires `Authorization: Bearer <token>`. Response headers include `Content-Type`, `Content-Length`, and `ETag` (same as `checksum`). Send `If-None-Match: <ETag>` to get `304 Not Modified` when the file is unchanged. The **Get Next Card** response puts full URLs in the `audio`, `image`, and `video` fields of each front/back entry (e.g. `https://api.wordupx.com:8443/api/media/{id}`); use that URL with the same auth header to load the file.
 
 ### Delete media
 
