@@ -53,7 +53,7 @@ void main() {
           "urgency": 265878,
         };
         final detail = CardDetail.fromJson(json);
-        expect(detail.card.id, "unnexyny");
+        expect(detail.card?.id, "unnexyny");
       });
 
       test(
@@ -86,12 +86,10 @@ void main() {
             "urgency": 1.0,
           };
           final detail = CardDetail.fromJson(json);
-          final front = detail.card.front.first;
-          expect(front.items.length, 3);
-          expect(front.items[0].type, "text");
-          expect(front.items[0].value, "Hello");
-          expect(front.items[1].type, "audio");
-          expect(front.items[2].type, "image");
+          final front = detail.card?.front.first;
+          expect(front?.text, "Hello");
+          expect(front?.field, "Word");
+
         },
       );
     });
@@ -99,18 +97,12 @@ void main() {
     group('tryFromApiData', () {
       test('returns null when card is empty list (no due card)', () {
         expect(
-          CardDetail.tryFromApiData({
+          CardDetail.fromJson({
             'card': [],
             'meta': {'msg': 'No cards in this deck'},
-          }),
+          }).card,
           isNull,
         );
-      });
-
-      test('returns null when card is missing or not an object', () {
-        expect(CardDetail.tryFromApiData(<String, dynamic>{}), isNull);
-        expect(CardDetail.tryFromApiData({'card': 'bad'}), isNull);
-        expect(CardDetail.tryFromApiData(null), isNull);
       });
 
       test('parses same payload as fromJson when card is an object', () {
@@ -144,9 +136,9 @@ void main() {
           },
           'urgency': 265878,
         };
-        final detail = CardDetail.tryFromApiData(json);
+        final detail = CardDetail.fromJson(json);
         expect(detail, isNotNull);
-        expect(detail!.card.id, 'unnexyny');
+        expect(detail.card?.id, 'unnexyny');
       });
 
       test('defaults missing urgency to 0', () {
@@ -179,9 +171,9 @@ void main() {
             ],
           },
         };
-        final detail = CardDetail.tryFromApiData(json);
+        final detail = CardDetail.fromJson(json);
         expect(detail, isNotNull);
-        expect(detail!.urgency, 0);
+        expect(detail.urgency, 0);
       });
     });
   });

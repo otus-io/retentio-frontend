@@ -15,7 +15,7 @@ class CardService {
         return null;
       }
 
-      return CardDetail.tryFromApiData(res!.data);
+      return CardDetail.fromJson(res!.data);
     } catch (e) {
       logger.e(e);
       return null;

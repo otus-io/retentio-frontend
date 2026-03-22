@@ -22,8 +22,8 @@ class CardWidget extends ConsumerWidget {
     final cards = ref.read(
       cardProvider.select(
         (value) => isFront
-            ? value.cardDetail?.card.front
-            : value.cardDetail?.card.back,
+            ? value.cardDetail?.card?.front
+            : value.cardDetail?.card?.back,
       ),
     );
     final color = isFront ? Colors.blue : Colors.green;
@@ -34,7 +34,7 @@ class CardWidget extends ConsumerWidget {
         border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: DefaultTabController(
-        key: ValueKey('${ref.read(cardProvider).cardDetail?.card.id}'),
+        key: ValueKey('${ref.read(cardProvider).cardDetail?.card?.id}'),
         length: cards?.length ?? 0,
         child: Column(
           children: [

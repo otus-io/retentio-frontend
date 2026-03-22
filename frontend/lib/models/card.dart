@@ -10,7 +10,7 @@ CardDetail cardDetailFromJson(String str) =>
 String cardDetailToJson(CardDetail data) => json.encode(data.toJson());
 
 class CardDetail {
-  Card card;
+  Card? card;
   num urgency;
 
   CardDetail({required this.card, required this.urgency});
@@ -18,10 +18,14 @@ class CardDetail {
   CardDetail copyWith({Card? card, double? urgency}) =>
       CardDetail(card: card ?? this.card, urgency: urgency ?? this.urgency);
 
-  factory CardDetail.fromJson(Map<String, dynamic> json) =>
-      CardDetail(card: Card.fromJson(json["card"]), urgency: json["urgency"]);
+  factory CardDetail.fromJson(Map<String, dynamic> json) => CardDetail(
+    card: json['card'] == null || json['card'] is! Map
+        ? null
+        : Card.fromJson(json['card']),
+    urgency: json["urgency"]??0,
+  );
 
-  Map<String, dynamic> toJson() => {"card": card.toJson(), "urgency": urgency};
+  Map<String, dynamic> toJson() => {"card": card?.toJson(), "urgency": urgency};
 }
 
 class Card {
@@ -108,6 +112,7 @@ class Back {
   Back({this.field, this.text, this.image, this.audio, this.video});
 
   factory Back.fromJson(Map<String, dynamic> json) => Back(
+    field: json["field"],
     text: json["text"],
     image: json["image"],
     audio: json["audio"],

@@ -29,8 +29,8 @@ class EditFactNotifier extends Notifier {
   Future<bool> updateFact() async {
     final deck = ref.read(deckProvider);
     final fact = ref.read(cardProvider).cardDetail?.card;
-    final facts = [questionController.text, answerController.text];
-    final res = await CardService.updateFact(deck.id, fact!.id, facts);
+   // final facts = [questionController.text, answerController.text];
+    final res = await CardService.updateFact(deck.id, fact!.id, {});
     bool success = res?.isSuccess == true;
     if (success) {
       ref.read(cardProvider.notifier).getCardDetail();

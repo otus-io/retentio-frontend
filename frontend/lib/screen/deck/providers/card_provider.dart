@@ -22,10 +22,13 @@ final deckProvider = Provider.autoDispose<Deck>(
 /// Hidden cards must not be shown in review (defense in depth vs GET /card).
 @visibleForTesting
 bool shouldIgnoreCardDetailForReview(CardDetail? response) =>
-    response != null && response.card.hidden;
+    response != null && (response.card?.hidden??false);
 
 class CardNotifier extends Notifier<CardState> {
   late Deck deck;
+
+  /// 本次学习会话的总卡片数
+  int get totalCardsInSession => deck.stats.cardsCount;
 
   final FlashCardController flashCardController = FlashCardController();
   late List<double> scope;
@@ -34,8 +37,8 @@ class CardNotifier extends Notifier<CardState> {
     if (state.cardDetail == null) {
       return;
     }
-    final dueDate = state.cardDetail!.card.dueDate;
-    final lastReview = state.cardDetail!.card.lastReview;
+    final dueDate = state.cardDetail!.card!.dueDate;
+    final lastReview = state.cardDetail!.card!.lastReview;
     final currentInterval = dueDate - lastReview;
     final urgency =
         (DateTime.now().microsecondsSinceEpoch ~/ 1000 - lastReview) /
@@ -106,13 +109,13 @@ class CardNotifier extends Notifier<CardState> {
       else
         'interval': state.selectedInterval,
       if (!isHide) 'last_review': DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      'card_id': state.cardDetail?.card.id,
+      'card_id': state.cardDetail?.card!.id,
     });
   }
 
   /// Permanently deletes the current card (`DELETE .../cards/{cardId}`), then refreshes.
   Future<bool> deleteCurrentCard() async {
-    final cardId = state.cardDetail?.card.id;
+    final cardId = state.cardDetail?.card!.id;
     if (cardId == null) return false;
     final res = await CardService.deleteCard(deck.id, cardId);
     if (!ref.mounted) return false;
@@ -131,7 +134,7 @@ class CardNotifier extends Notifier<CardState> {
 
     // Next-card API should skip hidden cards; never surface a hidden card in review.
     if (shouldIgnoreCardDetailForReview(response)) {
-      logger.w('Ignoring hidden card in getCardDetail: ${response!.card.id}');
+      logger.w('Ignoring hidden card in getCardDetail: ${response!.card!.id}');
       response = null;
     }
 
