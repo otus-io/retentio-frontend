@@ -16,12 +16,14 @@ void main() {
       expect(ApiService.authorization, '');
     });
 
-    test('buildHeaders includes Content-Type and omits Authorization without token',
-        () {
-      final h = ApiService.buildHeaders(null);
-      expect(h['Content-Type'], 'application/json');
-      expect(h.containsKey('Authorization'), false);
-    });
+    test(
+      'buildHeaders includes Content-Type and omits Authorization without token',
+      () {
+        final h = ApiService.buildHeaders(null);
+        expect(h['Content-Type'], 'application/json');
+        expect(h.containsKey('Authorization'), false);
+      },
+    );
 
     test('buildHeaders merges custom headers', () {
       final h = ApiService.buildHeaders({'X-Test': '1'});
@@ -29,20 +31,26 @@ void main() {
       expect(h['X-Test'], '1');
     });
 
-    test('setToken updates authorization and buildHeaders adds Bearer', () async {
-      await ApiService.setToken('my-token');
-      expect(ApiService.authorization, 'my-token');
-      final h = ApiService.buildHeaders(null);
-      expect(h['Authorization'], 'Bearer my-token');
-    });
+    test(
+      'setToken updates authorization and buildHeaders adds Bearer',
+      () async {
+        await ApiService.setToken('my-token');
+        expect(ApiService.authorization, 'my-token');
+        final h = ApiService.buildHeaders(null);
+        expect(h['Authorization'], 'Bearer my-token');
+      },
+    );
 
-    test('clearToken removes Authorization from subsequent buildHeaders', () async {
-      await ApiService.setToken('t');
-      await ApiService.clearToken();
-      expect(ApiService.authorization, '');
-      final h = ApiService.buildHeaders(null);
-      expect(h.containsKey('Authorization'), false);
-    });
+    test(
+      'clearToken removes Authorization from subsequent buildHeaders',
+      () async {
+        await ApiService.setToken('t');
+        await ApiService.clearToken();
+        expect(ApiService.authorization, '');
+        final h = ApiService.buildHeaders(null);
+        expect(h.containsKey('Authorization'), false);
+      },
+    );
 
     test('init loads token from SharedPreferences', () async {
       final prefs = await SharedPreferences.getInstance();
