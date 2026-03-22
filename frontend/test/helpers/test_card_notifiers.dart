@@ -5,7 +5,8 @@ import 'card_test_samples.dart';
 
 /// No network in [build]; supplies a card so [CardWidget] can render the menu.
 class CardWithMenuNotifier extends CardNotifier {
-  CardWithMenuNotifier([CardDetail? detail]) : _detail = detail ?? sampleCardDetail();
+  CardWithMenuNotifier([CardDetail? detail])
+    : _detail = detail ?? sampleCardDetail();
 
   final CardDetail _detail;
 
@@ -32,7 +33,11 @@ class SpyHideCardNotifier extends CardNotifier {
   CardState build() {
     deck = ref.watch(deckProvider);
     ref.onDispose(flashCardController.dispose);
-    return CardState(isLoading: false, cardDetail: sampleCardDetail(), showAnswer: true);
+    return CardState(
+      isLoading: false,
+      cardDetail: sampleCardDetail(),
+      showAnswer: true,
+    );
   }
 
   @override
@@ -55,7 +60,11 @@ class CountingDeleteCardNotifier extends CardNotifier {
   CardState build() {
     deck = ref.watch(deckProvider);
     ref.onDispose(flashCardController.dispose);
-    return CardState(isLoading: false, cardDetail: sampleCardDetail(), showAnswer: true);
+    return CardState(
+      isLoading: false,
+      cardDetail: sampleCardDetail(),
+      showAnswer: true,
+    );
   }
 
   @override

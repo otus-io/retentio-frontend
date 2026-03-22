@@ -27,22 +27,25 @@ void main() {
   });
 
   group('CardNotifier.reviewAgain', () {
-    test('resets studied count, showAnswer, and clears card after stub fetch', () async {
-      final container = ProviderContainer(
-        overrides: [
-          deckProvider.overrideWithValue(sampleDeck()),
-          cardProvider.overrideWith(ReviewAgainStateNotifier.new),
-        ],
-      );
-      addTearDown(container.dispose);
+    test(
+      'resets studied count, showAnswer, and clears card after stub fetch',
+      () async {
+        final container = ProviderContainer(
+          overrides: [
+            deckProvider.overrideWithValue(sampleDeck()),
+            cardProvider.overrideWith(ReviewAgainStateNotifier.new),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      await container.read(cardProvider.notifier).reviewAgain();
+        await container.read(cardProvider.notifier).reviewAgain();
 
-      final s = container.read(cardProvider);
-      expect(s.cardsStudied, 0);
-      expect(s.showAnswer, true);
-      expect(s.cardDetail, isNull);
-      expect(s.isLoading, false);
-    });
+        final s = container.read(cardProvider);
+        expect(s.cardsStudied, 0);
+        expect(s.showAnswer, true);
+        expect(s.cardDetail, isNull);
+        expect(s.isLoading, false);
+      },
+    );
   });
 }

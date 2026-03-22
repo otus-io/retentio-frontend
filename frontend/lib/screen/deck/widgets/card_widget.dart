@@ -95,8 +95,10 @@ class CardWidget extends ConsumerWidget {
                             title: 'Edit Fact',
                             onTap: () {
                               final deck = ref.read(deckProvider);
-                              final card =
-                                  ref.read(cardProvider).cardDetail?.card;
+                              final card = ref
+                                  .read(cardProvider)
+                                  .cardDetail
+                                  ?.card;
                               if (card == null) return;
                               showCommonBottomSheet(
                                 context: context,
@@ -132,9 +134,8 @@ class CardWidget extends ConsumerWidget {
                                       child: Text(loc.cancel),
                                     ),
                                     FilledButton(
-                                      onPressed: () => Navigator.of(
-                                        dialogContext,
-                                      ).pop(true),
+                                      onPressed: () =>
+                                          Navigator.of(dialogContext).pop(true),
                                       style: FilledButton.styleFrom(
                                         backgroundColor: Colors.red,
                                         foregroundColor: Colors.white,
@@ -153,9 +154,7 @@ class CardWidget extends ConsumerWidget {
                               if (!context.mounted) return;
                               if (!ok) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(loc.deleteCardFailed),
-                                  ),
+                                  SnackBar(content: Text(loc.deleteCardFailed)),
                                 );
                               }
                             },

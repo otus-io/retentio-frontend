@@ -122,9 +122,9 @@ class _EditFactWidgetState extends ConsumerState<EditFactWidget> {
 
     if (!mounted) return;
     if (res?.isSuccess != true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(res?.msg ?? 'Update failed')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(res?.msg ?? 'Update failed')));
       return;
     }
     await widget.onSaved();

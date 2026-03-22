@@ -19,12 +19,8 @@ class FactEntry {
     video: json['video'] as String? ?? '',
   );
 
-  FactEntry copyWithText(String newText) => FactEntry(
-    text: newText,
-    audio: audio,
-    image: image,
-    video: video,
-  );
+  FactEntry copyWithText(String newText) =>
+      FactEntry(text: newText, audio: audio, image: image, video: video);
 
   /// JSON for PATCH `entries` (preserves media when non-empty).
   Map<String, dynamic> toJson() {
@@ -37,11 +33,7 @@ class FactEntry {
 }
 
 class Fact {
-  Fact({
-    required this.id,
-    required this.entries,
-    required this.fields,
-  });
+  Fact({required this.id, required this.entries, required this.fields});
 
   final String id;
   final List<FactEntry> entries;
