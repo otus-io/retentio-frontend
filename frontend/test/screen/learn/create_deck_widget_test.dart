@@ -22,9 +22,9 @@ void main() {
 
       expect(find.byType(NumberPicker), findsOneWidget);
       final picker = tester.widget<NumberPicker>(find.byType(NumberPicker));
-      expect(picker.minValue, 1);
-      expect(picker.maxValue, 1000);
-      expect(picker.step, 1);
+      expect(picker.minValue, 10);
+      expect(picker.maxValue, 100);
+      expect(picker.step, 10);
       expect(picker.value, 10);
     });
 

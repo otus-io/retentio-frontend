@@ -17,7 +17,7 @@ class FieldContentWidget extends ConsumerWidget {
     required this.color,
   });
 
-  final Back back;
+  final CardSlot back;
   final Color color;
 
   @override

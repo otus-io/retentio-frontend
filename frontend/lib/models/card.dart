@@ -22,18 +22,18 @@ class CardDetail {
     card: json['card'] == null || json['card'] is! Map
         ? null
         : Card.fromJson(json['card']),
-    urgency: json["urgency"]??0,
+    urgency: json["urgency"] ?? 0,
   );
 
   Map<String, dynamic> toJson() => {"card": card?.toJson(), "urgency": urgency};
 }
 
 class Card {
-  List<Back> back;
+  List<CardSlot> back;
   int createdAt;
   int dueDate;
   String factId;
-  List<Back> front;
+  List<CardSlot> front;
   bool hidden;
   String id;
   int lastReview;
@@ -52,11 +52,11 @@ class Card {
   });
 
   Card copyWith({
-    List<Back>? back,
+    List<CardSlot>? back,
     int? createdAt,
     int? dueDate,
     String? factId,
-    List<Back>? front,
+    List<CardSlot>? front,
     bool? hidden,
     String? id,
     int? lastReview,
@@ -74,11 +74,11 @@ class Card {
   );
 
   factory Card.fromJson(Map<String, dynamic> json) => Card(
-    back: List<Back>.from(json["back"].map((x) => Back.fromJson(x))),
+    back: List<CardSlot>.from(json["back"].map((x) => CardSlot.fromJson(x))),
     createdAt: json["created_at"],
     dueDate: json["due_date"],
     factId: json["fact_id"],
-    front: List<Back>.from(json["front"].map((x) => Back.fromJson(x))),
+    front: List<CardSlot>.from(json["front"].map((x) => CardSlot.fromJson(x))),
     hidden: json["hidden"],
     id: json["id"],
     lastReview: json["last_review"],
@@ -102,16 +102,16 @@ class Card {
   };
 }
 
-class Back {
+class CardSlot {
   String? field;
   String? text;
   String? image;
   String? audio;
   String? video;
 
-  Back({this.field, this.text, this.image, this.audio, this.video});
+  CardSlot({this.field, this.text, this.image, this.audio, this.video});
 
-  factory Back.fromJson(Map<String, dynamic> json) => Back(
+  factory CardSlot.fromJson(Map<String, dynamic> json) => CardSlot(
     field: json["field"],
     text: json["text"],
     image: json["image"],

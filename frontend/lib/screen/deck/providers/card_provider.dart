@@ -22,7 +22,7 @@ final deckProvider = Provider.autoDispose<Deck>(
 /// Hidden cards must not be shown in review (defense in depth vs GET /card).
 @visibleForTesting
 bool shouldIgnoreCardDetailForReview(CardDetail? response) =>
-    response != null && (response.card?.hidden??false);
+    response != null && (response.card?.hidden ?? false);
 
 class CardNotifier extends Notifier<CardState> {
   late Deck deck;
