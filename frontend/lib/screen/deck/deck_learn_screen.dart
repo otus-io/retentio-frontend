@@ -48,8 +48,6 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
         builder: (context, ref, child) {
           final deck = ref.watch(deckProvider);
           final cardState = ref.watch(cardProvider);
-          final sessionTotalCards =
-              cardState.refreshedCardsCount ?? deck.stats.cardsCount;
           return Scaffold(
             appBar: AppBar(
               title: Text(ref.watch(createDeckParamsProvider).name),
@@ -84,21 +82,6 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
                       },
                       icon: LucideIcons.squarePen,
                     ),
-                    if (sessionTotalCards > 0)
-                      PullDownMenuItem(
-                        title: loc.hideCard,
-                        onTap: () async {
-                          await ref
-                              .read(cardProvider.notifier)
-                              .nextCard(isHide: true);
-                          ref
-                              .read(cardProvider.notifier)
-                              .flashCardController
-                              .showFront();
-                          ref.read(cardProvider.notifier).showAnswer();
-                        },
-                        icon: LucideIcons.eyeOff,
-                      ),
                     PullDownMenuItem(
                       title: loc.deleteDeck,
                       onTap: () async {

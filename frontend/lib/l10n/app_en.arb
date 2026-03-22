@@ -72,9 +72,9 @@
   "@home": {
     "description": "Home tab label in bottom navigation"
   },
-  "learn": "Learn",
+  "learn": "Deck",
   "@learn": {
-    "description": "Learn tab label in bottom navigation"
+    "description": "Deck tab label in bottom navigation and deck list screen title"
   },
   "profile": "Profile",
   "@profile": {
