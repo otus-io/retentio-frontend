@@ -270,15 +270,20 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
                       final scope = ref.read(
                         cardProvider.notifier.select((value) => value.scope),
                       );
-                      var label = '${(interval).ceil() ~/ 60}m';
+                      var label = '';
+                      // logger.d('interval: $interval');
 
-                      ///超过 60m 就可以显示 1h （小时）， 超过 24 小时显示 1d
-                      if (interval > 24 * 60 * 60) {
-                        label = '${(interval ~/ 60 / 60 / 24).ceil()}d';
-                      } else if (interval > 60 * 60) {
-                        label = '${(interval ~/ 60 / 60).toStringAsFixed(1)}h';
-                      } else {
+                      if (interval > 24 * 60 * 365) {
+                        label =
+                            '${(interval / 60 / 24 / 365).toStringAsFixed(1)}y';
+                      } else if (interval > 24 * 60) {
+                        label = '${(interval / 60 / 24).toStringAsFixed(1)}d';
+                      } else if (interval > 60) {
+                        label = '${(interval / 60).toStringAsFixed(1)}h';
+                      } else if (interval < 60) {
                         label = '${(interval).toStringAsFixed(1)}m';
+                      } else {
+                        label = '${(interval).ceil() / 60}m';
                       }
                       return Row(
                         children: [
