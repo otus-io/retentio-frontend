@@ -11,7 +11,7 @@ import 'extensions/context_extension.dart';
 import 'providers/locale_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screen/home/home_screen.dart';
-import 'screen/learn/learn_screen.dart';
+import 'screen/decks/decks_screen.dart';
 import 'screen/profile/profile_screen.dart';
 
 // 全局导航键
@@ -123,7 +123,7 @@ class _MainTabScreenState extends State<MainTabScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
-    const LearnScreen(),
+    const DecksScreen(),
     const HomeScreen(),
     const ProfileScreen(),
   ];
@@ -137,7 +137,7 @@ class _MainTabScreenState extends State<MainTabScreen> {
         items: [
           BottomNavigationBarItem(
             icon: Icon(LucideIcons.library),
-            label: context.loc.learn,
+            label: context.loc.decks,
           ),
           BottomNavigationBarItem(
             icon: Icon(LucideIcons.scanEye),

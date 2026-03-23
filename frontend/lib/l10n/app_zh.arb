@@ -18,7 +18,7 @@
     "resetPassword": "重置密码",
     "resetPasswordSent": "重置密码邮件已发送",
     "home": "首页",
-    "learn": "卡组",
+    "decks": "卡组",
     "profile": "我的",
     "noDecksAvailable": "暂无卡组",
     "retry": "重试",

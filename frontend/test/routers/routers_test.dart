@@ -15,11 +15,16 @@ void main() {
       expect(AppRoutes.register.path, '/register');
     });
 
+    test('study has correct path', () {
+      expect(AppRoutes.study.path, '/study');
+    });
+
     test('all enum values are defined', () {
       expect(AppRoutes.values.length, 4);
       expect(AppRoutes.values, contains(AppRoutes.login));
       expect(AppRoutes.values, contains(AppRoutes.main));
       expect(AppRoutes.values, contains(AppRoutes.register));
+      expect(AppRoutes.values, contains(AppRoutes.study));
     });
   });
 }

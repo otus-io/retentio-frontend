@@ -7,7 +7,7 @@ import '../../../models/deck.dart';
 import '../../../models/fact.dart';
 import '../../../providers/loading_state_provider.dart';
 import '../../../services/apis/card_service.dart';
-import '../../learn/widgets/loading_state_widget.dart';
+import '../../decks/widgets/loading_state_widget.dart';
 
 class EditFactWidget extends ConsumerStatefulWidget {
   const EditFactWidget({
@@ -23,7 +23,7 @@ class EditFactWidget extends ConsumerStatefulWidget {
   /// not depend on [cardProvider] inside a modal route).
   final String factId;
 
-  /// Refresh cards using the **parent** [WidgetRef] (learn screen notifier).
+  /// Refresh cards using the **parent** [WidgetRef] (decks screen notifier).
   final Future<void> Function() onSaved;
 
   @override

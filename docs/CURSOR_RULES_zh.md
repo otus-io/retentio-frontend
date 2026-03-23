@@ -62,7 +62,7 @@
 - 不要为了绕过生产代码的 bug 而修改测试数据
 - 使用 ProviderScope 包装的 Widget 测试模式
 - 针对空值和边界情况的模型测试模式
-- 测试报告格式和位置（`docs/frontend/test-reports/`）
+- 测试报告格式和位置（`docs/` 根目录下的按日期命名的 Markdown 摘要，例如 `docs/2026-02-11-test-summary.md`）
 
 ### CI/CD 工作流
 

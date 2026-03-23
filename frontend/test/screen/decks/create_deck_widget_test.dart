@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:retentio/screen/learn/widgets/create_deck_widget.dart';
+import 'package:retentio/screen/decks/widgets/create_deck_widget.dart';
 import 'package:retentio/widgets/number_picker.dart';
 
 import '../../helpers/test_wrapper.dart';

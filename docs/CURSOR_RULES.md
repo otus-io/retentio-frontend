@@ -62,7 +62,7 @@ Activated when editing files in `frontend/test/`:
 - Never modify test data to work around production code bugs
 - Widget test pattern with ProviderScope wrapping
 - Model test pattern for null/edge case handling
-- Test report format and location (`docs/frontend/test-reports/`)
+- Test report format and location (dated markdown summaries under `docs/`, e.g. `docs/2026-02-11-test-summary.md`)
 
 ### CI/CD Workflows
 

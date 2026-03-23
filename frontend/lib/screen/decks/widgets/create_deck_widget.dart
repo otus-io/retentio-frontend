@@ -6,7 +6,7 @@ import 'package:retentio/extensions/widget_extension.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/mixins/delayed_init_mixin.dart';
 import 'package:retentio/models/deck.dart';
-import 'package:retentio/screen/learn/providers/create_deck_provider.dart';
+import 'package:retentio/screen/decks/providers/create_deck_provider.dart';
 import 'package:retentio/widgets/number_picker.dart';
 
 import 'loading_state_widget.dart';

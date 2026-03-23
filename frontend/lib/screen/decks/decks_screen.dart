@@ -4,21 +4,21 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck.dart';
-import 'package:retentio/screen/learn/providers/deck_provider.dart';
-import 'package:retentio/screen/learn/widgets/create_deck_widget.dart';
+import 'package:retentio/screen/decks/providers/deck_provider.dart';
+import 'package:retentio/screen/decks/widgets/create_deck_widget.dart';
 import 'package:retentio/widgets/common_refresher.dart';
 
 import '../../routers/routers.dart';
 import '../../widgets/common_bottom_sheet.dart';
 
-class LearnScreen extends ConsumerStatefulWidget {
-  const LearnScreen({super.key});
+class DecksScreen extends ConsumerStatefulWidget {
+  const DecksScreen({super.key});
 
   @override
-  ConsumerState<LearnScreen> createState() => _LearnScreenState();
+  ConsumerState<DecksScreen> createState() => _DecksScreenState();
 }
 
-class _LearnScreenState extends ConsumerState<LearnScreen> {
+class _DecksScreenState extends ConsumerState<DecksScreen> {
   @override
   void initState() {
     super.initState();
@@ -31,7 +31,7 @@ class _LearnScreenState extends ConsumerState<LearnScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(loc.learn),
+        title: Text(loc.decks),
         actions: [
           IconButton(
             icon: const Icon(LucideIcons.squarePlus),
@@ -122,7 +122,7 @@ class _DeckCard extends ConsumerWidget {
 
     return GestureDetector(
       onTap: () {
-        context.push(AppRoutes.learn.path, extra: {'deck': deck});
+        context.push(AppRoutes.study.path, extra: {'deck': deck});
       },
       child: Card(
         margin: const EdgeInsets.only(bottom: 12),

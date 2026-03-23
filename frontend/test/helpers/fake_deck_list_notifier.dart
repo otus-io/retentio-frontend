@@ -1,6 +1,6 @@
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:retentio/models/deck.dart';
-import 'package:retentio/screen/learn/providers/deck_provider.dart';
+import 'package:retentio/screen/decks/providers/deck_provider.dart';
 
 /// [DeckListNotifier] that shows static decks without initial [onRefresh] (tests).
 class FakeDeckListNotifier extends DeckListNotifier {

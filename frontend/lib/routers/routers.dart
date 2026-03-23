@@ -4,7 +4,7 @@ enum AppRoutes {
   login('/login'),
   main('/'),
   register('/register'),
-  learn('/learn');
+  study('/study');
 
   final String path;
   const AppRoutes(this.path);

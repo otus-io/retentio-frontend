@@ -63,7 +63,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get home => 'Home';
 
   @override
-  String get learn => 'Deck';
+  String get decks => 'Decks';
 
   @override
   String get profile => 'Profile';

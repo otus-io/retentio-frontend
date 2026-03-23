@@ -34,7 +34,7 @@ class AppPages {
         builder: (context, state) => const MainTabScreen(),
       ),
       GoRoute(
-        path: AppRoutes.learn.path,
+        path: AppRoutes.study.path,
         builder: (context, state) =>
             DeckLearnScreen(deck: state.extra.asMap()['deck']),
       ),

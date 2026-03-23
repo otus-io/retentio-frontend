@@ -31,7 +31,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Start learning by checking your decks in the Deck tab'),
+        find.text('Start learning by checking your decks in the Decks tab'),
         findsOneWidget,
       );
     });

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/models/deck.dart';
-import 'package:retentio/screen/learn/learn_screen.dart';
-import 'package:retentio/screen/learn/providers/deck_provider.dart';
-import 'package:retentio/screen/learn/widgets/create_deck_widget.dart';
+import 'package:retentio/screen/decks/decks_screen.dart';
+import 'package:retentio/screen/decks/providers/deck_provider.dart';
+import 'package:retentio/screen/decks/widgets/create_deck_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retentio/services/storage/hydrated_storage.dart';
 
@@ -36,11 +36,11 @@ void main() {
     HydratedStorage.instance = null;
   });
 
-  group('LearnScreen wordbook list & create flow', () {
+  group('DecksScreen wordbook list & create flow', () {
     testWidgets('lists deck names from provider', (tester) async {
       await tester.pumpWidget(
         buildTestableWidgetWithOverrides(
-          const LearnScreen(),
+          const DecksScreen(),
           overrides: [
             deckListProvider.overrideWith(
               () => FakeDeckListNotifier([sampleDeck]),
@@ -59,7 +59,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         buildTestableWidgetWithOverrides(
-          const LearnScreen(),
+          const DecksScreen(),
           overrides: [
             deckListProvider.overrideWith(
               () => FakeDeckListNotifier([sampleDeck]),

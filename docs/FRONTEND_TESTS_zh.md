@@ -52,7 +52,7 @@ flutter test test/utils/debounce_util_test.dart
 - **screen/register/** - RegisterScreen 表单字段、键盘类型、密码遮蔽
 - **screen/profile/** - ProfileScreen 用户信息、设置项、退出登录对话框
 - **screen/deck/** - DeckDetailScreen 统计数据展示、按钮状态；DeckLearnScreen 异步状态
-- **screen/learn/** - LearnScreen 加载/错误状态、AppBar
+- **screen/decks/** - DecksScreen 加载/错误状态、AppBar
 - **widgets/** - BottomPopup 弹出/关闭、CommonRefresher 加载/空/子组件状态
 
 ### 辅助工具与报告

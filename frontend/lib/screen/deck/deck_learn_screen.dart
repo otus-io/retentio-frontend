@@ -12,9 +12,9 @@ import 'package:retentio/screen/deck/widgets/card_widget.dart';
 import 'package:retentio/screen/deck/widgets/flash_card/flash_card.dart';
 
 import '../../widgets/common_bottom_sheet.dart';
-import '../learn/providers/create_deck_provider.dart';
-import '../learn/providers/deck_provider.dart';
-import '../learn/widgets/create_deck_widget.dart';
+import '../decks/providers/create_deck_provider.dart';
+import '../decks/providers/deck_provider.dart';
+import '../decks/widgets/create_deck_widget.dart';
 
 /// [intervalSec] is the review interval in seconds (same as [CardState.selectedInterval]).
 String _formatReviewIntervalLabel(double intervalSec) {

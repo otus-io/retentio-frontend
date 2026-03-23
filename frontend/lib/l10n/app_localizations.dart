@@ -206,11 +206,11 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get home;
 
-  /// Deck tab label in bottom navigation and deck list screen title
+  /// Decks tab label in bottom navigation and deck list screen title
   ///
   /// In en, this message translates to:
-  /// **'Deck'**
-  String get learn;
+  /// **'Decks'**
+  String get decks;
 
   /// Profile tab label in bottom navigation
   ///

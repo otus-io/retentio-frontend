@@ -52,7 +52,7 @@ test('fromJson handles null values gracefully', () {
 ```
 
 ## Test Reports
-- Failed tests are documented in `docs/frontend/test-reports/`
+- Failed tests are documented as dated markdown summaries under `docs/` (e.g. `docs/2026-02-11-test-summary.md`)
 - Format: `YYYY-MM-DD-test-summary.md` with root cause analysis and fix suggestions
 - Reports include both English and Chinese content
 

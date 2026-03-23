@@ -63,7 +63,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get home => '首页';
 
   @override
-  String get learn => '卡组';
+  String get decks => '卡组';
 
   @override
   String get profile => '我的';

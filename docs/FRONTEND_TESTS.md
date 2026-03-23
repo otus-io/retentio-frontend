@@ -52,7 +52,7 @@ All tests are under `frontend/test/`:
 - **screen/register/** - RegisterScreen form fields, keyboard types, obscured passwords
 - **screen/profile/** - ProfileScreen user info, settings items, logout dialog
 - **screen/deck/** - DeckDetailScreen stats display, button states; DeckLearnScreen async states
-- **screen/learn/** - LearnScreen loading/error state, AppBar
+- **screen/decks/** - DecksScreen loading/error state, AppBar
 - **widgets/** - BottomPopup show/dismiss, CommonRefresher loading/empty/child states
 
 ### Helpers & Reports

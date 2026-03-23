@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:retentio/screen/learn/learn_screen.dart';
+import 'package:retentio/screen/decks/decks_screen.dart';
 import 'package:retentio/services/storage/hydrated_storage.dart';
 
 import '../../helpers/in_memory_hydrated_storage.dart';
@@ -17,24 +17,24 @@ void main() {
     HydratedStorage.instance = null;
   });
 
-  group('LearnScreen Widget', () {
+  group('DecksScreen Widget', () {
     testWidgets('renders without errors', (tester) async {
-      await tester.pumpWidget(buildTestableWidget(const LearnScreen()));
+      await tester.pumpWidget(buildTestableWidget(const DecksScreen()));
       // Only pump once — provider triggers async DeckService call
       await tester.pump();
 
-      expect(find.byType(LearnScreen), findsOneWidget);
+      expect(find.byType(DecksScreen), findsOneWidget);
     });
 
-    testWidgets('displays Deck in AppBar', (tester) async {
-      await tester.pumpWidget(buildTestableWidget(const LearnScreen()));
+    testWidgets('displays Decks in AppBar', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const DecksScreen()));
       await tester.pump();
 
-      expect(find.text('Deck'), findsOneWidget);
+      expect(find.text('Decks'), findsOneWidget);
     });
 
     testWidgets('shows loading or error state', (tester) async {
-      await tester.pumpWidget(buildTestableWidget(const LearnScreen()));
+      await tester.pumpWidget(buildTestableWidget(const DecksScreen()));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
@@ -51,7 +51,7 @@ void main() {
     });
 
     testWidgets('has AppBar with add button', (tester) async {
-      await tester.pumpWidget(buildTestableWidget(const LearnScreen()));
+      await tester.pumpWidget(buildTestableWidget(const DecksScreen()));
       await tester.pump();
 
       expect(find.byType(AppBar), findsOneWidget);
@@ -59,7 +59,7 @@ void main() {
     });
 
     testWidgets('has Scaffold structure', (tester) async {
-      await tester.pumpWidget(buildTestableWidget(const LearnScreen()));
+      await tester.pumpWidget(buildTestableWidget(const DecksScreen()));
       await tester.pump();
 
       expect(find.byType(Scaffold), findsOneWidget);
