@@ -88,7 +88,7 @@ PR 标题**必须**遵循以下格式：
 - `deck` - 卡组管理
 - `card` - 卡片操作
 - `api` - 通用 API 更改
-- `frontend` - 前端/移动应用更改
+- `app` / `mobile` - Flutter 客户端更改（与 `pubspec.yaml` 同级的仓库根目录）
 - `ci` - CI/CD 流水线更改
 
 #### 主题

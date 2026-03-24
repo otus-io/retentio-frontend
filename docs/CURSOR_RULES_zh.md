@@ -12,8 +12,8 @@
 |------|------|----------|------|
 | 项目规范 | `project-conventions.mdc` | 始终生效 | 项目级标准：提交、PR、文档、代码风格 |
 | Go 后端 | `go-backend.mdc` | `api/**/*.go` | Go 编码模式、Redis、JWT、中间件、Swagger |
-| Flutter 前端 | `flutter-frontend.mdc` | `frontend/lib/**/*.dart` | Riverpod、go_router、Dio、模型与页面规范 |
-| 测试 | `testing.mdc` | `frontend/test/**/*.dart` | 黑盒测试原则与 Flutter 测试规范 |
+| Flutter 前端 | `flutter-frontend.mdc` | `lib/**/*.dart` | Riverpod、go_router、Dio、模型与页面规范 |
+| 测试 | `testing.mdc` | `test/**/*.dart` | 黑盒测试原则与 Flutter 测试规范 |
 | CI/CD 工作流 | `ci-workflows.mdc` | `.github/workflows/**` | GitHub Actions 工作流规范 |
 
 ## 规则如何工作
@@ -46,7 +46,7 @@
 
 ### Flutter 前端
 
-编辑 `frontend/lib/` 中的文件时激活：
+编辑 `lib/` 中的文件时激活：
 
 - 使用 Riverpod 进行状态管理（ProviderScope、StateNotifier、ConsumerWidget）
 - 使用 go_router 进行路由管理
@@ -56,7 +56,7 @@
 
 ### 测试
 
-编辑 `frontend/test/` 中的文件时激活：
+编辑 `test/` 中的文件时激活：
 
 - **黑盒测试原则**：测试是用来发现 bug 的，不是用来通过的
 - 不要为了绕过生产代码的 bug 而修改测试数据

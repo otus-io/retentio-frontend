@@ -5,20 +5,40 @@ on:
   push:
     branches: [main]
     paths:
-      - 'frontend/**'
+      - 'lib/**'
+      - 'test/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'analysis_options.yaml'
+      - 'devtools_options.yaml'
+      - 'l10n.yaml'
+      - 'android/**'
+      - 'ios/**'
+      - 'web/**'
+      - 'linux/**'
+      - 'windows/**'
+      - '.github/workflows/frontend.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'frontend/**'
+      - 'lib/**'
+      - 'test/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'analysis_options.yaml'
+      - 'devtools_options.yaml'
+      - 'l10n.yaml'
+      - 'android/**'
+      - 'ios/**'
+      - 'web/**'
+      - 'linux/**'
+      - 'windows/**'
+      - '.github/workflows/frontend.yml'
 
 jobs:
   lint-and-analyze:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: frontend
 
     steps:
       - name: Checkout code

@@ -88,7 +88,7 @@ The scope should indicate the affected module or component:
 - `deck` - Deck management
 - `card` - Card operations
 - `api` - General API changes
-- `frontend` - Frontend/mobile app changes
+- `app` / `mobile` - Flutter client changes (repo root next to `pubspec.yaml`)
 - `ci` - CI/CD pipeline changes
 
 #### Subject

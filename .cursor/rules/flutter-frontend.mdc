@@ -1,6 +1,6 @@
 ---
 description: Flutter/Dart frontend conventions for the Retentio mobile app
-globs: frontend/lib/**/*.dart
+globs: lib/**/*.dart
 alwaysApply: false
 ---
 

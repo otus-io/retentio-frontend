@@ -12,8 +12,8 @@ This project uses [Cursor Rules](https://docs.cursor.com/context/rules-for-ai) t
 |------|------|-------|-------------|
 | Project Conventions | `project-conventions.mdc` | Always active | Project-wide standards for commits, PRs, docs, and code style |
 | Go Backend | `go-backend.mdc` | `api/**/*.go` | Go coding patterns, Redis, JWT, middleware, Swagger |
-| Flutter Frontend | `flutter-frontend.mdc` | `frontend/lib/**/*.dart` | Riverpod, go_router, Dio, model and screen patterns |
-| Testing | `testing.mdc` | `frontend/test/**/*.dart` | Blackbox testing principles and Flutter test conventions |
+| Flutter Frontend | `flutter-frontend.mdc` | `lib/**/*.dart` | Riverpod, go_router, Dio, model and screen patterns |
+| Testing | `testing.mdc` | `test/**/*.dart` | Blackbox testing principles and Flutter test conventions |
 | CI/CD Workflows | `ci-workflows.mdc` | `.github/workflows/**` | GitHub Actions workflow conventions |
 
 ## How Rules Work
@@ -46,7 +46,7 @@ Activated when editing files in `api/`:
 
 ### Flutter Frontend
 
-Activated when editing files in `frontend/lib/`:
+Activated when editing files in `lib/`:
 
 - State management with Riverpod (ProviderScope, StateNotifier, ConsumerWidget)
 - Routing with go_router
@@ -56,7 +56,7 @@ Activated when editing files in `frontend/lib/`:
 
 ### Testing
 
-Activated when editing files in `frontend/test/`:
+Activated when editing files in `test/`:
 
 - **Blackbox testing principle**: Tests are written to expose bugs, not to pass
 - Never modify test data to work around production code bugs

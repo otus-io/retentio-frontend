@@ -23,28 +23,41 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
+# VS Code — may wish to commit; left optional at repo level
 #.vscode/
 
-# Flutter/Dart/Pub related
+### Dart / Flutter (see also https://dart.dev/guides/libraries/private-files)
+.packages
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
 **/doc/api/
+doc/api/
+
+# Flutter build outputs
+/build/
+
+# dotenv
+.env*
+
+# dart2js / web compiler outputs
+*.dart.js
+*.info.json
+*.js_
+*.js.deps
+*.js.map
+
+# iOS / Flutter
 **/ios/Flutter/.last_build_id
 **/ios/Flutter/Generated.xcconfig
 **/ios/Flutter/ephemeral/
 **/ios/Flutter/flutter_export_environment.sh
 **/ios/Runner/GeneratedPluginRegistrant.*
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-*/pubspec.lock
-
-.pub-cache/
-.pub/
-/build/
-# ignore frontend build artifacts
-/frontend/build/
+/ios/Flutter/Flutter.podspec
+/ios/.symlinks/
+ios/Runner.xcworkspace/xcuserdata/
 
 # Symbolication related
 app.*.symbols
@@ -52,13 +65,11 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
-# Android Studio will place build artifacts here
+# Android Studio build outputs
 /android/app/debug
 /android/app/profile
 /android/app/release
-/frontend/ios/Podfile.lock
 
-# Go compiled binaries (dev-run.sh, run.sh)
+# Go compiled binaries (dev scripts; if present)
 backend-api/retentio
 backend-api/backend-api
-/frontend/ios/.symlinks/

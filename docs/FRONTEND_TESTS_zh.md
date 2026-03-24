@@ -5,14 +5,13 @@ Retentio Flutter 前端的黑盒测试。这些测试验证开发者编写的代
 ## 运行测试
 
 ```bash
-# 在 frontend 目录下
-cd frontend
+# 在仓库根目录（与 pubspec.yaml 同级）
 flutter test
 ```
 
 ### 测试报告
 
-将测试报告保存到 `frontend/test/reports/`：
+将测试报告保存到 `test/reports/`：
 
 ```bash
 flutter test --reporter expanded 2>&1 | tee test/reports/report_$(date +%Y%m%d_%H%M%S).txt
@@ -33,7 +32,7 @@ flutter test test/utils/debounce_util_test.dart
 
 ## 测试结构
 
-所有测试位于 `frontend/test/` 目录下：
+所有测试位于 `test/` 目录下：
 
 ### 单元测试
 

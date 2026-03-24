@@ -28,7 +28,7 @@ The hook only runs checks relevant to the files you're committing:
 | Go build | `go build` | Verify compilation |
 | Go tests | `go test ./tests/unit/...` | Run unit tests |
 
-### Frontend (`frontend/` files changed)
+### Flutter app (repository root — `lib/`, `test/`, `pubspec.yaml`, etc.)
 
 | Check | Command | Purpose |
 |-------|---------|---------|
@@ -43,7 +43,7 @@ If your commit only touches docs or config files, all checks are skipped automat
 Run the setup script once after cloning the repo:
 
 ```bash
-./utils/scripts/setup-hooks.sh
+./utils/setup-hooks.sh
 ```
 
 That's it. The hook is now active for all future commits.
@@ -53,7 +53,7 @@ That's it. The hook is now active for all future commits.
 If you prefer to install manually:
 
 ```bash
-cp utils/scripts/pre-commit .git/hooks/pre-commit
+cp utils/pre-commit .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
@@ -76,7 +76,7 @@ The hook runs automatically on every `git commit`. No extra steps needed.
 git commit -m "feat(deck): add card sorting"
 
 # If checks fail, fix the issues and try again
-dart format frontend/
+dart format .
 git add .
 git commit -m "feat(deck): add card sorting"
 ```
@@ -120,7 +120,7 @@ ls -la .git/hooks/pre-commit
 If missing, re-run the setup script:
 
 ```bash
-./utils/scripts/setup-hooks.sh
+./utils/setup-hooks.sh
 ```
 
 ## Platform Compatibility
@@ -139,11 +139,11 @@ If missing, re-run the setup script:
 The hook source file is tracked in git at:
 
 ```
-utils/scripts/pre-commit
+utils/pre-commit
 ```
 
 To modify the hook:
 
-1. Edit `utils/scripts/pre-commit`
-2. Re-run `./utils/scripts/setup-hooks.sh` to install the updated version
+1. Edit `utils/pre-commit`
+2. Re-run `./utils/setup-hooks.sh` to install the updated version
 3. Commit the updated source file so the team gets the change

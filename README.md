@@ -4,7 +4,7 @@ Flutter client for Retentio. Entrypoint: `lib/main.dart`. Dependencies and SDK v
 
 ## Getting started
 
-From this directory:
+From the repository root:
 
 ```bash
 flutter pub get
@@ -13,13 +13,14 @@ flutter run
 
 Flutter documentation: [docs.flutter.dev](https://docs.flutter.dev/).
 
-## Repository layout (parent of `frontend/`)
+## Repository layout
 
 | Path | Purpose |
 |------|---------|
-| `frontend/` | This app: Dart sources, `pubspec.yaml`, platform folders (`android/`, `ios/`, …). |
+| `lib/`, `android/`, `ios/`, … | Flutter app (`pubspec.yaml` at repo root). |
 | `docs/` | Project documentation: Markdown files in the `docs/` root (no subfolders). |
-| `.github/` | GitHub templates (e.g. pull request template). |
+| `utils/` | Helper scripts (e.g. pre-commit). |
+| `.github/` | GitHub templates and workflows. |
 
 ## `lib/` — application code
 
@@ -80,11 +81,11 @@ Feature providers often sit next to their screen (`screen/<feature>/providers/`)
 1. **Startup** — `PreConfig` initializes storage, loads the auth token, configures **Dio** with base URL from **`Env`**.
 2. **Navigation** — **go_router** in `app_pages.dart` gates routes using login state; a **`ChangeNotifier`** on the auth notifier refreshes the router when auth changes.
 3. **Data flow** — UI **Consumer** / **ref.watch** → **Notifier** providers → **\*Service** classes → **ApiService** / **DioClient** → **`ApiResponse`** / domain **models**.
-4. **Scoped state** — Some routes wrap subtrees in **`ProviderScope(overrides: …)`** so feature providers receive the correct `Deck` or parameters without global singletons.
+4. **Scoped state** — Some routes wrap **`ProviderScope(overrides: …)`** so feature providers receive the correct `Deck` or parameters without global singletons.
 
 ## Tests
 
-Tests live under `test/` and mirror `lib/` where practical (`test/providers/`, `test/screen/`, `test/services/`, `test/models/`, plus `test/helpers/`). Commands and conventions: [docs/FRONTEND_TESTS.md](../docs/FRONTEND_TESTS.md).
+Tests live under `test/` and mirror `lib/` where practical (`test/providers/`, `test/screen/`, `test/services/`, `test/models/`, plus `test/helpers/`). Commands and conventions: [docs/FRONTEND_TESTS.md](docs/FRONTEND_TESTS.md).
 
 ## Tooling
 

@@ -15,10 +15,8 @@ NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-FRONTEND_DIR="$REPO_ROOT/frontend"
-
-if [ ! -d "$FRONTEND_DIR" ]; then
-    echo -e "${RED}Error: frontend directory not found at $FRONTEND_DIR${NC}"
+if [ ! -f "$REPO_ROOT/pubspec.yaml" ]; then
+    echo -e "${RED}Error: pubspec.yaml not found at repo root $REPO_ROOT${NC}"
     exit 1
 fi
 
@@ -31,13 +29,13 @@ FAILED=0
 # -----------------------------------------------------------------------------
 # Dart format
 # -----------------------------------------------------------------------------
-echo -e "${YELLOW}━━━ Frontend Checks ━━━${NC}"
+echo -e "${YELLOW}━━━ Dart / Flutter ━━━${NC}"
 echo "🔧 Checking Dart formatting..."
-if (cd "$FRONTEND_DIR" && dart format --set-exit-if-changed .); then
+if (cd "$REPO_ROOT" && dart format --set-exit-if-changed .); then
     echo -e "${GREEN}  ✓ Dart formatting OK${NC}"
 else
     echo -e "${RED}  ✗ Dart formatting issues found${NC}"
-    echo "  Run: cd frontend && dart format ."
+    echo "  Run: dart format . (from repo root)"
     FAILED=1
 fi
 
@@ -45,7 +43,7 @@ fi
 # Flutter analyze
 # -----------------------------------------------------------------------------
 echo "🔎 Running flutter analyze..."
-if (cd "$FRONTEND_DIR" && flutter analyze --no-pub); then
+if (cd "$REPO_ROOT" && flutter analyze --no-pub); then
     echo -e "${GREEN}  ✓ Flutter analysis OK${NC}"
 else
     echo -e "${RED}  ✗ Flutter analysis found issues${NC}"
@@ -56,7 +54,7 @@ fi
 # Flutter test
 # -----------------------------------------------------------------------------
 echo "🧪 Running Flutter tests..."
-if (cd "$FRONTEND_DIR" && flutter test); then
+if (cd "$REPO_ROOT" && flutter test); then
     echo -e "${GREEN}  ✓ Flutter tests passed${NC}"
 else
     echo -e "${RED}  ✗ Flutter tests failed${NC}"

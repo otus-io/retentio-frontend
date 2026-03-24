@@ -28,7 +28,7 @@
 | Go 编译 | `go build` | 验证编译通过 |
 | Go 测试 | `go test ./tests/unit/...` | 运行单元测试 |
 
-### 前端（`frontend/` 文件变更时）
+### Flutter 应用（仓库根目录：`lib/`、`test/`、`pubspec.yaml` 等）
 
 | 检查项 | 命令 | 目的 |
 |--------|------|------|
@@ -43,7 +43,7 @@
 克隆仓库后运行一次安装脚本：
 
 ```bash
-./utils/scripts/setup-hooks.sh
+./utils/setup-hooks.sh
 ```
 
 完成。钩子已对所有后续提交生效。
@@ -53,7 +53,7 @@
 如果你更喜欢手动安装：
 
 ```bash
-cp utils/scripts/pre-commit .git/hooks/pre-commit
+cp utils/pre-commit .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
@@ -66,7 +66,7 @@ chmod +x .git/hooks/pre-commit
 git commit -m "feat(deck): add card sorting"
 
 # 如果检查失败，修复问题后重新提交
-dart format frontend/
+dart format .
 git add .
 git commit -m "feat(deck): add card sorting"
 ```
@@ -110,7 +110,7 @@ ls -la .git/hooks/pre-commit
 如果缺失，重新运行安装脚本：
 
 ```bash
-./utils/scripts/setup-hooks.sh
+./utils/setup-hooks.sh
 ```
 
 ## 平台兼容性
@@ -129,11 +129,11 @@ ls -la .git/hooks/pre-commit
 钩子源文件在 git 中跟踪，位于：
 
 ```
-utils/scripts/pre-commit
+utils/pre-commit
 ```
 
 修改钩子的步骤：
 
-1. 编辑 `utils/scripts/pre-commit`
-2. 重新运行 `./utils/scripts/setup-hooks.sh` 安装更新版本
+1. 编辑 `utils/pre-commit`
+2. 重新运行 `./utils/setup-hooks.sh` 安装更新版本
 3. 提交更新后的源文件，让团队也获得修改

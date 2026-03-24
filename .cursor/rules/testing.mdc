@@ -1,6 +1,6 @@
 ---
 description: Blackbox testing principles and Flutter test conventions
-globs: frontend/test/**/*.dart
+globs: test/**/*.dart
 alwaysApply: false
 ---
 
@@ -15,7 +15,7 @@ alwaysApply: false
 
 ## Test File Organization
 ```
-frontend/test/
+test/
 ├── models/        # Unit tests for data models (fromJson, toJson, edge cases)
 ├── providers/     # Unit tests for Riverpod state classes
 ├── screen/        # Widget tests for screens and components
@@ -58,7 +58,7 @@ test('fromJson handles null values gracefully', () {
 
 ## Running Tests
 ```bash
-cd frontend && flutter test                    # All tests
-cd frontend && flutter test test/models/       # Model tests only
-cd frontend && flutter test --reporter expanded # Verbose output
+flutter test                    # All tests
+flutter test test/models/       # Model tests only
+flutter test --reporter expanded # Verbose output
 ```

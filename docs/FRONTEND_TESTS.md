@@ -5,14 +5,13 @@ Blackbox tests for the Retentio Flutter frontend. These tests verify the behavio
 ## Running Tests
 
 ```bash
-# From frontend directory
-cd frontend
+# From repository root (where pubspec.yaml lives)
 flutter test
 ```
 
 ### Test report
 
-To run tests and save a report to `frontend/test/reports/`:
+To run tests and save a report to `test/reports/`:
 
 ```bash
 flutter test --reporter expanded 2>&1 | tee test/reports/report_$(date +%Y%m%d_%H%M%S).txt
@@ -33,7 +32,7 @@ flutter test test/utils/debounce_util_test.dart
 
 ## Test Structure
 
-All tests are under `frontend/test/`:
+All tests are under `test/`:
 
 ### Unit Tests
 
