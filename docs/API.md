@@ -1,4 +1,4 @@
-🌐 [English](QUICKSTART.md) | [中文](QUICKSTART_zh.md)
+🌐 [English](API.md) | [中文](API_zh.md)
 
 ---
 
