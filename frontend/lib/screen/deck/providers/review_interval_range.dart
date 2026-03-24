@@ -1,3 +1,5 @@
+import 'dart:math' show max;
+
 /// Result of [computeReviewIntervalRange]: bounds for the next review interval
 /// slider (seconds, whole numbers), derived from urgency.
 typedef ReviewIntervalRange = ({
@@ -8,10 +10,18 @@ typedef ReviewIntervalRange = ({
   int currentIntervalSec,
 });
 
+const int _minSliderIntervalSec = 60;
+
 /// All timestamps are Unix seconds (UTC instant).
 ///
 /// When [dueDate] <= [lastReview], the scheduling window is invalid; returns
 /// zeros so the caller can avoid dividing by zero.
+///
+/// [ReviewIntervalRange.currentIntervalSec] is always `dueDate - lastReview`
+/// when that value is positive. The slider's [ReviewIntervalRange.minInterval]
+/// is at least [_minSliderIntervalSec]. If raising [minInterval] would make
+/// it exceed [maxInterval], [maxInterval] is expanded to `4 × minInterval`
+/// so the slider keeps a usable span.
 ReviewIntervalRange computeReviewIntervalRange({
   required int nowSec,
   required int lastReview,
@@ -35,9 +45,12 @@ ReviewIntervalRange computeReviewIntervalRange({
   final maxRaw = urgency >= 1
       ? currentIntervalSec * 4.0
       : currentIntervalSec * ((4.0 - 1) * urgency + 1);
-  final minSec = minRaw.round();
-  final maxSec = maxRaw.round();
-  final midSec = ((minRaw + maxRaw) / 2).round();
+  var minSec = max(_minSliderIntervalSec, minRaw.round());
+  var maxSec = max(maxRaw.round(), minSec);
+  if (maxSec <= minSec) {
+    maxSec = minSec * 4;
+  }
+  final midSec = ((minSec + maxSec) / 2).round();
 
   return (
     minInterval: minSec.toDouble(),

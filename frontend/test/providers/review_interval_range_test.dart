@@ -76,5 +76,41 @@ void main() {
       expect(r.minInterval, 0.0);
       expect(r.maxInterval, 0.0);
     });
+
+    test(
+      'raw interval under 60s keeps true currentInterval; min slider at 60',
+      () {
+        const lastReview = 1000;
+        const dueDate = 1005;
+        const nowSec = 1010;
+        final r = computeReviewIntervalRange(
+          nowSec: nowSec,
+          lastReview: lastReview,
+          dueDate: dueDate,
+        );
+
+        expect(r.currentIntervalSec, 5);
+        expect(r.urgency, 2.0);
+        expect(r.minInterval, 60.0);
+        expect(r.maxInterval, 240.0);
+        expect(r.midInterval, 150.0);
+      },
+    );
+
+    test('min slider floor only widens max when max would be <= min', () {
+      const lastReview = 1000;
+      const dueDate = 1050;
+      const nowSec = 1100;
+      final r = computeReviewIntervalRange(
+        nowSec: nowSec,
+        lastReview: lastReview,
+        dueDate: dueDate,
+      );
+
+      expect(r.currentIntervalSec, 50);
+      expect(r.minInterval, 60.0);
+      expect(r.maxInterval, 200.0);
+      expect(r.midInterval, 130.0);
+    });
   });
 }

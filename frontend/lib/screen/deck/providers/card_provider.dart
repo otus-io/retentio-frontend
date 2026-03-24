@@ -38,17 +38,20 @@ class CardNotifier extends Notifier<CardState> {
     final dueDate = state.cardDetail!.card.dueDate;
     final lastReview = state.cardDetail!.card.lastReview;
     final nowSec = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-    final r = computeReviewIntervalRange(
+    final intervalRangeResult = computeReviewIntervalRange(
       nowSec: nowSec,
       lastReview: lastReview,
       dueDate: dueDate,
     );
-    intervalRange = [r.minInterval, r.maxInterval];
-    state = state.copyWith(selectedInterval: r.midInterval);
+    intervalRange = [
+      intervalRangeResult.minInterval,
+      intervalRangeResult.maxInterval,
+    ];
+    state = state.copyWith(selectedInterval: intervalRangeResult.midInterval);
     logger.d(
-      'currentInterval:${r.currentIntervalSec} '
-      'intervalRange:[${r.minInterval.toInt()}, ${r.maxInterval.toInt()}], '
-      'midInterval:${r.midInterval.toInt()}',
+      'currentInterval:${intervalRangeResult.currentIntervalSec} '
+      'intervalRange:[${intervalRangeResult.minInterval.toInt()}, ${intervalRangeResult.maxInterval.toInt()}], '
+      'midInterval:${intervalRangeResult.midInterval.toInt()}',
     );
   }
 

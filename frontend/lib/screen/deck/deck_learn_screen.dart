@@ -7,6 +7,7 @@ import 'package:retentio/extensions/context_extension.dart';
 import 'package:retentio/extensions/widget_extension.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/screen/deck/formatters/review_interval_label.dart';
 import 'package:retentio/screen/deck/providers/card_provider.dart';
 import 'package:retentio/screen/deck/widgets/card_widget.dart';
 import 'package:retentio/screen/deck/widgets/flash_card/flash_card.dart';
@@ -15,32 +16,6 @@ import '../../widgets/common_bottom_sheet.dart';
 import '../decks/providers/create_deck_provider.dart';
 import '../decks/providers/deck_provider.dart';
 import '../decks/widgets/create_deck_widget.dart';
-
-/// [intervalSec] is the review interval in seconds (same as [CardState.selectedInterval]).
-String _formatReviewIntervalLabel(double intervalSec) {
-  const secPerMinute = 60;
-  const secPerHour = 60 * secPerMinute;
-  const secPerDay = 24 * secPerHour;
-  const secPerMonth = 30 * secPerDay;
-  const secPerYear = 12 * secPerMonth;
-
-  if (intervalSec < secPerMinute) {
-    return '${intervalSec.ceil()}s';
-  }
-  if (intervalSec < secPerHour) {
-    return '${(intervalSec / secPerMinute).ceil()}m';
-  }
-  if (intervalSec < secPerDay) {
-    return '${(intervalSec / secPerHour).toStringAsFixed(1)}h';
-  }
-  if (intervalSec < secPerMonth) {
-    return '${(intervalSec / secPerDay).toStringAsFixed(1)}d';
-  }
-  if (intervalSec < secPerYear) {
-    return '${(intervalSec / secPerMonth).toStringAsFixed(1)}mo';
-  }
-  return '${(intervalSec / secPerYear).toStringAsFixed(1)}y';
-}
 
 class DeckLearnScreen extends StatefulWidget {
   final Deck deck;
@@ -331,7 +306,7 @@ class _DeckLearnScreenState extends State<DeckLearnScreen> {
                           (value) => value.intervalRange,
                         ),
                       );
-                      final label = _formatReviewIntervalLabel(interval);
+                      final label = formatReviewIntervalLabel(interval);
                       return Row(
                         children: [
                           Text(
