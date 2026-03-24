@@ -10,7 +10,7 @@ alwaysApply: false
 
 | File | Trigger | Purpose |
 |------|---------|---------|
-| `frontend.yml` | Push/PR to main, `frontend/**` | Flutter format, analyze, test |
+| `frontend.yml` | Push/PR to main, app paths (`lib/**`, `test/**`, platforms, `pubspec.*`) | Flutter format, analyze, test |
 | `pr-review.yml` | PR opened/synchronized | Claude AI auto-review + PR description |
 
 ## Frontend CI Requirements

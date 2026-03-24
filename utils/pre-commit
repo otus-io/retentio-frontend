@@ -1,11 +1,18 @@
 #!/bin/bash
 
 # =============================================================================
-# Pre-commit hook for Retentio Frontend
-# Runs format checks and tests for changed files before allowing commits.
+# Pre-commit hook — Retentio Flutter repo (pubspec.yaml at git root)
+# Runs format checks and tests before allowing commits.
 # =============================================================================
 
 set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || REPO_ROOT=""
+if [ -z "$REPO_ROOT" ] || [ ! -f "$REPO_ROOT/pubspec.yaml" ]; then
+    echo "Error: pre-commit must run inside this git repo (expected pubspec.yaml at root)."
+    exit 1
+fi
+cd "$REPO_ROOT"
 
 # Colors for output
 RED='\033[0;31m'
@@ -80,22 +87,22 @@ if [ -n "$MD_FILES" ]; then
 fi
 
 # =============================================================================
-# Frontend checks (always run — frontend is the main codebase)
+# Dart / Flutter (always run — app lives at repo root next to pubspec.yaml)
 # =============================================================================
-echo -e "${YELLOW}━━━ Frontend Checks ━━━${NC}"
+echo -e "${YELLOW}━━━ Dart / Flutter ━━━${NC}"
 
 echo "🔧 Checking Dart formatting..."
-if (cd frontend && dart format --set-exit-if-changed .); then
+if (dart format --set-exit-if-changed .); then
     echo -e "${GREEN}  ✓ Dart formatting OK${NC}"
 else
     echo -e "${RED}  ✗ Dart formatting issues found${NC}"
-    echo "  Run: cd frontend && dart format ."
+    echo "  Run: dart format ."
     FAILED=1
 fi
 
 # --- flutter analyze ---
 echo "🔎 Running flutter analyze..."
-if (cd frontend && flutter analyze --no-pub); then
+if (flutter analyze --no-pub); then
     echo -e "${GREEN}  ✓ Flutter analysis OK${NC}"
 else
     echo -e "${RED}  ✗ Flutter analysis found issues${NC}"
@@ -104,7 +111,7 @@ fi
 
 # --- flutter test ---
 echo "🧪 Running Flutter tests..."
-if (cd frontend && flutter test); then
+if (flutter test); then
     echo -e "${GREEN}  ✓ Flutter tests passed${NC}"
 else
     echo -e "${RED}  ✗ Flutter tests failed${NC}"
@@ -117,7 +124,7 @@ echo ""
 # Final result
 # =============================================================================
 if [ -z "$YAML_FILES" ] && [ -z "$MD_FILES" ]; then
-    echo -e "${GREEN}No YAML or Markdown changes — only frontend checks ran.${NC}"
+    echo -e "${GREEN}No YAML or Markdown in this commit — only Dart / Flutter checks ran.${NC}"
 fi
 
 if [ $FAILED -ne 0 ]; then

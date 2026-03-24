@@ -1,0 +1,333 @@
+{
+  "@@locale": "en",
+  "appTitle": "Retentio",
+  "@appTitle": {
+    "description": "Application title"
+  },
+  "login": "Login",
+  "@login": {
+    "description": "Login button text"
+  },
+  "register": "Register",
+  "@register": {
+    "description": "Register button text"
+  },
+  "forgotPassword": "Forgot Password?",
+  "@forgotPassword": {
+    "description": "Forgot password link text"
+  },
+  "username": "Username",
+  "@username": {
+    "description": "Username input field label"
+  },
+  "password": "Password",
+  "@password": {
+    "description": "Password input field label"
+  },
+  "loginPageTitle": "Login",
+  "@loginPageTitle": {
+    "description": "Login page title"
+  },
+  "email": "Email",
+  "@email": {
+    "description": "Email input field label"
+  },
+  "confirmPassword": "Confirm Password",
+  "@confirmPassword": {
+    "description": "Confirm password input field label"
+  },
+  "pleaseFillAllFields": "Please fill all fields",
+  "@pleaseFillAllFields": {
+    "description": "Validation error message when fields are empty"
+  },
+  "passwordNotMatch": "Passwords do not match",
+  "@passwordNotMatch": {
+    "description": "Validation error message when passwords don't match"
+  },
+  "registerSuccess": "Register Success",
+  "@registerSuccess": {
+    "description": "Success message after successful registration"
+  },
+  "loginSuccess": "Login Success",
+  "@loginSuccess": {
+    "description": "Success message after successful login"
+  },
+  "loginFailed": "Login Failed",
+  "@loginFailed": {
+    "description": "Error message when login fails"
+  },
+  "backToLogin": "Back to Login",
+  "@backToLogin": {
+    "description": "Link text to navigate back to login page"
+  },
+  "resetPassword": "Reset Password",
+  "@resetPassword": {
+    "description": "Reset password button text"
+  },
+  "resetPasswordSent": "Reset Password Sent",
+  "@resetPasswordSent": {
+    "description": "Confirmation message that password reset email was sent"
+  },
+  "home": "Home",
+  "@home": {
+    "description": "Home tab label in bottom navigation"
+  },
+  "decks": "Decks",
+  "@decks": {
+    "description": "Decks tab label in bottom navigation and deck list screen title"
+  },
+  "profile": "Profile",
+  "@profile": {
+    "description": "Profile tab label in bottom navigation"
+  },
+  "noDecksAvailable": "No decks available",
+  "@noDecksAvailable": {
+    "description": "Message shown when there are no decks"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "Retry button text"
+  },
+  "words": "words",
+  "@words": {
+    "description": "Words label"
+  },
+  "progress": "Progress",
+  "@progress": {
+    "description": "Progress label"
+  },
+  "cards": "cards",
+  "@cards": {
+    "description": "Cards label"
+  },
+  "newCards": "New",
+  "@newCards": {
+    "description": "New cards label"
+  },
+  "review": "Review",
+  "@review": {
+    "description": "Review cards label"
+  },
+  "facts": "Facts",
+  "@facts": {
+    "description": "Facts label"
+  },
+  "openDeck": "Open deck: {deckName}",
+  "@openDeck": {
+    "description": "Message when opening a deck",
+    "placeholders": {
+      "deckName": {
+        "type": "String",
+        "example": "English Vocabulary"
+      }
+    }
+  },
+  "logout": "Logout",
+  "@logout": {
+    "description": "Logout button text"
+  },
+  "logoutConfirmTitle": "Logout",
+  "@logoutConfirmTitle": {
+    "description": "Logout confirmation dialog title"
+  },
+  "logoutConfirmMessage": "Are you sure you want to logout?",
+  "@logoutConfirmMessage": {
+    "description": "Logout confirmation dialog message"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Cancel button text"
+  },
+  "changeLanguage": "Change Language",
+  "@changeLanguage": {
+    "description": "Change language setting"
+  },
+  "changeTheme": "Change Theme",
+  "@changeTheme": {
+    "description": "Change theme setting"
+  },
+  "themeLight": "Light",
+  "@themeLight": {
+    "description": "Light theme"
+  },
+  "themeDark": "Dark",
+  "@themeDark": {
+    "description": "Dark theme"
+  },
+  "themeSystem": "System",
+  "@themeSystem": {
+    "description": "System theme"
+  },
+  "totalCards": "Total",
+  "@totalCards": {
+    "description": "Total cards count label"
+  },
+  "dueCards": "Due",
+  "@dueCards": {
+    "description": "Due cards label"
+  },
+  "learned": "Learned",
+  "@learned": {
+    "description": "Learned cards label"
+  },
+  "noCardsInDeck": "No cards in this deck",
+  "@noCardsInDeck": {
+    "description": "Message shown when deck has no cards"
+  },
+  "startLearning": "Start Learning",
+  "@startLearning": {
+    "description": "Start learning button text"
+  },
+  "allCaughtUp": "All Caught Up!",
+  "@allCaughtUp": {
+    "description": "Message when no cards to study"
+  },
+  "startLearningDeck": "Start learning: {deckName}",
+  "@startLearningDeck": {
+    "description": "Message when starting to learn a deck",
+    "placeholders": {
+      "deckName": {
+        "type": "String",
+        "example": "English Vocabulary"
+      }
+    }
+  },
+  "showAnswer": "Show Answer",
+  "@showAnswer": {
+    "description": "Button text to show answer"
+  },
+  "hard": "Hard",
+  "@hard": {
+    "description": "Difficulty rating: Hard"
+  },
+  "good": "Good",
+  "@good": {
+    "description": "Difficulty rating: Good"
+  },
+  "easy": "Easy",
+  "@easy": {
+    "description": "Difficulty rating: Easy"
+  },
+  "backToDeck": "Back to Deck",
+  "@backToDeck": {
+    "description": "Button to go back to deck"
+  },
+  "viewCards": "View",
+  "@viewCards": {
+    "description": "Button to view all cards"
+  },
+  "learnButton": "Learn",
+  "@learnButton": {
+    "description": "Button to start learning"
+  },
+  "manage": "Manage",
+  "@manage": {
+    "description": "Button to manage deck"
+  },
+  "review": "Review",
+  "@review": {
+    "description": "Learn tab label in bottom navigation"
+  },
+  "createDeck": "Create Deck",
+  "@createDeck": {
+    "description": "Create a deck"
+  },
+  "createInputDeckName": "Name",
+  "@createInputDeckName": {
+    "description": "Label for deck name input field"
+  },
+  "createInputDeckNameHint": "Set a name for your deck",
+  "@createInputDeckNameHint": {
+    "description": "Hint text for deck name input field"
+  },
+  "language": "Language",
+  "@language": {
+    "description": "Language label"
+  },
+  "rate": "Rate",
+  "@rate": {
+    "description": "Rate label"
+  },
+  "slow": "Slow",
+  "@slow": {
+    "description": "Slow speed label"
+  },
+  "fast": "Fast",
+  "@fast": {
+    "description": "Fast speed label"
+  },
+  "unidirectional": "Unidirectional",
+  "@unidirectional": {
+    "description": "Unidirectional label"
+  },
+  "bidirectional": "Bidirectional",
+  "@bidirectional": {
+    "description": "Bidirectional label"
+  },
+  "template": "Template",
+  "@template": {
+    "description": "Template label"
+  },
+  "next": "Next",
+  "@next": {
+    "description": "Next button text"
+  },
+  "noNetworkConnection": "No network connection. Please check your internet settings.",
+  "@noNetworkConnection": {
+    "description": "Error message when there is no network connection"
+  },
+  "reviewAgain": "Review Again",
+  "@reviewAgain": {
+    "description": "Button text to start reviewing again"
+  },
+  "editDeck": "Edit Deck",
+  "@editDeck": {
+    "description": "Menu item to edit deck"
+  },
+  "hideCard": "Hide Card",
+  "@hideCard": {
+    "description": "Menu item to hide card"
+  },
+  "deleteCard": "Delete Card",
+  "@deleteCard": {
+    "description": "Menu item to delete current card"
+  },
+  "deleteCardConfirm": "Only this card will be removed. The fact and other cards for it stay in the deck.",
+  "@deleteCardConfirm": {
+    "description": "Confirmation message before deleting a card"
+  },
+  "deleteCardFailed": "Could not delete card",
+  "@deleteCardFailed": {
+    "description": "Snackbar when delete card API fails"
+  },
+  "deleteDeck": "Delete Deck",
+  "@deleteDeck": {
+    "description": "Menu item to delete deck"
+  },
+  "noCardsInThisDeck": "No cards in this deck",
+  "@noCardsInThisDeck": {
+    "description": "Message when deck has no cards"
+  },
+  "hard": "Hard",
+  "@hard": {
+    "description": "Difficulty rating: Hard (in slider context)"
+  },
+  "easy": "Easy",
+  "@easy": {
+    "description": "Difficulty rating: Easy (in slider context)"
+  },
+  "save": "Save",
+  "@save": {
+    "description": "Save button text"
+  },
+  "newCardEveryMinutes": "Introduce a new card every {interval} minutes",
+  "@newCardEveryMinutes": {
+    "description": "Description of card introduction interval",
+    "placeholders": {
+      "interval": {
+        "type": "int",
+        "example": "10"
+      }
+    }
+  }
+}
