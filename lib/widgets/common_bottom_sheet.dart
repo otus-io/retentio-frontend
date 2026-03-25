@@ -41,10 +41,15 @@ Future<T?> showCommonBottomSheet<T>({
             body: SingleChildScrollView(
               controller: scrollController,
               child: Padding(
-                padding: const .only(left: 20, top: 16, right: 20, bottom: 20),
+                padding: const EdgeInsets.only(
+                  left: 20,
+                  top: 16,
+                  right: 20,
+                  bottom: 20,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: .max,
+                  mainAxisSize: MainAxisSize.max,
                   children: [
                     // 拖动指示器
                     Center(
@@ -61,7 +66,7 @@ Future<T?> showCommonBottomSheet<T>({
                     Center(
                       child: Text(
                         title ?? '',
-                        textAlign: .center,
+                        textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,

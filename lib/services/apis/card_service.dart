@@ -86,4 +86,22 @@ class CardService {
     );
     return res;
   }
+
+  /// Adds one or more facts (`facts`, optional `template` per API contract).
+  static Future<ApiResponse?> addFacts(
+    String deckId,
+    String operation,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      return await ApiService.post(
+        Api.factsWithOperation,
+        pathParams: {'id': deckId, 'operation': operation},
+        body: body,
+      );
+    } catch (e) {
+      logger.e(e);
+      return null;
+    }
+  }
 }

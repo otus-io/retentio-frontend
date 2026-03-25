@@ -11,7 +11,7 @@ import 'extensions/context_extension.dart';
 import 'providers/locale_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screen/home/home_screen.dart';
-import 'screen/decks/decks_screen.dart';
+import 'screen/decks/deck_list_screen.dart';
 import 'screen/profile/profile_screen.dart';
 
 // 全局导航键
@@ -123,7 +123,7 @@ class _MainTabScreenState extends State<MainTabScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
-    const DecksScreen(),
+    const DeckListScreen(),
     const HomeScreen(),
     const ProfileScreen(),
   ];

@@ -238,4 +238,71 @@ class AppLocalizationsZh extends AppLocalizations {
   String newCardEveryMinutes(int interval) {
     return '每$interval分钟引入一张新卡片';
   }
+
+  @override
+  String get addFact => '添加词条';
+
+  @override
+  String get addFactAddRow => '添加一行';
+
+  @override
+  String get addFactRemoveRow => '删除该行';
+
+  @override
+  String get addFactFieldNameHint => '字段名（可选）';
+
+  @override
+  String get addFactContentHint => '文本（若已添加媒体可留空）';
+
+  @override
+  String get addFactAttachImage => '图片';
+
+  @override
+  String get addFactAttachVideo => '视频';
+
+  @override
+  String get addFactAttachAudio => '音频';
+
+  @override
+  String get addFactClearAttachment => '清除';
+
+  @override
+  String get addFactAttachMediaTooltip => '添加图片、视频或音频；长按可移除。';
+
+  @override
+  String get addFactGalleryMediaTooltip => '从相册选择照片或视频；长按可移除。';
+
+  @override
+  String get addFactSubmit => '保存词条';
+
+  @override
+  String get addFactUploadFailed => '上传失败，请重试。';
+
+  @override
+  String addFactFileTooLarge(int maxMb) {
+    return '文件过大（最大 $maxMb MB）。';
+  }
+
+  @override
+  String get addFactEntryNeedsContent => '每一行至少需要填写文本或添加一种附件。';
+
+  @override
+  String get addFactFileTypeNotSupported => '不支持此文件类型。';
+
+  @override
+  String get addFactFileWrongSlot => '请选择与附件类型匹配的文件。';
+
+  @override
+  String get addFactFailed => '无法添加词条';
+
+  @override
+  String get addFactSuccess => '已添加词条';
+
+  @override
+  String addFactFieldFallback(int number) {
+    return '字段 $number';
+  }
+
+  @override
+  String get addFactFieldShortLabel => '字段';
 }

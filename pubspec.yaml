@@ -37,6 +37,8 @@ dependencies:
   audio_waveforms: ^2.0.2
   video_player: ^2.9.1
   connectivity_plus: ^7.0.0
+  file_picker: ^8.3.7
+  image_picker: ^1.1.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

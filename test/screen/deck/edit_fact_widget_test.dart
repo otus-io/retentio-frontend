@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:retentio/l10n/app_localizations.dart';
-import 'package:retentio/screen/deck/providers/card_provider.dart';
-import 'package:retentio/screen/deck/widgets/edit_fact_widget.dart';
+import 'package:retentio/screen/deck/providers/card_review.dart';
+import 'package:retentio/screen/deck/fact_widgets/fact_edit.dart';
 
 import '../../helpers/card_test_samples.dart';
 import '../../helpers/fake_fact_api_interceptor.dart';
@@ -13,7 +13,7 @@ import '../../helpers/test_card_notifiers.dart';
 import '../../helpers/test_wrapper.dart';
 
 void main() {
-  group('EditFactWidget', () {
+  group('FactEdit', () {
     testWidgets('loads fact and can save', (tester) async {
       await setupTestEnvironment();
       addTearDown(tearDownTestEnvironment);
@@ -31,7 +31,7 @@ void main() {
           GoRoute(
             path: '/edit',
             builder: (_, _) => Scaffold(
-              body: EditFactWidget(
+              body: FactEdit(
                 deck: sampleDeck(),
                 factId: 'fact-test-1',
                 onSaved: () async {},

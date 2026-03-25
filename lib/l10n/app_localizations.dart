@@ -547,6 +547,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Introduce a new card every {interval} minutes'**
   String newCardEveryMinutes(int interval);
+
+  /// Menu and sheet title for adding a fact to a deck
+  ///
+  /// In en, this message translates to:
+  /// **'Add fact'**
+  String get addFact;
+
+  /// Button to add another entry row
+  ///
+  /// In en, this message translates to:
+  /// **'Add row'**
+  String get addFactAddRow;
+
+  /// Semantics label for removing an entry row
+  ///
+  /// In en, this message translates to:
+  /// **'Remove row'**
+  String get addFactRemoveRow;
+
+  /// Hint for optional column label
+  ///
+  /// In en, this message translates to:
+  /// **'Field name (optional)'**
+  String get addFactFieldNameHint;
+
+  /// Hint for entry text field
+  ///
+  /// In en, this message translates to:
+  /// **'Text (optional if you add media)'**
+  String get addFactContentHint;
+
+  /// Label for attaching an image
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get addFactAttachImage;
+
+  /// Label for attaching a video
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get addFactAttachVideo;
+
+  /// Label for attaching audio
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get addFactAttachAudio;
+
+  /// Remove selected media attachment
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get addFactClearAttachment;
+
+  /// Single media icon: tap to pick file, long press clears attachment
+  ///
+  /// In en, this message translates to:
+  /// **'Attach image, video, or audio. Long press to remove.'**
+  String get addFactAttachMediaTooltip;
+
+  /// Add-fact toolbar: open gallery for image or video
+  ///
+  /// In en, this message translates to:
+  /// **'Choose photo or video from your library. Long press to remove.'**
+  String get addFactGalleryMediaTooltip;
+
+  /// Submit add-fact form
+  ///
+  /// In en, this message translates to:
+  /// **'Save fact'**
+  String get addFactSubmit;
+
+  /// Snackbar when media upload fails
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed. Try again.'**
+  String get addFactUploadFailed;
+
+  /// When picked file exceeds API size limit
+  ///
+  /// In en, this message translates to:
+  /// **'File is too large (max {maxMb} MB).'**
+  String addFactFileTooLarge(int maxMb);
+
+  /// Validation when a row is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Each row needs text or at least one attachment.'**
+  String get addFactEntryNeedsContent;
+
+  /// When extension is not image/audio/video
+  ///
+  /// In en, this message translates to:
+  /// **'This file type is not supported.'**
+  String get addFactFileTypeNotSupported;
+
+  /// When file kind does not match image/video/audio slot
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a file that matches this attachment type.'**
+  String get addFactFileWrongSlot;
+
+  /// When add-facts API fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not add fact'**
+  String get addFactFailed;
+
+  /// Snackbar after a fact was saved to the deck
+  ///
+  /// In en, this message translates to:
+  /// **'Fact added'**
+  String get addFactSuccess;
+
+  /// Default column label when deck has fewer names than rows
+  ///
+  /// In en, this message translates to:
+  /// **'Field {number}'**
+  String addFactFieldFallback(int number);
+
+  /// Compact label for column name; tap to edit on add-fact form
+  ///
+  /// In en, this message translates to:
+  /// **'Field'**
+  String get addFactFieldShortLabel;
 }
 
 class _AppLocalizationsDelegate

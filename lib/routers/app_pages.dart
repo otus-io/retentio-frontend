@@ -7,7 +7,7 @@ import 'package:retentio/screen/register/register_screen.dart';
 
 import '../main.dart';
 import '../providers/auth_provider.dart';
-import '../screen/deck/deck_learn_screen.dart';
+import '../screen/deck/deck_view_screen.dart';
 
 /// Created on 2026/2/6
 /// Description:
@@ -36,7 +36,7 @@ class AppPages {
       GoRoute(
         path: AppRoutes.study.path,
         builder: (context, state) =>
-            DeckLearnScreen(deck: state.extra.asMap()['deck']),
+            DeckViewScreen(deck: state.extra.asMap()['deck']),
       ),
     ],
     redirect: (context, state) {

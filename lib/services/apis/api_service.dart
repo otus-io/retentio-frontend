@@ -34,8 +34,15 @@ class ApiService {
   static Future<ApiResponse?> post(
     String endpoint, {
     Map<String, dynamic>? body,
+    Map<String, String>? pathParams,
   }) async {
-    final response = await dioClient.post(endpoint, params: body);
+    final response = await dioClient.post(
+      endpoint,
+      params: body,
+      pathParams: pathParams == null
+          ? null
+          : Map<String, dynamic>.from(pathParams),
+    );
 
     return response;
   }

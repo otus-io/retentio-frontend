@@ -240,4 +240,75 @@ class AppLocalizationsEn extends AppLocalizations {
   String newCardEveryMinutes(int interval) {
     return 'Introduce a new card every $interval minutes';
   }
+
+  @override
+  String get addFact => 'Add fact';
+
+  @override
+  String get addFactAddRow => 'Add row';
+
+  @override
+  String get addFactRemoveRow => 'Remove row';
+
+  @override
+  String get addFactFieldNameHint => 'Field name (optional)';
+
+  @override
+  String get addFactContentHint => 'Text (optional if you add media)';
+
+  @override
+  String get addFactAttachImage => 'Image';
+
+  @override
+  String get addFactAttachVideo => 'Video';
+
+  @override
+  String get addFactAttachAudio => 'Audio';
+
+  @override
+  String get addFactClearAttachment => 'Clear';
+
+  @override
+  String get addFactAttachMediaTooltip =>
+      'Attach image, video, or audio. Long press to remove.';
+
+  @override
+  String get addFactGalleryMediaTooltip =>
+      'Choose photo or video from your library. Long press to remove.';
+
+  @override
+  String get addFactSubmit => 'Save fact';
+
+  @override
+  String get addFactUploadFailed => 'Upload failed. Try again.';
+
+  @override
+  String addFactFileTooLarge(int maxMb) {
+    return 'File is too large (max $maxMb MB).';
+  }
+
+  @override
+  String get addFactEntryNeedsContent =>
+      'Each row needs text or at least one attachment.';
+
+  @override
+  String get addFactFileTypeNotSupported => 'This file type is not supported.';
+
+  @override
+  String get addFactFileWrongSlot =>
+      'Pick a file that matches this attachment type.';
+
+  @override
+  String get addFactFailed => 'Could not add fact';
+
+  @override
+  String get addFactSuccess => 'Fact added';
+
+  @override
+  String addFactFieldFallback(int number) {
+    return 'Field $number';
+  }
+
+  @override
+  String get addFactFieldShortLabel => 'Field';
 }
