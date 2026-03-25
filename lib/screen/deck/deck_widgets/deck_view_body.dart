@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/extensions/context_extension.dart';
 import 'package:retentio/l10n/app_localizations.dart';
-import 'package:retentio/screen/deck/providers/card_provider.dart';
+import 'package:retentio/screen/deck/providers/card_review.dart';
 import 'package:retentio/screen/deck/card_widgets/card_side_content.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
 import 'package:retentio/screen/deck/card_widgets/card_flip.dart';

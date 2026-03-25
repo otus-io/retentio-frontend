@@ -5,7 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck.dart';
-import 'package:retentio/screen/deck/providers/card_provider.dart';
+import 'package:retentio/screen/deck/providers/card_review.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_add.dart';
 import 'package:retentio/screen/decks/providers/deck_create.dart';
 import 'package:retentio/screen/decks/providers/deck_list.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:retentio/screen/deck/fact_add_composer/add_fact_focus.dart';
+import 'package:retentio/screen/deck/fact_add_composer/focus.dart';
 
 void main() {
   group('addFactIndexToRemoveOnMinus', () {

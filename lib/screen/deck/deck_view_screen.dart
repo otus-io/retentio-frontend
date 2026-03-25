@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:retentio/models/deck.dart';
-import 'package:retentio/screen/deck/providers/card_provider.dart';
+import 'package:retentio/screen/deck/providers/card_review.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_menu.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_view_body.dart';
 

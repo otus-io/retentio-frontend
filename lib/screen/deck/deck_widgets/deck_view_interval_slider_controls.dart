@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:retentio/extensions/widget_extension.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/deck/formatters/review_interval_label.dart';
-import 'package:retentio/screen/deck/providers/card_provider.dart';
+import 'package:retentio/screen/deck/providers/card_review.dart';
 
 class DeckViewIntervalSliderControls extends ConsumerWidget {
   const DeckViewIntervalSliderControls({super.key});

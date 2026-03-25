@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:retentio/screen/deck/providers/card_provider.dart';
+import 'package:retentio/screen/deck/providers/card_review.dart';
 import 'package:retentio/screen/deck/card_widgets/card_side_content.dart';
 
 import '../../helpers/card_test_samples.dart';

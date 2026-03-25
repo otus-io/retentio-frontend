@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:retentio/screen/deck/fact_add_composer/add_fact_payload.dart';
+import 'package:retentio/screen/deck/fact_add_composer/payload.dart';
 
 void main() {
   group('AddFactPayload', () {

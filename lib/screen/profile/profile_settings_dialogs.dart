@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/providers/locale_provider.dart';
 import 'package:retentio/providers/theme_provider.dart';
-import 'package:retentio/screen/profile/providers/profile_provide.dart';
+import 'package:retentio/screen/profile/providers/profile.dart';
 
 String profileLanguageDisplayName(Locale locale) {
   switch (locale.languageCode) {
@@ -149,7 +149,7 @@ void showProfileLogoutDialog(
         TextButton(
           onPressed: () {
             context.pop();
-            ref.read(profileProvide.notifier).logout();
+            ref.read(profileProvider.notifier).logout();
           },
           style: TextButton.styleFrom(foregroundColor: Colors.red),
           child: Text(loc.logout),

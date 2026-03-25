@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:retentio/screen/deck/fact_add_composer/add_fact_pick_extensions.dart';
+import 'package:retentio/screen/deck/fact_add_composer/pick_extensions.dart';
 
 void main() {
   test('includes common image video audio extensions', () {

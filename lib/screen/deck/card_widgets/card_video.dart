@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:retentio/screen/deck/providers/card_provider.dart';
+import 'package:retentio/screen/deck/providers/card_review.dart';
 import 'package:video_player/video_player.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import '../../../mixins/delayed_init_mixin.dart';
-import '../../../widgets/video_player/src/custom_video_player.dart';
-import '../../../widgets/video_player/src/custom_video_player_controller.dart';
-import '../../../widgets/video_player/src/models/custom_video_player_settings.dart';
+import '../../../video_player/src/custom_video_player.dart';
+import '../../../video_player/src/custom_video_player_controller.dart';
+import '../../../video_player/src/models/custom_video_player_settings.dart';
 
 class CardVideo extends ConsumerStatefulWidget {
   const CardVideo({super.key, required this.url});

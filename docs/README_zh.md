@@ -70,14 +70,15 @@ flutter run
 | `screen/register/` | 注册与控制器。 |
 | `screen/home/` | 首页 Tab（欢迎类占位内容）。 |
 | `screen/decks/` | 卡组列表 Tab：`deck_list_screen.dart`、`providers/`（`deck_list.dart`、`deck_create.dart`）、`widgets/`（列表主体、列表行卡片、创建表单、加载态展示等）。 |
-| `screen/deck/` | 卡组视图 / 学习：`deck_view_screen.dart`、`providers/`（卡片会话、复习间隔计算、音频）、`formatters/`、`deck_widgets/`（菜单、主体、间隔控件）、`card_widgets/`（翻面、卡面、媒体）、`fact_widgets/`（添加 / 编辑 / 内容）、`fact_add_composer/`（添加知识点表单相关模型与 UI 片段）。 |
+| `screen/deck/` | 卡组视图 / 学习：`deck_view_screen.dart`、`providers/`（`card_review.dart`、`review_interval_range.dart`、`audio_player.dart`）、`formatters/`、`deck_widgets/`（菜单、主体、间隔控件）、`card_widgets/`（翻面、卡面、媒体）、`fact_widgets/`（添加 / 编辑 / 内容）、`fact_add_composer/`（添加知识点表单相关模型与 UI 片段）。 |
 | `screen/profile/` | 个人资料 Tab 及相关 providers。 |
 
 功能的 provider 通常与页面同级（`screen/<功能>/providers/`）。部分页面使用嵌套的 **`ProviderScope`** 与 **overrides**（例如 `deck_view_screen.dart` 向 `cardProvider` 注入当前 `Deck`，并为标题栏 / 编辑流程初始化 `createDeckParamsProvider`）。
 
 ### 共享 UI 与工具
 
-- **`widgets/`** — 可复用组件（`buttons_tab_bar`、`common_refresher`、`common_bottom_sheet`、`number_picker`、`video_player/` 子树等）。
+- **`widgets/`** — 可复用组件（`buttons_tab_bar`、`common_refresher`、`common_bottom_sheet`、`number_picker` 等）。
+- **`video_player/`** — 基于官方 `video_player` 插件的自研播放 UI（内嵌与全屏、控件与设置等）。
 - **`utils/`** — 日志、防抖、小工具。
 - **`extensions/`** — `BuildContext`、`Widget`、`Map` 等扩展。
 - **`mixins/`** — 共享 notifier 或生命周期行为（`refresh_controller_mixin`、`delayed_init_mixin` 等）。

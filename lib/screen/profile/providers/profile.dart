@@ -4,7 +4,7 @@ import 'package:retentio/services/apis/api_service.dart';
 
 import '../../../services/index.dart';
 
-final profileProvide = NotifierProvider.autoDispose(ProfileNotifier.new);
+final profileProvider = NotifierProvider.autoDispose(ProfileNotifier.new);
 
 class ProfileNotifier extends Notifier<UserState> {
   @override

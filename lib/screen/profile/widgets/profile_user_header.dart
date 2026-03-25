@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:retentio/screen/profile/providers/profile_provide.dart';
+import 'package:retentio/screen/profile/providers/profile.dart';
 
 class ProfileUserHeader extends ConsumerWidget {
   const ProfileUserHeader({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(profileProvide).user;
+    final user = ref.watch(profileProvider).user;
 
     return Container(
       padding: const EdgeInsets.all(24),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:retentio/models/card.dart';
-import '../providers/card_provider.dart';
+import '../providers/card_review.dart';
 import 'card_content_container.dart';
 import 'card_menu.dart';
 

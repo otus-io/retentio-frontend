@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:retentio/l10n/app_localizations.dart';
-import 'package:retentio/screen/deck/fact_add_composer/add_fact_attachment_chip.dart';
-import 'package:retentio/screen/deck/fact_add_composer/add_fact_row_model.dart';
+import 'package:retentio/screen/deck/fact_add_composer/attachment_chip.dart';
+import 'package:retentio/screen/deck/fact_add_composer/row_model.dart';
 
 class AddFactEntryRow extends StatefulWidget {
   const AddFactEntryRow({

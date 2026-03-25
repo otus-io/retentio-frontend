@@ -70,14 +70,15 @@ Screens are grouped by area under `screen/`:
 | `screen/register/` | Registration and controller. |
 | `screen/home/` | Home tab (placeholder-style welcome content). |
 | `screen/decks/` | Deck list tab: `deck_list_screen.dart`, `providers/` (`deck_list.dart`, `deck_create.dart`), `widgets/` (list body, list row, create form, loading affordances). |
-| `screen/deck/` | Deck view / study: `deck_view_screen.dart`, `providers/` (card session, review interval math, audio), `formatters/`, `deck_widgets/` (menu, body, interval controls), `card_widgets/` (flip, card face, media), `fact_widgets/` (add / edit / content), `fact_add_composer/` (add-fact row model and UI pieces). |
+| `screen/deck/` | Deck view / study: `deck_view_screen.dart`, `providers/` (`card_review.dart`, `review_interval_range.dart`, `audio_player.dart`), `formatters/`, `deck_widgets/` (menu, body, interval controls), `card_widgets/` (flip, card face, media), `fact_widgets/` (add / edit / content), `fact_add_composer/` (add-fact row model and UI pieces). |
 | `screen/profile/` | Profile tab and profile-related providers. |
 
 Feature providers often sit next to their screen (`screen/<feature>/providers/`). Some screens use a nested **`ProviderScope`** with **overrides** (for example `deck_view_screen.dart` supplies the current `Deck` to `cardProvider` and seeds `createDeckParamsProvider` for the app bar / edit flow).
 
 ### Shared UI and utilities
 
-- **`widgets/`** — Reusable components (`buttons_tab_bar`, `common_refresher`, `common_bottom_sheet`, `number_picker`, `video_player/` subtree, etc.).
+- **`widgets/`** — Reusable components (`buttons_tab_bar`, `common_refresher`, `common_bottom_sheet`, `number_picker`, etc.).
+- **`video_player/`** — Custom in-app video UI built on `video_player` (embedded + fullscreen, controls, settings).
 - **`utils/`** — Logging, debounce, small helpers.
 - **`extensions/`** — `BuildContext`, `Widget`, `Map`, and object extensions.
 - **`mixins/`** — Shared notifier or lifecycle behavior (`refresh_controller_mixin`, `delayed_init_mixin`, etc.).

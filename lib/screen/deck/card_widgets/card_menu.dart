@@ -4,7 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 import 'package:retentio/extensions/context_extension.dart';
 import 'package:retentio/l10n/app_localizations.dart';
-import 'package:retentio/screen/deck/providers/card_provider.dart';
+import 'package:retentio/screen/deck/providers/card_review.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_edit.dart';
 import 'package:retentio/widgets/common_bottom_sheet.dart';
 

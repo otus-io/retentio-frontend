@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/extensions/context_extension.dart';
-import 'package:retentio/screen/deck/providers/audio_player_provider.dart';
+import 'package:retentio/screen/deck/providers/audio_player.dart';
 
 class CardAudio extends StatefulWidget {
   const CardAudio({super.key, required this.audioUrl, this.color});

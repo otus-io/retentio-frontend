@@ -1,5 +1,5 @@
 import 'package:retentio/models/card.dart';
-import 'package:retentio/screen/deck/providers/card_provider.dart';
+import 'package:retentio/screen/deck/providers/card_review.dart';
 
 import 'card_test_samples.dart';
 

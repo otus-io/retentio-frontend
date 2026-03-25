@@ -1,4 +1,4 @@
-import 'package:retentio/screen/deck/providers/card_provider.dart';
+import 'package:retentio/screen/deck/providers/card_review.dart';
 
 /// Skips network; ends in a non-loading state for empty-session deck UI tests.
 class ImmediateEmptyCardNotifier extends CardNotifier {

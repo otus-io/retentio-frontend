@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/deck/deck_view_screen.dart';
-import 'package:retentio/screen/deck/providers/card_provider.dart';
+import 'package:retentio/screen/deck/providers/card_review.dart';
 
 import '../../helpers/card_test_samples.dart';
 import '../../helpers/immediate_empty_card_notifier.dart';
