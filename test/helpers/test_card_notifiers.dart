@@ -3,7 +3,7 @@ import 'package:retentio/screen/deck/providers/card_provider.dart';
 
 import 'card_test_samples.dart';
 
-/// No network in [build]; supplies a card so [CardWidget] can render the menu.
+/// No network in [build]; supplies a card so [CardSideContent] can render the menu.
 class CardWithMenuNotifier extends CardNotifier {
   CardWithMenuNotifier([CardDetail? detail])
     : _detail = detail ?? sampleCardDetail();
@@ -13,7 +13,7 @@ class CardWithMenuNotifier extends CardNotifier {
   @override
   CardState build() {
     deck = ref.watch(deckProvider);
-    ref.onDispose(flashCardController.dispose);
+    ref.onDispose(flipCardController.dispose);
     return CardState(isLoading: false, cardDetail: _detail, showAnswer: true);
   }
 }
@@ -32,7 +32,7 @@ class SpyHideCardNotifier extends CardNotifier {
   @override
   CardState build() {
     deck = ref.watch(deckProvider);
-    ref.onDispose(flashCardController.dispose);
+    ref.onDispose(flipCardController.dispose);
     return CardState(
       isLoading: false,
       cardDetail: sampleCardDetail(),
@@ -59,7 +59,7 @@ class CountingDeleteCardNotifier extends CardNotifier {
   @override
   CardState build() {
     deck = ref.watch(deckProvider);
-    ref.onDispose(flashCardController.dispose);
+    ref.onDispose(flipCardController.dispose);
     return CardState(
       isLoading: false,
       cardDetail: sampleCardDetail(),
@@ -88,7 +88,7 @@ class ReviewAgainHarnessNotifier extends CardNotifier {
   @override
   CardState build() {
     deck = ref.watch(deckProvider);
-    ref.onDispose(flashCardController.dispose);
+    ref.onDispose(flipCardController.dispose);
     return CardState(
       isLoading: false,
       cardDetail: sampleCardDetail(),
@@ -114,7 +114,7 @@ class NoOpGetCardNotifier extends CardNotifier {
   @override
   CardState build() {
     deck = ref.watch(deckProvider);
-    ref.onDispose(flashCardController.dispose);
+    ref.onDispose(flipCardController.dispose);
     return CardState(isLoading: false);
   }
 
@@ -127,7 +127,7 @@ class ReviewAgainStateNotifier extends CardNotifier {
   @override
   CardState build() {
     deck = ref.watch(deckProvider);
-    ref.onDispose(flashCardController.dispose);
+    ref.onDispose(flipCardController.dispose);
     return CardState(
       isLoading: false,
       cardDetail: sampleCardDetail(),

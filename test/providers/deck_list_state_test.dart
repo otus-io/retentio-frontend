@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:retentio/screen/decks/providers/deck_provider.dart';
+import 'package:retentio/screen/decks/providers/deck_list.dart';
 
 void main() {
   group('DeckListState', () {

@@ -50,8 +50,8 @@ All tests are under `test/`:
 - **screen/login/widgets/** - ForgotPassword form, validation, email input
 - **screen/register/** - RegisterScreen form fields, keyboard types, obscured passwords
 - **screen/profile/** - ProfileScreen user info, settings items, logout dialog
-- **screen/deck/** - DeckDetailScreen stats display, button states; DeckLearnScreen async states
-- **screen/decks/** - DecksScreen loading/error state, AppBar
+- **screen/deck/** - DeckStudyScreen async states; card / add-fact widget tests
+- **screen/decks/** - DeckListScreen loading/error state, AppBar
 - **widgets/** - BottomPopup show/dismiss, CommonRefresher loading/empty/child states
 
 ### Helpers & Reports

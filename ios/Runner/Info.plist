@@ -33,6 +33,8 @@
 	</dict>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Retentio uses a smart spaced repetition algorithm to help you learn more efficiently; the microphone is used to record the pronunciation of your own word list.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Retentio needs access to your photo library so you can attach images and videos to flashcard entries.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

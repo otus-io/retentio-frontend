@@ -261,6 +261,7 @@ class DioClient {
     required String filePath,
     String? fileName,
     String? contentType,
+    String? clientId,
     void Function(int count, int total)? onSendProgress,
   }) async {
     assert(_didConfig, 'Please call Dioclient.config(...) first.');
@@ -273,6 +274,7 @@ class DioClient {
             ? null
             : DioMediaType.parse(contentType),
       ),
+      if (clientId != null && clientId.isNotEmpty) 'client_id': clientId,
     });
     try {
       response = await _dio.post(

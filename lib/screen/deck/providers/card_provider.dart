@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meta/meta.dart';
 import 'package:retentio/providers/loading_state_provider.dart';
-import 'package:retentio/screen/deck/widgets/flash_card/flash_card_controller.dart';
+import 'package:retentio/screen/deck/card_widgets/card_flip_controller.dart';
 import 'package:retentio/utils/log.dart';
 
 import '../../../models/card.dart';
@@ -28,7 +28,7 @@ bool shouldIgnoreCardDetailForReview(CardDetail? response) =>
 class CardNotifier extends Notifier<CardState> {
   late Deck deck;
 
-  final FlashCardController flashCardController = FlashCardController();
+  final CardFlipController flipCardController = CardFlipController();
   late List<double> intervalRange;
 
   void calculateIntervalRange() {
@@ -60,7 +60,7 @@ class CardNotifier extends Notifier<CardState> {
     deck = ref.watch(deckProvider);
     intervalRange = [0, 0];
     getCardDetail();
-    ref.onDispose(flashCardController.dispose);
+    ref.onDispose(flipCardController.dispose);
     return CardState(isLoading: true, selectedInterval: 0);
   }
 
@@ -121,7 +121,7 @@ class CardNotifier extends Notifier<CardState> {
     if (res?.isSuccess != true) return false;
     await getCardDetail();
     if (!ref.mounted) return false;
-    flashCardController.showFront();
+    flipCardController.showFront();
     showAnswer();
     return true;
   }

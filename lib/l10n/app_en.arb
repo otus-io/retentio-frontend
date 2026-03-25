@@ -329,5 +329,101 @@
         "example": "10"
       }
     }
+  },
+  "addFact": "Add fact",
+  "@addFact": {
+    "description": "Menu and sheet title for adding a fact to a deck"
+  },
+  "addFactAddRow": "Add row",
+  "@addFactAddRow": {
+    "description": "Button to add another entry row"
+  },
+  "addFactRemoveRow": "Remove row",
+  "@addFactRemoveRow": {
+    "description": "Semantics label for removing an entry row"
+  },
+  "addFactFieldNameHint": "Field name (optional)",
+  "@addFactFieldNameHint": {
+    "description": "Hint for optional column label"
+  },
+  "addFactContentHint": "Text (optional if you add media)",
+  "@addFactContentHint": {
+    "description": "Hint for entry text field"
+  },
+  "addFactAttachImage": "Image",
+  "@addFactAttachImage": {
+    "description": "Label for attaching an image"
+  },
+  "addFactAttachVideo": "Video",
+  "@addFactAttachVideo": {
+    "description": "Label for attaching a video"
+  },
+  "addFactAttachAudio": "Audio",
+  "@addFactAttachAudio": {
+    "description": "Label for attaching audio"
+  },
+  "addFactClearAttachment": "Clear",
+  "@addFactClearAttachment": {
+    "description": "Remove selected media attachment"
+  },
+  "addFactAttachMediaTooltip": "Attach image, video, or audio. Long press to remove.",
+  "@addFactAttachMediaTooltip": {
+    "description": "Single media icon: tap to pick file, long press clears attachment"
+  },
+  "addFactGalleryMediaTooltip": "Choose photo or video from your library. Long press to remove.",
+  "@addFactGalleryMediaTooltip": {
+    "description": "Add-fact toolbar: open gallery for image or video"
+  },
+  "addFactSubmit": "Save fact",
+  "@addFactSubmit": {
+    "description": "Submit add-fact form"
+  },
+  "addFactUploadFailed": "Upload failed. Try again.",
+  "@addFactUploadFailed": {
+    "description": "Snackbar when media upload fails"
+  },
+  "addFactFileTooLarge": "File is too large (max {maxMb} MB).",
+  "@addFactFileTooLarge": {
+    "description": "When picked file exceeds API size limit",
+    "placeholders": {
+      "maxMb": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "addFactEntryNeedsContent": "Each row needs text or at least one attachment.",
+  "@addFactEntryNeedsContent": {
+    "description": "Validation when a row is empty"
+  },
+  "addFactFileTypeNotSupported": "This file type is not supported.",
+  "@addFactFileTypeNotSupported": {
+    "description": "When extension is not image/audio/video"
+  },
+  "addFactFileWrongSlot": "Pick a file that matches this attachment type.",
+  "@addFactFileWrongSlot": {
+    "description": "When file kind does not match image/video/audio slot"
+  },
+  "addFactFailed": "Could not add fact",
+  "@addFactFailed": {
+    "description": "When add-facts API fails"
+  },
+  "addFactSuccess": "Fact added",
+  "@addFactSuccess": {
+    "description": "Snackbar after a fact was saved to the deck"
+  },
+  "addFactFieldFallback": "Field {number}",
+  "@addFactFieldFallback": {
+    "description": "Default column label when deck has fewer names than rows",
+    "placeholders": {
+      "number": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "addFactFieldShortLabel": "Field",
+  "@addFactFieldShortLabel": {
+    "description": "Compact label for column name; tap to edit on add-fact form"
   }
 }

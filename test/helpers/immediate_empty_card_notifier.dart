@@ -5,7 +5,7 @@ class ImmediateEmptyCardNotifier extends CardNotifier {
   @override
   CardState build() {
     deck = ref.watch(deckProvider);
-    ref.onDispose(flashCardController.dispose);
+    ref.onDispose(flipCardController.dispose);
     return CardState(isLoading: false, showAnswer: false);
   }
 }
