@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:retentio/services/apis/api_service.dart';
+import 'package:retentio/utils/audio_cache_utils.dart';
 import 'package:retentio/utils/log.dart';
 
 final audioPlayerProvider = NotifierProvider(
@@ -18,27 +19,9 @@ final audioUrlProvider = Provider.autoDispose<String>(
   ),
 );
 
-/// Real clips are larger; Simulator / failed records often upload ~28 B `ftyp` shells.
-const int _kMinAudioFileBytes = 256;
-
-String _cacheFileNameForAudioUrl(String audioUrl) {
-  final uri = Uri.parse(audioUrl);
-  var baseName = p.basename(uri.path);
-  if (baseName.isEmpty) {
-    baseName = 'audio_${uri.path.hashCode.abs()}';
-  }
-  final lower = baseName.toLowerCase();
-  return lower.endsWith('.mp3') ||
-          lower.endsWith('.m4a') ||
-          lower.endsWith('.aac') ||
-          lower.endsWith('.wav')
-      ? baseName
-      : '$baseName.mp3';
-}
-
 Future<String> _localAudioCachePath(String audioUrl) async {
   final dir = await getTemporaryDirectory();
-  return p.join(dir.path, 'audio', _cacheFileNameForAudioUrl(audioUrl));
+  return p.join(dir.path, 'audio', cacheFileNameForAudioUrl(audioUrl));
 }
 
 Future<void> _logInvalidAudioFile(String path) async {
@@ -51,43 +34,12 @@ Future<void> _logInvalidAudioFile(String path) async {
     if (head.length >= 12) break;
   }
   final hex = head.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-  final isFtypM4a =
-      head.length >= 12 &&
-      head[4] == 0x66 &&
-      head[5] == 0x74 &&
-      head[6] == 0x79 &&
-      head[7] == 0x70;
+  final isFtypM4a = head.length >= 8 && bytesLookLikeIsoBmffFtyp(head);
   logger.e(
     'preparePlayer diagnostics: bytes=$n prefixHex=$hex '
-    '${isFtypM4a && n < _kMinAudioFileBytes ? "(empty M4A shell — no mic audio on Simulator, or upload failed) " : ""}'
+    '${isFtypM4a && n < kMinAudioFileBytesForPlayback ? "(empty M4A shell — no mic audio on Simulator, or upload failed) " : ""}'
     '(JSON error body often starts with 7b22)',
   );
-}
-
-/// If we cached as .mp3 but bytes are ISO-BMFF (`ftyp`), rename to .m4a for AVFoundation.
-Future<String> _renameMp3CacheToM4aIfFtyp(String path) async {
-  if (!path.toLowerCase().endsWith('.mp3')) return path;
-  final f = File(path);
-  if (!await f.exists()) return path;
-  final head = <int>[];
-  await for (final chunk in f.openRead(0, 12)) {
-    head.addAll(chunk);
-    if (head.length >= 12) break;
-  }
-  if (head.length < 8 ||
-      head[4] != 0x66 ||
-      head[5] != 0x74 ||
-      head[6] != 0x79 ||
-      head[7] != 0x70) {
-    return path;
-  }
-  final m4aPath = '${path.substring(0, path.length - 4)}.m4a';
-  try {
-    await f.rename(m4aPath);
-    return m4aPath;
-  } catch (_) {
-    return path;
-  }
 }
 
 class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
@@ -137,7 +89,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
     } else {
       await _waveformController?.startPlayer();
     }
-    _waveformController?.setFinishMode(finishMode: .pause);
+    _waveformController?.setFinishMode(finishMode: FinishMode.pause);
   }
 
   Future<void> _loadAudio(String audioUrl) async {
@@ -155,7 +107,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
           return;
         }
       }
-      var pathForPlayer = await _renameMp3CacheToM4aIfFtyp(path);
+      var pathForPlayer = await renameMp3CacheToM4aIfFtyp(path);
       final bytes = await File(pathForPlayer).length();
       if (bytes == 0) {
         logger.w("Audio file is empty: $pathForPlayer");
@@ -164,7 +116,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
         }
         return;
       }
-      if (bytes < _kMinAudioFileBytes) {
+      if (bytes < kMinAudioFileBytesForPlayback) {
         // Not an app bug: e.g. Simulator mic off → empty M4A shell on server (~28 B `ftyp`).
         logger.w(
           'Audio file too small ($bytes B), skipping playback. '

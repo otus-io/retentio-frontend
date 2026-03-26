@@ -4,6 +4,7 @@ import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/l10n/app_localizations.dart';
+import 'package:retentio/screen/deck/fact_add_composer/recorder_level_smooth.dart';
 
 class AddFactMediaToolbar extends StatelessWidget {
   const AddFactMediaToolbar({
@@ -115,7 +116,7 @@ class _InputReactiveMicState extends State<_InputReactiveMic>
     final raw = widget.controller.waveData.isEmpty
         ? 0.0
         : widget.controller.waveData.last;
-    final next = (_level * 0.55 + raw * 0.45).clamp(0.0, 1.0);
+    final next = smoothRecorderVisualizationLevel(_level, raw);
     if (!mounted) return;
     setState(() => _level = next);
   }
