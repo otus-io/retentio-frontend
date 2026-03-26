@@ -26,7 +26,24 @@ class _CardAudioState extends State<CardAudio>
       overrides: [audioUrlProvider.overrideWithValue(widget.audioUrl)],
       child: Consumer(
         builder: (context, ref, child) {
-          final isReady = ref.watch(audioPlayerProvider).isReady;
+          final audioState = ref.watch(audioPlayerProvider);
+          if (audioState.loadFailed) {
+            return SizedBox(
+              width: context.width,
+              height: 50,
+              child: Tooltip(
+                message: context.loc.cardAudioUnavailable,
+                child: Center(
+                  child: Icon(
+                    LucideIcons.volumeX,
+                    size: 28,
+                    color: Theme.of(context).disabledColor,
+                  ),
+                ),
+              ),
+            );
+          }
+          final isReady = audioState.isReady;
           return Stack(
             alignment: Alignment.center,
             children: [

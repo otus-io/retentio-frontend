@@ -374,6 +374,22 @@
   "@addFactGalleryMediaTooltip": {
     "description": "Add-fact toolbar: open gallery for image or video"
   },
+  "addFactRecordAudioTooltip": "Record audio with the microphone. Tap again to stop and attach. Long press while recording to discard.",
+  "@addFactRecordAudioTooltip": {
+    "description": "Add-fact toolbar: start voice recording"
+  },
+  "addFactStopRecordingTooltip": "Stop recording and attach audio to this field",
+  "@addFactStopRecordingTooltip": {
+    "description": "Add-fact toolbar: finish voice recording"
+  },
+  "addFactMicPermissionDenied": "Microphone access is required to record audio.",
+  "@addFactMicPermissionDenied": {
+    "description": "Snackbar when user denies mic permission for add-fact recording"
+  },
+  "addFactRecordingFailed": "Could not record audio. Try again.",
+  "@addFactRecordingFailed": {
+    "description": "Snackbar when starting or stopping recording fails"
+  },
   "addFactSubmit": "Save fact",
   "@addFactSubmit": {
     "description": "Submit add-fact form"
@@ -425,5 +441,9 @@
   "addFactFieldShortLabel": "Field",
   "@addFactFieldShortLabel": {
     "description": "Compact label for column name; tap to edit on add-fact form"
+  },
+  "cardAudioUnavailable": "Audio unavailable",
+  "@cardAudioUnavailable": {
+    "description": "Card review when the audio file is missing, empty, or invalid"
   }
 }

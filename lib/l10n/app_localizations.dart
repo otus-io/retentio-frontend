@@ -614,6 +614,30 @@ abstract class AppLocalizations {
   /// **'Choose photo or video from your library. Long press to remove.'**
   String get addFactGalleryMediaTooltip;
 
+  /// Add-fact toolbar: start voice recording
+  ///
+  /// In en, this message translates to:
+  /// **'Record audio with the microphone. Tap again to stop and attach. Long press while recording to discard.'**
+  String get addFactRecordAudioTooltip;
+
+  /// Add-fact toolbar: finish voice recording
+  ///
+  /// In en, this message translates to:
+  /// **'Stop recording and attach audio to this field'**
+  String get addFactStopRecordingTooltip;
+
+  /// Snackbar when user denies mic permission for add-fact recording
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone access is required to record audio.'**
+  String get addFactMicPermissionDenied;
+
+  /// Snackbar when starting or stopping recording fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not record audio. Try again.'**
+  String get addFactRecordingFailed;
+
   /// Submit add-fact form
   ///
   /// In en, this message translates to:
@@ -673,6 +697,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Field'**
   String get addFactFieldShortLabel;
+
+  /// Card review when the audio file is missing, empty, or invalid
+  ///
+  /// In en, this message translates to:
+  /// **'Audio unavailable'**
+  String get cardAudioUnavailable;
 }
 
 class _AppLocalizationsDelegate

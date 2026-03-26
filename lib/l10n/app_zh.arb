@@ -89,6 +89,10 @@
     "addFactClearAttachment": "清除",
     "addFactAttachMediaTooltip": "添加图片、视频或音频；长按可移除。",
     "addFactGalleryMediaTooltip": "从相册选择照片或视频；长按可移除。",
+    "addFactRecordAudioTooltip": "使用麦克风录音；再次点击结束并附加。录音时长按可放弃。",
+    "addFactStopRecordingTooltip": "停止录音并将音频附加到该字段",
+    "addFactMicPermissionDenied": "录音需要麦克风权限。",
+    "addFactRecordingFailed": "录音失败，请重试。",
     "addFactSubmit": "保存词条",
     "addFactUploadFailed": "上传失败，请重试。",
     "addFactFileTooLarge": "文件过大（最大 {maxMb} MB）。",
@@ -98,5 +102,6 @@
     "addFactFailed": "无法添加词条",
     "addFactSuccess": "已添加词条",
     "addFactFieldFallback": "字段 {number}",
-    "addFactFieldShortLabel": "字段"
+    "addFactFieldShortLabel": "字段",
+    "cardAudioUnavailable": "音频不可用（文件无效或缺失）"
 }

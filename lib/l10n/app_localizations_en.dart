@@ -277,6 +277,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'Choose photo or video from your library. Long press to remove.';
 
   @override
+  String get addFactRecordAudioTooltip =>
+      'Record audio with the microphone. Tap again to stop and attach. Long press while recording to discard.';
+
+  @override
+  String get addFactStopRecordingTooltip =>
+      'Stop recording and attach audio to this field';
+
+  @override
+  String get addFactMicPermissionDenied =>
+      'Microphone access is required to record audio.';
+
+  @override
+  String get addFactRecordingFailed => 'Could not record audio. Try again.';
+
+  @override
   String get addFactSubmit => 'Save fact';
 
   @override
@@ -311,4 +326,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addFactFieldShortLabel => 'Field';
+
+  @override
+  String get cardAudioUnavailable => 'Audio unavailable';
 }

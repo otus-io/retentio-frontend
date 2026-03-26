@@ -23,22 +23,39 @@ NC='\033[0m' # No Color
 echo "🔍 Running pre-commit checks..."
 echo ""
 
-# Detect which areas have staged changes (for conditional YAML/MD checks)
-YAML_FILES=$(git diff --cached --name-only --diff-filter=ACM -- '*.yml' '*.yaml' || true)
-MD_FILES=$(git diff --cached --name-only --diff-filter=ACM -- '*.md' '*.mdc' || true)
+# Staged paths to lint (exclude third_party — vendored upstream content).
+# Use arrays so we never call markdownlint/yamllint with zero file args after word-splitting
+# (which prints Usage: … and looks like a broken hook).
+lint_yaml_list=()
+while IFS= read -r f || [ -n "$f" ]; do
+  [ -z "$f" ] && continue
+  case "$f" in
+    third_party/*) ;;
+    *) lint_yaml_list+=("$f") ;;
+  esac
+done < <(git diff --cached --name-only --diff-filter=ACM -- '*.yml' '*.yaml' || true)
+
+lint_md_list=()
+while IFS= read -r f || [ -n "$f" ]; do
+  [ -z "$f" ] && continue
+  case "$f" in
+    third_party/*) ;;
+    *) lint_md_list+=("$f") ;;
+  esac
+done < <(git diff --cached --name-only --diff-filter=ACM -- '*.md' '*.mdc' || true)
 
 FAILED=0
 
 # =============================================================================
 # YAML lint (only if .yml/.yaml files changed)
 # =============================================================================
-if [ -n "$YAML_FILES" ]; then
+if [ ${#lint_yaml_list[@]} -gt 0 ]; then
     echo -e "${YELLOW}━━━ YAML Checks ━━━${NC}"
     echo "📋 Linting YAML files..."
 
     if command -v yamllint &> /dev/null; then
         YAML_FAILED=0
-        for file in $YAML_FILES; do
+        for file in "${lint_yaml_list[@]}"; do
             if yamllint -d "{extends: default, rules: {line-length: {max: 200}, truthy: disable}}" "$file" 2>&1; then
                 echo -e "${GREEN}  ✓ $file${NC}"
             else
@@ -61,19 +78,19 @@ fi
 # =============================================================================
 # Markdown lint (only if .md/.mdc files changed)
 # =============================================================================
-if [ -n "$MD_FILES" ]; then
+if [ ${#lint_md_list[@]} -gt 0 ]; then
     echo -e "${YELLOW}━━━ Markdown Checks ━━━${NC}"
     echo "📋 Linting Markdown files..."
 
     if command -v markdownlint &> /dev/null; then
-        if markdownlint --config .markdownlint.json $MD_FILES 2>&1; then
+        if markdownlint --config .markdownlint.json "${lint_md_list[@]}" 2>&1; then
             echo -e "${GREEN}  ✓ Markdown lint OK${NC}"
         else
             echo -e "${RED}  ✗ Markdown lint issues found${NC}"
             FAILED=1
         fi
     elif command -v markdownlint-cli2 &> /dev/null; then
-        if markdownlint-cli2 $MD_FILES 2>&1; then
+        if markdownlint-cli2 "${lint_md_list[@]}" 2>&1; then
             echo -e "${GREEN}  ✓ Markdown lint OK${NC}"
         else
             echo -e "${RED}  ✗ Markdown lint issues found${NC}"
@@ -123,7 +140,7 @@ echo ""
 # =============================================================================
 # Final result
 # =============================================================================
-if [ -z "$YAML_FILES" ] && [ -z "$MD_FILES" ]; then
+if [ ${#lint_yaml_list[@]} -eq 0 ] && [ ${#lint_md_list[@]} -eq 0 ]; then
     echo -e "${GREEN}No YAML or Markdown in this commit — only Dart / Flutter checks ran.${NC}"
 fi
 

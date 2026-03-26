@@ -273,6 +273,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get addFactGalleryMediaTooltip => '从相册选择照片或视频；长按可移除。';
 
   @override
+  String get addFactRecordAudioTooltip => '使用麦克风录音；再次点击结束并附加。录音时长按可放弃。';
+
+  @override
+  String get addFactStopRecordingTooltip => '停止录音并将音频附加到该字段';
+
+  @override
+  String get addFactMicPermissionDenied => '录音需要麦克风权限。';
+
+  @override
+  String get addFactRecordingFailed => '录音失败，请重试。';
+
+  @override
   String get addFactSubmit => '保存词条';
 
   @override
@@ -305,4 +317,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get addFactFieldShortLabel => '字段';
+
+  @override
+  String get cardAudioUnavailable => '音频不可用（文件无效或缺失）';
 }
