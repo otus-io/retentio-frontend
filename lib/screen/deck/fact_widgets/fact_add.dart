@@ -38,7 +38,7 @@ class FactAdd extends ConsumerStatefulWidget {
 }
 
 class _FactAddState extends ConsumerState<FactAdd> {
-  final List<AddFactRowModel> _rows = [AddFactRowModel(), AddFactRowModel()];
+  late List<AddFactRowModel> _rows;
 
   bool _submitting = false;
   bool _recordingVoice = false;
@@ -52,6 +52,7 @@ class _FactAddState extends ConsumerState<FactAdd> {
   @override
   void initState() {
     super.initState();
+    _rows = AddFactRowModel.listForDeckFields(widget.deck.fields);
     _voiceRecorder = RecorderController();
     FocusManager.instance.addListener(_onFocusChanged);
   }
@@ -99,9 +100,7 @@ class _FactAddState extends ConsumerState<FactAdd> {
     if (!mounted) return;
     final idx = _targetRowIndexForMedia();
     setState(() {
-      final row = _rows[idx];
-      row.attachmentPath = path;
-      row.attachmentKind = kind;
+      _rows[idx].setPathFor(kind, path);
     });
   }
 
@@ -210,9 +209,7 @@ class _FactAddState extends ConsumerState<FactAdd> {
   void _clearAttachmentOnTargetRow() {
     final idx = _targetRowIndexForMedia();
     setState(() {
-      final row = _rows[idx];
-      row.attachmentPath = null;
-      row.attachmentKind = null;
+      _rows[idx].clearAllAttachments();
     });
   }
 
@@ -249,7 +246,7 @@ class _FactAddState extends ConsumerState<FactAdd> {
     setState(() {
       _rows
         ..clear()
-        ..addAll([AddFactRowModel(), AddFactRowModel()]);
+        ..addAll(AddFactRowModel.listForDeckFields(widget.deck.fields));
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       for (final r in oldRows) {
@@ -295,27 +292,46 @@ class _FactAddState extends ConsumerState<FactAdd> {
         String? imgId;
         String? vidId;
         String? audId;
-        final path = row.attachmentPath;
-        final kind = row.attachmentKind;
-        if (path != null && kind != null) {
+
+        Future<bool> uploadIfPresent(
+          String? path,
+          MediaSlotKind kind,
+          String tag,
+          void Function(String id) assign,
+        ) async {
+          if (path == null) return true;
           final id = await MediaService.upload(
             filePath: path,
             slotKind: kind,
-            clientId: '$cidBase-att',
+            clientId: '$cidBase-$tag',
           );
-          if (id == null) {
-            if (mounted) _snack(loc.addFactUploadFailed);
-            return;
-          }
-          switch (kind) {
-            case MediaSlotKind.image:
-              imgId = id;
-            case MediaSlotKind.video:
-              vidId = id;
-            case MediaSlotKind.audio:
-              audId = id;
-          }
+          if (id == null) return false;
+          assign(id);
+          return true;
         }
+
+        if (!await uploadIfPresent(
+              row.imagePath,
+              MediaSlotKind.image,
+              'img',
+              (id) => imgId = id,
+            ) ||
+            !await uploadIfPresent(
+              row.videoPath,
+              MediaSlotKind.video,
+              'vid',
+              (id) => vidId = id,
+            ) ||
+            !await uploadIfPresent(
+              row.audioPath,
+              MediaSlotKind.audio,
+              'aud',
+              (id) => audId = id,
+            )) {
+          if (mounted) _snack(loc.addFactUploadFailed);
+          return;
+        }
+
         entries.add(
           AddFactPayload.buildEntryJson(
             text: row.content.text,
@@ -376,11 +392,8 @@ class _FactAddState extends ConsumerState<FactAdd> {
           loc: loc,
           theme: theme,
           outlineColor: outline,
-          onClearRowAttachment: () {
-            setState(() {
-              row.attachmentPath = null;
-              row.attachmentKind = null;
-            });
+          onClearSlot: (kind) {
+            setState(() => row.clearSlot(kind));
           },
         ),
       );

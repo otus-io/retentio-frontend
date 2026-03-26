@@ -113,9 +113,16 @@ class _InputReactiveMicState extends State<_InputReactiveMic>
   double _level = 0;
 
   void _onRecorder() {
-    final raw = widget.controller.waveData.isEmpty
-        ? 0.0
-        : widget.controller.waveData.last;
+    if (!mounted) return;
+    double raw = 0.0;
+    try {
+      final data = widget.controller.waveData;
+      if (data.isNotEmpty) {
+        raw = data[data.length - 1];
+      }
+    } catch (_) {
+      raw = 0.0;
+    }
     final next = smoothRecorderVisualizationLevel(_level, raw);
     if (!mounted) return;
     setState(() => _level = next);

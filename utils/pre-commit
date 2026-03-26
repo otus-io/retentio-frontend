@@ -2,7 +2,7 @@
 
 # =============================================================================
 # Pre-commit hook — Retentio Flutter repo (pubspec.yaml at git root)
-# Runs format checks and tests before allowing commits.
+# Runs dart format . first, then YAML/Markdown (if applicable), flutter analyze, and tests.
 # =============================================================================
 
 set -e
@@ -45,6 +45,23 @@ while IFS= read -r f || [ -n "$f" ]; do
 done < <(git diff --cached --name-only --diff-filter=ACM -- '*.md' '*.mdc' || true)
 
 FAILED=0
+
+# =============================================================================
+# Dart format (run first so analyze/tests see formatted code)
+# =============================================================================
+echo -e "${YELLOW}━━━ Dart format ━━━${NC}"
+echo "🔧 Running dart format . ..."
+if dart format .; then
+    echo -e "${GREEN}  ✓ dart format completed${NC}"
+    # Refresh index so the commit includes formatter output (not only the working tree).
+    while IFS= read -r -d '' f; do
+        git add -u -- "$f"
+    done < <(git ls-files -z -- '*.dart')
+else
+    echo -e "${RED}  ✗ dart format failed${NC}"
+    FAILED=1
+fi
+echo ""
 
 # =============================================================================
 # YAML lint (only if .yml/.yaml files changed)
@@ -107,15 +124,6 @@ fi
 # Dart / Flutter (always run — app lives at repo root next to pubspec.yaml)
 # =============================================================================
 echo -e "${YELLOW}━━━ Dart / Flutter ━━━${NC}"
-
-echo "🔧 Checking Dart formatting..."
-if (dart format --set-exit-if-changed .); then
-    echo -e "${GREEN}  ✓ Dart formatting OK${NC}"
-else
-    echo -e "${RED}  ✗ Dart formatting issues found${NC}"
-    echo "  Run: dart format ."
-    FAILED=1
-fi
 
 # --- flutter analyze ---
 echo "🔎 Running flutter analyze..."

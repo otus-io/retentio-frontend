@@ -175,16 +175,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createDeck => 'Create Deck';
 
   @override
-  String get createInputDeckName => 'Name';
+  String get createInputDeckName => 'Deck Name';
 
   @override
   String get createInputDeckNameHint => 'Set a name for your deck';
+
+  @override
+  String get deckEditorField => 'Field';
+
+  @override
+  String get deckEditorFieldHint => 'e.g. English';
+
+  @override
+  String get deckEditorAddFieldTooltip => 'Add field';
+
+  @override
+  String get deckEditorRemoveFieldTooltip => 'Remove field';
+
+  @override
+  String get deckEditorNameRequired => 'Please enter a deck name';
+
+  @override
+  String get deckEditorMinTwoFields =>
+      'Add another field — at least two columns are required';
+
+  @override
+  String get deckEditorFieldNamesRequired => 'Fill in every field name';
 
   @override
   String get language => 'Language';
 
   @override
   String get rate => 'Rate';
+
+  @override
+  String get cardsPerDay => 'cards per day';
 
   @override
   String get slow => 'Slow';

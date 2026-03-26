@@ -24,8 +24,7 @@ class DeckListScreen extends ConsumerWidget {
               showCommonBottomSheet(
                 context: context,
                 title: loc.createDeck,
-                initialChildSize: 0.5,
-                minChildSize: 0.4,
+                fullScreen: true,
                 child: DeckCreate(),
               );
             },

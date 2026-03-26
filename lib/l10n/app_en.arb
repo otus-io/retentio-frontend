@@ -232,13 +232,41 @@
   "@createDeck": {
     "description": "Create a deck"
   },
-  "createInputDeckName": "Name",
+  "createInputDeckName": "Deck Name",
   "@createInputDeckName": {
     "description": "Label for deck name input field"
   },
   "createInputDeckNameHint": "Set a name for your deck",
   "@createInputDeckNameHint": {
     "description": "Hint text for deck name input field"
+  },
+  "deckEditorField": "Field",
+  "@deckEditorField": {
+    "description": "Label for deck template column name"
+  },
+  "deckEditorFieldHint": "e.g. English",
+  "@deckEditorFieldHint": {
+    "description": "Hint for deck field name input"
+  },
+  "deckEditorAddFieldTooltip": "Add field",
+  "@deckEditorAddFieldTooltip": {
+    "description": "Tooltip for button that adds another deck field row"
+  },
+  "deckEditorRemoveFieldTooltip": "Remove field",
+  "@deckEditorRemoveFieldTooltip": {
+    "description": "Tooltip for button that removes a deck field row"
+  },
+  "deckEditorNameRequired": "Please enter a deck name",
+  "@deckEditorNameRequired": {
+    "description": "Snackbar when saving deck without a name"
+  },
+  "deckEditorMinTwoFields": "Add another field — at least two columns are required",
+  "@deckEditorMinTwoFields": {
+    "description": "Snackbar when fewer than two field rows exist"
+  },
+  "deckEditorFieldNamesRequired": "Fill in every field name",
+  "@deckEditorFieldNamesRequired": {
+    "description": "Snackbar when a field name is empty"
   },
   "language": "Language",
   "@language": {
@@ -247,6 +275,10 @@
   "rate": "Rate",
   "@rate": {
     "description": "Rate label"
+  },
+  "cardsPerDay": "cards per day",
+  "@cardsPerDay": {
+    "description": "Suffix next to deck new-card rate picker (number shown in picker only)"
   },
   "slow": "Slow",
   "@slow": {

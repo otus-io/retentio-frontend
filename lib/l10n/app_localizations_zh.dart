@@ -175,16 +175,40 @@ class AppLocalizationsZh extends AppLocalizations {
   String get createDeck => '创建卡组';
 
   @override
-  String get createInputDeckName => '名称';
+  String get createInputDeckName => '卡组名称';
 
   @override
   String get createInputDeckNameHint => '为你的deck设置name';
+
+  @override
+  String get deckEditorField => '字段';
+
+  @override
+  String get deckEditorFieldHint => '例如：英语';
+
+  @override
+  String get deckEditorAddFieldTooltip => '添加字段';
+
+  @override
+  String get deckEditorRemoveFieldTooltip => '删除此字段';
+
+  @override
+  String get deckEditorNameRequired => '请输入卡组名称';
+
+  @override
+  String get deckEditorMinTwoFields => '请再添加一个字段（至少需要两列）';
+
+  @override
+  String get deckEditorFieldNamesRequired => '请填写每个字段名称';
 
   @override
   String get language => '语言';
 
   @override
   String get rate => '速率';
+
+  @override
+  String get cardsPerDay => '张新卡片/天';
 
   @override
   String get slow => '慢';

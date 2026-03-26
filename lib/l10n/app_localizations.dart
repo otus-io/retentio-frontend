@@ -425,7 +425,7 @@ abstract class AppLocalizations {
   /// Label for deck name input field
   ///
   /// In en, this message translates to:
-  /// **'Name'**
+  /// **'Deck Name'**
   String get createInputDeckName;
 
   /// Hint text for deck name input field
@@ -433,6 +433,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set a name for your deck'**
   String get createInputDeckNameHint;
+
+  /// Label for deck template column name
+  ///
+  /// In en, this message translates to:
+  /// **'Field'**
+  String get deckEditorField;
+
+  /// Hint for deck field name input
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. English'**
+  String get deckEditorFieldHint;
+
+  /// Tooltip for button that adds another deck field row
+  ///
+  /// In en, this message translates to:
+  /// **'Add field'**
+  String get deckEditorAddFieldTooltip;
+
+  /// Tooltip for button that removes a deck field row
+  ///
+  /// In en, this message translates to:
+  /// **'Remove field'**
+  String get deckEditorRemoveFieldTooltip;
+
+  /// Snackbar when saving deck without a name
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a deck name'**
+  String get deckEditorNameRequired;
+
+  /// Snackbar when fewer than two field rows exist
+  ///
+  /// In en, this message translates to:
+  /// **'Add another field — at least two columns are required'**
+  String get deckEditorMinTwoFields;
+
+  /// Snackbar when a field name is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Fill in every field name'**
+  String get deckEditorFieldNamesRequired;
 
   /// Language label
   ///
@@ -445,6 +487,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rate'**
   String get rate;
+
+  /// Suffix next to deck new-card rate picker (number shown in picker only)
+  ///
+  /// In en, this message translates to:
+  /// **'cards per day'**
+  String get cardsPerDay;
 
   /// Slow speed label
   ///

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/deck/fact_add_composer/attachment_chip.dart';
 import 'package:retentio/screen/deck/fact_add_composer/row_model.dart';
+import 'package:retentio/services/apis/media_service.dart';
 
 class AddFactEntryRow extends StatefulWidget {
   const AddFactEntryRow({
@@ -10,14 +11,14 @@ class AddFactEntryRow extends StatefulWidget {
     required this.loc,
     required this.theme,
     required this.outlineColor,
-    required this.onClearRowAttachment,
+    required this.onClearSlot,
   });
 
   final AddFactRowModel row;
   final AppLocalizations loc;
   final ThemeData theme;
   final Color outlineColor;
-  final VoidCallback onClearRowAttachment;
+  final void Function(MediaSlotKind kind) onClearSlot;
 
   @override
   State<AddFactEntryRow> createState() => _AddFactEntryRowState();
@@ -68,8 +69,16 @@ class _AddFactEntryRowState extends State<AddFactEntryRow> {
       _fieldNameEditorOpen || _fieldNameFocus.hasFocus;
 
   Widget _buildContentField(ThemeData theme, AppLocalizations loc) {
-    final kind = widget.row.attachmentKind;
-    final showMediaChip = widget.row.hasAttachment && kind != null;
+    final row = widget.row;
+    const kindsOrder = [
+      MediaSlotKind.image,
+      MediaSlotKind.video,
+      MediaSlotKind.audio,
+    ];
+    final activeKinds = kindsOrder
+        .where((k) => row.pathFor(k) != null)
+        .toList(growable: false);
+    final showMediaChips = activeKinds.isNotEmpty;
 
     final textField = TextField(
       controller: widget.row.content,
@@ -78,13 +87,13 @@ class _AddFactEntryRowState extends State<AddFactEntryRow> {
         hintText: loc.addFactContentHint,
         isDense: true,
         border: InputBorder.none,
-        contentPadding: EdgeInsets.fromLTRB(showMediaChip ? 2 : 10, 8, 10, 10),
+        contentPadding: EdgeInsets.fromLTRB(showMediaChips ? 2 : 10, 8, 10, 10),
       ),
       minLines: 1,
       maxLines: 3,
     );
 
-    if (!showMediaChip) {
+    if (!showMediaChips) {
       return textField;
     }
 
@@ -93,26 +102,37 @@ class _AddFactEntryRowState extends State<AddFactEntryRow> {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 6, top: 6),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+          child: Wrap(
+            spacing: 2,
+            runSpacing: 2,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Icon(
-                addFactAttachmentChipIcon(kind),
-                size: 18,
-                color: theme.colorScheme.primary,
-              ),
-              IconButton(
-                tooltip: loc.addFactClearAttachment,
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                onPressed: widget.onClearRowAttachment,
-                icon: Icon(
-                  Icons.close_rounded,
-                  size: 18,
-                  color: theme.colorScheme.onSurfaceVariant,
+              for (final kind in activeKinds)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      addFactAttachmentChipIcon(kind),
+                      size: 18,
+                      color: theme.colorScheme.primary,
+                    ),
+                    IconButton(
+                      tooltip: loc.addFactClearAttachment,
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
+                      onPressed: () => widget.onClearSlot(kind),
+                      icon: Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
             ],
           ),
         ),
