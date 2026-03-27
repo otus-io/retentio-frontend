@@ -26,20 +26,21 @@ void main() {
       expect(picker.value, 10);
     });
 
-    testWidgets('shows name field, one field input, and save button', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        buildTestableWidget(
-          const Scaffold(body: SingleChildScrollView(child: DeckCreate())),
-        ),
-      );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
+    testWidgets(
+      'shows name field, two default column inputs, and save button',
+      (tester) async {
+        await tester.pumpWidget(
+          buildTestableWidget(
+            const Scaffold(body: SingleChildScrollView(child: DeckCreate())),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
 
-      expect(find.byType(TextField), findsNWidgets(2));
-      expect(find.byType(OutlinedButton), findsOneWidget);
-      expect(find.byType(FilledButton), findsOneWidget);
-    });
+        expect(find.byType(TextField), findsNWidgets(3));
+        expect(find.byType(OutlinedButton), findsOneWidget);
+        expect(find.byType(FilledButton), findsOneWidget);
+      },
+    );
   });
 }

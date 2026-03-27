@@ -114,32 +114,10 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
       );
       return;
     }
-    final fields = fieldNames.map((s) => s.trim()).toList();
-    if (fields.length < 2) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            loc?.deckEditorMinTwoFields ??
-                'Add another field — at least two columns are required',
-            style: const TextStyle(color: Colors.white),
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-    if (fields.any((s) => s.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            loc?.deckEditorFieldNamesRequired ?? 'Fill in every field name',
-            style: const TextStyle(color: Colors.white),
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+    final fields = fieldNames
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
     final params = {
       'name': name,
       'fields': fields,

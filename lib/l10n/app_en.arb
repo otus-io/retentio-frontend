@@ -240,33 +240,33 @@
   "@createInputDeckNameHint": {
     "description": "Hint text for deck name input field"
   },
-  "deckEditorField": "Field",
-  "@deckEditorField": {
-    "description": "Label for deck template column name"
-  },
   "deckEditorFieldHint": "e.g. English",
   "@deckEditorFieldHint": {
-    "description": "Hint for deck field name input"
+    "description": "Hint for first (and other non-second) deck column header row"
   },
-  "deckEditorAddFieldTooltip": "Add field",
+  "deckEditorFieldHintSecond": "e.g. Japanese",
+  "@deckEditorFieldHintSecond": {
+    "description": "Hint for second deck column header row"
+  },
+  "deckEditorAddFieldTooltip": "Add column header",
   "@deckEditorAddFieldTooltip": {
-    "description": "Tooltip for button that adds another deck field row"
+    "description": "Tooltip for button that adds another deck column header row"
   },
-  "deckEditorRemoveFieldTooltip": "Remove field",
+  "deckEditorRemoveFieldTooltip": "Remove column header",
   "@deckEditorRemoveFieldTooltip": {
-    "description": "Tooltip for button that removes a deck field row"
+    "description": "Tooltip for button that removes a deck column header row"
   },
   "deckEditorNameRequired": "Please enter a deck name",
   "@deckEditorNameRequired": {
     "description": "Snackbar when saving deck without a name"
   },
-  "deckEditorMinTwoFields": "Add another field — at least two columns are required",
+  "deckEditorMinTwoFields": "Add another column header — at least two columns are required",
   "@deckEditorMinTwoFields": {
-    "description": "Snackbar when fewer than two field rows exist"
+    "description": "Snackbar when fewer than two column header rows exist"
   },
-  "deckEditorFieldNamesRequired": "Fill in every field name",
+  "deckEditorFieldNamesRequired": "Fill in every column header",
   "@deckEditorFieldNamesRequired": {
-    "description": "Snackbar when a field name is empty"
+    "description": "Snackbar when a column header is empty"
   },
   "language": "Language",
   "@language": {

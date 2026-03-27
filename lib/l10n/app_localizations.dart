@@ -434,28 +434,28 @@ abstract class AppLocalizations {
   /// **'Set a name for your deck'**
   String get createInputDeckNameHint;
 
-  /// Label for deck template column name
-  ///
-  /// In en, this message translates to:
-  /// **'Field'**
-  String get deckEditorField;
-
-  /// Hint for deck field name input
+  /// Hint for first (and other non-second) deck column header row
   ///
   /// In en, this message translates to:
   /// **'e.g. English'**
   String get deckEditorFieldHint;
 
-  /// Tooltip for button that adds another deck field row
+  /// Hint for second deck column header row
   ///
   /// In en, this message translates to:
-  /// **'Add field'**
+  /// **'e.g. Japanese'**
+  String get deckEditorFieldHintSecond;
+
+  /// Tooltip for button that adds another deck column header row
+  ///
+  /// In en, this message translates to:
+  /// **'Add column header'**
   String get deckEditorAddFieldTooltip;
 
-  /// Tooltip for button that removes a deck field row
+  /// Tooltip for button that removes a deck column header row
   ///
   /// In en, this message translates to:
-  /// **'Remove field'**
+  /// **'Remove column header'**
   String get deckEditorRemoveFieldTooltip;
 
   /// Snackbar when saving deck without a name
@@ -464,16 +464,16 @@ abstract class AppLocalizations {
   /// **'Please enter a deck name'**
   String get deckEditorNameRequired;
 
-  /// Snackbar when fewer than two field rows exist
+  /// Snackbar when fewer than two column header rows exist
   ///
   /// In en, this message translates to:
-  /// **'Add another field — at least two columns are required'**
+  /// **'Add another column header — at least two columns are required'**
   String get deckEditorMinTwoFields;
 
-  /// Snackbar when a field name is empty
+  /// Snackbar when a column header is empty
   ///
   /// In en, this message translates to:
-  /// **'Fill in every field name'**
+  /// **'Fill in every column header'**
   String get deckEditorFieldNamesRequired;
 
   /// Language label

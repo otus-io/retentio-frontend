@@ -20,6 +20,9 @@ class DeckCreate extends ConsumerStatefulWidget {
 }
 
 class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
+  /// Two empty column headers by default when creating a deck.
+  static const List<String> _defaultNewDeckFields = ['', ''];
+
   late List<TextEditingController> _fieldControllers;
 
   static InputDecoration _outlineDecoration(
@@ -40,17 +43,14 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
     );
   }
 
-  static ButtonStyle _fieldRowTrailingIconStyle() {
-    return IconButton.styleFrom(
-      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      visualDensity: VisualDensity.compact,
-    );
-  }
+  static const _fieldAddRemoveIconBtn = BoxConstraints(
+    minWidth: 44,
+    minHeight: 44,
+  );
 
-  /// ~50% vertical size vs [ _outlineDecoration ]; width matches deck name row.
+  /// Thinner than [ _outlineDecoration]: ~25% of theme vertical padding (half of prior compact).
   static InputDecoration _outlineDecorationCompact(
     BuildContext context, {
-    required String labelText,
     String? hintText,
   }) {
     final base = Theme.of(context).inputDecorationTheme;
@@ -58,27 +58,29 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
     final resolved =
         base.contentPadding?.resolve(dir) ??
         const EdgeInsets.fromLTRB(12, 16, 12, 16);
+    const verticalScale = 0.2;
     return InputDecoration(
-      labelText: labelText,
       hintText: hintText,
       border: const OutlineInputBorder(),
       contentPadding: EdgeInsets.fromLTRB(
         resolved.left,
-        resolved.top * 0.4,
+        resolved.top * verticalScale,
         resolved.right,
-        resolved.bottom * 0.4,
+        resolved.bottom * verticalScale,
       ),
       isDense: true,
       filled: base.filled,
       fillColor: base.fillColor,
-      floatingLabelBehavior: base.floatingLabelBehavior,
+      floatingLabelBehavior: FloatingLabelBehavior.never,
     );
   }
 
   @override
   void initState() {
     super.initState();
-    _fieldControllers = [TextEditingController()];
+    _fieldControllers = [
+      for (final t in _defaultNewDeckFields) TextEditingController(text: t),
+    ];
   }
 
   @override
@@ -93,9 +95,7 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
     for (final c in _fieldControllers) {
       c.dispose();
     }
-    _fieldControllers = texts.isEmpty
-        ? [TextEditingController()]
-        : [for (final t in texts) TextEditingController(text: t)];
+    _fieldControllers = [for (final t in texts) TextEditingController(text: t)];
   }
 
   void _addField() {
@@ -104,10 +104,10 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
     });
   }
 
-  void _removeField(int index) {
-    if (_fieldControllers.length <= 1) return;
+  void _removeLastField() {
+    if (_fieldControllers.isEmpty) return;
     setState(() {
-      _fieldControllers.removeAt(index).dispose();
+      _fieldControllers.removeLast().dispose();
     });
   }
 
@@ -135,10 +135,10 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
               rate: 10,
               type: DeckCardType.add,
               id: '',
-              fields: const [],
+              fields: _defaultNewDeckFields,
             ),
           );
-      _resetFieldControllers(const []);
+      _resetFieldControllers(_defaultNewDeckFields);
     }
     setState(() {});
   }
@@ -198,86 +198,57 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
           ),
         ),
 
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: 4,
-          children: [
-            Expanded(
-              child: TextField(
-                controller: (ref
-                    .read(createDeckProvider.notifier)
-                    .nameController),
-                minLines: 1,
-                maxLines: 1,
-                decoration: _outlineDecoration(
-                  context,
-                  labelText: context.loc.createInputDeckName,
-                ),
-              ),
-            ),
-            if (_fieldControllers.length > 1)
-              Visibility(
-                visible: false,
-                maintainState: true,
-                maintainAnimation: true,
-                maintainSize: true,
-                child: IconButton(
-                  onPressed: () {},
-                  icon: Icon(LucideIcons.minus),
-                  style: _fieldRowTrailingIconStyle(),
-                ),
-              ),
-          ],
+        TextField(
+          controller: ref.read(createDeckProvider.notifier).nameController,
+          minLines: 1,
+          maxLines: 1,
+          decoration: _outlineDecoration(
+            context,
+            labelText: context.loc.createInputDeckName,
+          ),
         ),
         Column(
           spacing: 12,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (var i = 0; i < _fieldControllers.length; i++)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: 4,
+              TextField(
+                controller: _fieldControllers[i],
+                minLines: 1,
+                maxLines: 1,
+                decoration: _outlineDecorationCompact(
+                  context,
+                  hintText: i == 1
+                      ? loc.deckEditorFieldHintSecond
+                      : loc.deckEditorFieldHint,
+                ),
+              ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextField(
-                          controller: _fieldControllers[i],
-                          minLines: 1,
-                          maxLines: 1,
-                          decoration: _outlineDecorationCompact(
-                            context,
-                            labelText: loc.deckEditorField,
-                            hintText: loc.deckEditorFieldHint,
-                          ),
-                        ),
-                        if (i == _fieldControllers.length - 1)
-                          Align(
-                            alignment: Alignment.center,
-                            child: IconButton(
-                              tooltip: loc.deckEditorAddFieldTooltip,
-                              onPressed: _addField,
-                              icon: Icon(LucideIcons.plus),
-                              style: IconButton.styleFrom(
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                visualDensity: VisualDensity.compact,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
+                  IconButton(
+                    tooltip: loc.deckEditorAddFieldTooltip,
+                    padding: EdgeInsets.zero,
+                    constraints: _fieldAddRemoveIconBtn,
+                    onPressed: _addField,
+                    icon: Icon(LucideIcons.plus),
                   ),
-                  if (_fieldControllers.length > 1)
+                  if (_fieldControllers.isNotEmpty)
                     IconButton(
                       tooltip: loc.deckEditorRemoveFieldTooltip,
-                      onPressed: () => _removeField(i),
-                      icon: Icon(LucideIcons.minus),
-                      style: _fieldRowTrailingIconStyle(),
+                      padding: EdgeInsets.zero,
+                      constraints: _fieldAddRemoveIconBtn,
+                      onPressed: _removeLastField,
+                      icon: Icon(
+                        LucideIcons.minus,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                 ],
               ),
+            ),
           ],
         ),
 
