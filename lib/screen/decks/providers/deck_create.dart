@@ -11,6 +11,7 @@ import 'deck_list.dart';
 /// Inclusive bounds for the rate field when creating or editing a deck.
 const int kDeckEditorRateMin = 1;
 const int kDeckEditorRateMax = 1000;
+const int kDeckEditorRateDefault = 10;
 
 int clampDeckEditorRate(int rate) =>
     rate.clamp(kDeckEditorRateMin, kDeckEditorRateMax);
@@ -28,7 +29,7 @@ class DeckParamsNotifier extends Notifier<CreateDeckParams> with NotifierMixin {
   CreateDeckParams build() {
     return CreateDeckParams(
       name: '',
-      rate: 10,
+      rate: kDeckEditorRateDefault,
       type: DeckCardType.add,
       id: '',
       fields: [],
@@ -88,7 +89,9 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
     final params = ref.watch(createDeckParamsProvider);
     var name = params.name;
     var rate = clampDeckEditorRate(params.rate);
-    nameController.text = name;
+    if (nameController.text != name) {
+      nameController.text = name;
+    }
     deckId = params.id;
     cardType = params.type;
 
@@ -176,7 +179,11 @@ class CreateDeckState {
   final String name;
   final int rate;
 
-  CreateDeckState({this.fields = const [], this.name = '', this.rate = 10});
+  CreateDeckState({
+    this.fields = const [],
+    this.name = '',
+    this.rate = kDeckEditorRateDefault,
+  });
 
   CreateDeckState copyWith({List<String>? fields, String? name, int? rate}) =>
       CreateDeckState(

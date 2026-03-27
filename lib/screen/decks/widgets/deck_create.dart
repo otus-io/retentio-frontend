@@ -24,22 +24,19 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
   static const List<String> _defaultNewDeckFields = ['', ''];
 
   late List<TextEditingController> _fieldControllers;
+  late final FocusNode _deckNameFocusNode;
 
-  static InputDecoration _outlineDecoration(
+  static InputDecoration _borderlessDecoration(
     BuildContext context, {
-    required String labelText,
     String? hintText,
   }) {
-    final base = Theme.of(context).inputDecorationTheme;
     return InputDecoration(
-      labelText: labelText,
       hintText: hintText,
-      border: const OutlineInputBorder(),
-      contentPadding: base.contentPadding,
-      isDense: base.isDense,
-      filled: base.filled,
-      fillColor: base.fillColor,
-      floatingLabelBehavior: base.floatingLabelBehavior,
+      border: InputBorder.none,
+      enabledBorder: InputBorder.none,
+      focusedBorder: InputBorder.none,
+      isDense: true,
+      contentPadding: const EdgeInsets.fromLTRB(0, 6, 0, 6),
     );
   }
 
@@ -78,6 +75,12 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
   @override
   void initState() {
     super.initState();
+    _deckNameFocusNode = FocusNode();
+    _deckNameFocusNode.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
     _fieldControllers = [
       for (final t in _defaultNewDeckFields) TextEditingController(text: t),
     ];
@@ -85,6 +88,7 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
 
   @override
   void dispose() {
+    _deckNameFocusNode.dispose();
     for (final c in _fieldControllers) {
       c.dispose();
     }
@@ -132,7 +136,7 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
           .update(
             (state) => CreateDeckParams(
               name: '',
-              rate: 10,
+              rate: kDeckEditorRateDefault,
               type: DeckCardType.add,
               id: '',
               fields: _defaultNewDeckFields,
@@ -200,11 +204,17 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
 
         TextField(
           controller: ref.read(createDeckProvider.notifier).nameController,
+          focusNode: _deckNameFocusNode,
           minLines: 1,
           maxLines: 1,
-          decoration: _outlineDecoration(
+          textAlign: TextAlign.center,
+          selectAllOnFocus: true,
+          onTapAlwaysCalled: true,
+          decoration: _borderlessDecoration(
             context,
-            labelText: context.loc.createInputDeckName,
+            hintText: _deckNameFocusNode.hasFocus
+                ? null
+                : context.loc.createInputDeckName,
           ),
         ),
         Column(
@@ -212,16 +222,29 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (var i = 0; i < _fieldControllers.length; i++)
-              TextField(
-                controller: _fieldControllers[i],
-                minLines: 1,
-                maxLines: 1,
-                decoration: _outlineDecorationCompact(
-                  context,
-                  hintText: i == 1
-                      ? loc.deckEditorFieldHintSecond
-                      : loc.deckEditorFieldHint,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 2,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Text(
+                      'Header ${i + 1}',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelSmall?.copyWith(fontSize: 9),
+                    ),
+                  ),
+                  TextField(
+                    controller: _fieldControllers[i],
+                    minLines: 1,
+                    maxLines: 1,
+                    decoration: _outlineDecorationCompact(
+                      context,
+                      hintText: null,
+                    ),
+                  ),
+                ],
               ),
             Align(
               alignment: Alignment.centerLeft,
