@@ -24,6 +24,18 @@ void main() {
       expect(AddFactPayload.entryHasAnyContent(e), isTrue);
     });
 
+    test('buildEntryJson includes audio id when set', () {
+      final e = AddFactPayload.buildEntryJson(text: '', audioId: 'aud-99');
+      expect(e, {'audio': 'aud-99'});
+      expect(AddFactPayload.entryHasAnyContent(e), isTrue);
+    });
+
+    test('buildEntryJson omits blank audio id', () {
+      final e = AddFactPayload.buildEntryJson(text: 'x', audioId: '  ');
+      expect(e.containsKey('audio'), isFalse);
+      expect(e, {'text': 'x'});
+    });
+
     test('buildFactBody wraps single fact', () {
       final b = AddFactPayload.buildFactBody(
         entries: [

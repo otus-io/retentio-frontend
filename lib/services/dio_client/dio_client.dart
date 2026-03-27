@@ -332,7 +332,6 @@ class DioClient {
   }) async {
     assert(_didConfig, 'Please call Dioclient.config(...) first.');
 
-    final Completer<String> downLoadFileFuture = Completer<String>();
     final File filePr = File(downloadPath);
     final isPrExist = await filePr.exists();
     if (isPrExist) {
@@ -340,7 +339,7 @@ class DioClient {
     }
     // 必须加上 否则 download 报 can not open file
     final File file = File(downloadPath);
-    file.create(recursive: true);
+    await file.create(recursive: true);
 
     try {
       await _dio.download(
@@ -349,15 +348,13 @@ class DioClient {
         cancelToken: cancelToken,
         onReceiveProgress: (received, total) {
           if (total > 0) {
-            final percent = received / total;
-            onProgress(percent);
-            if (percent >= 1) {
-              downLoadFileFuture.complete(downloadPath);
-            }
+            onProgress(received / total);
           }
         },
       );
-      return downLoadFileFuture.future;
+      // Previously a Completer only completed when total>0 && percent>=1, so streams
+      // without Content-Length never completed, or edge cases left a truncated file.
+      return downloadPath;
     } on DioException catch (e) {
       _handleError(e);
       onError.call();

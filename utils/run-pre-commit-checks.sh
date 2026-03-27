@@ -27,21 +27,22 @@ echo ""
 FAILED=0
 
 # -----------------------------------------------------------------------------
-# Dart format
+# Dart format (run first so analyze/tests see formatted code)
 # -----------------------------------------------------------------------------
-echo -e "${YELLOW}━━━ Dart / Flutter ━━━${NC}"
-echo "🔧 Checking Dart formatting..."
-if (cd "$REPO_ROOT" && dart format --set-exit-if-changed .); then
-    echo -e "${GREEN}  ✓ Dart formatting OK${NC}"
+echo -e "${YELLOW}━━━ Dart format ━━━${NC}"
+echo "🔧 Running dart format . ..."
+if (cd "$REPO_ROOT" && dart format .); then
+    echo -e "${GREEN}  ✓ dart format completed${NC}"
 else
-    echo -e "${RED}  ✗ Dart formatting issues found${NC}"
-    echo "  Run: dart format . (from repo root)"
+    echo -e "${RED}  ✗ dart format failed${NC}"
     FAILED=1
 fi
+echo ""
 
 # -----------------------------------------------------------------------------
 # Flutter analyze
 # -----------------------------------------------------------------------------
+echo -e "${YELLOW}━━━ Dart / Flutter ━━━${NC}"
 echo "🔎 Running flutter analyze..."
 if (cd "$REPO_ROOT" && flutter analyze --no-pub); then
     echo -e "${GREEN}  ✓ Flutter analysis OK${NC}"

@@ -25,15 +25,27 @@ Future<T?> showCommonBottomSheet<T>({
   double initialChildSize = 0.6,
   double minChildSize = 0.5,
   double maxChildSize = 0.8,
+
+  /// Fills the viewport (create/edit deck, long forms). User can drag down to [minChildSize].
+  bool fullScreen = false,
+
+  /// When true, the sheet sizes to fill its parent; use with tall [initialChildSize] / [fullScreen].
+  bool expandSheet = false,
 }) {
+  final resolvedInitial = fullScreen ? 1.0 : initialChildSize;
+  final resolvedMax = fullScreen ? 1.0 : maxChildSize;
+  final resolvedMin = fullScreen ? 0.35 : minChildSize;
+  final resolvedExpand = fullScreen || expandSheet;
+  final resolvedUseSafeArea = fullScreen || useSafeArea;
+
   return showModalBottomSheet<T>(
     context: context,
 
     builder: (context) => DraggableScrollableSheet(
-      initialChildSize: initialChildSize,
-      minChildSize: minChildSize,
-      maxChildSize: maxChildSize,
-      expand: false,
+      initialChildSize: resolvedInitial,
+      minChildSize: resolvedMin,
+      maxChildSize: resolvedMax,
+      expand: resolvedExpand,
       builder: (context, scrollController) {
         return ClipRRect(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -97,5 +109,6 @@ Future<T?> showCommonBottomSheet<T>({
     useRootNavigator: useRootNavigator,
     isDismissible: isDismissible,
     enableDrag: enableDrag,
+    useSafeArea: resolvedUseSafeArea,
   );
 }

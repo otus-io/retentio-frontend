@@ -175,16 +175,40 @@ class AppLocalizationsZh extends AppLocalizations {
   String get createDeck => '创建卡组';
 
   @override
-  String get createInputDeckName => '名称';
+  String get createInputDeckName => '卡组名称';
 
   @override
   String get createInputDeckNameHint => '为你的deck设置name';
+
+  @override
+  String get deckEditorField => '字段';
+
+  @override
+  String get deckEditorFieldHint => '例如：英语';
+
+  @override
+  String get deckEditorAddFieldTooltip => '添加字段';
+
+  @override
+  String get deckEditorRemoveFieldTooltip => '删除此字段';
+
+  @override
+  String get deckEditorNameRequired => '请输入卡组名称';
+
+  @override
+  String get deckEditorMinTwoFields => '请再添加一个字段（至少需要两列）';
+
+  @override
+  String get deckEditorFieldNamesRequired => '请填写每个字段名称';
 
   @override
   String get language => '语言';
 
   @override
   String get rate => '速率';
+
+  @override
+  String get cardsPerDay => '张新卡片/天';
 
   @override
   String get slow => '慢';
@@ -273,6 +297,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get addFactGalleryMediaTooltip => '从相册选择照片或视频；长按可移除。';
 
   @override
+  String get addFactRecordAudioTooltip => '使用麦克风录音；再次点击结束并附加。录音时长按可放弃。';
+
+  @override
+  String get addFactStopRecordingTooltip => '停止录音并将音频附加到该字段';
+
+  @override
+  String get addFactMicPermissionDenied => '录音需要麦克风权限。';
+
+  @override
+  String get addFactRecordingFailed => '录音失败，请重试。';
+
+  @override
   String get addFactSubmit => '保存词条';
 
   @override
@@ -305,4 +341,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get addFactFieldShortLabel => '字段';
+
+  @override
+  String get cardAudioUnavailable => '音频不可用（文件无效或缺失）';
 }

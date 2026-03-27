@@ -175,16 +175,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createDeck => 'Create Deck';
 
   @override
-  String get createInputDeckName => 'Name';
+  String get createInputDeckName => 'Deck Name';
 
   @override
   String get createInputDeckNameHint => 'Set a name for your deck';
+
+  @override
+  String get deckEditorField => 'Field';
+
+  @override
+  String get deckEditorFieldHint => 'e.g. English';
+
+  @override
+  String get deckEditorAddFieldTooltip => 'Add field';
+
+  @override
+  String get deckEditorRemoveFieldTooltip => 'Remove field';
+
+  @override
+  String get deckEditorNameRequired => 'Please enter a deck name';
+
+  @override
+  String get deckEditorMinTwoFields =>
+      'Add another field — at least two columns are required';
+
+  @override
+  String get deckEditorFieldNamesRequired => 'Fill in every field name';
 
   @override
   String get language => 'Language';
 
   @override
   String get rate => 'Rate';
+
+  @override
+  String get cardsPerDay => 'cards per day';
 
   @override
   String get slow => 'Slow';
@@ -277,6 +302,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'Choose photo or video from your library. Long press to remove.';
 
   @override
+  String get addFactRecordAudioTooltip =>
+      'Record audio with the microphone. Tap again to stop and attach. Long press while recording to discard.';
+
+  @override
+  String get addFactStopRecordingTooltip =>
+      'Stop recording and attach audio to this field';
+
+  @override
+  String get addFactMicPermissionDenied =>
+      'Microphone access is required to record audio.';
+
+  @override
+  String get addFactRecordingFailed => 'Could not record audio. Try again.';
+
+  @override
   String get addFactSubmit => 'Save fact';
 
   @override
@@ -311,4 +351,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addFactFieldShortLabel => 'Field';
+
+  @override
+  String get cardAudioUnavailable => 'Audio unavailable';
 }

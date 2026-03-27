@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/providers/loading_state_provider.dart';
 import '../../../main.dart';
 import '../../../mixins/notifier_mixin.dart';
@@ -79,8 +80,6 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
   //   'Japanese',
   // ];
   final TextEditingController nameController = TextEditingController();
-  final TextEditingController fieldController1 = TextEditingController();
-  final TextEditingController fieldController2 = TextEditingController();
   DeckCardType cardType = DeckCardType.add;
   String deckId = '';
 
@@ -90,8 +89,6 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
     var name = params.name;
     var rate = clampDeckEditorRate(params.rate);
     nameController.text = name;
-    fieldController1.text = params.fields.firstOrNull ?? '';
-    fieldController2.text = params.fields.lastOrNull ?? '';
     deckId = params.id;
     cardType = params.type;
 
@@ -102,24 +99,14 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
     state = state.copyWith(rate: clampDeckEditorRate(rate));
   }
 
-  void changeField(int index, String field) {
-    final fields = [
-      for (int i = 0; i < state.fields.length; i++)
-        if (i == index) field else state.fields[i],
-    ];
-    if (fields.first == fields.last) {
-      return;
-    }
-    state = state.copyWith(fields: fields);
-  }
-
-  Future<void> createDeck(BuildContext context) async {
-    final name = nameController.text;
+  Future<void> createDeck(BuildContext context, List<String> fieldNames) async {
+    final loc = AppLocalizations.of(context);
+    final name = nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'name cannot be empty',
+            loc?.deckEditorNameRequired ?? 'Please enter a deck name',
             style: const TextStyle(color: Colors.white),
           ),
           backgroundColor: Colors.red,
@@ -127,15 +114,26 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
       );
       return;
     }
-    state = state.copyWith(
-      fields: [fieldController1.text, fieldController2.text],
-    );
-    if (state.fields.length < 2) {
+    final fields = fieldNames.map((s) => s.trim()).toList();
+    if (fields.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'At least two fields are required',
-            style: TextStyle(color: Colors.white),
+            loc?.deckEditorMinTwoFields ??
+                'Add another field — at least two columns are required',
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    if (fields.any((s) => s.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            loc?.deckEditorFieldNamesRequired ?? 'Fill in every field name',
+            style: const TextStyle(color: Colors.white),
           ),
           backgroundColor: Colors.red,
         ),
@@ -144,7 +142,7 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
     }
     final params = {
       'name': name,
-      'fields': state.fields,
+      'fields': fields,
       'rate': clampDeckEditorRate(state.rate),
     };
     ref.read(loadingStateProvider.notifier).showLoading();

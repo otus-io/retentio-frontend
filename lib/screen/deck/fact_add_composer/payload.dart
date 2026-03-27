@@ -35,9 +35,15 @@ class AddFactPayload {
     final m = <String, dynamic>{};
     final t = text.trim();
     if (t.isNotEmpty) m['text'] = t;
-    if (imageId != null && imageId.isNotEmpty) m['image'] = imageId;
-    if (videoId != null && videoId.isNotEmpty) m['video'] = videoId;
-    if (audioId != null && audioId.isNotEmpty) m['audio'] = audioId;
+    if (imageId != null && imageId.trim().isNotEmpty) {
+      m['image'] = imageId.trim();
+    }
+    if (videoId != null && videoId.trim().isNotEmpty) {
+      m['video'] = videoId.trim();
+    }
+    if (audioId != null && audioId.trim().isNotEmpty) {
+      m['audio'] = audioId.trim();
+    }
     return m;
   }
 

@@ -1,8 +1,15 @@
+import 'dart:async' show unawaited;
+import 'dart:io';
+
+import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/deck/fact_add_composer/entry_row.dart';
@@ -31,15 +38,22 @@ class FactAdd extends ConsumerStatefulWidget {
 }
 
 class _FactAddState extends ConsumerState<FactAdd> {
-  final List<AddFactRowModel> _rows = [AddFactRowModel(), AddFactRowModel()];
+  late List<AddFactRowModel> _rows;
 
   bool _submitting = false;
+  bool _recordingVoice = false;
+  late final RecorderController _voiceRecorder;
+
+  bool get _voiceRecordingAvailable =>
+      !kIsWeb && (Platform.isIOS || Platform.isAndroid);
 
   List<GlobalKey> get _hostKeys => [for (final r in _rows) r.hostKey];
 
   @override
   void initState() {
     super.initState();
+    _rows = AddFactRowModel.listForDeckFields(widget.deck.fields);
+    _voiceRecorder = RecorderController();
     FocusManager.instance.addListener(_onFocusChanged);
   }
 
@@ -50,6 +64,7 @@ class _FactAddState extends ConsumerState<FactAdd> {
   @override
   void dispose() {
     FocusManager.instance.removeListener(_onFocusChanged);
+    _voiceRecorder.dispose();
     for (final r in _rows) {
       r.dispose();
     }
@@ -85,9 +100,7 @@ class _FactAddState extends ConsumerState<FactAdd> {
     if (!mounted) return;
     final idx = _targetRowIndexForMedia();
     setState(() {
-      final row = _rows[idx];
-      row.attachmentPath = path;
-      row.attachmentKind = kind;
+      _rows[idx].setPathFor(kind, path);
     });
   }
 
@@ -124,12 +137,79 @@ class _FactAddState extends ConsumerState<FactAdd> {
     }
   }
 
+  Future<void> _toggleVoiceRecording() async {
+    final loc = AppLocalizations.of(context)!;
+    if (_recordingVoice) {
+      await _finishVoiceRecording();
+      return;
+    }
+    final permitted = await _voiceRecorder.checkPermission();
+    if (!permitted) {
+      if (mounted) _snack(loc.addFactMicPermissionDenied);
+      return;
+    }
+    final dir = await getTemporaryDirectory();
+    final ext = Platform.isAndroid ? 'aac' : 'm4a';
+    final filePath = p.join(
+      dir.path,
+      'fact_voice_${DateTime.now().millisecondsSinceEpoch}.$ext',
+    );
+    try {
+      await _voiceRecorder.record(
+        path: filePath,
+        recorderSettings: const RecorderSettings(),
+      );
+      if (mounted) setState(() => _recordingVoice = true);
+    } catch (_) {
+      if (mounted) _snack(loc.addFactRecordingFailed);
+    }
+  }
+
+  Future<void> _finishVoiceRecording() async {
+    final loc = AppLocalizations.of(context)!;
+    String? outPath;
+    try {
+      outPath = await _voiceRecorder.stop();
+    } catch (_) {
+      if (mounted) _snack(loc.addFactRecordingFailed);
+    }
+    if (!mounted) return;
+    setState(() => _recordingVoice = false);
+    if (outPath != null && outPath.isNotEmpty) {
+      await _tryAttachPickedPath(outPath);
+    }
+  }
+
+  Future<void> _cancelVoiceRecording() async {
+    if (!_recordingVoice) return;
+    String? outPath;
+    try {
+      outPath = await _voiceRecorder.stop();
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() => _recordingVoice = false);
+    _voiceRecorder.reset();
+    if (outPath != null && outPath.isNotEmpty) {
+      try {
+        await File(outPath).delete();
+      } catch (_) {}
+    }
+  }
+
+  void _onVoiceRecordLongPress() {
+    if (_recordingVoice) {
+      _cancelVoiceRecording();
+      return;
+    }
+    if (_rows[_targetRowIndexForMedia()].hasAttachment) {
+      _clearAttachmentOnTargetRow();
+    }
+  }
+
   void _clearAttachmentOnTargetRow() {
     final idx = _targetRowIndexForMedia();
     setState(() {
-      final row = _rows[idx];
-      row.attachmentPath = null;
-      row.attachmentKind = null;
+      _rows[idx].clearAllAttachments();
     });
   }
 
@@ -166,7 +246,7 @@ class _FactAddState extends ConsumerState<FactAdd> {
     setState(() {
       _rows
         ..clear()
-        ..addAll([AddFactRowModel(), AddFactRowModel()]);
+        ..addAll(AddFactRowModel.listForDeckFields(widget.deck.fields));
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       for (final r in oldRows) {
@@ -178,12 +258,21 @@ class _FactAddState extends ConsumerState<FactAdd> {
   void _onTapOutsideForm(PointerDownEvent event) {
     if (_submitting || !mounted) return;
     FocusManager.instance.primaryFocus?.unfocus();
+    if (_recordingVoice) {
+      unawaited(_discardRecordingAndResetForm());
+      return;
+    }
     _resetForm();
+  }
+
+  Future<void> _discardRecordingAndResetForm() async {
+    await _cancelVoiceRecording();
+    if (mounted) _resetForm();
   }
 
   Future<void> _submit() async {
     final loc = AppLocalizations.of(context)!;
-    if (_submitting) return;
+    if (_submitting || _recordingVoice) return;
 
     for (var i = 0; i < _rows.length; i++) {
       if (!addFactRowIsSatisfied(_rows[i])) {
@@ -203,27 +292,46 @@ class _FactAddState extends ConsumerState<FactAdd> {
         String? imgId;
         String? vidId;
         String? audId;
-        final path = row.attachmentPath;
-        final kind = row.attachmentKind;
-        if (path != null && kind != null) {
+
+        Future<bool> uploadIfPresent(
+          String? path,
+          MediaSlotKind kind,
+          String tag,
+          void Function(String id) assign,
+        ) async {
+          if (path == null) return true;
           final id = await MediaService.upload(
             filePath: path,
             slotKind: kind,
-            clientId: '$cidBase-att',
+            clientId: '$cidBase-$tag',
           );
-          if (id == null) {
-            if (mounted) _snack(loc.addFactUploadFailed);
-            return;
-          }
-          switch (kind) {
-            case MediaSlotKind.image:
-              imgId = id;
-            case MediaSlotKind.video:
-              vidId = id;
-            case MediaSlotKind.audio:
-              audId = id;
-          }
+          if (id == null) return false;
+          assign(id);
+          return true;
         }
+
+        if (!await uploadIfPresent(
+              row.imagePath,
+              MediaSlotKind.image,
+              'img',
+              (id) => imgId = id,
+            ) ||
+            !await uploadIfPresent(
+              row.videoPath,
+              MediaSlotKind.video,
+              'vid',
+              (id) => vidId = id,
+            ) ||
+            !await uploadIfPresent(
+              row.audioPath,
+              MediaSlotKind.audio,
+              'aud',
+              (id) => audId = id,
+            )) {
+          if (mounted) _snack(loc.addFactUploadFailed);
+          return;
+        }
+
         entries.add(
           AddFactPayload.buildEntryJson(
             text: row.content.text,
@@ -284,11 +392,8 @@ class _FactAddState extends ConsumerState<FactAdd> {
           loc: loc,
           theme: theme,
           outlineColor: outline,
-          onClearRowAttachment: () {
-            setState(() {
-              row.attachmentPath = null;
-              row.attachmentKind = null;
-            });
+          onClearSlot: (kind) {
+            setState(() => row.clearSlot(kind));
           },
         ),
       );
@@ -316,6 +421,16 @@ class _FactAddState extends ConsumerState<FactAdd> {
               onPickFiles: _pickMediaForTargetRow,
               onPickGallery: _pickGalleryMediaForTargetRow,
               onClearTargetAttachment: _clearAttachmentOnTargetRow,
+              voiceRecorder: _voiceRecorder,
+              mediaPicksLocked: _recordingVoice,
+              showVoiceRecord: _voiceRecordingAvailable,
+              isRecordingVoice: _recordingVoice,
+              onVoiceRecordTap: _voiceRecordingAvailable
+                  ? _toggleVoiceRecording
+                  : null,
+              onVoiceRecordLongPress: _voiceRecordingAvailable
+                  ? _onVoiceRecordLongPress
+                  : null,
             ),
             ..._buildEntryRows(loc, theme, outline),
             AddFactRowControls(
@@ -327,7 +442,7 @@ class _FactAddState extends ConsumerState<FactAdd> {
             ),
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: _submitting ? null : _submit,
+              onPressed: (_submitting || _recordingVoice) ? null : _submit,
               child: _submitting
                   ? const SizedBox(
                       height: 22,

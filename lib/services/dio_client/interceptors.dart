@@ -17,6 +17,37 @@ class HttpHeaderInterceptors extends InterceptorsWrapper {
   }
 }
 
+Object _loggableResponseData(dynamic data) {
+  if (data == null) return 'null';
+  if (data is Map || data is List) return data;
+  if (data is String) {
+    final n = data.length;
+    return n > 256 ? 'String(length=$n)' : data;
+  }
+  if (data is ResponseBody) {
+    return 'ResponseBody (binary, omitted)';
+  }
+  return '${data.runtimeType}';
+}
+
+/// Copy of request headers safe for logs (never log bearer tokens or cookies).
+Map<String, Object?> _headersForLog(Map<String, dynamic>? headers) {
+  if (headers == null || headers.isEmpty) {
+    return const {};
+  }
+  const sensitiveKeys = {'authorization', 'cookie', 'set-cookie'};
+  final out = <String, Object?>{};
+  for (final e in headers.entries) {
+    final k = e.key;
+    if (sensitiveKeys.contains(k.toLowerCase())) {
+      out[k] = '<redacted>';
+    } else {
+      out[k] = e.value;
+    }
+  }
+  return out;
+}
+
 /// 日志拦截器
 class LogInterceptors extends InterceptorsWrapper {
   @override
@@ -24,7 +55,7 @@ class LogInterceptors extends InterceptorsWrapper {
     logger.d({
       "oRequest method": options.method,
       "oRequest url": options.uri,
-      "oRequest header": options.headers,
+      "oRequest header": _headersForLog(options.headers),
       "onRequest params": options.queryParameters,
       "onRequest data": options.data,
     });
@@ -36,12 +67,10 @@ class LogInterceptors extends InterceptorsWrapper {
     Response response,
     ResponseInterceptorHandler handler,
   ) async {
-    // if (response.data is Map) {
     logger.d({
-      "Request": response.requestOptions.path,
-      "Response": response.data,
+      "Request": response.requestOptions.uri.toString(),
+      "Response": _loggableResponseData(response.data),
     });
-    // }
     super.onResponse(response, handler);
   }
 

@@ -52,8 +52,7 @@ class DeckMenu extends ConsumerWidget {
             showCommonBottomSheet(
               context: ref.context,
               title: loc.editDeck,
-              initialChildSize: 0.5,
-              minChildSize: 0.5,
+              fullScreen: true,
               child: DeckCreate(deck: deck),
             ).then((value) {
               if (value != null && value.isNotEmpty) {

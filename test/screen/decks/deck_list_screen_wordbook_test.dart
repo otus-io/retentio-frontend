@@ -80,8 +80,10 @@ void main() {
       final sheet = tester.widget<DraggableScrollableSheet>(
         find.byType(DraggableScrollableSheet),
       );
-      expect(sheet.initialChildSize, 0.5);
-      expect(sheet.minChildSize, 0.4);
+      expect(sheet.initialChildSize, 1.0);
+      expect(sheet.minChildSize, 0.35);
+      expect(sheet.maxChildSize, 1.0);
+      expect(sheet.expand, isTrue);
     });
   });
 }

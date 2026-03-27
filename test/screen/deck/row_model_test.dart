@@ -19,14 +19,50 @@ void main() {
       row.dispose();
     });
 
-    test('hasAttachment requires path and kind', () {
+    test('hasAttachment is true when any slot has a path', () {
       final row = AddFactRowModel();
       expect(row.hasAttachment, isFalse);
-      row.attachmentPath = '/tmp/x.jpg';
-      expect(row.hasAttachment, isFalse);
-      row.attachmentKind = MediaSlotKind.image;
+      row.imagePath = '/tmp/x.jpg';
       expect(row.hasAttachment, isTrue);
       row.dispose();
+    });
+
+    test('pathFor and clearSlot isolate kinds', () {
+      final row = AddFactRowModel();
+      row.setPathFor(MediaSlotKind.image, '/a.jpg');
+      row.setPathFor(MediaSlotKind.audio, '/a.m4a');
+      expect(row.imagePath, '/a.jpg');
+      expect(row.audioPath, '/a.m4a');
+      expect(row.videoPath, isNull);
+      row.clearSlot(MediaSlotKind.image);
+      expect(row.imagePath, isNull);
+      expect(row.audioPath, '/a.m4a');
+      row.dispose();
+    });
+
+    test('initialFieldName prefills fieldName controller', () {
+      final row = AddFactRowModel(initialFieldName: 'Front');
+      expect(row.fieldName.text, 'Front');
+      row.dispose();
+    });
+
+    test('listForDeckFields yields two blank rows when deck has no fields', () {
+      final rows = AddFactRowModel.listForDeckFields([]);
+      expect(rows, hasLength(2));
+      expect(rows.every((r) => r.fieldName.text.isEmpty), isTrue);
+      for (final r in rows) {
+        r.dispose();
+      }
+    });
+
+    test('listForDeckFields mirrors deck field names', () {
+      final rows = AddFactRowModel.listForDeckFields(['Term', 'Definition']);
+      expect(rows, hasLength(2));
+      expect(rows[0].fieldName.text, 'Term');
+      expect(rows[1].fieldName.text, 'Definition');
+      for (final r in rows) {
+        r.dispose();
+      }
     });
   });
 
@@ -40,8 +76,7 @@ void main() {
 
     test('true when attachment present', () {
       final row = AddFactRowModel();
-      row.attachmentPath = '/x';
-      row.attachmentKind = MediaSlotKind.image;
+      row.imagePath = '/x';
       expect(addFactRowIsSatisfied(row), isTrue);
       row.dispose();
     });
