@@ -196,8 +196,10 @@ class CustomVideoPlayerController {
         _timer?.cancel();
         _timer = null;
         if (videoPlayerController.value.isInitialized) {
-          _videoProgressNotifier.value =
-              (await videoPlayerController.position)!;
+          final p = await videoPlayerController.position;
+          if (p != null) {
+            _videoProgressNotifier.value = p;
+          }
         }
       }
     }

@@ -193,9 +193,11 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _getCenterPadding(context),
-    );
+    if (widget.center) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _getCenterPadding(context),
+      );
+    }
 
     _tabKeys = widget.tabs.map((Widget tab) => GlobalKey()).toList();
 
@@ -218,15 +220,21 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     if (newController == _controller) return;
 
     if (_controllerIsValid) {
-      _controller?.animation!.removeListener(_handleTabAnimation);
+      _controller?.animation?.removeListener(_handleTabAnimation);
       _controller?.removeListener(_handleController);
     }
 
     _controller = newController;
-    _controller?.animation!.addListener(_handleTabAnimation);
+    final tabAnim = _controller?.animation;
+    if (tabAnim != null) {
+      tabAnim.addListener(_handleTabAnimation);
+    }
     _controller?.addListener(_handleController);
     _currentIndex = _controller!.index;
-    Future.delayed(Duration.zero, () {
+    // After didChangeDependencies the subtree may not be built yet; keys have no
+    // context until after layout. Post-frame matches TabBar's own pattern.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _scrollTo(_currentIndex);
     });
   }
@@ -250,6 +258,12 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
       _updateTabController();
     }
 
+    if (widget.center && !oldWidget.center) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _getCenterPadding(context),
+      );
+    }
+
     if (widget.tabs.length > oldWidget.tabs.length) {
       final int delta = widget.tabs.length - oldWidget.tabs.length;
       _tabKeys.addAll(List<GlobalKey>.generate(delta, (int n) => GlobalKey()));
@@ -267,10 +281,8 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
 
   @override
   void dispose() {
-    if (_controllerIsValid) {
-      _controller!.animation!.removeListener(_handleTabAnimation);
-      _controller!.removeListener(_handleController);
-    }
+    _controller?.animation?.removeListener(_handleTabAnimation);
+    _controller?.removeListener(_handleController);
     _controller = null;
     _scrollController.dispose();
     _animationController.dispose();
@@ -278,18 +290,24 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
   }
 
   void _getCenterPadding(BuildContext context) {
-    // get the screen width. This is used to check if we have an element off screen
-    final RenderBox tabsParent =
-        _tabsParentKey.currentContext!.findRenderObject() as RenderBox;
-    final double screenWidth = tabsParent.size.width;
+    if (!widget.center || !mounted) return;
+    final parentCtx = _tabsParentKey.currentContext;
+    final tabsParentObj = parentCtx?.findRenderObject();
+    if (tabsParentObj is! RenderBox || !tabsParentObj.hasSize) return;
 
-    RenderBox renderBox =
-        _tabKeys.first.currentContext?.findRenderObject() as RenderBox;
-    double size = renderBox.size.width;
+    final double screenWidth = tabsParentObj.size.width;
+
+    final first =
+        _tabKeys.first.currentContext?.findRenderObject() as RenderBox?;
+    final last = _tabKeys.last.currentContext?.findRenderObject() as RenderBox?;
+    if (first == null || last == null || !first.hasSize || !last.hasSize) {
+      return;
+    }
+
+    double size = first.size.width;
     final double left = (screenWidth - size) / 2;
 
-    renderBox = _tabKeys.last.currentContext?.findRenderObject() as RenderBox;
-    size = renderBox.size.width;
+    size = last.size.width;
     final double right = (screenWidth - size) / 2;
     _centerPadding = EdgeInsets.only(left: left, right: right);
   }
@@ -477,15 +495,16 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
 
   // runs during the switching tabs animation
   void _handleTabAnimation() {
-    _aniIndex =
-        ((_controller!.animation!.value > _prevAniValue)
-                ? _controller!.animation!.value
-                : _prevAniValue)
-            .round();
-    if (!_controller!.indexIsChanging && _aniIndex != _currentIndex) {
+    final c = _controller;
+    final anim = c?.animation;
+    if (c == null || anim == null) return;
+
+    _aniIndex = ((anim.value > _prevAniValue) ? anim.value : _prevAniValue)
+        .round();
+    if (!c.indexIsChanging && _aniIndex != _currentIndex) {
       _setCurrentIndex(_aniIndex);
     }
-    _prevAniValue = _controller!.animation!.value;
+    _prevAniValue = anim.value;
   }
 
   void _goToIndex(int index) {
@@ -514,17 +533,25 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
   }
 
   void _scrollTo(int index) {
+    if (!mounted) return;
+    if (index < 0 || index >= _tabKeys.length) return;
+
     // get the screen width. This is used to check if we have an element off screen
-    final RenderBox tabsContainer =
-        _tabsContainerKey.currentContext!.findRenderObject() as RenderBox;
+    final tabsContainerCtx = _tabsContainerKey.currentContext;
+    final tabsContainerObj = tabsContainerCtx?.findRenderObject();
+    if (tabsContainerObj is! RenderBox || !tabsContainerObj.hasSize) return;
+    final RenderBox tabsContainer = tabsContainerObj;
+
     double screenWidth = tabsContainer.size.width;
     final tabsContainerPosition = tabsContainer.localToGlobal(Offset.zero).dx;
     // get the TabsContainer offset (for cases when padding is used)
     final tabsContainerOffset = Offset(-tabsContainerPosition, 0);
 
     // get the button we want to scroll to
-    RenderBox renderBox =
-        _tabKeys[index].currentContext?.findRenderObject() as RenderBox;
+    final RenderBox? tabBox =
+        _tabKeys[index].currentContext?.findRenderObject() as RenderBox?;
+    if (tabBox == null || !tabBox.hasSize) return;
+    RenderBox renderBox = tabBox;
     // get its size
     double size = renderBox.size.width;
     // and position
@@ -536,10 +563,12 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     // if the button is to the left of the middle
     if (offset < 0) {
       // get the first button
-      renderBox =
+      final edgeBox =
           (_textLTR ? _tabKeys.first : _tabKeys.last).currentContext
                   ?.findRenderObject()
-              as RenderBox;
+              as RenderBox?;
+      if (edgeBox == null || !edgeBox.hasSize) return;
+      renderBox = edgeBox;
       // get the position of the first button of the TabBar
       position = renderBox.localToGlobal(tabsContainerOffset).dx;
 
@@ -548,10 +577,12 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     } else {
       // if the button is to the right of the middle
       // get the last button
-      renderBox =
+      final edgeBox =
           (_textLTR ? _tabKeys.last : _tabKeys.first).currentContext
                   ?.findRenderObject()
-              as RenderBox;
+              as RenderBox?;
+      if (edgeBox == null || !edgeBox.hasSize) return;
+      renderBox = edgeBox;
       // get its position
       position = renderBox.localToGlobal(tabsContainerOffset).dx;
       // and size

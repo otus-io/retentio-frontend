@@ -21,13 +21,15 @@ class CardVideo extends ConsumerStatefulWidget {
 class _CardVideoState extends ConsumerState<CardVideo>
     with AutomaticKeepAliveClientMixin, DelayedInitMixin {
   late final VideoPlayerController _controller;
-  late CustomVideoPlayerController _customVideoPlayerController;
-  late TabController _tabController;
+  CustomVideoPlayerController? _customVideoPlayerController;
+  TabController? _tabController;
   int _currentIndex = 0;
   bool _currentIsBack = false;
 
   void _handleController() {
-    final index = _tabController.index;
+    final tc = _tabController;
+    if (tc == null) return;
+    final index = tc.index;
     if (index != _currentIndex) {
       _controller.pause();
     }
@@ -35,9 +37,9 @@ class _CardVideoState extends ConsumerState<CardVideo>
 
   @override
   void afterFirstLayout() {
-    _tabController = DefaultTabController.of(context);
-    _currentIndex = _tabController.index;
-    _tabController.addListener(_handleController);
+    _tabController = DefaultTabController.maybeOf(context);
+    _currentIndex = _tabController?.index ?? 0;
+    _tabController?.addListener(_handleController);
     _currentIsBack = ref.read(cardProvider.select((value) => value.showAnswer));
     ref.listenManual(cardProvider.select((value) => value.showAnswer), (
       previous,
@@ -51,9 +53,13 @@ class _CardVideoState extends ConsumerState<CardVideo>
 
   @override
   dispose() {
-    //  _controller.dispose();
-    _tabController.removeListener(_handleController);
-    _customVideoPlayerController.dispose();
+    _tabController?.removeListener(_handleController);
+    final custom = _customVideoPlayerController;
+    if (custom != null) {
+      custom.dispose();
+    } else {
+      _controller.dispose();
+    }
     super.dispose();
   }
 
@@ -68,7 +74,8 @@ class _CardVideoState extends ConsumerState<CardVideo>
       httpHeaders: {'Authorization': ApiService.authorization},
     );
 
-    _controller.initialize().then((value) {
+    _controller.initialize().then((_) {
+      if (!mounted) return;
       setState(() {
         isInit = true;
         _customVideoPlayerController = CustomVideoPlayerController(
@@ -87,9 +94,9 @@ class _CardVideoState extends ConsumerState<CardVideo>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return isInit
+    return isInit && _customVideoPlayerController != null
         ? CustomVideoPlayer(
-            customVideoPlayerController: _customVideoPlayerController,
+            customVideoPlayerController: _customVideoPlayerController!,
           )
         : isError
         ? Center(
