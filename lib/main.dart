@@ -87,16 +87,40 @@ class _MyAppState extends ConsumerState<MyApp> {
 
     return MaterialApp.router(
       routerConfig: AppPages.routes,
+      // light theme
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.blue,
           brightness: Brightness.light,
         ),
+        scaffoldBackgroundColor: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.light,
+        ).surface,
+        appBarTheme: AppBarTheme(
+          backgroundColor: ColorScheme.fromSeed(
+            seedColor: Colors.blue,
+            brightness: Brightness.light,
+          ).surface,
+          scrolledUnderElevation: 0,
+        ),
       ),
+      // dark theme
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.blue,
           brightness: Brightness.dark,
+        ),
+        scaffoldBackgroundColor: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.dark,
+        ).surface,
+        appBarTheme: AppBarTheme(
+          backgroundColor: ColorScheme.fromSeed(
+            seedColor: Colors.blue,
+            brightness: Brightness.dark,
+          ).surface,
+          scrolledUnderElevation: 0,
         ),
       ),
       themeMode: flutterThemeMode,
