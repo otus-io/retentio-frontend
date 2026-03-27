@@ -1,22 +1,14 @@
 import 'dart:async' show unawaited;
-import 'dart:io';
 
 import 'package:audio_waveforms/audio_waveforms.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/deck/fact_add_composer/entry_row.dart';
 import 'package:retentio/screen/deck/fact_add_composer/focus.dart';
+import 'package:retentio/screen/deck/fact_add_composer/media_handling_coordinator.dart';
 import 'package:retentio/screen/deck/fact_add_composer/payload.dart';
-import 'package:retentio/screen/deck/fact_add_composer/pick_extensions.dart';
-import 'package:retentio/screen/deck/fact_add_composer/precheck_messages.dart';
 import 'package:retentio/screen/deck/fact_add_composer/row_model.dart';
 import 'package:retentio/screen/deck/fact_add_composer/toolbars.dart';
 import 'package:retentio/screen/decks/providers/deck_list.dart';
@@ -37,17 +29,27 @@ class FactAdd extends ConsumerStatefulWidget {
   ConsumerState<FactAdd> createState() => _FactAddState();
 }
 
-class _FactAddState extends ConsumerState<FactAdd> {
+class _FactAddState extends ConsumerState<FactAdd>
+    with MediaHandlingCoordinator<FactAdd> {
   late List<AddFactRowModel> _rows;
 
   bool _submitting = false;
   bool _recordingVoice = false;
   late final RecorderController _voiceRecorder;
 
-  bool get _voiceRecordingAvailable =>
-      !kIsWeb && (Platform.isIOS || Platform.isAndroid);
-
   List<GlobalKey> get _hostKeys => [for (final r in _rows) r.hostKey];
+
+  @override
+  RecorderController get voiceRecorder => _voiceRecorder;
+
+  @override
+  bool get isRecordingVoice => _recordingVoice;
+
+  @override
+  set isRecordingVoice(bool value) => _recordingVoice = value;
+
+  @override
+  List<GlobalKey> get mediaTargetHostKeys => _hostKeys;
 
   @override
   void initState() {
@@ -71,13 +73,6 @@ class _FactAddState extends ConsumerState<FactAdd> {
     super.dispose();
   }
 
-  int _targetRowIndexForMedia() {
-    return addFactTargetRowIndexForMedia(
-      focusContext: FocusManager.instance.primaryFocus?.context,
-      hostKeys: _hostKeys,
-    );
-  }
-
   void _snack(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(
@@ -85,129 +80,24 @@ class _FactAddState extends ConsumerState<FactAdd> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _tryAttachPickedPath(String path) async {
-    final loc = AppLocalizations.of(context)!;
-    final kind = MediaService.classifyFile(path);
-    if (kind == null) {
-      _snack(loc.addFactFileTypeNotSupported);
-      return;
-    }
-    final pre = await MediaService.precheckSlot(kind, path);
-    if (pre != MediaPrecheck.ok) {
-      _snack(AddFactPrecheckMessages.message(loc, pre, kind));
-      return;
-    }
-    if (!mounted) return;
-    final idx = _targetRowIndexForMedia();
+  @override
+  void showComposerSnack(String message) => _snack(message);
+
+  @override
+  void attachPathOnTargetRow(MediaSlotKind kind, String path) {
+    final idx = targetRowIndexForMedia();
     setState(() {
       _rows[idx].setPathFor(kind, path);
     });
   }
 
-  Future<void> _pickMediaForTargetRow() async {
-    final loc = AppLocalizations.of(context)!;
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: AddFactPickExtensions.all,
-      allowMultiple: false,
-      withData: false,
-    );
-    if (result == null || result.files.isEmpty) return;
-    final path = result.files.first.path;
-    if (path == null) {
-      _snack(loc.addFactUploadFailed);
-      return;
-    }
-    await _tryAttachPickedPath(path);
-  }
+  @override
+  bool get targetRowHasAttachment =>
+      _rows[targetRowIndexForMedia()].hasAttachment;
 
-  Future<void> _pickGalleryMediaForTargetRow() async {
-    final loc = AppLocalizations.of(context)!;
-    try {
-      final picked = await ImagePicker().pickMedia(requestFullMetadata: false);
-      if (picked == null || !mounted) return;
-      final path = picked.path;
-      if (path.isEmpty) {
-        _snack(loc.addFactUploadFailed);
-        return;
-      }
-      await _tryAttachPickedPath(path);
-    } on PlatformException catch (_) {
-      if (mounted) _snack(loc.addFactUploadFailed);
-    }
-  }
-
-  Future<void> _toggleVoiceRecording() async {
-    final loc = AppLocalizations.of(context)!;
-    if (_recordingVoice) {
-      await _finishVoiceRecording();
-      return;
-    }
-    final permitted = await _voiceRecorder.checkPermission();
-    if (!permitted) {
-      if (mounted) _snack(loc.addFactMicPermissionDenied);
-      return;
-    }
-    final dir = await getTemporaryDirectory();
-    final ext = Platform.isAndroid ? 'aac' : 'm4a';
-    final filePath = p.join(
-      dir.path,
-      'fact_voice_${DateTime.now().millisecondsSinceEpoch}.$ext',
-    );
-    try {
-      await _voiceRecorder.record(
-        path: filePath,
-        recorderSettings: const RecorderSettings(),
-      );
-      if (mounted) setState(() => _recordingVoice = true);
-    } catch (_) {
-      if (mounted) _snack(loc.addFactRecordingFailed);
-    }
-  }
-
-  Future<void> _finishVoiceRecording() async {
-    final loc = AppLocalizations.of(context)!;
-    String? outPath;
-    try {
-      outPath = await _voiceRecorder.stop();
-    } catch (_) {
-      if (mounted) _snack(loc.addFactRecordingFailed);
-    }
-    if (!mounted) return;
-    setState(() => _recordingVoice = false);
-    if (outPath != null && outPath.isNotEmpty) {
-      await _tryAttachPickedPath(outPath);
-    }
-  }
-
-  Future<void> _cancelVoiceRecording() async {
-    if (!_recordingVoice) return;
-    String? outPath;
-    try {
-      outPath = await _voiceRecorder.stop();
-    } catch (_) {}
-    if (!mounted) return;
-    setState(() => _recordingVoice = false);
-    _voiceRecorder.reset();
-    if (outPath != null && outPath.isNotEmpty) {
-      try {
-        await File(outPath).delete();
-      } catch (_) {}
-    }
-  }
-
-  void _onVoiceRecordLongPress() {
-    if (_recordingVoice) {
-      _cancelVoiceRecording();
-      return;
-    }
-    if (_rows[_targetRowIndexForMedia()].hasAttachment) {
-      _clearAttachmentOnTargetRow();
-    }
-  }
-
-  void _clearAttachmentOnTargetRow() {
-    final idx = _targetRowIndexForMedia();
+  @override
+  void clearTargetRowAttachment() {
+    final idx = targetRowIndexForMedia();
     setState(() {
       _rows[idx].clearAllAttachments();
     });
@@ -266,7 +156,7 @@ class _FactAddState extends ConsumerState<FactAdd> {
   }
 
   Future<void> _discardRecordingAndResetForm() async {
-    await _cancelVoiceRecording();
+    await cancelVoiceRecording();
     if (mounted) _resetForm();
   }
 
@@ -404,7 +294,7 @@ class _FactAddState extends ConsumerState<FactAdd> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final hasMediaOnTargetRow = _rows[_targetRowIndexForMedia()].hasAttachment;
+    final hasMediaOnTargetRow = _rows[targetRowIndexForMedia()].hasAttachment;
     final outline = theme.colorScheme.outline.withValues(alpha: 0.5);
 
     return TapRegion(
@@ -418,18 +308,18 @@ class _FactAddState extends ConsumerState<FactAdd> {
               loc: loc,
               theme: theme,
               hasMediaOnTargetRow: hasMediaOnTargetRow,
-              onPickFiles: _pickMediaForTargetRow,
-              onPickGallery: _pickGalleryMediaForTargetRow,
-              onClearTargetAttachment: _clearAttachmentOnTargetRow,
+              onPickFiles: pickMediaForTargetRow,
+              onPickGallery: pickGalleryMediaForTargetRow,
+              onClearTargetAttachment: clearTargetRowAttachment,
               voiceRecorder: _voiceRecorder,
               mediaPicksLocked: _recordingVoice,
-              showVoiceRecord: _voiceRecordingAvailable,
+              showVoiceRecord: voiceRecordingAvailable,
               isRecordingVoice: _recordingVoice,
-              onVoiceRecordTap: _voiceRecordingAvailable
-                  ? _toggleVoiceRecording
+              onVoiceRecordTap: voiceRecordingAvailable
+                  ? toggleVoiceRecording
                   : null,
-              onVoiceRecordLongPress: _voiceRecordingAvailable
-                  ? _onVoiceRecordLongPress
+              onVoiceRecordLongPress: voiceRecordingAvailable
+                  ? onVoiceRecordLongPress
                   : null,
             ),
             ..._buildEntryRows(loc, theme, outline),
