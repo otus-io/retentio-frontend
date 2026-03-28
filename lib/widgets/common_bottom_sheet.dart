@@ -50,44 +50,48 @@ Future<T?> showCommonBottomSheet<T>({
         return ClipRRect(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           child: Scaffold(
-            body: SingleChildScrollView(
+            body: Scrollbar(
               controller: scrollController,
-              child: Padding(
-                padding: const EdgeInsets.only(
-                  left: 20,
-                  top: 16,
-                  right: 20,
-                  bottom: 20,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    // 拖动指示器
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        margin: const EdgeInsets.only(bottom: 20),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(2),
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                controller: scrollController,
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 20,
+                    top: 16,
+                    right: 20,
+                    bottom: 20,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      // Drag indicator.
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
                       ),
-                    ),
-                    Center(
-                      child: Text(
-                        title ?? '',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                      Center(
+                        child: Text(
+                          title ?? '',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    child,
-                  ],
+                      const SizedBox(height: 20),
+                      child,
+                    ],
+                  ),
                 ),
               ),
             ),

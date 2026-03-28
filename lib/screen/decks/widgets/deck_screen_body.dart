@@ -60,6 +60,9 @@ class DeckScreenBody extends ConsumerWidget {
         ),
       ),
       child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
         padding: const EdgeInsets.all(16),
         itemCount: deckState.decks.length,
         itemBuilder: (context, index) {

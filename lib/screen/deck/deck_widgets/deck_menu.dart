@@ -79,10 +79,8 @@ class DeckMenu extends ConsumerWidget {
           ),
         ),
       ],
-      buttonBuilder: (context, showMenu) => IconButton(
-        onPressed: showMenu,
-        icon: Icon(LucideIcons.ellipsisVertical),
-      ),
+      buttonBuilder: (context, showMenu) =>
+          IconButton(onPressed: showMenu, icon: Icon(LucideIcons.ellipsis)),
     );
   }
 }

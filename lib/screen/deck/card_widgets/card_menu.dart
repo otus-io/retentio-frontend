@@ -16,8 +16,8 @@ class CardMenu extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return SizedBox(
-      width: 50,
-      height: 46,
+      width: 48,
+      height: 48,
       child: PullDownButton(
         routeTheme: PullDownMenuRouteTheme(
           width: 180,
@@ -101,7 +101,7 @@ class CardMenu extends ConsumerWidget {
         ],
         buttonBuilder: (context, showMenu) => IconButton(
           onPressed: showMenu,
-          icon: Icon(LucideIcons.ellipsisVertical, color: color),
+          icon: Icon(LucideIcons.ellipsis, color: color),
         ),
       ),
     );

@@ -13,6 +13,32 @@ flutter pub get
 flutter run
 ```
 
+### Backend environment / host override
+
+API host is compile-time configured via `--dart-define`:
+
+- `API_ENV=debug|dev|release` (default is `dev`)
+- `API_HOST=<full-base-url>` (overrides `API_ENV` mapping when provided)
+
+Examples:
+
+```bash
+# Use env mapping
+flutter run --dart-define=API_ENV=debug
+flutter run --dart-define=API_ENV=dev
+flutter run --dart-define=API_ENV=release
+
+# Direct host override (takes precedence over API_ENV)
+flutter run --dart-define=API_HOST=http://10.0.2.2:8080
+flutter run --dart-define=API_HOST=https://api-staging.example.com
+```
+
+Current host mapping in `lib/services/env.dart`:
+
+- `debug` -> `http://localhost:8080`
+- `dev` -> `https://api.wordupx.com:8443`
+- `release` -> `https://api.wordupx.com`
+
 ## Git hooks
 
 After cloning, run `./utils/setup-hooks.sh` once to install **pre-commit** (format, analyze, tests).

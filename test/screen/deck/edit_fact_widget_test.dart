@@ -77,7 +77,9 @@ void main() {
       expect(find.text('Alpha'), findsOneWidget);
       expect(find.text('Beta'), findsOneWidget);
 
-      await tester.tap(find.text('Save'));
+      final saveButton = find.byType(FilledButton);
+      expect(saveButton, findsOneWidget);
+      await tester.tap(saveButton);
       await tester.pumpAndSettle();
     });
   });

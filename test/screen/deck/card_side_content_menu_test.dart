@@ -33,7 +33,7 @@ void main() {
 
       expect(find.text('Hello'), findsWidgets);
 
-      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
+      await tester.tap(find.byIcon(LucideIcons.ellipsis));
       await tester.pumpAndSettle();
 
       expect(find.text('Hide Card'), findsOneWidget);
@@ -62,7 +62,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
+      await tester.tap(find.byIcon(LucideIcons.ellipsis));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Hide Card'));
       await tester.pumpAndSettle();
@@ -91,7 +91,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(LucideIcons.ellipsisVertical));
+      await tester.tap(find.byIcon(LucideIcons.ellipsis));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Delete Card').first);
       await tester.pumpAndSettle();

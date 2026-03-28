@@ -16,35 +16,74 @@ class FactContent extends ConsumerWidget {
   final List<Item> items;
   final Color color;
 
+  static IconData _tabIconForMedia(Item e) => switch (e.type) {
+    'video' => LucideIcons.video,
+    'image' => LucideIcons.image,
+    String() => LucideIcons.fileText,
+  };
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef _) {
+    final textLikeItems = <Item>[];
+    final audioItems = <Item>[];
+    final mediaTabs = <Item>[];
+
+    for (final e in items) {
+      switch (e.type) {
+        case 'audio':
+          audioItems.add(e);
+        case 'image':
+        case 'video':
+          mediaTabs.add(e);
+        default:
+          textLikeItems.add(e);
+      }
+    }
+
+    final showCombinedTab = textLikeItems.isNotEmpty || audioItems.isNotEmpty;
+
+    final tabPages = <Widget>[];
+    final tabWidgets = <Tab>[];
+
+    if (showCombinedTab) {
+      tabPages.add(_CombinedTextPane(textItems: textLikeItems, color: color));
+      final combinedTrailing = <Widget>[
+        for (final a in audioItems)
+          CardAudio(audioUrl: a.value, color: color, compact: true),
+      ];
+      tabWidgets.add(
+        combinedTrailing.isEmpty
+            ? const Tab(icon: Icon(LucideIcons.fileText))
+            : Tab(
+                icon: const Icon(LucideIcons.fileText),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: combinedTrailing,
+                ),
+              ),
+      );
+    }
+
+    for (final e in mediaTabs) {
+      tabPages.add(switch (e.type) {
+        'video' => CardVideo(url: e.value),
+        'image' => Center(child: CardImage(url: e.value)),
+        String() => const SizedBox.shrink(),
+      });
+      tabWidgets.add(Tab(icon: Icon(_tabIconForMedia(e))));
+    }
+
+    if (tabPages.isEmpty) {
+      tabPages.add(CardText(text: '', color: color));
+      tabWidgets.add(const Tab(icon: Icon(LucideIcons.fileText)));
+    }
+
     return DefaultTabController(
       key: const ValueKey('field_content_widget'),
-      length: items.length,
+      length: tabPages.length,
       child: Column(
         children: [
-          TabBarView(
-            children: items.map((e) {
-              final type = e.type;
-              return switch (type) {
-                'audio' => CardAudio(audioUrl: e.value, color: color),
-                'video' => CardVideo(url: e.value),
-                'image' => Center(child: CardImage(url: e.value)),
-                'text' => CardText(text: e.value, color: color),
-                String() => Center(
-                  child: Text(
-                    e.value,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
-                      color: color,
-                    ),
-                  ),
-                ),
-              };
-            }).toList(),
-          ).expanded(),
+          TabBarView(children: tabPages).expanded(),
           Container(
             decoration: BoxDecoration(
               border: Border(top: BorderSide(width: 0.3, color: color)),
@@ -66,22 +105,53 @@ class FactContent extends ConsumerWidget {
                     color: Colors.black.withValues(alpha: 0.5),
                     fontWeight: FontWeight.bold,
                   ),
-                  tabs: items.map((e) {
-                    return Tab(
-                      icon: Icon(switch (e.type) {
-                        'audio' => LucideIcons.audioLines,
-                        'video' => LucideIcons.video,
-                        'image' => LucideIcons.image,
-                        _ => LucideIcons.fileText,
-                      }),
-                    );
-                  }).toList(),
+                  tabs: tabWidgets,
                 ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Text for the combined field tab; audio controls live on the tab bar by the note icon.
+class _CombinedTextPane extends StatelessWidget {
+  const _CombinedTextPane({required this.textItems, required this.color});
+
+  final List<Item> textItems;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final t in textItems)
+                    if (t.value.trim().isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: CardText(
+                          text: t.value,
+                          color: color,
+                          scrollable: false,
+                        ),
+                      ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
