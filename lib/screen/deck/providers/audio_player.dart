@@ -43,8 +43,6 @@ Future<void> _logInvalidAudioFile(String path) async {
 }
 
 class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
-  // late AudioPlayer? _justAudioPlayer;
-
   late PlayerController? _waveformController;
   late StreamSubscription<PlayerState>? _playerStateSubscription;
 
@@ -54,12 +52,9 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
   AudioPlayerState build() {
     final audioUrl = ref.watch(audioUrlProvider);
     _initPlayers();
-    // Do not read [state] inside _loadAudio until after this method returns — Riverpod
-    // leaves the notifier uninitialized until [build] completes.
     _loadAudio(audioUrl);
     ref.onDispose(() {
       logger.w('AudioPlayerNotifier  dispose');
-      // _justAudioPlayer?.dispose();
       _playerStateSubscription?.cancel();
       _waveformController?.dispose();
     });
@@ -67,21 +62,16 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
   }
 
   void _initPlayers() {
-    //  _justAudioPlayer = AudioPlayer();
     _waveformController = PlayerController()..overrideAudioSession = true;
     _playerStateSubscription = _waveformController?.onPlayerStateChanged.listen(
       (playerState) {
         if (ref.mounted) {
           state = state.copyWith(isPlaying: playerState == PlayerState.playing);
-          if (playerState == PlayerState.paused) {
-            _waveformController?.seekTo(0);
-          }
         }
       },
     );
   }
 
-  // 播放/暂停控制
   Future<void> playPause() async {
     if (state.loadFailed || !state.isReady) return;
     if (state.isPlaying == true) {
@@ -117,7 +107,6 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
         return;
       }
       if (bytes < kMinAudioFileBytesForPlayback) {
-        // Not an app bug: e.g. Simulator mic off → empty M4A shell on server (~28 B `ftyp`).
         logger.w(
           'Audio file too small ($bytes B), skipping playback. '
           'Use a real device or Simulator → I/O → Microphone, then re-record.',
@@ -127,17 +116,21 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
         }
         return;
       }
-      //  await _justAudioPlayer?.setFilePath(path);
       await _waveformController?.preparePlayer(
         path: pathForPlayer,
-        shouldExtractWaveform: true,
+        shouldExtractWaveform: false,
       );
-      _waveformController?.waveformExtraction
-          .extractWaveformData(path: pathForPlayer, noOfSamples: 100)
-          .then((waveformData) {
-            if (!ref.mounted) return;
-            state = state.copyWith(isReady: true, waveform: waveformData);
-          });
+      if (!ref.mounted) return;
+      state = state.copyWith(isReady: true);
+
+      unawaited(
+        _waveformController?.waveformExtraction
+            .extractWaveformData(path: pathForPlayer, noOfSamples: 100)
+            .then((waveformData) {
+              if (!ref.mounted) return;
+              state = state.copyWith(waveform: waveformData);
+            }),
+      );
     } catch (e) {
       logger.e(e);
       if (ref.mounted) {
