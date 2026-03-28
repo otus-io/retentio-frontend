@@ -111,5 +111,6 @@
     "addFactSuccess": "已添加词条",
     "addFactFieldFallback": "字段 {number}",
     "addFactFieldShortLabel": "字段",
+    "addFactPasteFromClipboard": "从剪贴板粘贴",
     "cardAudioUnavailable": "音频不可用（文件无效或缺失）"
 }

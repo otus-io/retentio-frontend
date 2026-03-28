@@ -1,8 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/deck/fact_add_composer/attachment_chip.dart';
 import 'package:retentio/screen/deck/fact_add_composer/row_model.dart';
 import 'package:retentio/services/apis/media_service.dart';
+
+Future<void> _pastePlainTextInto({
+  required TextEditingController controller,
+  required FocusNode? focusBeforePaste,
+}) async {
+  final data = await Clipboard.getData(Clipboard.kTextPlain);
+  final pasted = data?.text;
+  if (pasted == null || pasted.isEmpty) return;
+
+  focusBeforePaste?.requestFocus();
+
+  var sel = controller.selection;
+  if (!sel.isValid) {
+    sel = TextSelection.collapsed(offset: controller.text.length);
+  }
+  final text = controller.text;
+  final newText = text.replaceRange(sel.start, sel.end, pasted);
+  final newOffset = sel.start + pasted.length;
+  controller.value = TextEditingValue(
+    text: newText,
+    selection: TextSelection.collapsed(offset: newOffset),
+  );
+}
 
 class AddFactEntryRow extends StatefulWidget {
   const AddFactEntryRow({
@@ -25,13 +49,13 @@ class AddFactEntryRow extends StatefulWidget {
 }
 
 class _AddFactEntryRowState extends State<AddFactEntryRow> {
-  late final FocusNode _fieldNameFocus;
+  final FocusNode _fieldNameFocus = FocusNode();
+  final FocusNode _contentFocus = FocusNode();
   bool _fieldNameEditorOpen = false;
 
   @override
   void initState() {
     super.initState();
-    _fieldNameFocus = FocusNode();
     _fieldNameFocus.addListener(_onFieldNameFocusChange);
     widget.row.fieldName.addListener(_onFieldNameTextChange);
   }
@@ -53,6 +77,7 @@ class _AddFactEntryRowState extends State<AddFactEntryRow> {
     widget.row.fieldName.removeListener(_onFieldNameTextChange);
     _fieldNameFocus.removeListener(_onFieldNameFocusChange);
     _fieldNameFocus.dispose();
+    _contentFocus.dispose();
     super.dispose();
   }
 
@@ -82,12 +107,36 @@ class _AddFactEntryRowState extends State<AddFactEntryRow> {
 
     final textField = TextField(
       controller: widget.row.content,
+      focusNode: _contentFocus,
       style: theme.textTheme.bodyMedium,
+      enableInteractiveSelection: true,
+      contextMenuBuilder: (context, editableTextState) {
+        return AdaptiveTextSelectionToolbar.editableText(
+          editableTextState: editableTextState,
+        );
+      },
       decoration: InputDecoration(
         hintText: loc.addFactContentHint,
         isDense: true,
         border: InputBorder.none,
-        contentPadding: EdgeInsets.fromLTRB(showMediaChips ? 2 : 10, 8, 10, 10),
+        contentPadding: EdgeInsets.fromLTRB(showMediaChips ? 2 : 10, 8, 6, 10),
+        suffixIcon: IconButton(
+          tooltip: loc.addFactPasteFromClipboard,
+          onPressed: () => _pastePlainTextInto(
+            controller: widget.row.content,
+            focusBeforePaste: _contentFocus,
+          ),
+          icon: Icon(
+            Icons.content_paste_rounded,
+            size: 20,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          visualDensity: VisualDensity.compact,
+        ),
+        suffixIconConstraints: const BoxConstraints(
+          minWidth: 40,
+          minHeight: 36,
+        ),
       ),
       minLines: 1,
       maxLines: 3,
@@ -163,11 +212,34 @@ class _AddFactEntryRowState extends State<AddFactEntryRow> {
             controller: widget.row.fieldName,
             focusNode: _fieldNameFocus,
             style: theme.textTheme.bodySmall,
+            enableInteractiveSelection: true,
+            contextMenuBuilder: (context, editableTextState) {
+              return AdaptiveTextSelectionToolbar.editableText(
+                editableTextState: editableTextState,
+              );
+            },
             decoration: InputDecoration(
               hintText: loc.addFactFieldNameHint,
               isDense: true,
               border: InputBorder.none,
               contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 6),
+              suffixIcon: IconButton(
+                tooltip: loc.addFactPasteFromClipboard,
+                onPressed: () => _pastePlainTextInto(
+                  controller: widget.row.fieldName,
+                  focusBeforePaste: _fieldNameFocus,
+                ),
+                icon: Icon(
+                  Icons.content_paste_rounded,
+                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                visualDensity: VisualDensity.compact,
+              ),
+              suffixIconConstraints: const BoxConstraints(
+                minWidth: 36,
+                minHeight: 32,
+              ),
             ),
             textCapitalization: TextCapitalization.sentences,
             onSubmitted: (_) => _fieldNameFocus.unfocus(),
