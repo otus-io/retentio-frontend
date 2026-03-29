@@ -14,6 +14,17 @@ void main() {
       expect(s!.words.length, 2);
       expect(s.words[0].word, 'ab');
       expect(s.words[1].end, 1.0);
+      expect(s.annotatedSourceText, isNull);
+    });
+
+    test('tryParse stores text field as annotatedSourceText', () {
+      const raw = '''
+{"format":"retentio-transcript-sync","text":"[[皆|みな]]","words":[
+  {"word":"皆","start":0.0,"end":0.5}
+]}''';
+      final s = TranscriptSync.tryParse(raw);
+      expect(s, isNotNull);
+      expect(s!.annotatedSourceText, '[[皆|みな]]');
     });
 
     test('tryParse returns null for wrong format', () {

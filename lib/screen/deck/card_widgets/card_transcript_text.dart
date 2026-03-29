@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:retentio/screen/deck/card_widgets/card_text.dart';
+import 'package:retentio/screen/deck/card_widgets/card_wiki_ruby_layout.dart';
 import 'package:retentio/screen/deck/providers/audio_player.dart';
 import 'package:retentio/screen/deck/providers/transcript_sync_provider.dart';
-import 'package:retentio/screen/deck/card_widgets/card_text.dart';
+import 'package:retentio/utils/wiki_ruby_markup.dart';
 
 /// Rich text aligned with [TranscriptSync] and current audio position; tap a word to seek.
 ///
@@ -114,38 +116,105 @@ class _CardTranscriptTextState extends ConsumerState<CardTranscriptText> {
         final base = _baseStyle(widget.color);
         final highlightBg = widget.color.withValues(alpha: 0.22);
         final keys = _wordKeys!;
+        final ruby = wikiRubyReadingStyle(base);
+
+        final annotated = sync.annotatedSourceText;
+        WikiRubyParseResult? parsed;
+        List<int>? charMap;
+        if (annotated != null && WikiRubyMarkup.looksLikeMarkup(annotated)) {
+          parsed = WikiRubyMarkup.parse(annotated);
+          charMap = WikiRubyMarkup.charToWordIndex(parsed.composed, sync.words);
+          if (charMap == null) parsed = null;
+        }
+
+        final List<Widget>? rubyWrapChildren = () {
+          if (parsed == null || charMap == null) return null;
+          final composed = parsed.composed;
+          final out = <Widget>[];
+          var pos = 0;
+          while (pos < composed.length) {
+            final wi = charMap[pos];
+            var end = pos;
+            while (end < composed.length && charMap[end] == wi) {
+              end++;
+            }
+            final rowParts = wikiRubyRowWidgetsForRange(
+              parsed,
+              pos,
+              end,
+              base,
+              ruby,
+            );
+            if (rowParts == null) return null;
+            out.add(
+              KeyedSubtree(
+                key: keys[wi],
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: () {
+                    final w = sync.words[wi];
+                    ref
+                        .read(audioPlayerProvider.notifier)
+                        .seekToMs((w.start * 1000).round());
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 1,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: wi == active ? highlightBg : null,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: rowParts,
+                    ),
+                  ),
+                ),
+              ),
+            );
+            pos = end;
+          }
+          return out;
+        }();
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
           child: Wrap(
             alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.center,
+            crossAxisAlignment: rubyWrapChildren != null
+                ? WrapCrossAlignment.end
+                : WrapCrossAlignment.center,
             spacing: 0,
             runSpacing: 4,
-            children: [
-              for (var i = 0; i < sync.words.length; i++)
-                KeyedSubtree(
-                  key: keys[i],
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onTap: () {
-                      final w = sync.words[i];
-                      ref
-                          .read(audioPlayerProvider.notifier)
-                          .seekToMs((w.start * 1000).round());
-                    },
-                    child: Text(
-                      sync.words[i].word,
-                      style: base.copyWith(
-                        backgroundColor: i == active ? highlightBg : null,
-                        fontWeight: i == active
-                            ? FontWeight.w800
-                            : base.fontWeight,
+            children:
+                rubyWrapChildren ??
+                [
+                  for (var i = 0; i < sync.words.length; i++)
+                    KeyedSubtree(
+                      key: keys[i],
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: () {
+                          final w = sync.words[i];
+                          ref
+                              .read(audioPlayerProvider.notifier)
+                              .seekToMs((w.start * 1000).round());
+                        },
+                        child: Text(
+                          sync.words[i].word,
+                          style: base.copyWith(
+                            backgroundColor: i == active ? highlightBg : null,
+                            fontWeight: i == active
+                                ? FontWeight.w800
+                                : base.fontWeight,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-            ],
+                ],
           ),
         );
       },
