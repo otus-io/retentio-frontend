@@ -15,9 +15,10 @@ void main() {
       expect(MediaService.classifyFile('/a/b/x.wav'), MediaSlotKind.audio);
     });
 
-    test('recognizes image and video', () {
+    test('recognizes image, video, and json', () {
       expect(MediaService.classifyFile('/i/photo.JPG'), MediaSlotKind.image);
       expect(MediaService.classifyFile('/v/m.mp4'), MediaSlotKind.video);
+      expect(MediaService.classifyFile('/t/sync.JSON'), MediaSlotKind.json);
     });
 
     test('returns null for unknown extension', () {
@@ -35,6 +36,10 @@ void main() {
       final n = 200 * 1024 * 1024;
       expect(MediaService.maxBytesFor(MediaSlotKind.audio), n);
       expect(MediaService.maxBytesFor(MediaSlotKind.video), n);
+    });
+
+    test('json cap is 2 MB', () {
+      expect(MediaService.maxBytesFor(MediaSlotKind.json), 2 * 1024 * 1024);
     });
   });
 
@@ -88,6 +93,19 @@ void main() {
       expect(await f.length(), MediaService.maxImageBytes + 1);
       expect(
         await MediaService.precheckSlot(MediaSlotKind.image, f.path),
+        MediaPrecheck.fileTooLarge,
+      );
+    });
+
+    test('fileTooLarge for json over 2 MB', () async {
+      final f = File('${dir.path}/huge.json');
+      final raf = await f.open(mode: FileMode.write);
+      await raf.setPosition(MediaService.maxJsonBytes);
+      await raf.writeByte(1);
+      await raf.close();
+      expect(await f.length(), MediaService.maxJsonBytes + 1);
+      expect(
+        await MediaService.precheckSlot(MediaSlotKind.json, f.path),
         MediaPrecheck.fileTooLarge,
       );
     });

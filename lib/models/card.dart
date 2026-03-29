@@ -172,7 +172,7 @@ class CardSlot {
       CardSlot(field: field ?? this.field, items: items ?? this.items);
 
   /// Parses next-card face slots: legacy `{ field, items: [{type,value}] }` or
-  /// `{ field?, text?, audio?, image?, video? }` (synthesizes items in text→audio→image→video order).
+  /// `{ field?, text?, audio?, json?, image?, video? }` (synthesizes items in text→audio→json→image→video order).
   factory CardSlot.fromJson(Map<String, dynamic> json) {
     final field = (json["field"] as String?) ?? "Text";
     List<Item> items;
@@ -194,6 +194,7 @@ class CardSlot {
 
       addIf("text", json["text"]);
       addIf("audio", json["audio"]);
+      addIf("json", json["json"]);
       addIf("image", json["image"]);
       addIf("video", json["video"]);
     }

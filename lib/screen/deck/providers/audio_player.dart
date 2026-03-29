@@ -43,8 +43,9 @@ Future<void> _logInvalidAudioFile(String path) async {
 }
 
 class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
-  late PlayerController? _waveformController;
-  late StreamSubscription<PlayerState>? _playerStateSubscription;
+  PlayerController? _waveformController;
+  StreamSubscription<PlayerState>? _playerStateSubscription;
+  StreamSubscription<int>? _positionSubscription;
 
   PlayerController get waveformController => _waveformController!;
 
@@ -55,6 +56,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
     _loadAudio(audioUrl);
     ref.onDispose(() {
       logger.w('AudioPlayerNotifier  dispose');
+      _positionSubscription?.cancel();
       _playerStateSubscription?.cancel();
       _waveformController?.dispose();
     });
@@ -62,7 +64,9 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
   }
 
   void _initPlayers() {
-    _waveformController = PlayerController()..overrideAudioSession = true;
+    _waveformController = PlayerController()
+      ..overrideAudioSession = true
+      ..updateFrequency = UpdateFrequency.medium;
     _playerStateSubscription = _waveformController?.onPlayerStateChanged.listen(
       (playerState) {
         if (ref.mounted) {
@@ -70,6 +74,12 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
         }
       },
     );
+    _positionSubscription = _waveformController?.onCurrentDurationChanged
+        .listen((ms) {
+          if (ref.mounted) {
+            state = state.copyWith(positionMs: ms);
+          }
+        });
   }
 
   Future<void> playPause() async {
@@ -80,6 +90,24 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
       await _waveformController?.startPlayer();
     }
     _waveformController?.setFinishMode(finishMode: FinishMode.pause);
+  }
+
+  Future<void> seekToMs(int ms) async {
+    if (state.loadFailed || !state.isReady) return;
+    final max = state.maxDurationMs;
+    final clamped = max > 0 ? ms.clamp(0, max) : ms.clamp(0, 1 << 30);
+    final c = _waveformController;
+    if (c != null) {
+      await c.seekTo(clamped);
+    }
+    if (ref.mounted) {
+      state = state.copyWith(positionMs: clamped);
+    }
+  }
+
+  Future<void> skipSeconds(int deltaSeconds) async {
+    final next = state.positionMs + deltaSeconds * 1000;
+    await seekToMs(next);
   }
 
   Future<void> _loadAudio(String audioUrl) async {
@@ -121,7 +149,12 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
         shouldExtractWaveform: false,
       );
       if (!ref.mounted) return;
-      state = state.copyWith(isReady: true);
+      final maxMs =
+          await _waveformController?.getDuration(DurationType.max) ?? -1;
+      state = state.copyWith(
+        isReady: true,
+        maxDurationMs: maxMs > 0 ? maxMs : state.maxDurationMs,
+      );
 
       unawaited(
         _waveformController?.waveformExtraction
@@ -152,12 +185,20 @@ class AudioPlayerState {
   final bool loadFailed;
   final List<double> waveform;
 
+  /// Playback position in milliseconds (last known; kept while paused).
+  final int positionMs;
+
+  /// Total duration in milliseconds from native player, or 0 if unknown.
+  final int maxDurationMs;
+
   AudioPlayerState({
     this.audioUrl = '',
     this.isPlaying = false,
     this.isReady = false,
     this.loadFailed = false,
     this.waveform = const [],
+    this.positionMs = 0,
+    this.maxDurationMs = 0,
   });
 
   AudioPlayerState copyWith({
@@ -166,11 +207,15 @@ class AudioPlayerState {
     bool? isReady,
     bool? loadFailed,
     List<double>? waveform,
+    int? positionMs,
+    int? maxDurationMs,
   }) => AudioPlayerState(
     audioUrl: audioUrl ?? this.audioUrl,
     isPlaying: isPlaying ?? this.isPlaying,
     isReady: isReady ?? this.isReady,
     loadFailed: loadFailed ?? this.loadFailed,
     waveform: waveform ?? this.waveform,
+    positionMs: positionMs ?? this.positionMs,
+    maxDurationMs: maxDurationMs ?? this.maxDurationMs,
   );
 }

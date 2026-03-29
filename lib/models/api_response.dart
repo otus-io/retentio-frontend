@@ -13,7 +13,10 @@ class ApiResponse {
 
   factory ApiResponse.fromJson(dynamic json) => ApiResponse(
     code: json['code'] ?? 0,
-    msg: json['message']?.toString() ?? 'Unknown error',
+    msg:
+        json['msg']?.toString() ??
+        json['message']?.toString() ??
+        'Unknown error',
     data: json['data'],
   );
 

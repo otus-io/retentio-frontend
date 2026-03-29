@@ -23,5 +23,6 @@ class AddFactPickExtensions {
     'ogg',
     'flac',
     'opus',
+    'json',
   ];
 }

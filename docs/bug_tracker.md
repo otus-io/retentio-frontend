@@ -2,13 +2,70 @@
 
 Known bugs and their status. Ordered by severity.
 
+| Total bugs | Resolved | Unresolved | qktrn | Joe | AI |
+| ---------: | -------: | ---------: | ----: | --: | -: |
+|          2 |        2 |          0 |     1 |   1 | 0 |
+
+_**Resolved** / **Unresolved** follow each bug’s **Status** (e.g. Fixed → resolved, Open → unresolved). **qktrn** / **Joe** / **AI** are **Discovered by** counts. Update this table when entries change._
+
+---
+
+## BUG-002: Login failures hid server error text (401 `msg` not surfaced)
+
+**Status**: Fixed  
+**Severity**: Low -- confusing UX and noisy logs; login still correctly failed  
+**Component**: Frontend -- [`lib/services/dio_client/dio_client.dart`](../lib/services/dio_client/dio_client.dart),
+[`lib/models/api_response.dart`](../lib/models/api_response.dart),
+[`lib/services/apis/auth_service.dart`](../lib/services/apis/auth_service.dart)  
+**Discovered by**: Joe
+
+### Description
+
+When `POST /auth/login` returned **401** with body `{"msg":"Invalid credentials"}` (as the API does in
+[`retentio-backend/api/auth/auth.go`](../../retentio-backend/api/auth/auth.go) via `helpers.Msg(...)`), the app did not
+reliably show that message to the user. Logs showed a long `DioException [bad response]` stack trace, and the login
+snackbar could be empty or unhelpful because the UI read `result['message']` while the error envelope uses **`msg`**.
+
+### Impact
+
+- Users saw generic failure or empty snackbars instead of **Invalid credentials**
+- `ApiResponse.fromJson` only read `message`, not `msg`, so successful parsing of error-shaped JSON was wrong when used
+- `_handleError` checked `e.response is Map`; Dio’s `e.response` is a **`Response`**, not a `Map`, so the response **body
+  was never parsed** and `ApiResponse.msg` often fell back to **Bad response** / **Unknown error**
+
+### Reproduction (before fix)
+
+1. Point the app at an API that returns Go `ExceptionResponse` errors (`json:"msg"`)
+2. Submit wrong username/password on the login screen
+3. Observe: Dio error spam in logs; snackbar not showing **Invalid credentials**
+
+### Root cause
+
+1. **Schema mismatch**: Backend `ExceptionResponse` uses field **`msg`**; `ApiResponse.fromJson` only mapped **`message`**.  
+2. **Wrong type check**: Error handler used `e.response is Map` instead of reading **`e.response?.data`**.  
+3. **Login result map**: `AuthService.login` returned only `data`; on failure there is no `data`, and **`message` was never
+   set** from `res.msg` for `LoginController`’s `showSnack(context, result['message'])`.
+
+### Fix
+
+- **`ApiResponse.fromJson`**: Prefer `json['msg']`, then `json['message']`.  
+- **`DioClient._handleError`**: If `e.response?.data` is a `Map`, set `msg` from `body['msg']` or `body['message']`.  
+- **`AuthService.login`**: When there is no token, copy `res.msg` into the returned map as **`message`** for the login
+  UI.
+
+### Notes
+
+- A **401** with **Invalid credentials** still means wrong username/password or unknown user on that server’s Redis; this
+  bug was only about **surfacing** the server text, not about auth succeeding incorrectly.
+
 ---
 
 ## BUG-001: Orphaned cards after template update
 
-**Status**: Open
+**Status**: Resolved
 **Severity**: High -- can cause runtime panic
-**Component**: Backend -- `UpdateDeck` handler in [`backend-api/deck/deck.go`](../backend-api/deck/deck.go)
+**Component**: Backend -- `UpdateDeck` handler in [`backend-api/deck/deck.go`](../backend-api/deck/deck.go)  
+**Discovered by**: qktrn
 
 ### Description
 

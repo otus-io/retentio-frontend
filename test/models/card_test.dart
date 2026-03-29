@@ -213,23 +213,26 @@ void main() {
       });
 
       test(
-        'synthesizes items from flat text, audio, image, video keys in order',
+        'synthesizes items from flat text, audio, json, image, video keys in order',
         () {
           final slot = CardSlot.fromJson({
             'field': 'Rich',
             'text': 't',
             'audio': 'a',
+            'json': 'https://x/j',
             'image': 'i',
             'video': 'v',
           });
-          expect(slot.items.length, 4);
+          expect(slot.items.length, 5);
           expect(slot.items.map((e) => e.type).toList(), [
             'text',
             'audio',
+            'json',
             'image',
             'video',
           ]);
-          expect(slot.items[3].value, 'v');
+          expect(slot.items[2].value, 'https://x/j');
+          expect(slot.items[4].value, 'v');
         },
       );
 

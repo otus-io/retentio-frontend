@@ -32,9 +32,16 @@ class AuthService {
       providerContainer.read(isLoginProvider.notifier).setLogin(true);
     }
 
-    return res?.data is Map
+    final dataMap = res?.data is Map
         ? Map<String, dynamic>.from(res!.data as Map)
         : <String, dynamic>{};
+    if (dataMap['token'] == null &&
+        res != null &&
+        res.msg.isNotEmpty &&
+        res.msg != 'Unknown error') {
+      dataMap['message'] = res.msg;
+    }
+    return dataMap;
   }
 
   /// Logout: invalidates token on server and clears local state.

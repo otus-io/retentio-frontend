@@ -13,7 +13,11 @@ class AddFactPrecheckMessages {
       case MediaPrecheck.ok:
         return '';
       case MediaPrecheck.fileTooLarge:
-        final mb = slot == MediaSlotKind.image ? 5 : 200;
+        final mb = switch (slot) {
+          MediaSlotKind.image => 5,
+          MediaSlotKind.json => 2,
+          MediaSlotKind.audio || MediaSlotKind.video => 200,
+        };
         return loc.addFactFileTooLarge(mb);
       case MediaPrecheck.unknownType:
         return loc.addFactFileTypeNotSupported;

@@ -474,6 +474,10 @@
   "@addFactFieldShortLabel": {
     "description": "Compact label for column name; tap to edit on add-fact form"
   },
+  "addFactPasteFromClipboard": "Paste from clipboard",
+  "@addFactPasteFromClipboard": {
+    "description": "Tooltip for pasting plain text into add/edit fact fields"
+  },
   "cardAudioUnavailable": "Audio unavailable",
   "@cardAudioUnavailable": {
     "description": "Card review when the audio file is missing, empty, or invalid"

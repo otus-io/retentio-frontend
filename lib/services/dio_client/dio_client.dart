@@ -386,8 +386,14 @@ class DioClient {
     logger.e('e.response: ${e.response}');
     // DialogUtil.dismiss();
     // DialogUtil.showToast(msg);
-    final data = e.response is Map ? e.response?.data : null;
-    return ApiResponse(msg: data ?? msg, exception: e, code: -1);
+    final body = e.response?.data;
+    if (body is Map) {
+      final serverMsg = body['msg'] ?? body['message'];
+      if (serverMsg != null && serverMsg.toString().isNotEmpty) {
+        msg = serverMsg.toString();
+      }
+    }
+    return ApiResponse(msg: msg, exception: e, code: -1);
   }
 
   static HttpClient _createHttpClient() {

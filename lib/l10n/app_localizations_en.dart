@@ -353,5 +353,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addFactFieldShortLabel => 'Field';
 
   @override
+  String get addFactPasteFromClipboard => 'Paste from clipboard';
+
+  @override
   String get cardAudioUnavailable => 'Audio unavailable';
 }

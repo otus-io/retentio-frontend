@@ -746,6 +746,12 @@ abstract class AppLocalizations {
   /// **'Field'**
   String get addFactFieldShortLabel;
 
+  /// Tooltip for pasting plain text into add/edit fact fields
+  ///
+  /// In en, this message translates to:
+  /// **'Paste from clipboard'**
+  String get addFactPasteFromClipboard;
+
   /// Card review when the audio file is missing, empty, or invalid
   ///
   /// In en, this message translates to:

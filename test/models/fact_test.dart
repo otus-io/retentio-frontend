@@ -9,6 +9,7 @@ void main() {
       expect(e.audio, '');
       expect(e.image, '');
       expect(e.video, '');
+      expect(e.json, '');
     });
 
     test('fromJson parses all keys', () {
@@ -17,11 +18,13 @@ void main() {
         'audio': 'a',
         'image': 'i',
         'video': 'v',
+        'json': 'j',
       });
       expect(e.text, 't');
       expect(e.audio, 'a');
       expect(e.image, 'i');
       expect(e.video, 'v');
+      expect(e.json, 'j');
     });
 
     test('toJson includes text always; media keys only when non-empty', () {
@@ -30,13 +33,18 @@ void main() {
         'text': 'x',
         'audio': 'https://a',
       });
+      expect(FactEntry(text: 'x', json: 'jid').toJson(), {
+        'text': 'x',
+        'json': 'jid',
+      });
     });
 
     test('copyWithText updates only text', () {
-      final a = FactEntry(text: 'a', audio: 'keep');
+      final a = FactEntry(text: 'a', audio: 'keep', json: 'j');
       final b = a.copyWithText('b');
       expect(b.text, 'b');
       expect(b.audio, 'keep');
+      expect(b.json, 'j');
     });
   });
 
@@ -101,6 +109,17 @@ void main() {
       expect(next.entries[1].text, 'n2');
       expect(next.entries[1].image, 'https://i');
       expect(next.fields, fact.fields);
+    });
+
+    test('withMergedTexts preserves json attachment', () {
+      final fact = Fact(
+        id: 'id',
+        entries: [FactEntry(text: 'old', json: 'jid')],
+        fields: ['f'],
+      );
+      final next = fact.withMergedTexts(['new']);
+      expect(next.entries[0].text, 'new');
+      expect(next.entries[0].json, 'jid');
     });
 
     test('withMergedTexts throws when text count does not match entries', () {

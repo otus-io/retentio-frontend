@@ -343,5 +343,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get addFactFieldShortLabel => '字段';
 
   @override
+  String get addFactPasteFromClipboard => '从剪贴板粘贴';
+
+  @override
   String get cardAudioUnavailable => '音频不可用（文件无效或缺失）';
 }

@@ -9,12 +9,14 @@ class FactEditRowModel {
     this.existingImageId,
     this.existingVideoId,
     this.existingAudioId,
+    this.existingJsonId,
   });
 
   final AddFactRowModel row;
   String? existingImageId;
   String? existingVideoId;
   String? existingAudioId;
+  String? existingJsonId;
 
   String? existingFor(MediaSlotKind kind) {
     switch (kind) {
@@ -24,6 +26,8 @@ class FactEditRowModel {
         return existingVideoId;
       case MediaSlotKind.audio:
         return existingAudioId;
+      case MediaSlotKind.json:
+        return existingJsonId;
     }
   }
 
@@ -35,6 +39,8 @@ class FactEditRowModel {
         existingVideoId = null;
       case MediaSlotKind.audio:
         existingAudioId = null;
+      case MediaSlotKind.json:
+        existingJsonId = null;
     }
   }
 
@@ -43,6 +49,7 @@ class FactEditRowModel {
     existingImageId = null;
     existingVideoId = null;
     existingAudioId = null;
+    existingJsonId = null;
   }
 
   void seedRowAttachmentPathsFromExisting() {
@@ -55,6 +62,9 @@ class FactEditRowModel {
     if (existingAudioId != null) {
       row.audioPath = existingAudioId;
     }
+    if (existingJsonId != null) {
+      row.jsonPath = existingJsonId;
+    }
   }
 }
 
@@ -62,7 +72,8 @@ bool factEditRowHasAttachment(FactEditRowModel row) {
   return row.row.hasAttachment ||
       row.existingImageId != null ||
       row.existingVideoId != null ||
-      row.existingAudioId != null;
+      row.existingAudioId != null ||
+      row.existingJsonId != null;
 }
 
 bool factEditRowHasAnyContent(FactEditRowModel row) {
