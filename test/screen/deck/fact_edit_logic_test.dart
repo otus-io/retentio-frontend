@@ -40,6 +40,7 @@ void main() {
           existingImageId: 'img-1',
           existingVideoId: 'vid-1',
           existingAudioId: 'aud-1',
+          existingJsonId: 'json-1',
         );
 
         model.seedRowAttachmentPathsFromExisting();
@@ -47,6 +48,7 @@ void main() {
         expect(row.imagePath, 'img-1');
         expect(row.videoPath, 'vid-1');
         expect(row.audioPath, 'aud-1');
+        expect(row.jsonPath, 'json-1');
         row.dispose();
       },
     );
@@ -58,16 +60,19 @@ void main() {
         existingImageId: 'img-1',
         existingVideoId: 'vid-1',
         existingAudioId: 'aud-1',
+        existingJsonId: 'json-1',
       );
 
       expect(model.existingFor(MediaSlotKind.image), 'img-1');
       expect(model.existingFor(MediaSlotKind.video), 'vid-1');
       expect(model.existingFor(MediaSlotKind.audio), 'aud-1');
+      expect(model.existingFor(MediaSlotKind.json), 'json-1');
 
       model.clearExistingFor(MediaSlotKind.video);
       expect(model.existingVideoId, isNull);
       expect(model.existingImageId, 'img-1');
       expect(model.existingAudioId, 'aud-1');
+      expect(model.existingJsonId, 'json-1');
       row.dispose();
     });
 
@@ -76,11 +81,13 @@ void main() {
       row.imagePath = '/tmp/new.jpg';
       row.videoPath = '/tmp/new.mp4';
       row.audioPath = '/tmp/new.m4a';
+      row.jsonPath = '/tmp/new.json';
       final model = FactEditRowModel(
         row: row,
         existingImageId: 'img-1',
         existingVideoId: 'vid-1',
         existingAudioId: 'aud-1',
+        existingJsonId: 'json-1',
       );
 
       model.clearAllAttachments();
@@ -88,9 +95,11 @@ void main() {
       expect(row.imagePath, isNull);
       expect(row.videoPath, isNull);
       expect(row.audioPath, isNull);
+      expect(row.jsonPath, isNull);
       expect(model.existingImageId, isNull);
       expect(model.existingVideoId, isNull);
       expect(model.existingAudioId, isNull);
+      expect(model.existingJsonId, isNull);
       row.dispose();
     });
   });
@@ -106,6 +115,13 @@ void main() {
     test('true when only existing attachment id is present', () {
       final row = AddFactRowModel();
       final model = FactEditRowModel(row: row, existingAudioId: 'aud-1');
+      expect(factEditRowHasAttachment(model), isTrue);
+      row.dispose();
+    });
+
+    test('true when only existing json id is present', () {
+      final row = AddFactRowModel();
+      final model = FactEditRowModel(row: row, existingJsonId: 'j-1');
       expect(factEditRowHasAttachment(model), isTrue);
       row.dispose();
     });

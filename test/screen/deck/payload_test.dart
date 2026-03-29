@@ -36,6 +36,11 @@ void main() {
       expect(e, {'text': 'x'});
     });
 
+    test('buildEntryJson includes json id when set', () {
+      final e = AddFactPayload.buildEntryJson(text: '', jsonId: 'j-1');
+      expect(e, {'json': 'j-1'});
+    });
+
     test('buildFactBody wraps single fact', () {
       final b = AddFactPayload.buildFactBody(
         entries: [

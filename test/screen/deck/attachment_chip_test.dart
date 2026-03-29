@@ -8,6 +8,7 @@ void main() {
     test('maps each slot kind to a Lucide icon', () {
       expect(addFactAttachmentChipIcon(MediaSlotKind.image), LucideIcons.image);
       expect(addFactAttachmentChipIcon(MediaSlotKind.video), LucideIcons.video);
+      expect(addFactAttachmentChipIcon(MediaSlotKind.json), LucideIcons.braces);
       expect(
         addFactAttachmentChipIcon(MediaSlotKind.audio),
         LucideIcons.audioLines,

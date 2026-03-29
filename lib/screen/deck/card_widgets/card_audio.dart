@@ -14,6 +14,7 @@ class CardAudio extends StatefulWidget {
     this.compact = false,
     this.useExternalScope = false,
     this.transcriptForWordNav,
+    this.transcriptJsonUrl,
   });
 
   final Color? color;
@@ -27,6 +28,10 @@ class CardAudio extends StatefulWidget {
 
   /// When non-null with words, compact prev/next jump by transcript timestamps instead of ±10s.
   final TranscriptSync? transcriptForWordNav;
+
+  /// When non-empty, compact mode shows prev/next controls (word jumps or ±10s while loading).
+  /// Omit or leave empty when there is no paired JSON transcript URL.
+  final String? transcriptJsonUrl;
 
   @override
   State<CardAudio> createState() => _CardAudioState();
@@ -97,6 +102,8 @@ class _CardAudioState extends State<CardAudio>
           final wordNav = transcript != null && transcript.words.isNotEmpty
               ? transcript
               : null;
+          final jsonUrl = widget.transcriptJsonUrl?.trim() ?? '';
+          final showSkipButtons = jsonUrl.isNotEmpty;
           void onPrev() {
             final pos = ref.read(audioPlayerProvider).positionMs;
             final nav = wordNav;
@@ -121,16 +128,20 @@ class _CardAudioState extends State<CardAudio>
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              IconButton(
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(minWidth: 28, minHeight: 36),
-                iconSize: 18,
-                color: accent,
-                tooltip: wordNav != null ? 'Previous word' : 'Back 10s',
-                onPressed: onPrev,
-                icon: const Icon(LucideIcons.rotateCcw),
-              ),
+              if (showSkipButtons)
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints(
+                    minWidth: 28,
+                    minHeight: 36,
+                  ),
+                  iconSize: 18,
+                  color: accent,
+                  tooltip: wordNav != null ? 'Previous word' : 'Back 10s',
+                  onPressed: onPrev,
+                  icon: const Icon(LucideIcons.rotateCcw),
+                ),
               IconButton(
                 padding: EdgeInsets.zero,
                 visualDensity: VisualDensity.compact,
@@ -140,16 +151,20 @@ class _CardAudioState extends State<CardAudio>
                 onPressed: notifier.playPause,
                 icon: Icon(isPlaying ? LucideIcons.pause : LucideIcons.play),
               ),
-              IconButton(
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(minWidth: 28, minHeight: 36),
-                iconSize: 18,
-                color: accent,
-                tooltip: wordNav != null ? 'Next word' : 'Forward 10s',
-                onPressed: onNext,
-                icon: const Icon(LucideIcons.rotateCw),
-              ),
+              if (showSkipButtons)
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints(
+                    minWidth: 28,
+                    minHeight: 36,
+                  ),
+                  iconSize: 18,
+                  color: accent,
+                  tooltip: wordNav != null ? 'Next word' : 'Forward 10s',
+                  onPressed: onNext,
+                  icon: const Icon(LucideIcons.rotateCw),
+                ),
             ],
           );
         }

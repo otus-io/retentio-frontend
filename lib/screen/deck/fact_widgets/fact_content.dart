@@ -190,6 +190,7 @@ class _CombinedAudioTrailing extends ConsumerWidget {
             compact: true,
             useExternalScope: singleAudioScope,
             transcriptForWordNav: sync,
+            transcriptJsonUrl: url,
           ),
       ],
     );
