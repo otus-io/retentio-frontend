@@ -275,37 +275,24 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
           ],
         ),
 
-        Row(
-          spacing: 12,
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(loc.cancel),
-              ),
-            ),
-            Expanded(
-              child: FilledButton(
-                onPressed: () {
-                  ref
-                      .read(createDeckProvider.notifier)
-                      .createDeck(
-                        context,
-                        _fieldControllers.map((c) => c.text).toList(),
-                      );
-                },
-                child: Row(
-                  spacing: 5,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    DeckLoadingState(child: Icon(LucideIcons.save)),
-                    Text(loc.save),
-                  ],
-                ),
-              ),
-            ),
-          ],
+        FilledButton(
+          onPressed: () {
+            ref
+                .read(createDeckProvider.notifier)
+                .createDeck(
+                  context,
+                  _fieldControllers.map((c) => c.text).toList(),
+                );
+          },
+          child: Row(
+            spacing: 5,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              DeckLoadingState(child: Icon(LucideIcons.save)),
+              Text(loc.save),
+            ],
+          ),
         ),
       ],
     );

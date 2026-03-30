@@ -11,7 +11,7 @@ import 'deck_list.dart';
 /// Inclusive bounds for the rate field when creating or editing a deck.
 const int kDeckEditorRateMin = 1;
 const int kDeckEditorRateMax = 1000;
-const int kDeckEditorRateDefault = 10;
+const int kDeckEditorRateDefault = 30;
 
 int clampDeckEditorRate(int rate) =>
     rate.clamp(kDeckEditorRateMin, kDeckEditorRateMax);

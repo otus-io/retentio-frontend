@@ -47,20 +47,25 @@ Future<T?> showCommonBottomSheet<T>({
       maxChildSize: resolvedMax,
       expand: resolvedExpand,
       builder: (context, scrollController) {
+        // Avoid shrinking the sheet when the keyboard opens (iOS device): that
+        // combination with DraggableScrollableSheet can pop the modal. Inset
+        // is applied as padding so the scroll view can still scroll above keys.
+        final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
         return ClipRRect(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           child: Scaffold(
+            resizeToAvoidBottomInset: false,
             body: Scrollbar(
               controller: scrollController,
               thumbVisibility: true,
               child: SingleChildScrollView(
                 controller: scrollController,
                 child: Padding(
-                  padding: const EdgeInsets.only(
+                  padding: EdgeInsets.only(
                     left: 20,
                     top: 16,
                     right: 20,
-                    bottom: 20,
+                    bottom: 20 + keyboardBottom,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

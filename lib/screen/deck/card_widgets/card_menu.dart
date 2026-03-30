@@ -41,9 +41,7 @@ class CardMenu extends ConsumerWidget {
               if (card == null) return;
               showCommonBottomSheet(
                 context: context,
-                initialChildSize: 0.4,
-                minChildSize: 0.3,
-                maxChildSize: 0.85,
+                fullScreen: true,
                 title: 'Edit Fact',
                 child: FactEdit(
                   deck: deck,
