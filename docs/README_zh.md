@@ -17,7 +17,7 @@ flutter run
 
 克隆后于仓库根目录执行一次 `./utils/setup-hooks.sh`，安装 **pre-commit**（dart格式、`flutter analyze`、测试）。
 
-完整说明：[PRE_COMMIT_HOOK_zh.md](PRE_COMMIT_HOOK_zh.md) · [English](PRE_COMMIT_HOOK.md)
+完整说明：[pre_commit_hook_zh.md](pre_commit_hook_zh.md) · [English](pre_commit_hook.md)
 
 ## 仓库结构
 
@@ -30,7 +30,7 @@ flutter run
 
 ## 文档
 
-- **API 文档：** [API_zh.md](API_zh.md)（[English](API.md)）
+- **API 文档：** [api_zh.md](api_zh.md)（[English](api.md)）
 
 ## `lib/` — 应用代码
 
@@ -96,7 +96,7 @@ flutter run
 
 ## 测试
 
-测试位于 `test/`，结构尽量与 `lib/` 对应（`test/providers/`、`test/screen/`、`test/services/`、`test/models/` 及 `test/helpers/` 等）。命令与约定见 [FRONTEND_TESTS_zh.md](FRONTEND_TESTS_zh.md)（[English](FRONTEND_TESTS.md)）。
+测试位于 `test/`，结构尽量与 `lib/` 对应（`test/providers/`、`test/screen/`、`test/services/`、`test/models/` 及 `test/helpers/` 等）。命令与约定见 [frontend_tests_zh.md](frontend_tests_zh.md)（[English](frontend_tests.md)）。
 
 ## 工具链
 

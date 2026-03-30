@@ -1,4 +1,4 @@
-🌐 [English](CURSOR_RULES.md) | [中文](CURSOR_RULES_zh.md)
+🌐 [English](cursor_rules.md) | [中文](cursor_rules_zh.md)
 
 ---
 
