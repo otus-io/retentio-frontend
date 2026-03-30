@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:retentio/screen/deck/card_widgets/card_wiki_ruby_layout.dart';
+import 'package:retentio/utils/wiki_ruby_markup.dart';
 
 class CardText extends ConsumerWidget {
   const CardText({
@@ -24,7 +26,9 @@ class CardText extends ConsumerWidget {
       letterSpacing: 1.2,
       color: color,
     );
-    final textWidget = Text(text, textAlign: TextAlign.center, style: style);
+    final textWidget = WikiRubyMarkup.looksLikeMarkup(text)
+        ? wikiRubyWrappedText(text: text, baseStyle: style)
+        : Text(text, textAlign: TextAlign.center, style: style);
     if (!scrollable) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),

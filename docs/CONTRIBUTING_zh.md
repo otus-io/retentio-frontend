@@ -1,4 +1,4 @@
-🌐 [English](CONTRIBUTING.md) | [中文](CONTRIBUTING_zh.md)
+🌐 [English](contributing.md) | [中文](contributing_zh.md)
 
 ---
 

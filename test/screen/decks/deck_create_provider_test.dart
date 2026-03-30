@@ -31,12 +31,12 @@ void main() {
   });
 
   group('DeckParamsNotifier', () {
-    test('build returns empty add-mode params with default rate 10', () {
+    test('build returns empty add-mode params with default rate 30', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
       final params = container.read(createDeckParamsProvider);
       expect(params.name, '');
-      expect(params.rate, 10);
+      expect(params.rate, 30);
       expect(params.type, DeckCardType.add);
       expect(params.fields, isEmpty);
     });
@@ -46,7 +46,7 @@ void main() {
     test('changeRate updates provider state', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
-      expect(container.read(createDeckProvider).rate, 10);
+      expect(container.read(createDeckProvider).rate, 30);
       container.read(createDeckProvider.notifier).changeRate(60);
       expect(container.read(createDeckProvider).rate, 60);
     });

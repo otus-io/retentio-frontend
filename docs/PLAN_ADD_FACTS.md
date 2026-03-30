@@ -1,6 +1,6 @@
 # Plan: Add Facts (Flutter frontend)
 
-Single-fact flow: one fact per submit, **dynamic entry rows** (default **2** rows; **+** adds a row, **−** removes a row). **At least one row** always (disable or hide **−** when only one row remains). **Optional field name** per row, plus text and media via `POST /api/media`. **Per row:** at most **one image, one video, and one audio** (re-picking a type replaces that slot). See [API.md](API.md) (Add Facts + §5 Media).
+Single-fact flow: one fact per submit, **dynamic entry rows** (default **2** rows; **+** adds a row, **−** removes a row). **At least one row** always (disable or hide **−** when only one row remains). **Optional field name** per row, plus text and media via `POST /api/media`. **Per row:** at most **one image, one video, and one audio** (re-picking a type replaces that slot). See [api.md](api.md) (Add Facts + §5 Media).
 
 ## Implementation checklist
 
@@ -73,4 +73,4 @@ Extend `ApiService.post` with optional `Map<String, String>? pathParams` and pas
 
 - Bulk facts or bulk media not tied to the single fact being composed.
 - Shared / admin media endpoints (WIP in API).
-- Full parity with an external media-upload design doc until reviewed alongside [API.md](API.md).
+- Full parity with an external media-upload design doc until reviewed alongside [api.md](api.md).

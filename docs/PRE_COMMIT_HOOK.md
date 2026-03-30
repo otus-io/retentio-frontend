@@ -1,4 +1,4 @@
-🌐 [English](PRE_COMMIT_HOOK.md) | [中文](PRE_COMMIT_HOOK_zh.md)
+🌐 [English](pre_commit_hook.md) | [中文](pre_commit_hook_zh.md)
 
 ---
 

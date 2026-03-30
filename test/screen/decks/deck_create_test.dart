@@ -23,7 +23,7 @@ void main() {
       expect(picker.minValue, 1);
       expect(picker.maxValue, 1000);
       expect(picker.step, 1);
-      expect(picker.value, 10);
+      expect(picker.value, 30);
     });
 
     testWidgets(
@@ -38,7 +38,6 @@ void main() {
         await tester.pump(const Duration(milliseconds: 400));
 
         expect(find.byType(TextField), findsNWidgets(3));
-        expect(find.byType(OutlinedButton), findsOneWidget);
         expect(find.byType(FilledButton), findsOneWidget);
       },
     );

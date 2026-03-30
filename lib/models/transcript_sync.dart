@@ -21,9 +21,13 @@ class TranscriptWord {
 
 /// Word-level timings for audio sync (`retentio-transcript-sync` JSON from media).
 class TranscriptSync {
-  TranscriptSync({required this.words});
+  TranscriptSync({required this.words, this.annotatedSourceText});
 
   final List<TranscriptWord> words;
+
+  /// Optional `text` field from transcript JSON (`[[kanji|reading]]` markup). Used to
+  /// render furigana when it aligns exactly with [words].
+  final String? annotatedSourceText;
 
   /// Last word index with `start <= t`, or -1 if before first word.
   int wordIndexAt(double tSeconds) {
@@ -90,7 +94,12 @@ class TranscriptSync {
         out.add(TranscriptWord(word: w, start: start, end: end));
       }
       if (out.isEmpty) return null;
-      return TranscriptSync(words: out);
+      String? annotated;
+      final textField = root['text'];
+      if (textField is String && textField.trim().isNotEmpty) {
+        annotated = textField;
+      }
+      return TranscriptSync(words: out, annotatedSourceText: annotated);
     } catch (_) {
       return null;
     }

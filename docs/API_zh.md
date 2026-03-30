@@ -1,4 +1,4 @@
-🌐 [English](API.md) | [中文](API_zh.md)
+🌐 [English](api.md) | [中文](api_zh.md)
 
 ---
 
@@ -1144,7 +1144,7 @@
 
 ## 响应示例速查
 
-上述各节均包含完整 JSON 示例。接口与响应结构对应关系与 [Response examples reference](API.md#response-examples-reference)（英文版）一致，此处不重复列表。
+上述各节均包含完整 JSON 示例。接口与响应结构对应关系与 [Response examples reference](api.md#response-examples-reference)（英文版）一致，此处不重复列表。
 
 ---
 

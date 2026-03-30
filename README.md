@@ -1,6 +1,6 @@
 # Retentio (Flutter)
 
-🌐 English | [中文](docs/README_zh.md)
+🌐 English | [中文](docs/readme_zh.md)
 
 Flutter client for Retentio. Entrypoint: `lib/main.dart`. Dependencies and SDK versions: `pubspec.yaml`.
 
@@ -43,7 +43,7 @@ Current host mapping in `lib/services/env.dart`:
 
 After cloning, run `./utils/setup-hooks.sh` once to install **pre-commit** (format, analyze, tests).
 
-Full guide: [docs/PRE_COMMIT_HOOK_zh.md](docs/PRE_COMMIT_HOOK_zh.md) · [English](docs/PRE_COMMIT_HOOK.md)
+Full guide: [docs/pre_commit_hook_zh.md](docs/pre_commit_hook_zh.md) · [English](docs/pre_commit_hook.md)
 
 ## Repository layout
 
@@ -56,7 +56,7 @@ Full guide: [docs/PRE_COMMIT_HOOK_zh.md](docs/PRE_COMMIT_HOOK_zh.md) · [English
 
 ## Documentation
 
-- **API:** [docs/API.md](docs/API.md) ([中文](docs/API_zh.md))
+- **API:** [docs/api.md](docs/api.md) ([中文](docs/api_zh.md))
 
 ## `lib/` — application code
 
@@ -122,7 +122,7 @@ Feature providers often sit next to their screen (`screen/<feature>/providers/`)
 
 ## Tests
 
-Tests live under `test/` and mirror `lib/` where practical (`test/providers/`, `test/screen/`, `test/services/`, `test/models/`, plus `test/helpers/`). Commands and conventions: [docs/FRONTEND_TESTS.md](docs/FRONTEND_TESTS.md) ([中文](docs/FRONTEND_TESTS_zh.md)).
+Tests live under `test/` and mirror `lib/` where practical (`test/providers/`, `test/screen/`, `test/services/`, `test/models/`, plus `test/helpers/`). Commands and conventions: [docs/frontend_tests.md](docs/frontend_tests.md) ([中文](docs/frontend_tests_zh.md)).
 
 ## Tooling
 

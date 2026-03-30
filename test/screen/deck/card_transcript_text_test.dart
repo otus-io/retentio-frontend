@@ -82,6 +82,42 @@ void main() {
     expect(find.byType(Wrap), findsOneWidget);
   });
 
+  testWidgets('annotated transcript shows ruby when text aligns with words', (
+    tester,
+  ) async {
+    final rubySync = TranscriptSync(
+      words: const [
+        TranscriptWord(word: '皆さん', start: 0, end: 0.3),
+        TranscriptWord(word: 'は', start: 0.3, end: 0.5),
+      ],
+      annotatedSourceText: '[[皆|みな]]さんは',
+    );
+    await tester.pumpWidget(
+      buildTestableWidgetWithOverrides(
+        SizedBox(
+          height: 400,
+          child: SingleChildScrollView(
+            child: CardTranscriptText(
+              transcriptUrl: transcriptUrl,
+              fallbackText: 'FB',
+              color: Colors.black,
+            ),
+          ),
+        ),
+        overrides: transcriptAudioTestOverrides(
+          transcriptUrl: transcriptUrl,
+          audioUrl: audioUrl,
+          transcriptAsync: AsyncData<TranscriptSync?>(rubySync),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('みな'), findsOneWidget);
+    expect(find.text('皆'), findsOneWidget);
+    expect(find.text('さん'), findsOneWidget);
+    expect(find.text('は'), findsOneWidget);
+  });
+
   testWidgets('tap word seeks to its start in ms', (tester) async {
     final container = ProviderContainer(
       overrides: transcriptAudioTestOverrides(

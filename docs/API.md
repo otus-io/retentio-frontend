@@ -1,4 +1,4 @@
-🌐 [English](API.md) | [中文](API_zh.md)
+🌐 [English](api.md) | [中文](api_zh.md)
 
 ---
 
