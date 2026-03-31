@@ -327,7 +327,10 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
                 onPressed: _addField,
                 child: Text(
                   loc.deckCreateAddField,
-                  style: const TextStyle(decoration: TextDecoration.underline),
+                  style: const TextStyle(
+                    decoration: TextDecoration.underline,
+                    fontSize: kFontSizeSmall,
+                  ),
                 ),
               ),
             ),
