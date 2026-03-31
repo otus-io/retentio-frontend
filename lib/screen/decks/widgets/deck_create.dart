@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/constants.dart';
 import 'package:retentio/extensions/context_extension.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/mixins/delayed_init_mixin.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/decks/providers/deck_create.dart';
 import 'package:retentio/widgets/number_picker.dart';
-
 import 'deck_loading_state.dart';
 
 class DeckCreate extends ConsumerStatefulWidget {
@@ -22,16 +22,8 @@ class DeckCreate extends ConsumerStatefulWidget {
 class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
   /// Two empty column headers by default when creating a deck.
   static const List<String> _defaultNewDeckFields = ['', ''];
-  static const double _textFieldHeight = 46;
-  static const double _buttonHeight = 46;
-
   late List<TextEditingController> _fieldControllers;
   late final FocusNode _deckNameFocusNode;
-
-  static const _fieldAddRemoveIconBtn = BoxConstraints(
-    minWidth: 44,
-    minHeight: 44,
-  );
 
   @override
   void initState() {
@@ -133,9 +125,9 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
                     step: 1,
                     axis: Axis.vertical,
                     value: rate,
-                    textStyle: TextStyle(fontSize: 16),
+                    textStyle: TextStyle(fontSize: kFontSizeMedium),
                     selectedTextStyle: TextStyle(
-                      fontSize: 24,
+                      fontSize: kFontSizeLarge,
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.primary,
                     ),
@@ -147,13 +139,19 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
                       ref.read(createDeckProvider.notifier).changeRate(value);
                     },
                   ),
-                  Text(loc.cardsPerDay, style: TextStyle(fontSize: 16)),
+                  Text(
+                    loc.cardsPerDay,
+                    style: TextStyle(fontSize: kFontSizeMedium),
+                  ),
                 ],
               ),
               Text(
                 loc.newCardEveryMinutes(((86400 / rate) / 60).toInt()),
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: kFontSizeMedium,
+                  color: Colors.grey[600],
+                ),
               ),
             ],
           ),
@@ -175,7 +173,7 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
             contentPadding: EdgeInsets.symmetric(
               horizontal: 12,
               // 使文本区域本身高度接近 _textFieldHeight（假设字体 16）
-              vertical: (_textFieldHeight - 16) / 2,
+              vertical: (kTextFieldHeight - 16) / 2,
             ),
             filled: Theme.of(context).inputDecorationTheme.filled,
             fillColor: Theme.of(context).inputDecorationTheme.fillColor,
@@ -241,9 +239,8 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
                             padding: const EdgeInsets.fromLTRB(4, 24, 4, 4),
                             child: Text(
                               '${context.loc.addFactFieldShortLabel} ${i + 1}',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.labelSmall?.copyWith(fontSize: 14),
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(fontSize: kFontSizeSmall),
                             ),
                           ),
                           TextField(
@@ -255,8 +252,8 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
                               isDense: false,
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: 12,
-                                // 控制文本区域本身高度接近 _textFieldHeight（假设字体 16）
-                                vertical: (_textFieldHeight - 16) / 2,
+                                vertical:
+                                    (kTextFieldHeight - kFontSizeMedium) / 2,
                               ),
                               filled: Theme.of(
                                 context,
@@ -279,7 +276,7 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
                                     IconButton(
                                       tooltip: loc.deckEditorRemoveFieldTooltip,
                                       padding: EdgeInsets.zero,
-                                      constraints: _fieldAddRemoveIconBtn,
+                                      constraints: kIconBtnConstraints,
                                       onPressed: _fieldControllers.length == 2
                                           ? null
                                           : () {
@@ -301,9 +298,14 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
                                     ),
                                     ReorderableDragStartListener(
                                       index: i,
-                                      child: Icon(
-                                        LucideIcons.gripVertical,
-                                        color: Theme.of(context).hintColor,
+                                      child: IconButton(
+                                        padding: EdgeInsets.zero,
+                                        constraints: kIconBtnConstraints,
+                                        onPressed: () {},
+                                        icon: Icon(
+                                          LucideIcons.gripVertical,
+                                          color: Theme.of(context).hintColor,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -333,7 +335,7 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
         ),
 
         SizedBox(
-          height: _buttonHeight,
+          height: kButtonHeight,
           child: FilledButton(
             onPressed: () {
               ref
@@ -349,7 +351,7 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 DeckLoadingState(child: Icon(LucideIcons.save)),
-                Text(loc.save, style: TextStyle(fontSize: 16)),
+                Text(loc.save, style: TextStyle(fontSize: kFontSizeMedium)),
               ],
             ),
           ),
