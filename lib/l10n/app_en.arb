@@ -252,6 +252,10 @@
   "@deckEditorAddFieldTooltip": {
     "description": "Tooltip for button that adds another deck column header row"
   },
+  "deckCreateAddField": "Add a new field",
+  "@deckCreateAddField": {
+    "description": "Text button to add a new deck field in create-deck sheet"
+  },
   "deckEditorRemoveFieldTooltip": "Remove column header",
   "@deckEditorRemoveFieldTooltip": {
     "description": "Tooltip for button that removes a deck column header row"

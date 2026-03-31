@@ -190,6 +190,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deckEditorAddFieldTooltip => 'Add column header';
 
   @override
+  String get deckCreateAddField => 'Add a new field';
+
+  @override
   String get deckEditorRemoveFieldTooltip => 'Remove column header';
 
   @override

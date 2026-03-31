@@ -190,6 +190,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deckEditorAddFieldTooltip => '添加列标题';
 
   @override
+  String get deckCreateAddField => '新增一个字段';
+
+  @override
   String get deckEditorRemoveFieldTooltip => '移除此列标题';
 
   @override
