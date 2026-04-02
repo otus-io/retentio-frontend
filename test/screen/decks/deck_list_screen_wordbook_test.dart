@@ -77,13 +77,17 @@ void main() {
       expect(find.byType(DeckCreate), findsOneWidget);
       expect(find.text('Create Deck'), findsOneWidget);
 
-      final sheet = tester.widget<DraggableScrollableSheet>(
-        find.byType(DraggableScrollableSheet),
+      final scrollAncestor = find.ancestor(
+        of: find.byType(DeckCreate),
+        matching: find.byType(SingleChildScrollView),
       );
-      expect(sheet.initialChildSize, 1.0);
-      expect(sheet.minChildSize, 0.35);
-      expect(sheet.maxChildSize, 1.0);
-      expect(sheet.expand, isTrue);
+      expect(scrollAncestor, findsOneWidget);
+
+      final scaffoldAncestor = find.ancestor(
+        of: find.byType(DeckCreate),
+        matching: find.byType(Scaffold),
+      );
+      expect(scaffoldAncestor, findsOneWidget);
     });
   });
 }

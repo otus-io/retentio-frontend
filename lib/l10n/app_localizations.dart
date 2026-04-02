@@ -452,6 +452,12 @@ abstract class AppLocalizations {
   /// **'Add column header'**
   String get deckEditorAddFieldTooltip;
 
+  /// Text button to add a new deck field in create-deck sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Add a new field'**
+  String get deckCreateAddField;
+
   /// Tooltip for button that removes a deck column header row
   ///
   /// In en, this message translates to:

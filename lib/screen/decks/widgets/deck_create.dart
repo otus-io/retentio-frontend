@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/constants.dart';
 import 'package:retentio/extensions/context_extension.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/mixins/delayed_init_mixin.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/decks/providers/deck_create.dart';
 import 'package:retentio/widgets/number_picker.dart';
-
 import 'deck_loading_state.dart';
 
 class DeckCreate extends ConsumerStatefulWidget {
@@ -22,55 +22,8 @@ class DeckCreate extends ConsumerStatefulWidget {
 class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
   /// Two empty column headers by default when creating a deck.
   static const List<String> _defaultNewDeckFields = ['', ''];
-
   late List<TextEditingController> _fieldControllers;
   late final FocusNode _deckNameFocusNode;
-
-  static InputDecoration _borderlessDecoration(
-    BuildContext context, {
-    String? hintText,
-  }) {
-    return InputDecoration(
-      hintText: hintText,
-      border: InputBorder.none,
-      enabledBorder: InputBorder.none,
-      focusedBorder: InputBorder.none,
-      isDense: true,
-      contentPadding: const EdgeInsets.fromLTRB(0, 6, 0, 6),
-    );
-  }
-
-  static const _fieldAddRemoveIconBtn = BoxConstraints(
-    minWidth: 44,
-    minHeight: 44,
-  );
-
-  /// Thinner than [ _outlineDecoration]: ~25% of theme vertical padding (half of prior compact).
-  static InputDecoration _outlineDecorationCompact(
-    BuildContext context, {
-    String? hintText,
-  }) {
-    final base = Theme.of(context).inputDecorationTheme;
-    final dir = Directionality.of(context);
-    final resolved =
-        base.contentPadding?.resolve(dir) ??
-        const EdgeInsets.fromLTRB(12, 16, 12, 16);
-    const verticalScale = 0.2;
-    return InputDecoration(
-      hintText: hintText,
-      border: const OutlineInputBorder(),
-      contentPadding: EdgeInsets.fromLTRB(
-        resolved.left,
-        resolved.top * verticalScale,
-        resolved.right,
-        resolved.bottom * verticalScale,
-      ),
-      isDense: true,
-      filled: base.filled,
-      fillColor: base.fillColor,
-      floatingLabelBehavior: FloatingLabelBehavior.never,
-    );
-  }
 
   @override
   void initState() {
@@ -108,12 +61,7 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
     });
   }
 
-  void _removeLastField() {
-    if (_fieldControllers.isEmpty) return;
-    setState(() {
-      _fieldControllers.removeLast().dispose();
-    });
-  }
+  int? _draggingFieldIndex;
 
   @override
   void afterFirstLayout() {
@@ -153,7 +101,7 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
     final rate = ref.watch(createDeckProvider.select((value) => value.rate));
 
     return Column(
-      spacing: 20,
+      spacing: 16,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(
@@ -168,17 +116,18 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Icon(LucideIcons.activity),
+                  Icon(LucideIcons.activity, size: 24),
                   NumberPicker(
                     minValue: kDeckEditorRateMin,
                     maxValue: kDeckEditorRateMax,
-                    itemWidth: 50,
-                    itemHeight: 30,
+                    itemWidth: 44,
+                    itemHeight: 44,
                     step: 1,
                     axis: Axis.vertical,
                     value: rate,
+                    textStyle: TextStyle(fontSize: kFontSizeMedium),
                     selectedTextStyle: TextStyle(
-                      fontSize: 18,
+                      fontSize: kFontSizeLarge,
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.primary,
                     ),
@@ -190,108 +139,224 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
                       ref.read(createDeckProvider.notifier).changeRate(value);
                     },
                   ),
-                  Text(loc.cardsPerDay),
+                  Text(
+                    loc.cardsPerDay,
+                    style: TextStyle(fontSize: kFontSizeMedium),
+                  ),
                 ],
               ),
               Text(
                 loc.newCardEveryMinutes(((86400 / rate) / 60).toInt()),
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: kFontSizeMedium,
+                  color: Colors.grey[600],
+                ),
               ),
             ],
           ),
         ),
 
+        // TextField for deck name.
         TextField(
           controller: ref.read(createDeckProvider.notifier).nameController,
           focusNode: _deckNameFocusNode,
           minLines: 1,
           maxLines: 1,
-          textAlign: TextAlign.center,
+          textAlign: TextAlign.left,
           selectAllOnFocus: true,
           onTapAlwaysCalled: true,
-          decoration: _borderlessDecoration(
-            context,
-            hintText: _deckNameFocusNode.hasFocus
-                ? null
-                : context.loc.createInputDeckName,
+          decoration: InputDecoration(
+            labelText: context.loc.createInputDeckName,
+            border: const OutlineInputBorder(),
+            isDense: true,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 12,
+              // 使文本区域本身高度接近 _textFieldHeight（假设字体 16）
+              vertical: (kTextFieldHeight - 16) / 2,
+            ),
+            filled: Theme.of(context).inputDecorationTheme.filled,
+            fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+            floatingLabelBehavior: FloatingLabelBehavior.auto,
           ),
         ),
+
+        // TextFields for deck fields with reordering.
         Column(
-          spacing: 12,
+          spacing: 16,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (var i = 0; i < _fieldControllers.length; i++)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: 2,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4),
-                    child: Text(
-                      'Header ${i + 1}',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelSmall?.copyWith(fontSize: 9),
-                    ),
-                  ),
-                  TextField(
-                    controller: _fieldControllers[i],
-                    minLines: 1,
-                    maxLines: 1,
-                    decoration: _outlineDecorationCompact(
-                      context,
-                      hintText: null,
-                    ),
-                  ),
-                ],
-              ),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    tooltip: loc.deckEditorAddFieldTooltip,
-                    padding: EdgeInsets.zero,
-                    constraints: _fieldAddRemoveIconBtn,
-                    onPressed: _addField,
-                    icon: Icon(LucideIcons.plus),
-                  ),
-                  if (_fieldControllers.isNotEmpty)
-                    IconButton(
-                      tooltip: loc.deckEditorRemoveFieldTooltip,
-                      padding: EdgeInsets.zero,
-                      constraints: _fieldAddRemoveIconBtn,
-                      onPressed: _removeLastField,
-                      icon: Icon(
-                        LucideIcons.minus,
-                        color: Theme.of(context).colorScheme.error,
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              onReorderStart: (index) {
+                setState(() {
+                  _draggingFieldIndex = index;
+                });
+              },
+              onReorder: (oldIndex, newIndex) {
+                setState(() {
+                  if (newIndex > oldIndex) {
+                    newIndex -= 1;
+                  }
+                  final controller = _fieldControllers.removeAt(oldIndex);
+                  _fieldControllers.insert(newIndex, controller);
+                  _draggingFieldIndex = null;
+                });
+              },
+              proxyDecorator: (child, index, animation) {
+                return AnimatedBuilder(
+                  animation: animation,
+                  child: child,
+                  builder: (context, child) {
+                    final scale = 1.0 + 0.05 * animation.value;
+                    return Transform.scale(
+                      scale: scale,
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: child,
                       ),
-                    ),
-                ],
+                    );
+                  },
+                );
+              },
+              itemCount: _fieldControllers.length,
+              itemBuilder: (context, i) {
+                final isDimmed =
+                    _draggingFieldIndex != null && _draggingFieldIndex != i;
+                return AnimatedOpacity(
+                  key: ValueKey('deck_field_$i'),
+                  duration: const Duration(milliseconds: 150),
+                  opacity: isDimmed ? 0.25 : 1,
+                  child: Stack(
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 4,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(4, 24, 4, 4),
+                            child: Text(
+                              '${context.loc.addFactFieldShortLabel} ${i + 1}',
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(fontSize: kFontSizeSmall),
+                            ),
+                          ),
+                          TextField(
+                            controller: _fieldControllers[i],
+                            minLines: 1,
+                            maxLines: 1,
+                            decoration: InputDecoration(
+                              border: const OutlineInputBorder(),
+                              isDense: false,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical:
+                                    (kTextFieldHeight - kFontSizeMedium) / 2,
+                              ),
+                              filled: Theme.of(
+                                context,
+                              ).inputDecorationTheme.filled,
+                              fillColor: Theme.of(
+                                context,
+                              ).inputDecorationTheme.fillColor,
+                              floatingLabelBehavior:
+                                  FloatingLabelBehavior.never,
+                              suffixIconConstraints: const BoxConstraints(
+                                minWidth: 40,
+                                minHeight: 40,
+                              ),
+                              suffixIcon: Padding(
+                                padding: const EdgeInsets.only(right: 16),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  spacing: 2,
+                                  children: [
+                                    IconButton(
+                                      tooltip: loc.deckEditorRemoveFieldTooltip,
+                                      padding: EdgeInsets.zero,
+                                      constraints: kIconBtnConstraints,
+                                      onPressed: _fieldControllers.length == 2
+                                          ? null
+                                          : () {
+                                              setState(() {
+                                                _fieldControllers
+                                                    .removeAt(i)
+                                                    .dispose();
+                                              });
+                                            },
+                                      icon: Icon(
+                                        LucideIcons.trash2,
+                                        size: 18,
+                                        color: _fieldControllers.length == 2
+                                            ? Theme.of(context).disabledColor
+                                            : Theme.of(
+                                                context,
+                                              ).colorScheme.error,
+                                      ),
+                                    ),
+                                    ReorderableDragStartListener(
+                                      index: i,
+                                      child: IconButton(
+                                        padding: EdgeInsets.zero,
+                                        constraints: kIconBtnConstraints,
+                                        onPressed: () {},
+                                        icon: Icon(
+                                          LucideIcons.gripVertical,
+                                          color: Theme.of(context).hintColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            // Add field button.
+            Align(
+              alignment: Alignment.center,
+              child: TextButton(
+                onPressed: _addField,
+                child: Text(
+                  loc.deckCreateAddField,
+                  style: const TextStyle(
+                    decoration: TextDecoration.underline,
+                    fontSize: kFontSizeSmall,
+                  ),
+                ),
               ),
             ),
           ],
         ),
 
-        FilledButton(
-          onPressed: () {
-            ref
-                .read(createDeckProvider.notifier)
-                .createDeck(
-                  context,
-                  _fieldControllers.map((c) => c.text).toList(),
-                );
-          },
-          child: Row(
-            spacing: 5,
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              DeckLoadingState(child: Icon(LucideIcons.save)),
-              Text(loc.save),
-            ],
+        SizedBox(
+          height: kButtonHeight,
+          child: FilledButton(
+            onPressed: () {
+              ref
+                  .read(createDeckProvider.notifier)
+                  .createDeck(
+                    context,
+                    _fieldControllers.map((c) => c.text).toList(),
+                  );
+            },
+            child: Row(
+              spacing: 5,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                DeckLoadingState(child: Icon(LucideIcons.save)),
+                Text(loc.save, style: TextStyle(fontSize: kFontSizeMedium)),
+              ],
+            ),
           ),
         ),
       ],

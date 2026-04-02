@@ -61,6 +61,7 @@
     "deckEditorFieldHintSecond": "例如：日语",
     "deckEditorAddFieldTooltip": "添加列标题",
     "deckEditorRemoveFieldTooltip": "移除此列标题",
+    "deckCreateAddField": "新增一个字段",
     "deckEditorNameRequired": "请输入卡组名称",
     "deckEditorMinTwoFields": "请再添加一个列标题（至少需要两列）",
     "deckEditorFieldNamesRequired": "请填写每个列标题",
