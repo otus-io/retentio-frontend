@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:io';
 
 import 'package:audio_waveforms/audio_waveforms.dart';
@@ -10,14 +11,17 @@ import 'package:retentio/screen/deck/fact_add_composer/entry_row.dart';
 import 'package:retentio/screen/deck/fact_add_composer/fact_edit_logic.dart';
 import 'package:retentio/screen/deck/fact_add_composer/focus.dart';
 import 'package:retentio/screen/deck/fact_add_composer/media_handling_coordinator.dart';
+import 'package:retentio/screen/deck/providers/card_audio_mic_handoff.dart';
 import 'package:retentio/screen/deck/fact_add_composer/row_model.dart';
 import 'package:retentio/screen/deck/fact_add_composer/toolbars.dart';
+import 'package:record/record.dart';
 import 'package:retentio/services/apis/media_service.dart';
 
 import '../../../models/deck.dart';
 import '../../../models/fact.dart';
 import '../../../providers/loading_state_provider.dart';
 import '../../../services/apis/card_service.dart';
+import '../../../utils/media_client_id.dart';
 import '../../decks/widgets/deck_loading_state.dart';
 
 class FactEdit extends ConsumerStatefulWidget {
@@ -45,11 +49,15 @@ class _FactEditState extends ConsumerState<FactEdit>
 
   bool _recordingVoice = false;
   late final RecorderController _voiceRecorder;
+  late final AudioRecorder _iosPackageVoiceRecorder;
 
   List<GlobalKey> get _hostKeys => [for (final r in _rows ?? []) r.row.hostKey];
 
   @override
   RecorderController get voiceRecorder => _voiceRecorder;
+
+  @override
+  AudioRecorder? get iosPackageVoiceRecorder => _iosPackageVoiceRecorder;
 
   @override
   bool get isRecordingVoice => _recordingVoice;
@@ -61,9 +69,15 @@ class _FactEditState extends ConsumerState<FactEdit>
   List<GlobalKey> get mediaTargetHostKeys => _hostKeys;
 
   @override
+  Future<void> prepareForExternalMicRecording() async {
+    await ref.read(cardAudioMicHandoffProvider.notifier).pauseAllForMic();
+  }
+
+  @override
   void initState() {
     super.initState();
     _voiceRecorder = RecorderController();
+    _iosPackageVoiceRecorder = AudioRecorder();
     FocusManager.instance.addListener(_onFocusChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadFact());
   }
@@ -188,8 +202,6 @@ class _FactEditState extends ConsumerState<FactEdit>
   Future<String?> _resolveMediaIdForSubmit(
     FactEditRowModel row,
     MediaSlotKind kind,
-    String cidBase,
-    String cidTag,
   ) async {
     final path = row.row.pathFor(kind);
     final existingId = row.existingFor(kind);
@@ -200,7 +212,7 @@ class _FactEditState extends ConsumerState<FactEdit>
       return MediaService.upload(
         filePath: path,
         slotKind: kind,
-        clientId: '$cidBase-$cidTag',
+        clientId: newMediaClientId(),
       );
     }
     // Not a local file path (existing id/url seeded in row path) -> keep as-is.
@@ -228,15 +240,10 @@ class _FactEditState extends ConsumerState<FactEdit>
     ref.read(loadingStateProvider.notifier).showLoading();
     try {
       final entries = <FactEntry>[];
-      for (var i = 0; i < rows.length; i++) {
-        final row = rows[i];
-        final cidBase = '${DateTime.now().microsecondsSinceEpoch}-$i';
-
+      for (final row in rows) {
         final imageId = await _resolveMediaIdForSubmit(
           row,
           MediaSlotKind.image,
-          cidBase,
-          'img',
         );
         if (!mounted) return;
         if (row.row.imagePath != null && imageId == null) {
@@ -247,8 +254,6 @@ class _FactEditState extends ConsumerState<FactEdit>
         final videoId = await _resolveMediaIdForSubmit(
           row,
           MediaSlotKind.video,
-          cidBase,
-          'vid',
         );
         if (!mounted) return;
         if (row.row.videoPath != null && videoId == null) {
@@ -259,8 +264,6 @@ class _FactEditState extends ConsumerState<FactEdit>
         final audioId = await _resolveMediaIdForSubmit(
           row,
           MediaSlotKind.audio,
-          cidBase,
-          'aud',
         );
         if (!mounted) return;
         if (row.row.audioPath != null && audioId == null) {
@@ -268,12 +271,7 @@ class _FactEditState extends ConsumerState<FactEdit>
           return;
         }
 
-        final jsonId = await _resolveMediaIdForSubmit(
-          row,
-          MediaSlotKind.json,
-          cidBase,
-          'json',
-        );
+        final jsonId = await _resolveMediaIdForSubmit(row, MediaSlotKind.json);
         if (!mounted) return;
         if (row.row.jsonPath != null && jsonId == null) {
           _snack(loc.addFactUploadFailed);
@@ -345,6 +343,7 @@ class _FactEditState extends ConsumerState<FactEdit>
   @override
   void dispose() {
     FocusManager.instance.removeListener(_onFocusChanged);
+    unawaited(_iosPackageVoiceRecorder.dispose());
     _voiceRecorder.dispose();
     for (final model in _rows ?? <FactEditRowModel>[]) {
       model.row.dispose();

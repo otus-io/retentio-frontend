@@ -8,6 +8,7 @@ import 'package:flutter/services.dart' show PlatformException;
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/deck/fact_add_composer/focus.dart';
 import 'package:retentio/screen/deck/fact_add_composer/pick_extensions.dart';
@@ -20,6 +21,10 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
   set isRecordingVoice(bool value);
   List<GlobalKey> get mediaTargetHostKeys;
 
+  /// iOS only: when non-null, voice capture uses [record] instead of
+  /// [RecorderController] (avoids audio_waveforms `AVAudioEngine` + -10868).
+  AudioRecorder? get iosPackageVoiceRecorder => null;
+
   void showComposerSnack(String message);
   void attachPathOnTargetRow(MediaSlotKind kind, String path);
   bool get targetRowHasAttachment;
@@ -27,6 +32,12 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
 
   bool get voiceRecordingAvailable =>
       !kIsWeb && (Platform.isIOS || Platform.isAndroid);
+
+  bool get _usesIosPackageRecorder =>
+      !kIsWeb && Platform.isIOS && iosPackageVoiceRecorder != null;
+
+  /// Pause underlying card/deck audio so the microphone can own the session.
+  Future<void> prepareForExternalMicRecording() async {}
 
   int targetRowIndexForMedia() {
     return addFactTargetRowIndexForMedia(
@@ -90,7 +101,10 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
       await finishVoiceRecording();
       return;
     }
-    final permitted = await voiceRecorder.checkPermission();
+    await prepareForExternalMicRecording();
+    final permitted = _usesIosPackageRecorder
+        ? await iosPackageVoiceRecorder!.hasPermission()
+        : await voiceRecorder.checkPermission();
     if (!permitted) {
       if (mounted) showComposerSnack(loc.addFactMicPermissionDenied);
       return;
@@ -102,10 +116,22 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
       'fact_voice_${DateTime.now().millisecondsSinceEpoch}.$ext',
     );
     try {
-      await voiceRecorder.record(
-        path: filePath,
-        recorderSettings: const RecorderSettings(),
-      );
+      if (_usesIosPackageRecorder) {
+        await iosPackageVoiceRecorder!.start(
+          const RecordConfig(
+            encoder: AudioEncoder.aacLc,
+            bitRate: 128000,
+            sampleRate: 44100,
+            numChannels: 1,
+          ),
+          path: filePath,
+        );
+      } else {
+        await voiceRecorder.record(
+          path: filePath,
+          recorderSettings: const RecorderSettings(),
+        );
+      }
       if (mounted) setState(() => isRecordingVoice = true);
     } catch (_) {
       if (mounted) showComposerSnack(loc.addFactRecordingFailed);
@@ -116,19 +142,40 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
     final loc = AppLocalizations.of(context)!;
     String? outPath;
     try {
-      outPath = await voiceRecorder.stop();
+      if (_usesIosPackageRecorder) {
+        outPath = await iosPackageVoiceRecorder!.stop();
+      } else {
+        outPath = await voiceRecorder.stop();
+      }
     } catch (_) {
       if (mounted) showComposerSnack(loc.addFactRecordingFailed);
     }
     if (!mounted) return;
     setState(() => isRecordingVoice = false);
     if (outPath != null && outPath.isNotEmpty) {
+      try {
+        if ((await File(outPath).length()) == 0) {
+          if (mounted) showComposerSnack(loc.addFactRecordingFailed);
+          return;
+        }
+      } catch (_) {
+        if (mounted) showComposerSnack(loc.addFactRecordingFailed);
+        return;
+      }
       await tryAttachPickedPath(outPath);
     }
   }
 
   Future<void> cancelVoiceRecording() async {
     if (!isRecordingVoice) return;
+    if (_usesIosPackageRecorder) {
+      try {
+        await iosPackageVoiceRecorder!.cancel();
+      } catch (_) {}
+      if (!mounted) return;
+      setState(() => isRecordingVoice = false);
+      return;
+    }
     String? outPath;
     try {
       outPath = await voiceRecorder.stop();

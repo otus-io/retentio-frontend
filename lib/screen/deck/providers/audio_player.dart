@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:retentio/services/apis/api_service.dart';
+import 'package:retentio/screen/deck/providers/card_audio_mic_handoff.dart';
 import 'package:retentio/utils/audio_cache_utils.dart';
 import 'package:retentio/utils/log.dart';
 
@@ -46,6 +47,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
   PlayerController? _waveformController;
   StreamSubscription<PlayerState>? _playerStateSubscription;
   StreamSubscription<int>? _positionSubscription;
+  int? _micHandoffRegId;
 
   PlayerController get waveformController => _waveformController!;
 
@@ -53,9 +55,21 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
   AudioPlayerState build() {
     final audioUrl = ref.watch(audioUrlProvider);
     _initPlayers();
+    _micHandoffRegId = ref.read(cardAudioMicHandoffProvider.notifier).register(
+      () async {
+        final c = _waveformController;
+        if (c != null) {
+          await c.stopPlayer();
+        }
+      },
+    );
     _loadAudio(audioUrl);
     ref.onDispose(() {
       logger.w('AudioPlayerNotifier  dispose');
+      final id = _micHandoffRegId;
+      if (id != null) {
+        ref.read(cardAudioMicHandoffProvider.notifier).unregister(id);
+      }
       _positionSubscription?.cancel();
       _playerStateSubscription?.cancel();
       _waveformController?.dispose();
@@ -65,7 +79,9 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
 
   void _initPlayers() {
     _waveformController = PlayerController()
-      ..overrideAudioSession = true
+      // false: do not force .playback AVAudioSession; RecorderController needs
+      // .playAndRecord when adding facts over an open card (see audio_waveforms).
+      ..overrideAudioSession = false
       ..updateFrequency = UpdateFrequency.medium;
     _playerStateSubscription = _waveformController?.onPlayerStateChanged.listen(
       (playerState) {

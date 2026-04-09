@@ -11,9 +11,12 @@ import 'package:retentio/screen/deck/fact_add_composer/media_handling_coordinato
 import 'package:retentio/screen/deck/fact_add_composer/payload.dart';
 import 'package:retentio/screen/deck/fact_add_composer/row_model.dart';
 import 'package:retentio/screen/deck/fact_add_composer/toolbars.dart';
+import 'package:retentio/screen/deck/providers/card_audio_mic_handoff.dart';
 import 'package:retentio/screen/decks/providers/deck_list.dart';
+import 'package:record/record.dart';
 import 'package:retentio/services/apis/card_service.dart';
 import 'package:retentio/services/apis/media_service.dart';
+import 'package:retentio/utils/media_client_id.dart';
 
 class FactAdd extends ConsumerStatefulWidget {
   const FactAdd({super.key, required this.deck, this.onStudyQueueRefresh});
@@ -36,11 +39,15 @@ class _FactAddState extends ConsumerState<FactAdd>
   bool _submitting = false;
   bool _recordingVoice = false;
   late final RecorderController _voiceRecorder;
+  late final AudioRecorder _iosPackageVoiceRecorder;
 
   List<GlobalKey> get _hostKeys => [for (final r in _rows) r.hostKey];
 
   @override
   RecorderController get voiceRecorder => _voiceRecorder;
+
+  @override
+  AudioRecorder? get iosPackageVoiceRecorder => _iosPackageVoiceRecorder;
 
   @override
   bool get isRecordingVoice => _recordingVoice;
@@ -52,10 +59,16 @@ class _FactAddState extends ConsumerState<FactAdd>
   List<GlobalKey> get mediaTargetHostKeys => _hostKeys;
 
   @override
+  Future<void> prepareForExternalMicRecording() async {
+    await ref.read(cardAudioMicHandoffProvider.notifier).pauseAllForMic();
+  }
+
+  @override
   void initState() {
     super.initState();
     _rows = AddFactRowModel.listForDeckFields(widget.deck.fields);
     _voiceRecorder = RecorderController();
+    _iosPackageVoiceRecorder = AudioRecorder();
     FocusManager.instance.addListener(_onFocusChanged);
   }
 
@@ -66,6 +79,7 @@ class _FactAddState extends ConsumerState<FactAdd>
   @override
   void dispose() {
     FocusManager.instance.removeListener(_onFocusChanged);
+    unawaited(_iosPackageVoiceRecorder.dispose());
     _voiceRecorder.dispose();
     for (final r in _rows) {
       r.dispose();
@@ -178,7 +192,6 @@ class _FactAddState extends ConsumerState<FactAdd>
 
       for (var i = 0; i < _rows.length; i++) {
         final row = _rows[i];
-        final cidBase = '${DateTime.now().microsecondsSinceEpoch}-$i';
         String? imgId;
         String? vidId;
         String? audId;
@@ -187,14 +200,13 @@ class _FactAddState extends ConsumerState<FactAdd>
         Future<bool> uploadIfPresent(
           String? path,
           MediaSlotKind kind,
-          String tag,
           void Function(String id) assign,
         ) async {
           if (path == null) return true;
           final id = await MediaService.upload(
             filePath: path,
             slotKind: kind,
-            clientId: '$cidBase-$tag',
+            clientId: newMediaClientId(),
           );
           if (id == null) return false;
           assign(id);
@@ -204,25 +216,21 @@ class _FactAddState extends ConsumerState<FactAdd>
         if (!await uploadIfPresent(
               row.imagePath,
               MediaSlotKind.image,
-              'img',
               (id) => imgId = id,
             ) ||
             !await uploadIfPresent(
               row.videoPath,
               MediaSlotKind.video,
-              'vid',
               (id) => vidId = id,
             ) ||
             !await uploadIfPresent(
               row.audioPath,
               MediaSlotKind.audio,
-              'aud',
               (id) => audId = id,
             ) ||
             !await uploadIfPresent(
               row.jsonPath,
               MediaSlotKind.json,
-              'json',
               (id) => jsonId = id,
             )) {
           if (mounted) _snack(loc.addFactUploadFailed);
