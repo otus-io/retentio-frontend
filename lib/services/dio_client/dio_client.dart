@@ -358,6 +358,10 @@ class DioClient {
     } on DioException catch (e) {
       _handleError(e);
       onError.call();
+      try {
+        final fe = File(downloadPath);
+        if (await fe.exists()) await fe.delete();
+      } catch (_) {}
       return '';
     }
   }

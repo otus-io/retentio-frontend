@@ -54,21 +54,20 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
   @override
   AudioPlayerState build() {
     final audioUrl = ref.watch(audioUrlProvider);
+    final micHandoff = ref.read(cardAudioMicHandoffProvider.notifier);
     _initPlayers();
-    _micHandoffRegId = ref.read(cardAudioMicHandoffProvider.notifier).register(
-      () async {
-        final c = _waveformController;
-        if (c != null) {
-          await c.stopPlayer();
-        }
-      },
-    );
+    _micHandoffRegId = micHandoff.register(() async {
+      final c = _waveformController;
+      if (c != null) {
+        await c.stopPlayer();
+      }
+    });
     _loadAudio(audioUrl);
     ref.onDispose(() {
       logger.w('AudioPlayerNotifier  dispose');
       final id = _micHandoffRegId;
       if (id != null) {
-        ref.read(cardAudioMicHandoffProvider.notifier).unregister(id);
+        micHandoff.unregister(id);
       }
       _positionSubscription?.cancel();
       _playerStateSubscription?.cancel();
@@ -129,7 +128,21 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
   Future<void> _loadAudio(String audioUrl) async {
     try {
       final path = await _localAudioCachePath(audioUrl);
-      if (!File(path).existsSync()) {
+      final cacheFile = File(path);
+      final cacheExists = cacheFile.existsSync();
+      var cacheBytes = -1;
+      if (cacheExists) {
+        try {
+          cacheBytes = cacheFile.lengthSync();
+        } catch (_) {}
+      }
+      final cacheUsable = cacheExists && cacheBytes > 0;
+      if (!cacheUsable) {
+        if (cacheExists) {
+          try {
+            await cacheFile.delete();
+          } catch (_) {}
+        }
         logger.i("开始下载音频...");
         final file = await ApiService.downloadFile(audioUrl, path);
         logger.i("下载完成: $file");
