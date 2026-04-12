@@ -8,11 +8,21 @@
 set -e
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || REPO_ROOT=""
-if [ -z "$REPO_ROOT" ] || [ ! -f "$REPO_ROOT/pubspec.yaml" ]; then
-    echo "Error: pre-commit must run inside this git repo (expected pubspec.yaml at root)."
+if [ -z "$REPO_ROOT" ]; then
+    echo "Error: pre-commit must run inside a git repository."
     exit 1
 fi
 cd "$REPO_ROOT"
+
+# Flutter app: pubspec at repo root (this repo) or legacy frontend/ subfolder.
+if [ -f "$REPO_ROOT/pubspec.yaml" ]; then
+    FLUTTER_ROOT="$REPO_ROOT"
+elif [ -f "$REPO_ROOT/frontend/pubspec.yaml" ]; then
+    FLUTTER_ROOT="$REPO_ROOT/frontend"
+else
+    echo "Error: expected pubspec.yaml at repository root or in frontend/"
+    exit 1
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -50,8 +60,11 @@ FAILED=0
 # Dart format (run first so analyze/tests see formatted code)
 # =============================================================================
 echo -e "${YELLOW}━━━ Dart format ━━━${NC}"
-echo "🔧 Running dart format . ..."
-if dart format .; then
+_flutter_rel="${FLUTTER_ROOT#"$REPO_ROOT"}"
+_flutter_rel="${_flutter_rel#/}"
+[ -z "$_flutter_rel" ] && _flutter_rel="."
+echo "🔧 Running dart format . (cwd: $_flutter_rel)..."
+if (cd "$FLUTTER_ROOT" && dart format .); then
     echo -e "${GREEN}  ✓ dart format completed${NC}"
     # Refresh index so the commit includes formatter output (not only the working tree).
     while IFS= read -r -d '' f; do
@@ -127,7 +140,7 @@ echo -e "${YELLOW}━━━ Dart / Flutter ━━━${NC}"
 
 # --- flutter analyze ---
 echo "🔎 Running flutter analyze..."
-if (flutter analyze --no-pub); then
+if (cd "$FLUTTER_ROOT" && flutter analyze --no-pub); then
     echo -e "${GREEN}  ✓ Flutter analysis OK${NC}"
 else
     echo -e "${RED}  ✗ Flutter analysis found issues${NC}"
@@ -136,7 +149,7 @@ fi
 
 # --- flutter test ---
 echo "🧪 Running Flutter tests..."
-if (flutter test); then
+if (cd "$FLUTTER_ROOT" && flutter test); then
     echo -e "${GREEN}  ✓ Flutter tests passed${NC}"
 else
     echo -e "${RED}  ✗ Flutter tests failed${NC}"

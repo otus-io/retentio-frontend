@@ -4,7 +4,7 @@ part of 'index.dart';
 /// Description:
 
 /// Picked at compile time via `--dart-define=API_ENV=debug|dev|release`.
-/// When omitted, defaults to [ApiEnv.dev] (staging / wordupx :8443).
+/// When omitted, defaults to [ApiEnv.dev] (staging :8443).
 ApiEnv _resolveApiEnv() {
   const raw = String.fromEnvironment('API_ENV', defaultValue: '');
   if (raw.isEmpty) return ApiEnv.dev;
@@ -45,9 +45,9 @@ class Env {
       case ApiEnv.debug:
         return 'http://localhost:8080';
       case ApiEnv.dev:
-        return 'https://api.wordupx.com:8443';
+        return 'https://api.retentio.app:8443';
       case ApiEnv.release:
-        return 'https://api.wordupx.com';
+        return 'https://api.retentio.app';
     }
   }
 }

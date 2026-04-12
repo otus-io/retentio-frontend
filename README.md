@@ -36,8 +36,8 @@ flutter run --dart-define=API_HOST=https://api-staging.example.com
 Current host mapping in `lib/services/env.dart`:
 
 - `debug` -> `http://localhost:8080`
-- `dev` -> `https://api.wordupx.com:8443`
-- `release` -> `https://api.wordupx.com`
+- `dev` -> `https://api.retentio.app:8443`
+- `release` -> `https://api.retentio.app`
 
 ## Git hooks
 
