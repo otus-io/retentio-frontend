@@ -31,14 +31,27 @@
   - [获取单个词条](#获取单个词条)
   - [更新词条](#更新词条)
   - [删除词条](#删除词条)
-- [4. 卡片](#4-卡片)
+- [4. 标签](#4-标签)
+  - [创建标签](#创建标签)
+  - [列出你的标签](#列出你的标签)
+  - [获取单个标签](#获取单个标签)
+  - [更新标签](#更新标签)
+  - [删除标签](#删除标签)
+  - [将标签关联到卡组](#将标签关联到卡组)
+  - [从卡组移除标签](#从卡组移除标签)
+  - [列出卡组上的标签](#列出卡组上的标签)
+  - [将标签关联到词条](#将标签关联到词条)
+  - [从词条移除标签](#从词条移除标签)
+  - [列出词条上的标签](#列出词条上的标签)
+  - [列出拥有某标签的所有词条](#列出拥有某标签的所有词条)
+- [5. 卡片](#5-卡片)
   - [为已有词条添加一张卡（如反向卡）](#为已有词条添加一张卡如反向卡)
   - [获取下一张最紧急卡片](#获取下一张最紧急卡片)
   - [复习卡片](#复习卡片)
   - [隐藏卡片](#隐藏卡片)
   - [删除卡片](#删除卡片)
   - [获取卡片统计](#获取卡片统计)
-- [5. 媒体（音频 / 图片）](#5-媒体音频--图片)
+- [6. 媒体（音频 / 图片）](#6-媒体音频--图片)
   - [上传媒体](#上传媒体)
   - [列出媒体](#列出媒体)
   - [获取媒体元数据](#获取媒体元数据)
@@ -57,53 +70,65 @@
 
 - 打开 Swagger UI：
   - **本地**: <http://localhost:8080/docs>
-  - **生产环境**: <https://api.wordupx.com:8443/docs>
+  - **生产环境**: <https://api.retentio.app:8443/docs>
 
 > **时间戳规范：** API 中所有时间戳均使用 **UTC** 时区。
 > ISO 8601 字符串使用 `Z` 后缀（例如 `2026-02-08T12:00:00Z`）。
 > Unix 时间戳为自 Unix 纪元（1970-01-01T00:00:00Z）以来的秒数。
 > 客户端需自行进行本地时间的转换。
 >
-> **ID 格式：** 卡组、词条、卡片 ID 均为随机 **小写字母数字** 字符串（无下划线或连字符）。后端生成：**deck_id** 12 位、**fact_id** 与 **card_id** 各 8 位。媒体 ID（如 `[audio:id]` 中的 id）为 10 位。本指南中的示例 ID 均符合上述长度。
+> **ID 格式：** 卡组、词条、卡片与**标签** ID 均为随机 **小写字母数字** 字符串（无下划线或连字符）。后端生成：**deck_id** 12 位；**fact_id**、**card_id**、**tag_id** 各 8 位。媒体 ID（如 `[audio:id]` 中的 id）为 10 位。本指南中的示例 ID 均符合上述长度。
 
 ---
 
 ## API 接口参考
 
-| 接口 | 方法 | 说明 |
-| ------ | ------ | ------ |
-| `/auth/register` | POST | 注册用户 |
-| `/auth/login` | POST | 登录 |
-| `/auth/logout` | POST | 登出（使令牌失效） |
-| `/auth/forgot-password` | POST | 请求密码重置令牌 |
-| `/auth/reset-password` | POST | 使用令牌重置密码 |
-| `/api/profile` | GET | 获取当前用户资料 |
-| `/api/decks` | POST | 创建卡组 |
-| `/api/decks` | GET | 获取所有卡组 |
-| `/api/decks/{id}` | GET | 获取卡组详情 |
-| `/api/decks/{id}` | PATCH | 更新卡组 |
-| `/api/decks/{id}` | DELETE | 删除卡组 |
-| `/api/decks/{id}/facts/{operation}` | POST | 添加词条：operation 为 append/prepend/shuffle/spread。请求体：facts（必填）及可选 template。为已有词条添加一张卡请使用 POST `/api/decks/{id}/card`。 |
-| `/api/decks/{id}/facts` | GET | 获取所有词条 |
-| `/api/decks/{id}/facts/{factId}` | GET | 获取单个词条 |
-| `/api/decks/{id}/facts/{factId}` | PATCH | 更新词条 |
-| `/api/decks/{id}/facts/{factId}` | DELETE | 删除词条 |
-| `/api/decks/{id}/card` | GET | 获取最紧急卡片 |
-| `/api/decks/{id}/card` | POST | 为已有词条添加一张卡（如反向卡）。请求体：fact_id、template，可选 operation。 |
-| `/api/decks/{id}/card` | PATCH | 更新卡片间隔或可见性（按 card_id） |
-| `/api/decks/{id}/cards` | GET | 获取卡片统计 |
-| `/api/decks/{id}/cards/{cardId}` | DELETE | 删除单张卡片（词条及其他卡片不变） |
-| `/api/decks/{id}/reschedule` | POST | 假期模式：按天数平移卡片复习计划 |
-| `/api/media` | POST | 上传媒体（音频/图片） |
-| `/api/media` | GET | 列出用户媒体（同步清单） |
-| `/api/media/shared` | GET | 列出或查询共享媒体（`?word=...&lang=...`） |
-| `/api/media/shared/{id}` | GET | 下载共享媒体文件 |
-| `/api/media/{id}/meta` | GET | 获取媒体元数据（不含文件体） |
-| `/api/media/{id}` | GET | 下载媒体文件 |
-| `/api/media/{id}` | DELETE | 删除媒体 |
-| `/api/admin/media/shared` | POST | **（管理端）** 上传共享媒体 |
-| `/api/admin/media/shared/{id}` | DELETE | **（管理端）** 删除共享媒体 |
-| `/api/admin/decks/import` | POST | **（管理端）** 导入共享卡组（zip + manifest） |
+| 接口                                          | 方法   | 说明                                                                                                                                                 |
+| --------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/auth/register`                              | POST   | 注册用户                                                                                                                                             |
+| `/auth/login`                                 | POST   | 登录                                                                                                                                                 |
+| `/auth/logout`                                | POST   | 登出（使令牌失效）                                                                                                                                   |
+| `/auth/forgot-password`                       | POST   | 请求密码重置令牌                                                                                                                                     |
+| `/auth/reset-password`                        | POST   | 使用令牌重置密码                                                                                                                                     |
+| `/api/profile`                                | GET    | 获取当前用户资料                                                                                                                                     |
+| `/api/decks`                                  | POST   | 创建卡组                                                                                                                                             |
+| `/api/decks`                                  | GET    | 获取所有卡组                                                                                                                                         |
+| `/api/decks/{id}`                             | GET    | 获取卡组详情                                                                                                                                         |
+| `/api/decks/{id}`                             | PATCH  | 更新卡组                                                                                                                                             |
+| `/api/decks/{id}`                             | DELETE | 删除卡组                                                                                                                                             |
+| `/api/decks/{id}/facts/{operation}`           | POST   | 添加词条：operation 为 append/prepend/shuffle/spread。请求体：facts（必填）及可选 template。为已有词条添加一张卡请使用 POST `/api/decks/{id}/card`。 |
+| `/api/decks/{id}/facts`                       | GET    | 获取词条（分页）：默认 `limit` **50**、`offset` **0**；`limit` 最大 **200**。`meta` 含 `count`、`has_more`、`limit`、`offset`、`total`。 |
+| `/api/decks/{id}/facts/{factId}`              | GET    | 获取单个词条                                                                                                                                         |
+| `/api/decks/{id}/facts/{factId}`              | PATCH  | 更新词条                                                                                                                                             |
+| `/api/decks/{id}/facts/{factId}`              | DELETE | 删除词条                                                                                                                                             |
+| `/api/decks/{id}/card`                        | GET    | 获取最紧急卡片                                                                                                                                       |
+| `/api/decks/{id}/card`                        | POST   | 为已有词条添加一张卡（如反向卡）。请求体：fact_id、template，可选 operation。                                                                        |
+| `/api/decks/{id}/card`                        | PATCH  | 更新卡片间隔或可见性（按 card_id）                                                                                                                   |
+| `/api/decks/{id}/cards`                       | GET    | 获取卡片统计                                                                                                                                         |
+| `/api/decks/{id}/cards/{cardId}`              | DELETE | 删除单张卡片（词条及其他卡片不变）                                                                                                                   |
+| `/api/decks/{id}/reschedule`                  | POST   | 假期模式：按天数平移卡片复习计划                                                                                                                     |
+| `/api/tags`                                   | POST   | 创建标签（`name`、可选 `description`）。成功时 **201**。                                                                                             |
+| `/api/tags`                                   | GET    | 列出当前用户全部标签                                                                                                                                 |
+| `/api/tags/{tagId}`                           | GET    | 获取单个标签                                                                                                                                         |
+| `/api/tags/{tagId}`                           | PATCH  | 部分更新标签 `name` / `description`                                                                                                                  |
+| `/api/tags/{tagId}`                           | DELETE | 删除标签及其所有卡组/词条关联                                                                                                                        |
+| `/api/tags/{tagId}/facts`                     | GET    | 列出带该标签的词条（`deck_id` + `fact_id`，跨卡组）                                                                                                  |
+| `/api/decks/{id}/tags/{tagId}`                | PUT    | 将已有标签关联到卡组（无请求体）                                                                                                                     |
+| `/api/decks/{id}/tags/{tagId}`                | DELETE | 从卡组移除标签                                                                                                                                       |
+| `/api/decks/{id}/tags`                        | GET    | 列出卡组上的标签                                                                                                                                     |
+| `/api/decks/{id}/facts/{factId}/tags/{tagId}` | PUT    | 将已有标签关联到词条（无请求体）                                                                                                                     |
+| `/api/decks/{id}/facts/{factId}/tags/{tagId}` | DELETE | 从词条移除标签                                                                                                                                       |
+| `/api/decks/{id}/facts/{factId}/tags`         | GET    | 仅列出某词条上的标签                                                                                                                                 |
+| `/api/media`                                  | POST   | 上传媒体（音频/图片）                                                                                                                                |
+| `/api/media`                                  | GET    | 列出用户媒体（同步清单）                                                                                                                             |
+| `/api/media/shared`                           | GET    | 列出或查询共享媒体（`?word=...&lang=...`）                                                                                                           |
+| `/api/media/shared/{id}`                      | GET    | 下载共享媒体文件                                                                                                                                     |
+| `/api/media/{id}/meta`                        | GET    | 获取媒体元数据（不含文件体）                                                                                                                         |
+| `/api/media/{id}`                             | GET    | 下载媒体文件                                                                                                                                         |
+| `/api/media/{id}`                             | DELETE | 删除媒体                                                                                                                                             |
+| `/api/admin/media/shared`                     | POST   | **（管理端）** 上传共享媒体                                                                                                                          |
+| `/api/admin/media/shared/{id}`                | DELETE | **（管理端）** 删除共享媒体                                                                                                                          |
+| `/api/admin/decks/import`                     | POST   | **（管理端）** 导入共享卡组（zip + manifest）                                                                                                        |
 
 > **说明：** 管理端媒体相关接口为**开发中**，行为可能变更。
 
@@ -239,10 +264,7 @@
 
 ```json
 {
-  "fields": [
-    "English",
-    "Japanese"
-  ],
+  "fields": ["English", "Japanese"],
   "name": "English Japanese IELTS Deck",
   "rate": 20
 }
@@ -353,24 +375,24 @@
 
 > **理解 `meta`（元数据）：**
 >
-> | 字段 | 说明 |
-> | ------ | ------ |
+> | 字段            | 说明                   |
+> | --------------- | ---------------------- |
 > | `total`（总数） | 当前用户拥有的卡组总数 |
-> | `msg`（消息） | 状态信息 |
+> | `msg`（消息）   | 状态信息               |
 
 <!-- -->
 
 > **理解 `stats`（统计信息）：**
 >
-> | 字段 | 说明 |
-> | ------ | ------ |
-> | `cards_count`（卡片总数） | 卡组中的卡片总数 |
-> | `facts_count`（词条总数） | 卡组中的词条总数 |
-> | `unseen_cards`（未学习卡片） | 从未复习过的新卡片数量 |
-> | `reviewed_cards`（已学习卡片） | 已学习过至少一次的卡片数量 |
-> | `due_cards`（待复习卡片） | 当前待复习的卡片数量（due_date <= 当前时间） |
-> | `hidden_cards`（已隐藏卡片） | 被用户隐藏的卡片数量 |
-> | `new_cards_today`（今日新增卡片） | 今天添加的卡片数量（从午夜开始计算） |
+> | 字段                               | 说明                                           |
+> | ---------------------------------- | ---------------------------------------------- |
+> | `cards_count`（卡片总数）          | 卡组中的卡片总数                               |
+> | `facts_count`（词条总数）          | 卡组中的词条总数                               |
+> | `unseen_cards`（未学习卡片）       | 从未复习过的新卡片数量                         |
+> | `reviewed_cards`（已学习卡片）     | 已学习过至少一次的卡片数量                     |
+> | `due_cards`（待复习卡片）          | 当前待复习的卡片数量（due_date <= 当前时间）   |
+> | `hidden_cards`（已隐藏卡片）       | 被用户隐藏的卡片数量                           |
+> | `new_cards_today`（今日新增卡片）  | 今天添加的卡片数量（从午夜开始计算）           |
 > | `last_reviewed_at`（上次复习时间） | 最近一次复习的 Unix 时间戳（未复习过则为 `0`） |
 >
 > 统计信息是实时计算的。对于刚创建的空卡组，所有值都为 `0`。
@@ -502,7 +524,15 @@
     { "text": "I go to school every day.", "audio": "ex1aud" },
     { "text": "School starts at nine.", "audio": "ex2aud" }
   ],
-  "fields": ["Word", "Translation", "Pronunciation", "Picture", "Clip", "Example 1", "Example 2"]
+  "fields": [
+    "Word",
+    "Translation",
+    "Pronunciation",
+    "Picture",
+    "Clip",
+    "Example 1",
+    "Example 2"
+  ]
 }
 ```
 
@@ -521,11 +551,13 @@
   例：对 3 条目的词条，每个词条生成 3 张卡（第 0 条→其余、第 1 条→其余、第 2 条→其余）：
 
 ```json
-"template": [
-  [[0], [1, 2]],
-  [[1], [0, 2]],
-  [[2], [0, 1]]
-]
+{
+  "template": [
+    [[0], [1, 2]],
+    [[1], [0, 2]],
+    [[2], [0, 1]]
+  ]
+}
 ```
 
 因此：**二维** = 一张卡（一种正/背面划分）；**三维** = 每词条多张卡（兄弟卡）。若只传一个二维模板（如仅反向 `[[1], [0]]`），API 也接受：会视为「仅含一个模板」的数组，即每个词条一张反向卡。
@@ -533,7 +565,12 @@
 示例：每个词条两张兄弟卡（正常 + 反向）：
 
 ```json
-"template": [ [[0], [1]], [[1], [0]] ]
+{
+  "template": [
+    [[0], [1]],
+    [[1], [0]]
+  ]
+}
 ```
 
 每个词条会得到正面=0/背面=1 与正面=1/背面=0 各一张。若只想为部分词条增加反向卡，可稍后对单个词条调用 `POST /api/decks/{id}/card` 添加。
@@ -561,19 +598,54 @@
 
 **接口：** `GET /api/decks/{id}/facts`
 
-**响应示例：**
+**查询参数（可选）：** `limit`（默认 **50**，最大 **200**）、`offset`（默认 **0**）。省略时使用默认值；**`meta` 回显 `limit` 与 `offset`**，并含 `count`、`has_more`、`total`。
+
+| 名称 | 说明 |
+|------|------|
+| `limit` | 每页条数。非法或非正数→默认；超过最大→**200**。 |
+| `offset` | 按词条 **`id` 升序**排序后跳过的条数。负数→**0**。 |
+
+**请求示例**（首页；省略查询串则使用默认 `limit` 与 `offset`）：
+
+```http
+GET /api/decks/{id}/facts?limit=50&offset=0
+Authorization: Bearer <token>
+```
+
+**响应示例**（两条例词、首页；URL 不传参数时 `meta` 同样为默认 `limit`/`offset`）：
 
 ```json
 {
   "data": {
     "facts": [
-      { "id": "x9k2m4np", "entries": [{ "text": "Apple" }, { "text": "りんご" }], "fields": ["English", "Japanese"] },
-      { "id": "b00k1ab2", "entries": [{ "text": "Book" }, { "text": "本" }] }
+      {
+        "id": "x9k2m4np",
+        "entries": [{ "text": "Apple" }, { "text": "りんご" }],
+        "fields": ["English", "Japanese"],
+        "tags": [
+          { "id": "a1b2c3d4", "name": "food", "description": "" },
+          { "id": "f6e5d4c3", "name": "noun", "description": "Parts of speech" }
+        ]
+      },
+      {
+        "id": "b00k1ab2",
+        "entries": [{ "text": "Book" }, { "text": "本" }],
+        "tags": []
+      }
     ]
   },
-  "meta": { "msg": "Facts retrieved successfully" }
+  "meta": {
+    "msg": "Facts retrieved successfully",
+    "count": 2,
+    "has_more": false,
+    "limit": 50,
+    "offset": 0,
+    "total": 2
+  }
 }
 ```
+
+每个词条均包含 **`tags`**：`{ "id", "name", "description" }` 对象数组；无标签时为 `[]`。同一词条可有**多个**标签；列表与详情接口中标签按 **name** 排序。标签不存放在 Redis 的 `fact:{id}` JSON 内，由服务端按用户维度的关联键解析。
 
 ### 获取单个词条
 
@@ -587,9 +659,14 @@
     "fact": {
       "id": "x9k2m4np",
       "entries": [{ "text": "Apple" }, { "text": "りんご" }],
-      "fields": ["English", "Japanese"]
+      "fields": ["English", "Japanese"],
+      "tags": [
+        { "id": "a1b2c3d4", "name": "food", "description": "" },
+        { "id": "f6e5d4c3", "name": "noun", "description": "Parts of speech" }
+      ]
     }
-  }
+  },
+  "meta": { "msg": "Fact retrieved successfully" }
 }
 ```
 
@@ -636,7 +713,213 @@
 
 ---
 
-## 4. 卡片
+## 4. 标签
+
+标签按**用户**隔离：先用 `POST /api/tags` 创建，再通过 **`PUT`**（无 JSON 请求体）挂到**卡组**和/或**词条**上。同一标签可关联多个卡组、多个词条。键空间与命名规则见 **[标签系统设计文档](../design-doc/tagging-system.md)**。
+
+**限制：** 每用户最多 **100** 个不同标签；单个卡组最多关联 **20** 个标签。标签**名称**允许 Unicode 字母与数字、空格、连字符 `-`、撇号 `'`；首尾空白会去掉，连续空白合并为一个。唯一性按**规范化**结果校验（去首尾空白 → 合并空白 → 小写）。**`tag_id`** 为 8 位小写字母数字。
+
+错误响应为 `{ "msg": "..." }`（例如 **409** `tag name already exists`，**400** 校验失败或超出限制）。
+
+### 创建标签
+
+**接口：** `POST /api/tags`
+
+```json
+{
+  "name": "Food Recipes",
+  "description": "Cooking vocabulary"
+}
+```
+
+**响应（201）：**
+
+```json
+{
+  "data": {
+    "tag": {
+      "id": "Kt8QmNz2",
+      "name": "Food Recipes",
+      "description": "Cooking vocabulary"
+    }
+  },
+  "meta": { "msg": "Tag created successfully" }
+}
+```
+
+### 列出你的标签
+
+**接口：** `GET /api/tags`
+
+**说明：** `data.tags` 为你拥有的全部标签（最多 100 个）。顺序为 **tag id 字典序**，不是按 `name` 排序——若需按名称展示请在客户端排序。
+
+```json
+{
+  "data": {
+    "tags": [
+      {
+        "id": "Kt8QmNz2",
+        "name": "Food Recipes",
+        "description": "Cooking vocabulary"
+      },
+      { "id": "p4q5r6s7", "name": "GRE Verbal", "description": "" },
+      { "id": "z9y8x7w6", "name": "Japanese", "description": "JLPT prep" }
+    ]
+  },
+  "meta": { "msg": "Tags retrieved successfully" }
+}
+```
+
+### 获取单个标签
+
+**接口：** `GET /api/tags/{tagId}`
+
+**响应：** 与 `data.tags` 中单条结构相同，但放在 `data.tag` 下，并带 `meta.msg`。
+
+### 更新标签
+
+**接口：** `PATCH /api/tags/{tagId}`
+
+可选字段（不改的字段请省略）：
+
+```json
+{
+  "name": "Renamed Tag",
+  "description": "Updated note"
+}
+```
+
+**响应：** `data.tag` 为更新后的标签。
+
+### 删除标签
+
+**接口：** `DELETE /api/tags/{tagId}`
+
+删除该标签、其名称索引，以及所有**卡组**与**词条**上的关联。
+
+**响应：**
+
+```json
+{
+  "data": { "decks_untagged": 3 },
+  "meta": { "msg": "Tag deleted successfully" }
+}
+```
+
+（`decks_untagged` 表示删除前在正向索引上曾带有该标签的卡组数量。）
+
+### 将标签关联到卡组
+
+**接口：** `PUT /api/decks/{id}/tags/{tagId}`
+
+无请求体。须拥有该卡组与该标签。已关联时再次 `PUT` 为幂等。
+
+**响应：** `data.tags` 为**本次关联之后**该卡组上的**全部**标签（与 `GET /api/decks/{id}/tags` 形状相同）。示例：卡组上已有两个标签，再关联第三个：
+
+```json
+{
+  "data": {
+    "tags": [
+      { "id": "a1b2c3d4", "name": "GRE", "description": "" },
+      { "id": "m9n8p7q6", "name": "Verbal", "description": "" },
+      { "id": "Kt8QmNz2", "name": "Vocabulary", "description": "Core words" }
+    ]
+  },
+  "meta": { "msg": "Tags updated successfully" }
+}
+```
+
+### 从卡组移除标签
+
+**接口：** `DELETE /api/decks/{id}/tags/{tagId}`
+
+**响应：** 与 `PUT` 相同信封，`data.tags` 为移除后剩余标签。
+
+### 列出卡组上的标签
+
+**接口：** `GET /api/decks/{id}/tags`
+
+**响应：** 与 `PUT`/`DELETE` 的 `data.tags` 相同。多标签示例：
+
+```json
+{
+  "data": {
+    "tags": [
+      { "id": "a1b2c3d4", "name": "GRE", "description": "" },
+      { "id": "m9n8p7q6", "name": "Verbal", "description": "" },
+      { "id": "Kt8QmNz2", "name": "Vocabulary", "description": "Core words" }
+    ]
+  },
+  "meta": { "msg": "Tags retrieved successfully" }
+}
+```
+
+### 将标签关联到词条
+
+**接口：** `PUT /api/decks/{id}/facts/{factId}/tags/{tagId}`
+
+无请求体。标签须已存在（`POST /api/tags`）。词条须属于该卡组。
+
+**响应：** `PUT` 后该词条的完整标签列表（可有多个标签）：
+
+```json
+{
+  "data": {
+    "tags": [
+      { "id": "Kt8QmNz2", "name": "verb", "description": "Part of speech" },
+      { "id": "r5s6t7u8", "name": "hard", "description": "" }
+    ]
+  },
+  "meta": { "msg": "Tags updated successfully" }
+}
+```
+
+### 从词条移除标签
+
+**接口：** `DELETE /api/decks/{id}/facts/{factId}/tags/{tagId}`
+
+**响应：** 同 `PUT`（`data.tags` 为该词条剩余标签）。
+
+### 列出词条上的标签
+
+**接口：** `GET /api/decks/{id}/facts/{factId}/tags`
+
+**响应：** 与 `data.tags` 形状相同（可不拉取完整词条仅取标签）。两标签示例：
+
+```json
+{
+  "data": {
+    "tags": [
+      { "id": "Kt8QmNz2", "name": "verb", "description": "Part of speech" },
+      { "id": "r5s6t7u8", "name": "hard", "description": "" }
+    ]
+  },
+  "meta": { "msg": "Tags retrieved successfully" }
+}
+```
+
+### 列出拥有某标签的所有词条
+
+**接口：** `GET /api/tags/{tagId}/facts`
+
+**响应：** 你所有卡组中带该标签的词条，常有多条：
+
+```json
+{
+  "data": {
+    "facts": [
+      { "deck_id": "dk7xm2n9pq4w", "fact_id": "f4k2m9x1" },
+      { "deck_id": "dk7xm2n9pq4w", "fact_id": "n3p4q5r6" },
+      { "deck_id": "ab12cd34ef56", "fact_id": "s7t8u9v0" }
+    ]
+  },
+  "meta": { "msg": "Facts retrieved successfully" }
+}
+```
+
+---
+
+## 5. 卡片
 
 ### 为已有词条添加一张卡（如反向卡）
 
@@ -684,7 +967,7 @@
 
 - `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 
-**响应结构：** `front` 与 `back` 为**词条对象数组**，顺序按 **template**（每个对象对应 template 在该侧的一个词条索引）。每个对象与事实中的**词条（entry）**一致：可选 **`field`**（标签），以及可选的 **`text`**、**`audio`**、**`image`**、**`video`** 字符串键（无内容则省略）。正文与对应读音音频在同一对象上并列（例如 `"text": "Hello"` 与 `"audio": "https://…/api/media/…"`），对应关系明确。`audio` / `image` / `video` 在服务端能解析 base URL 时为**完整媒体 URL**（如 `https://api.wordupx.com:8443/api/media/abc123`）。使用该 URL 并携带相同 `Authorization: Bearer <token>` 即可下载。
+**响应结构：** `front` 与 `back` 为**词条对象数组**，顺序按 **template**（每个对象对应 template 在该侧的一个词条索引）。每个对象与事实中的**词条（entry）**一致：可选 **`field`**（标签），以及可选的 **`text`**、**`audio`**、**`image`**、**`video`** 字符串键（无内容则省略）。正文与对应读音音频在同一对象上并列（例如 `"text": "Hello"` 与 `"audio": "https://…/api/media/…"`），对应关系明确。`audio` / `image` / `video` 在服务端能解析 base URL 时为**完整媒体 URL**（如 `https://api.retentio.app:8443/api/media/abc123`）。使用该 URL 并携带相同 `Authorization: Bearer <token>` 即可下载。
 
 **响应（无字段名）：**
 
@@ -699,12 +982,8 @@
       "due_date": 1763269800,
       "hidden": false,
       "created_at": 1763269600,
-      "front": [
-        {"text": "Apple"}
-      ],
-      "back": [
-        {"text": "苹果"}
-      ]
+      "front": [{ "text": "Apple" }],
+      "back": [{ "text": "苹果" }]
     },
     "urgency": 1.0
   },
@@ -727,12 +1006,8 @@
       "due_date": 1763269702,
       "hidden": false,
       "created_at": 1763269700,
-      "front": [
-        {"field": "Word", "text": "Apple"}
-      ],
-      "back": [
-        {"field": "Translation", "text": "苹果"}
-      ]
+      "front": [{ "field": "Word", "text": "Apple" }],
+      "back": [{ "field": "Translation", "text": "苹果" }]
     },
     "urgency": 2.598
   },
@@ -763,9 +1038,7 @@
           "image": "https://api.example.com/api/media/img002"
         }
       ],
-      "back": [
-        {"field": "Translation", "text": "你好"}
-      ]
+      "back": [{ "field": "Translation", "text": "你好" }]
     },
     "urgency": 1.0
   },
@@ -800,9 +1073,7 @@
           "audio": "https://api.example.com/api/media/aud002"
         }
       ],
-      "back": [
-        {"field": "Translation", "text": "翻译"}
-      ]
+      "back": [{ "field": "Translation", "text": "翻译" }]
     },
     "urgency": 1.0
   },
@@ -825,9 +1096,7 @@
       "due_date": 1763269800,
       "hidden": false,
       "created_at": 1763269600,
-      "front": [
-        {"field": "Question", "text": "Only front text"}
-      ],
+      "front": [{ "field": "Question", "text": "Only front text" }],
       "back": []
     },
     "urgency": 1.0
@@ -844,18 +1113,31 @@
     "card": {
       "id": "m8n9o0p1",
       "fact_id": "f2a3b4c5",
-      "template": [[0, 1], [2, 3]],
+      "template": [
+        [0, 1],
+        [2, 3]
+      ],
       "last_review": 1763269700,
       "due_date": 1763269800,
       "hidden": false,
       "created_at": 1763269600,
       "front": [
-        {"field": "Front", "text": "Word"},
-        {"field": "Pronunciation", "audio": "https://api.wordupx.com:8443/api/media/abc123"}
+        { "field": "Front", "text": "Word" },
+        {
+          "field": "Pronunciation",
+          "audio": "https://api.retentio.app:8443/api/media/abc123"
+        }
       ],
       "back": [
-        {"field": "Picture", "image": "https://api.wordupx.com:8443/api/media/def456"},
-        {"field": "Clip", "video": "https://api.wordupx.com:8443/api/media/vid789", "text": "Translation"}
+        {
+          "field": "Picture",
+          "image": "https://api.retentio.app:8443/api/media/def456"
+        },
+        {
+          "field": "Clip",
+          "video": "https://api.retentio.app:8443/api/media/vid789",
+          "text": "Translation"
+        }
       ]
     },
     "urgency": 1.2
@@ -1025,7 +1307,11 @@
     "total_cards": 20,
     "hidden_count": 3,
     "hidden_facts": [
-      { "id": "h1d2e3n4", "entries": ["Hidden word", "隠れた語"], "fields": ["English", "Japanese"] }
+      {
+        "id": "h1d2e3n4",
+        "entries": ["Hidden word", "隠れた語"],
+        "fields": ["English", "Japanese"]
+      }
     ],
     "orphaned_hidden_cards": 0
   },
@@ -1035,7 +1321,7 @@
 
 ---
 
-## 5. 媒体（音频 / 图片）
+## 6. 媒体（音频 / 图片）
 
 可为词条附加音频、图片和视频。每条 entry 为对象，含可选 `text`、`audio`、`image`、`video`；可单独用一项媒体（如 `{ "audio": "abc123" }`），或与文本合在同一 entry（如 `{ "text": "例文。", "audio": "ex1id" }`）以明确该音频对应该句。
 
@@ -1047,10 +1333,10 @@
 
 **接口：** `POST /api/media` — multipart/form-data。
 
-| 字段         | 必填 | 说明 |
-| ------------ | ---- | ---- |
-| `file`       | 是   | 媒体文件（图片、音频或视频）。 |
-| `client_id`  | 否   | 客户端生成的 ID，用于幂等上传；若该用户下该媒体已存在，则返回 201 及已有记录。 |
+| 字段        | 必填 | 说明                                                                           |
+| ----------- | ---- | ------------------------------------------------------------------------------ |
+| `file`      | 是   | 媒体文件（图片、音频或视频）。                                                 |
+| `client_id` | 否   | 客户端生成的 ID，用于幂等上传；若该用户下该媒体已存在，则返回 201 及已有记录。 |
 
 **响应：**
 
@@ -1073,11 +1359,11 @@
 
 **接口：** `GET /api/media` — 返回当前用户的媒体（分页）。
 
-| 查询参数   | 说明 |
-| ---------- | ---- |
-| `since`    | 可选。Unix 时间戳；仅返回该时间之后创建的媒体。 |
-| `limit`    | 可选。每页条数（默认 200，最大 1000）。 |
-| `offset`   | 可选。跳过条数（默认 0）。 |
+| 查询参数 | 说明                                            |
+| -------- | ----------------------------------------------- |
+| `since`  | 可选。Unix 时间戳；仅返回该时间之后创建的媒体。 |
+| `limit`  | 可选。每页条数（默认 50，最大 200）。           |
+| `offset` | 可选。跳过条数（默认 0）。                      |
 
 **响应：**
 
@@ -1108,7 +1394,7 @@
 
 **接口：** `GET /api/media/{id}`
 
-按 ID 返回用户拥有的媒体文件（二进制）。需在请求头中携带 `Authorization: Bearer <token>`。响应头包含 `Content-Type`、`Content-Length` 和 `ETag`（与 `checksum` 一致）。请求头中携带 `If-None-Match: <ETag>` 可在文件未变更时获得 `304 Not Modified`。**获取下一张卡片** 接口会在每个正面/背面词条对象的 `audio`、`image`、`video` 字段中给出完整 URL（如 `https://api.wordupx.com:8443/api/media/{id}`）；使用该 URL 并携带相同认证头即可加载文件。
+按 ID 返回用户拥有的媒体文件（二进制）。需在请求头中携带 `Authorization: Bearer <token>`。响应头包含 `Content-Type`、`Content-Length` 和 `ETag`（与 `checksum` 一致）。请求头中携带 `If-None-Match: <ETag>` 可在文件未变更时获得 `304 Not Modified`。**获取下一张卡片** 接口会在每个正面/背面词条对象的 `audio`、`image`、`video` 字段中给出完整 URL（如 `https://api.retentio.app:8443/api/media/{id}`）；使用该 URL 并携带相同认证头即可加载文件。
 
 ### 删除媒体
 
@@ -1144,13 +1430,13 @@
 
 ## 响应示例速查
 
-上述各节均包含完整 JSON 示例。接口与响应结构对应关系与 [Response examples reference](api.md#response-examples-reference)（英文版）一致，此处不重复列表。
+上述各节均包含完整 JSON 示例。接口与响应结构对应关系与 [Response examples reference](api.md#response-examples-reference)（英文 `api.md`）一致，此处不重复列表。
 
 ---
 
 ## 后续步骤
 
-- 重复步骤 5-6 继续复习卡片
-- **标签系统** — 用标签管理卡组与词条（规划中）
+- 使用 **[标签](#4-标签)** 在卡组与词条维度整理内容
+- 在 [卡片](#5-卡片) 中重复 **获取下一张最紧急卡片** 与 **复习卡片** 步骤以持续复习
 - **离线同步** — 恢复联网后同步数据（规划中）
 - **本地存储** — 缓存卡组与卡片供离线使用（规划中）
