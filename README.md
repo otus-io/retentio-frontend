@@ -17,7 +17,7 @@ flutter run
 
 API host is compile-time configured via `--dart-define`:
 
-- `API_ENV=debug|dev|release` (default is `dev`)
+- `API_ENV=debug|dev|release`. If omitted: **`release`** in release/product builds (e.g. `flutter build ipa`, Xcode Archive); **`dev`** for normal `flutter run` and other non-release builds.
 - `API_HOST=<full-base-url>` (overrides `API_ENV` mapping when provided)
 
 Examples:
@@ -28,6 +28,9 @@ flutter run --dart-define=API_ENV=debug
 flutter run --dart-define=API_ENV=dev
 flutter run --dart-define=API_ENV=release
 
+# Point a release/IPA build at staging (optional)
+flutter build ipa --dart-define=API_ENV=dev
+
 # Direct host override (takes precedence over API_ENV)
 flutter run --dart-define=API_HOST=http://10.0.2.2:8080
 flutter run --dart-define=API_HOST=https://api-staging.example.com
@@ -36,8 +39,8 @@ flutter run --dart-define=API_HOST=https://api-staging.example.com
 Current host mapping in `lib/services/env.dart`:
 
 - `debug` -> `http://localhost:8080`
-- `dev` -> `https://api.retentio.app:8443`
-- `release` -> `https://api.retentio.app`
+- `dev` -> `https://10.0.0.145:8443`
+- `release` -> `https://api.retentio.app:8443`
 
 ## Git hooks
 

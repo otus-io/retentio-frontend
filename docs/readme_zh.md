@@ -13,6 +13,21 @@ flutter pub get
 flutter run
 ```
 
+### 后端环境与 API 地址
+
+通过 `--dart-define` 在编译期配置（实现见 `lib/services/env.dart`）：
+
+- `API_ENV=debug|dev|release`。未指定时：**release / 正式构建**（如 `flutter build ipa`、Xcode Archive）默认连 **生产**；日常 `flutter run` 等非 release 构建默认 **dev**。
+- `API_HOST=<完整 base URL>` 若非空，则覆盖 `API_ENV` 对应的主机。
+
+主机映射：
+
+- `debug` → `http://localhost:8080`
+- `dev` → `https://10.0.0.145:8443`
+- `release` → `https://api.retentio.app:8443`
+
+示例：`flutter build ipa --dart-define=API_ENV=dev` 可在正式包中指向开发环境。
+
 ## Git 钩子
 
 克隆后于仓库根目录执行一次 `./utils/setup-hooks.sh`，安装 **pre-commit**（dart格式、`flutter analyze`、测试）。
