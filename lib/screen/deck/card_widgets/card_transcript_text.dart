@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:retentio/screen/deck/card_widgets/card_text.dart';
 import 'package:retentio/screen/deck/card_widgets/card_wiki_ruby_layout.dart';
+import 'package:retentio/screen/deck/providers/deck_card_typography.dart';
 import 'package:retentio/screen/deck/providers/audio_player.dart';
 import 'package:retentio/screen/deck/providers/transcript_sync_provider.dart';
 import 'package:retentio/utils/wiki_ruby_markup.dart';
@@ -16,11 +17,15 @@ class CardTranscriptText extends ConsumerStatefulWidget {
     required this.transcriptUrl,
     required this.fallbackText,
     required this.color,
+    this.typographyDeckId,
+    this.typographyIsFront = true,
   });
 
   final String transcriptUrl;
   final String fallbackText;
   final Color color;
+  final String? typographyDeckId;
+  final bool typographyIsFront;
 
   @override
   ConsumerState<CardTranscriptText> createState() => _CardTranscriptTextState();
@@ -35,12 +40,32 @@ class _CardTranscriptTextState extends ConsumerState<CardTranscriptText> {
   /// extends beyond the card vertically).
   static const double _minScrollExtentForAutoScroll = 12;
 
-  static TextStyle _baseStyle(Color color) => TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.w600,
-    letterSpacing: 1.2,
-    color: color,
-  );
+  TextStyle _baseStyle(Color color, WidgetRef ref) {
+    final id = widget.typographyDeckId;
+    if (id != null) {
+      final t = ref
+          .watch(deckSidesTypographyProvider(id))
+          .forSide(widget.typographyIsFront);
+      return t.baseTextStyle(color);
+    }
+    return TextStyle(
+      fontSize: 18,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 1.2,
+      color: color,
+    );
+  }
+
+  TextStyle _rubyStyle(TextStyle base, WidgetRef ref) {
+    final id = widget.typographyDeckId;
+    if (id != null) {
+      final t = ref
+          .watch(deckSidesTypographyProvider(id))
+          .forSide(widget.typographyIsFront);
+      return t.rubyTextStyle(widget.color);
+    }
+    return wikiRubyReadingStyle(base);
+  }
 
   void _ensureWordKeys(String url, int n) {
     if (_keysBoundUrl == url && _wordKeys?.length == n) {
@@ -96,6 +121,8 @@ class _CardTranscriptTextState extends ConsumerState<CardTranscriptText> {
             text: widget.fallbackText,
             color: widget.color,
             scrollable: false,
+            typographyDeckId: widget.typographyDeckId,
+            typographyIsFront: widget.typographyIsFront,
           );
         }
         _ensureWordKeys(widget.transcriptUrl, sync.words.length);
@@ -113,10 +140,10 @@ class _CardTranscriptTextState extends ConsumerState<CardTranscriptText> {
           });
         }
 
-        final base = _baseStyle(widget.color);
+        final base = _baseStyle(widget.color, ref);
         final highlightBg = widget.color.withValues(alpha: 0.22);
         final keys = _wordKeys!;
-        final ruby = wikiRubyReadingStyle(base);
+        final ruby = _rubyStyle(base, ref);
 
         final annotated = sync.annotatedSourceText;
         WikiRubyParseResult? parsed;
@@ -222,11 +249,15 @@ class _CardTranscriptTextState extends ConsumerState<CardTranscriptText> {
         text: widget.fallbackText.isNotEmpty ? widget.fallbackText : '…',
         color: widget.color,
         scrollable: false,
+        typographyDeckId: widget.typographyDeckId,
+        typographyIsFront: widget.typographyIsFront,
       ),
       error: (e, st) => CardText(
         text: widget.fallbackText,
         color: widget.color,
         scrollable: false,
+        typographyDeckId: widget.typographyDeckId,
+        typographyIsFront: widget.typographyIsFront,
       ),
     );
   }

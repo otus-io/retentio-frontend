@@ -10,11 +10,15 @@ class CardContentContainer extends StatelessWidget {
     required this.cards,
     required this.color,
     this.trailing,
+    this.typographyDeckId,
+    this.typographyIsFront = true,
   });
 
   final List<CardSlot> cards;
   final Color color;
   final Widget? trailing;
+  final String? typographyDeckId;
+  final bool typographyIsFront;
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +54,14 @@ class CardContentContainer extends StatelessWidget {
         ),
         TabBarView(
           children: cards
-              .map((e) => FactContent(items: e.items, color: color))
+              .map(
+                (e) => FactContent(
+                  items: e.items,
+                  color: color,
+                  typographyDeckId: typographyDeckId,
+                  typographyIsFront: typographyIsFront,
+                ),
+              )
               .toList(),
         ).expanded(),
       ],

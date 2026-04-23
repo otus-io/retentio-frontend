@@ -45,9 +45,9 @@ class Env {
       case ApiEnv.debug:
         return 'http://localhost:8080';
       case ApiEnv.dev:
-        return 'https://api.retentio.app:8443';
+        return 'https://10.0.0.145:8443';
       case ApiEnv.release:
-        return 'https://api.retentio.app';
+        return 'https://api.retentio.app:8443';
     }
   }
 }

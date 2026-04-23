@@ -113,5 +113,12 @@
     "addFactFieldFallback": "字段 {number}",
     "addFactFieldShortLabel": "字段",
     "addFactPasteFromClipboard": "从剪贴板粘贴",
-    "cardAudioUnavailable": "音频不可用（文件无效或缺失）"
+    "cardAudioUnavailable": "音频不可用（文件无效或缺失）",
+    "font": "字体",
+    "deckFontSheetTitle": "字体与注音",
+    "deckFontMainSizeLabel": "正文字号",
+    "deckFontRubySizeLabel": "注音字号",
+    "deckFontPreviewCaption": "预览",
+    "deckFontTabFront": "正面",
+    "deckFontTabBack": "背面"
 }

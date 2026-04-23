@@ -1,0 +1,35 @@
+// audio_waveforms 2.0.2 still pins classic ExoPlayer 2.17.1 (pulls exoplayer-ui; Jetifier
+// processor warning) and Java 8 (obsolete javac -source/-target 8). Override locally until
+// upstream moves to Media3 / JDK 11+.
+//
+// Several Flutter plugins still declare Java 8 for library modules; JDK 21+ warns that
+// -source/-target 8 is obsolete. Force 11 for every Android library subproject.
+
+subprojects { subproject ->
+    if (subproject.name == "audio_waveforms") {
+        subproject.configurations.configureEach { configuration ->
+            configuration.resolutionStrategy.eachDependency { details ->
+                def req = details.requested
+                if (req.group == "com.google.android.exoplayer" && req.version == "2.17.1") {
+                    details.useVersion("2.19.1")
+                    details.because("Align ExoPlayer past 2.17.x mixed AndroidX/support artifacts (audio_waveforms)")
+                }
+            }
+        }
+    }
+
+    subproject.afterEvaluate {
+        def androidExt = subproject.extensions.findByName("android")
+        if (androidExt != null) {
+            androidExt.compileOptions {
+                sourceCompatibility JavaVersion.VERSION_11
+                targetCompatibility JavaVersion.VERSION_11
+            }
+        }
+        subproject.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+            kotlinOptions {
+                jvmTarget = "11"
+            }
+        }
+    }
+}
