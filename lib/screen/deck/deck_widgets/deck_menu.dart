@@ -12,6 +12,8 @@ import 'package:retentio/screen/decks/providers/deck_list.dart';
 import 'package:retentio/screen/decks/widgets/deck_create.dart';
 import 'package:retentio/widgets/common_bottom_sheet.dart';
 
+import 'deck_font_sheet.dart';
+
 class DeckMenu extends ConsumerWidget {
   const DeckMenu({super.key, required this.deck});
 
@@ -28,6 +30,20 @@ class DeckMenu extends ConsumerWidget {
         backgroundColor: theme.colorScheme.surface,
       ),
       itemBuilder: (context) => [
+        PullDownMenuItem(
+          title: loc.font,
+          onTap: () {
+            showCommonBottomSheet<void>(
+              context: ref.context,
+              title: loc.deckFontSheetTitle,
+              initialChildSize: 0.52,
+              minChildSize: 0.35,
+              maxChildSize: 0.85,
+              child: DeckFontSheet(deckId: deck.id),
+            );
+          },
+          icon: LucideIcons.type,
+        ),
         PullDownMenuItem(
           title: loc.addFact,
           onTap: () {

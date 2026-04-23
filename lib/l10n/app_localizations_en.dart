@@ -360,4 +360,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cardAudioUnavailable => 'Audio unavailable';
+
+  @override
+  String get font => 'Font';
+
+  @override
+  String get deckFontSheetTitle => 'Font & ruby';
+
+  @override
+  String get deckFontMainSizeLabel => 'Main text size';
+
+  @override
+  String get deckFontRubySizeLabel => 'Ruby text size';
+
+  @override
+  String get deckFontPreviewCaption => 'Preview';
+
+  @override
+  String get deckFontTabFront => 'Front';
+
+  @override
+  String get deckFontTabBack => 'Back';
 }

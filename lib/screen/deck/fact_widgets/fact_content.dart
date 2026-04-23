@@ -15,10 +15,18 @@ import '../providers/audio_player.dart';
 import '../providers/transcript_sync_provider.dart';
 
 class FactContent extends ConsumerWidget {
-  const FactContent({super.key, required this.items, required this.color});
+  const FactContent({
+    super.key,
+    required this.items,
+    required this.color,
+    this.typographyDeckId,
+    this.typographyIsFront = true,
+  });
 
   final List<Item> items;
   final Color color;
+  final String? typographyDeckId;
+  final bool typographyIsFront;
 
   static IconData _tabIconForMedia(Item e) => switch (e.type) {
     'video' => LucideIcons.video,
@@ -72,6 +80,8 @@ class FactContent extends ConsumerWidget {
           textItems: textLikeItems,
           color: color,
           transcriptUrl: transcriptUrl,
+          typographyDeckId: typographyDeckId,
+          typographyIsFront: typographyIsFront,
         ),
       );
       final combinedTrailing = <Widget>[
@@ -105,7 +115,14 @@ class FactContent extends ConsumerWidget {
     }
 
     if (tabPages.isEmpty) {
-      tabPages.add(CardText(text: '', color: color));
+      tabPages.add(
+        CardText(
+          text: '',
+          color: color,
+          typographyDeckId: typographyDeckId,
+          typographyIsFront: typographyIsFront,
+        ),
+      );
       tabWidgets.add(const Tab(icon: Icon(LucideIcons.fileText)));
     }
 
@@ -203,11 +220,15 @@ class _CombinedTextPane extends StatelessWidget {
     required this.textItems,
     required this.color,
     this.transcriptUrl,
+    this.typographyDeckId,
+    this.typographyIsFront = true,
   });
 
   final List<Item> textItems;
   final Color color;
   final String? transcriptUrl;
+  final String? typographyDeckId;
+  final bool typographyIsFront;
 
   @override
   Widget build(BuildContext context) {
@@ -229,6 +250,8 @@ class _CombinedTextPane extends StatelessWidget {
                         textItems,
                       ),
                       color: color,
+                      typographyDeckId: typographyDeckId,
+                      typographyIsFront: typographyIsFront,
                     )
                   else
                     for (final t in textItems)
@@ -239,6 +262,8 @@ class _CombinedTextPane extends StatelessWidget {
                             text: t.value,
                             color: color,
                             scrollable: false,
+                            typographyDeckId: typographyDeckId,
+                            typographyIsFront: typographyIsFront,
                           ),
                         ),
                 ],

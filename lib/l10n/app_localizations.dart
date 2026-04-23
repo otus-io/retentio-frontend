@@ -763,6 +763,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Audio unavailable'**
   String get cardAudioUnavailable;
+
+  /// Deck study overflow menu item to adjust card text and ruby sizes
+  ///
+  /// In en, this message translates to:
+  /// **'Font'**
+  String get font;
+
+  /// Title of bottom sheet for deck card typography
+  ///
+  /// In en, this message translates to:
+  /// **'Font & ruby'**
+  String get deckFontSheetTitle;
+
+  /// Slider label for base script font size on cards
+  ///
+  /// In en, this message translates to:
+  /// **'Main text size'**
+  String get deckFontMainSizeLabel;
+
+  /// Slider label for reading (ruby) font size on cards
+  ///
+  /// In en, this message translates to:
+  /// **'Ruby text size'**
+  String get deckFontRubySizeLabel;
+
+  /// Caption above Japanese sample with wiki ruby markup
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get deckFontPreviewCaption;
+
+  /// Font sheet tab for card front typography
+  ///
+  /// In en, this message translates to:
+  /// **'Front'**
+  String get deckFontTabFront;
+
+  /// Font sheet tab for card back typography
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get deckFontTabBack;
 }
 
 class _AppLocalizationsDelegate

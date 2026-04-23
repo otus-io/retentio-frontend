@@ -1,3 +1,5 @@
+apply(from = file("gradle/retentio_android_compat.gradle"))
+
 allprojects {
     repositories {
         google()

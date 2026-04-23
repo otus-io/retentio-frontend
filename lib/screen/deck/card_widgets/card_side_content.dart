@@ -36,6 +36,8 @@ class CardSideContent extends ConsumerWidget {
           cards: sideCards,
           color: color,
           trailing: sideCards.isNotEmpty ? CardMenu(color: color) : null,
+          typographyDeckId: ref.watch(deckProvider).id,
+          typographyIsFront: isFront,
         ),
       ),
     );

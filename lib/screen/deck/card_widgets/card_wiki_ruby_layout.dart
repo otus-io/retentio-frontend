@@ -3,12 +3,13 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:retentio/utils/wiki_ruby_markup.dart';
 
-TextStyle wikiRubyReadingStyle(TextStyle base) => base.copyWith(
-  fontSize: (base.fontSize ?? 18) * 0.55,
-  fontWeight: FontWeight.w500,
-  letterSpacing: 0,
-  height: 1.0,
-);
+TextStyle wikiRubyReadingStyle(TextStyle base, {double? rubyFontSize}) =>
+    base.copyWith(
+      fontSize: rubyFontSize ?? (base.fontSize ?? 18) * 0.55,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0,
+      height: 1.0,
+    );
 
 Widget _wikiRubyCell(WikiSegRuby seg, TextStyle base, TextStyle ruby) =>
     Padding(
@@ -58,15 +59,16 @@ List<Widget>? wikiRubyRowWidgetsForRange(
 Widget wikiRubyWrappedText({
   required String text,
   required TextStyle baseStyle,
+  TextStyle? rubyStyle,
 }) {
   final parsed = WikiRubyMarkup.parse(text);
-  final rubyStyle = wikiRubyReadingStyle(baseStyle);
+  final resolvedRuby = rubyStyle ?? wikiRubyReadingStyle(baseStyle);
   final parts = wikiRubyRowWidgetsForRange(
     parsed,
     0,
     parsed.composed.length,
     baseStyle,
-    rubyStyle,
+    resolvedRuby,
   );
   if (parts == null) {
     return Text(text, textAlign: TextAlign.center, style: baseStyle);

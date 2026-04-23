@@ -63,5 +63,13 @@ void main() {
       final r = wikiRubyReadingStyle(const TextStyle(fontSize: 20));
       expect(r.fontSize, closeTo(11, 0.01));
     });
+
+    test('honors explicit rubyFontSize', () {
+      final r = wikiRubyReadingStyle(
+        const TextStyle(fontSize: 20),
+        rubyFontSize: 7.5,
+      );
+      expect(r.fontSize, 7.5);
+    });
   });
 }

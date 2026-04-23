@@ -30,6 +30,7 @@ dependencies:
   flutter_expandable_fab: ^2.5.2
   pull_to_refresh: ^2.0.0
   pull_down_button: ^0.10.2
+  google_fonts: ^6.3.0
   equatable: ^2.0.8
   extended_image: ^10.0.1
   path: ^1.9.1

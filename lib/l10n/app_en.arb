@@ -485,5 +485,33 @@
   "cardAudioUnavailable": "Audio unavailable",
   "@cardAudioUnavailable": {
     "description": "Card review when the audio file is missing, empty, or invalid"
+  },
+  "font": "Font",
+  "@font": {
+    "description": "Deck study overflow menu item to adjust card text and ruby sizes"
+  },
+  "deckFontSheetTitle": "Font & ruby",
+  "@deckFontSheetTitle": {
+    "description": "Title of bottom sheet for deck card typography"
+  },
+  "deckFontMainSizeLabel": "Main text size",
+  "@deckFontMainSizeLabel": {
+    "description": "Slider label for base script font size on cards"
+  },
+  "deckFontRubySizeLabel": "Ruby text size",
+  "@deckFontRubySizeLabel": {
+    "description": "Slider label for reading (ruby) font size on cards"
+  },
+  "deckFontPreviewCaption": "Preview",
+  "@deckFontPreviewCaption": {
+    "description": "Caption above Japanese sample with wiki ruby markup"
+  },
+  "deckFontTabFront": "Front",
+  "@deckFontTabFront": {
+    "description": "Font sheet tab for card front typography"
+  },
+  "deckFontTabBack": "Back",
+  "@deckFontTabBack": {
+    "description": "Font sheet tab for card back typography"
   }
 }

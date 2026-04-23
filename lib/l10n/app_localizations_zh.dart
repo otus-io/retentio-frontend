@@ -350,4 +350,25 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cardAudioUnavailable => '音频不可用（文件无效或缺失）';
+
+  @override
+  String get font => '字体';
+
+  @override
+  String get deckFontSheetTitle => '字体与注音';
+
+  @override
+  String get deckFontMainSizeLabel => '正文字号';
+
+  @override
+  String get deckFontRubySizeLabel => '注音字号';
+
+  @override
+  String get deckFontPreviewCaption => '预览';
+
+  @override
+  String get deckFontTabFront => '正面';
+
+  @override
+  String get deckFontTabBack => '背面';
 }

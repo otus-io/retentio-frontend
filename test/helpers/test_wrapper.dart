@@ -5,6 +5,7 @@ import 'package:riverpod/misc.dart' show Override;
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retentio/l10n/app_localizations.dart';
+import 'package:retentio/screen/deck/providers/deck_card_typography.dart';
 import 'package:retentio/services/index.dart';
 import 'package:retentio/services/storage/hydrated_storage.dart';
 import 'package:retentio/utils/log.dart';
@@ -31,6 +32,10 @@ Future<void> setupTestEnvironment() async {
   DioClient.of.config(
     Env.host, // 代理拦截器
   );
+
+  // Deck study UI uses [GoogleFonts.notoSansJp] for per-deck typography; widget tests
+  // must not hit the network (HttpClient returns 400 under TestWidgetsFlutterBinding).
+  deckCardTypographyUsePlainTextStyleInTests = true;
 }
 
 /// Tears down the test environment.
@@ -43,6 +48,8 @@ void tearDownTestEnvironment() {
 
   // Clear hydrated storage
   HydratedStorage.instance = null;
+
+  deckCardTypographyUsePlainTextStyleInTests = false;
 }
 
 /// Wraps a widget with MaterialApp, localization delegates,
