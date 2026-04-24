@@ -13,6 +13,8 @@ flutter pub get
 flutter run
 ```
 
+`ios/Flutter/Generated.xcconfig` 由 Flutter **生成**且已在 `.gitignore` 中。若 Xcode 提示找不到该文件，请在仓库根目录再次执行 **`flutter pub get`**，并打开 **`ios/Runner.xcworkspace`** 进行构建或归档。
+
 ### 后端环境与 API 地址
 
 通过 `--dart-define` 在编译期配置（实现见 `lib/services/env.dart`）：

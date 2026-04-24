@@ -13,6 +13,10 @@ flutter pub get
 flutter run
 ```
 
+`ios/Flutter/Generated.xcconfig` is **generated** by Flutter and listed in `.gitignore`. If Xcode reports it missing (for example from `Release.xcconfig`), run **`flutter pub get`** again from the repo root before opening or archiving **`ios/Runner.xcworkspace`**.
+
+If plugins fail with **`Flutter/Flutter.h` file not found**, run **`flutter pub get`** then **`cd ios && pod install`** on **this Mac** so CocoaPods picks up your local Flutter engine paths (they are not portable across machines).
+
 ### Backend environment / host override
 
 API host is compile-time configured via `--dart-define`:
