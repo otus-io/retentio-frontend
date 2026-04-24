@@ -4,10 +4,13 @@ part of 'index.dart';
 /// Description:
 
 /// Picked at compile time via `--dart-define=API_ENV=debug|dev|release`.
-/// When omitted, defaults to [ApiEnv.dev] (staging :8443).
+/// When omitted: [ApiEnv.release] in release/product builds (Xcode Archive,
+/// `flutter build ios --release`), otherwise [ApiEnv.dev].
 ApiEnv _resolveApiEnv() {
   const raw = String.fromEnvironment('API_ENV', defaultValue: '');
-  if (raw.isEmpty) return ApiEnv.dev;
+  if (raw.isEmpty) {
+    return kReleaseMode ? ApiEnv.release : ApiEnv.dev;
+  }
   switch (raw.toLowerCase()) {
     case 'debug':
       return ApiEnv.debug;

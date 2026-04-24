@@ -64,7 +64,7 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
 
   Future<void> pickMediaForTargetRow() async {
     final loc = AppLocalizations.of(context)!;
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: AddFactPickExtensions.all,
       allowMultiple: false,
