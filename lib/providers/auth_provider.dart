@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:retentio/screen/decks/providers/deck_list.dart';
+import 'package:retentio/screen/profile/providers/profile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final isLoginProvider = NotifierProvider<AuthNotifier, bool>(AuthNotifier.new);
@@ -22,6 +24,10 @@ class AuthNotifier extends Notifier<bool> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLogin', value);
     authProvider.setLoginStatus(value);
+    // Clear session-scoped caches on login (refetch for new user) and logout
+    // (deck list is not autoDispose, so it would otherwise keep the prior session).
+    ref.invalidate(deckListProvider);
+    ref.invalidate(profileProvider);
   }
 
   void logout() {

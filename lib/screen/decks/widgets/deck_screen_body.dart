@@ -13,6 +13,7 @@ class DeckScreenBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final loc = AppLocalizations.of(context)!;
     final deckState = ref.watch(deckListProvider);
+    final deckNotifier = ref.watch(deckListProvider.notifier);
 
     if (deckState.isLoading && deckState.decks.isEmpty) {
       return const Center(child: CircularProgressIndicator());
@@ -43,8 +44,8 @@ class DeckScreenBody extends ConsumerWidget {
     }
 
     return CommonRefresher(
-      controller: ref.read(deckListProvider.notifier).refreshController,
-      onRefresh: ref.read(deckListProvider.notifier).onRefresh,
+      controller: deckNotifier.refreshController,
+      onRefresh: deckNotifier.onRefresh,
       isEmpty: deckState.decks.isEmpty,
       emptyView: Center(
         child: Column(
