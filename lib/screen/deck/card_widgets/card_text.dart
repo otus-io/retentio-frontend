@@ -24,7 +24,7 @@ class CardText extends ConsumerWidget {
   final bool typographyIsFront;
 
   /// When false, only the text is rendered (no internal scroll) for embedding in
-  /// a parent [SingleChildScrollView], e.g. text + audio on one tab.
+  /// a parent [SingleChildScrollView], e.g. combined text + audio in one column.
   final bool scrollable;
 
   @override

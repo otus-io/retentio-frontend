@@ -69,3 +69,11 @@ flowchart LR
   CardTranscriptText --> NotifierFamily
   FactContent --> CardText
 ```
+
+---
+
+## Appendix: Study card UI (no field tabs; optional typography)（2026）
+
+**中文：** 卡组**复习**界面已去掉「每个 field 一排 tab + `TabBarView`」；改为 `CardContentContainer` 里最多五条字段摘要、`+N` 弹窗（`FactSummary*` in `lib/screen/deck/fact_widgets/fact_content.dart`）。`typographyDeckId` / `typographyIsFront` **仍保留**在 `CardText` / `CardTranscriptText` 上；复习摘要路径不传它们。Deck 菜单 **Font** 仍会把字号写入 `SharedPreferences`，供测试或其它界面显式传入 `typographyDeckId` 时使用。上文「Wiring」里写到的经 `CardSideContent` / `FactContent` 传 typography **指早期复习布局**，与当前复习摘要 UI 不一致处以本附录为准。
+
+**English:** Deck **review** no longer uses **per-field** tabs (`ButtonsTabBar` / `TabBarView` on the card face). `CardSideContent` → `CardContentContainer` shows a stacked **summary** (five fields; `+N` opens the rest). **`typographyDeckId` / `typographyIsFront`** stay supported on **`CardText`** / **`CardTranscriptText`**; the review summary does not pass them. The **Font** sheet still persists per-deck sizes for any caller that wires `typographyDeckId` in. The **“Wiring into widgets”** bullets above that mention threading through `CardSideContent` / `FactContent` describe the **older** review path; for review UI, this appendix supersedes.

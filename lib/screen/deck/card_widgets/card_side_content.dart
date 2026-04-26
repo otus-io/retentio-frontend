@@ -6,7 +6,7 @@ import 'card_content_container.dart';
 import 'card_menu.dart';
 
 /// One side (front or back) of the current review card on the deck study screen:
-/// field tabs, field content, and card actions (hide / edit fact / delete).
+/// stacked summary layout (up to five fields, rest behind +N); card actions (menu).
 class CardSideContent extends ConsumerWidget {
   const CardSideContent({super.key, required this.isFront});
 
@@ -23,22 +23,18 @@ class CardSideContent extends ConsumerWidget {
     );
     final sideCards = cards ?? <CardSlot>[];
     final color = isFront ? Colors.blue : Colors.green;
+    final cardId = ref.watch(cardProvider.select((v) => v.cardDetail?.card.id));
     return Container(
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
-      child: DefaultTabController(
-        key: ValueKey('${ref.read(cardProvider).cardDetail?.card.id}'),
-        length: sideCards.length,
-        child: CardContentContainer(
-          cards: sideCards,
-          color: color,
-          trailing: sideCards.isNotEmpty ? CardMenu(color: color) : null,
-          typographyDeckId: ref.watch(deckProvider).id,
-          typographyIsFront: isFront,
-        ),
+      child: CardContentContainer(
+        key: ValueKey('${cardId ?? 'none'}_${isFront}_${sideCards.length}'),
+        cards: sideCards,
+        color: color,
+        trailing: sideCards.isEmpty ? null : CardMenu(color: color),
       ),
     );
   }

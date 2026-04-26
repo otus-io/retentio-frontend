@@ -29,7 +29,7 @@ Implementation detail: store position in `AudioPlayerState` and update it from `
 **UI (pick one or combine; all are small additions):**
 
 1. **Waveform scrub** — `AudioFileWaveforms` may already support drag-to-seek; if so, wire it to the same controller and transcript highlight updates automatically from position.
-2. **Skip buttons** — e.g. −15s / +15s (or −5s / +5s) next to the play button on the compact tab-bar control.
+2. **Skip buttons** — e.g. −15s / +15s (or −5s / +5s) next to the play button on the compact **`CardAudio`** control.
 3. **Tap a word** — `GestureDetector` on each `TextSpan` (or `Text.rich` with `TapGestureRecognizer`): `seekToMs((word.start * 1000).round())`; optional small UX polish: pause after seek or keep playing.
 
 After any seek, highlight recomputes from the new `t` (whether playing or paused).
@@ -49,13 +49,13 @@ After any seek, highlight recomputes from the new `t` (whether playing or paused
 
 **Change:** subscribe alongside existing `onPlayerStateChanged`, map ms → seconds (or store ms), extend `AudioPlayerState` with a position field; cancel in `onDispose`. Use that position for both **playing** and **paused** highlight and as the base for **skip** operations.
 
-## Riverpod scope: one player for tab + text
+## Riverpod scope: one player for audio + transcript text
 
-[`CardAudio`](../lib/screen/deck/card_widgets/card_audio.dart) wraps `ProviderScope` + `audioUrlProvider`. [`FactContent`](../lib/screen/deck/fact_widgets/fact_content.dart) puts transcript text in `_CombinedTextPane` and controls in the tab bar — siblings, so the pane cannot see the same `audioPlayerProvider` today.
+[`CardAudio`](../lib/screen/deck/card_widgets/card_audio.dart) uses `ProviderScope` + `audioUrlProvider` unless `useExternalScope` is true. [`FactContent`](../lib/screen/deck/fact_widgets/fact_content.dart) lays out transcript / text in `_CombinedTextPane` above a scroll column and puts compact **audio** on a **bottom strip** when present — transcript and play controls are **siblings**, so the transcript subtree does not automatically see the same `audioPlayerProvider` unless the tree is wrapped once at a common ancestor.
 
 **Change:**
 
-- If **`audioItems.length == 1`**, wrap the `FactContent` subtree (e.g. the `DefaultTabController` column) in a **single** `ProviderScope` with `audioUrlProvider.overrideWithValue(thatUrl)`.
+- If **`audioItems.length == 1`**, wrap the **`FactContent` root** (the outer `Column` returned from `build`) in a **single** `ProviderScope` with `audioUrlProvider.overrideWithValue(thatUrl)`.
 - **`CardAudio`:** stop nesting `ProviderScope` when the parent already provides scope (e.g. optional flag `useExternalScope`, or equivalent), so text and play button share one notifier.
 - If **`audioItems.length != 1`**, keep per-control scopes (no transcript sync for multi-audio fields in v1).
 

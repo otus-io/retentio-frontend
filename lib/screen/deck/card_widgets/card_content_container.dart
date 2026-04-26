@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:retentio/extensions/widget_extension.dart';
 import 'package:retentio/models/card.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_content.dart';
-import 'package:retentio/widgets/buttons_tab_bar.dart';
 
 class CardContentContainer extends StatelessWidget {
   const CardContentContainer({
@@ -10,60 +8,90 @@ class CardContentContainer extends StatelessWidget {
     required this.cards,
     required this.color,
     this.trailing,
-    this.typographyDeckId,
-    this.typographyIsFront = true,
   });
+
+  static const int _maxVisibleFields = 5;
 
   final List<CardSlot> cards;
   final Color color;
   final Widget? trailing;
-  final String? typographyDeckId;
-  final bool typographyIsFront;
 
   @override
   Widget build(BuildContext context) {
+    if (cards.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final visibleCards = cards.take(_maxVisibleFields).toList(growable: false);
+    final hiddenCards = cards.skip(_maxVisibleFields).toList(growable: false);
+
     return Column(
       children: [
-        Container(
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(width: 0.3, color: color)),
+        if (trailing != null)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(10, 4, 6, 4),
+            child: Align(alignment: Alignment.centerRight, child: trailing!),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              ButtonsTabBar(
-                backgroundColor: Colors.transparent,
-                unselectedBackgroundColor: Colors.transparent,
-                borderWidth: 1,
-                radius: 10,
-                borderColor: Colors.transparent,
-                unselectedBorderColor: Colors.transparent,
-                labelStyle: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              const verticalPadding = 20.0;
+              const dividerExtent = 1.0;
+              final dividerCount = visibleCards.isNotEmpty
+                  ? visibleCards.length - 1
+                  : 0;
+              final availableHeight =
+                  (constraints.maxHeight -
+                          verticalPadding -
+                          (dividerCount * dividerExtent))
+                      .clamp(0.0, double.infinity);
+              final rowHeight = visibleCards.isEmpty
+                  ? 0.0
+                  : availableHeight / visibleCards.length;
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
                 ),
-                unselectedLabelStyle: TextStyle(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  fontWeight: FontWeight.bold,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    for (
+                      var index = 0;
+                      index < visibleCards.length;
+                      index++
+                    ) ...[
+                      FactSummaryFieldRow(
+                        card: visibleCards[index],
+                        color: color,
+                        rowHeight: rowHeight,
+                      ),
+                      if (index < visibleCards.length - 1)
+                        Divider(
+                          height: dividerExtent,
+                          thickness: 0.3,
+                          color: color.withValues(alpha: 0.22),
+                        ),
+                    ],
+                  ],
                 ),
-                tabs: cards.map((e) => Tab(text: e.field)).toList(),
-              ).expanded(),
-              ?trailing,
-            ],
+              );
+            },
           ),
         ),
-        TabBarView(
-          children: cards
-              .map(
-                (e) => FactContent(
-                  items: e.items,
-                  color: color,
-                  typographyDeckId: typographyDeckId,
-                  typographyIsFront: typographyIsFront,
-                ),
-              )
-              .toList(),
-        ).expanded(),
+        if (hiddenCards.isNotEmpty)
+          FactSummaryHiddenFieldsButton(
+            count: hiddenCards.length,
+            color: color,
+            onPressed: () => showFactSummaryHiddenFieldsDialog(
+              context,
+              hiddenCards: hiddenCards,
+              color: color,
+            ),
+          ),
       ],
     );
   }

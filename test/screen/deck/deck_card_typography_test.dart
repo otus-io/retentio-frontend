@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:retentio/models/card.dart';
 import 'package:retentio/models/transcript_sync.dart';
 import 'package:retentio/screen/deck/card_widgets/card_text.dart';
 import 'package:retentio/screen/deck/card_widgets/card_transcript_text.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_font_sheet.dart';
-import 'package:retentio/screen/deck/fact_widgets/fact_content.dart';
 import 'package:retentio/screen/deck/providers/deck_card_typography.dart';
 
 import '../../helpers/test_wrapper.dart';
@@ -414,42 +412,6 @@ void main() {
         expect(yomi.style!.fontSize, closeTo(14.0, 0.01));
       },
     );
-  });
-
-  group('FactContent typography', () {
-    testWidgets('passes typographyIsFront to CardText for text fields', (
-      tester,
-    ) async {
-      SharedPreferences.setMockInitialValues({
-        'deck_typography_base_front_v1_d-fact': 18.0,
-        'deck_typography_ruby_front_v1_d-fact': 9.9,
-        'deck_typography_base_back_v1_d-fact': 27.0,
-        'deck_typography_ruby_back_v1_d-fact': 13.0,
-      });
-
-      await tester.pumpWidget(
-        buildTestableWidgetWithOverrides(
-          Scaffold(
-            body: SizedBox(
-              height: 400,
-              child: FactContent(
-                color: Colors.black,
-                typographyDeckId: 'd-fact',
-                typographyIsFront: false,
-                items: [Item(type: 'text', value: '[[乙|yǐ]]')],
-              ),
-            ),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pumpAndSettle();
-
-      final han = tester.widget<Text>(find.text('乙'));
-      final reading = tester.widget<Text>(find.text('yǐ'));
-      expect(han.style!.fontSize, closeTo(27.0, 0.01));
-      expect(reading.style!.fontSize, closeTo(13.0, 0.01));
-    });
   });
 
   group('DeckFontSheet', () {

@@ -20,10 +20,10 @@ class CardAudio extends StatefulWidget {
   final Color? color;
   final String audioUrl;
 
-  /// Icon-only control for the field tab bar (next to the note icon); no waveform.
+  /// Icon-only control (compact layout); no waveform.
   final bool compact;
 
-  /// When true, [audioUrlProvider] is already overridden above (e.g. by [FactContent]).
+  /// When true, [audioUrlProvider] is already overridden by an ancestor [ProviderScope].
   final bool useExternalScope;
 
   /// When non-null with words, compact prev/next jump by transcript timestamps instead of ±10s.
