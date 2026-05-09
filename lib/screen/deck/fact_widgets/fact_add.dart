@@ -118,10 +118,12 @@ class _FactAddState extends ConsumerState<FactAdd>
   }
 
   void _addRow() {
+    if (widget.deck.fields.isNotEmpty) return;
     setState(() => _rows.add(AddFactRowModel()));
   }
 
   void _removeRowAt(int index) {
+    if (widget.deck.fields.isNotEmpty) return;
     if (_rows.length <= 1) return;
     if (index < 0 || index >= _rows.length) return;
     final removed = _rows[index];
@@ -241,22 +243,7 @@ class _FactAddState extends ConsumerState<FactAdd>
         );
       }
 
-      final userNamesByRow = _rows.map((r) {
-        final t = r.fieldName.text.trim();
-        return t.isEmpty ? null : t;
-      }).toList();
-
-      final fields = AddFactPayload.resolveFieldLabels(
-        entryCount: _rows.length,
-        userNamesByRow: userNamesByRow,
-        deckFields: widget.deck.fields,
-        fallbackForIndex: loc.addFactFieldFallback,
-      );
-
-      final body = AddFactPayload.buildFactBody(
-        entries: entries,
-        fields: fields,
-      );
+      final body = AddFactPayload.buildFactBody(entries: entries);
       final res = await CardService.addFacts(widget.deck.id, 'append', body);
       if (!mounted) return;
       if (res?.isSuccess == true) {
@@ -281,7 +268,8 @@ class _FactAddState extends ConsumerState<FactAdd>
     ThemeData theme,
     Color outline,
   ) sync* {
-    for (final row in _rows) {
+    for (var i = 0; i < _rows.length; i++) {
+      final row = _rows[i];
       yield Padding(
         key: row.hostKey,
         padding: const EdgeInsets.only(bottom: 10),
@@ -291,6 +279,11 @@ class _FactAddState extends ConsumerState<FactAdd>
           loc: loc,
           theme: theme,
           outlineColor: outline,
+          headerLabel: AddFactPayload.deckColumnLabel(
+            columnIndex: i,
+            deckFields: widget.deck.fields,
+            fallbackForIndex: loc.addFactFieldFallback,
+          ),
           onClearSlot: (kind) {
             setState(() => row.clearSlot(kind));
           },
@@ -332,13 +325,14 @@ class _FactAddState extends ConsumerState<FactAdd>
                   : null,
             ),
             ..._buildEntryRows(loc, theme, outline),
-            AddFactRowControls(
-              loc: loc,
-              theme: theme,
-              rowCount: _rows.length,
-              onAddRow: _addRow,
-              onRemoveRow: _removeRowOnMinusPressed,
-            ),
+            if (widget.deck.fields.isEmpty)
+              AddFactRowControls(
+                loc: loc,
+                theme: theme,
+                rowCount: _rows.length,
+                onAddRow: _addRow,
+                onRemoveRow: _removeRowOnMinusPressed,
+              ),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: (_submitting || _recordingVoice) ? null : _submit,

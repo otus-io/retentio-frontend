@@ -36,6 +36,9 @@ class AddFactEntryRow extends StatefulWidget {
     required this.theme,
     required this.outlineColor,
     required this.onClearSlot,
+
+    /// When set (add-fact flow), shown read-only; labels come from the deck only.
+    this.headerLabel,
   });
 
   final AddFactRowModel row;
@@ -43,6 +46,7 @@ class AddFactEntryRow extends StatefulWidget {
   final ThemeData theme;
   final Color outlineColor;
   final void Function(MediaSlotKind kind) onClearSlot;
+  final String? headerLabel;
 
   @override
   State<AddFactEntryRow> createState() => _AddFactEntryRowState();
@@ -52,12 +56,16 @@ class _AddFactEntryRowState extends State<AddFactEntryRow> {
   final FocusNode _fieldNameFocus = FocusNode();
   final FocusNode _contentFocus = FocusNode();
   bool _fieldNameEditorOpen = false;
+  late final bool _editableFieldHeader;
 
   @override
   void initState() {
     super.initState();
-    _fieldNameFocus.addListener(_onFieldNameFocusChange);
-    widget.row.fieldName.addListener(_onFieldNameTextChange);
+    _editableFieldHeader = widget.headerLabel == null;
+    if (_editableFieldHeader) {
+      _fieldNameFocus.addListener(_onFieldNameFocusChange);
+      widget.row.fieldName.addListener(_onFieldNameTextChange);
+    }
   }
 
   void _onFieldNameFocusChange() {
@@ -74,8 +82,10 @@ class _AddFactEntryRowState extends State<AddFactEntryRow> {
 
   @override
   void dispose() {
-    widget.row.fieldName.removeListener(_onFieldNameTextChange);
-    _fieldNameFocus.removeListener(_onFieldNameFocusChange);
+    if (_editableFieldHeader) {
+      widget.row.fieldName.removeListener(_onFieldNameTextChange);
+      _fieldNameFocus.removeListener(_onFieldNameFocusChange);
+    }
     _fieldNameFocus.dispose();
     _contentFocus.dispose();
     super.dispose();
@@ -207,7 +217,15 @@ class _AddFactEntryRowState extends State<AddFactEntryRow> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (_showFieldNameTextField)
+        if (widget.headerLabel != null)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: collapsedPadding,
+              child: Text(widget.headerLabel!, style: labelStyle),
+            ),
+          )
+        else if (_showFieldNameTextField)
           TextField(
             controller: widget.row.fieldName,
             focusNode: _fieldNameFocus,

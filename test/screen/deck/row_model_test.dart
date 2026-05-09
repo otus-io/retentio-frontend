@@ -55,11 +55,10 @@ void main() {
       }
     });
 
-    test('listForDeckFields mirrors deck field names', () {
+    test('listForDeckFields yields one row per deck column', () {
       final rows = AddFactRowModel.listForDeckFields(['Term', 'Definition']);
       expect(rows, hasLength(2));
-      expect(rows[0].fieldName.text, 'Term');
-      expect(rows[1].fieldName.text, 'Definition');
+      expect(rows.every((r) => r.fieldName.text.isEmpty), isTrue);
       for (final r in rows) {
         r.dispose();
       }

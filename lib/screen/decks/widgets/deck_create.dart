@@ -63,6 +63,8 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
 
   int? _draggingFieldIndex;
 
+  bool get _isEditingDeck => widget.deck != null;
+
   @override
   void afterFirstLayout() {
     if (widget.deck != null) {
@@ -93,6 +95,92 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
       _resetFieldControllers(_defaultNewDeckFields);
     }
     setState(() {});
+  }
+
+  /// One deck column header row. [showDragHandle] is false when editing an existing
+  /// deck so column order stays aligned with stored facts.
+  Widget _deckFieldEditor(
+    BuildContext context,
+    AppLocalizations loc,
+    int i, {
+    required bool showDragHandle,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 4,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 24, 4, 4),
+          child: Text(
+            '${context.loc.addFactFieldShortLabel} ${i + 1}',
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(fontSize: kFontSizeSmall),
+          ),
+        ),
+        TextField(
+          controller: _fieldControllers[i],
+          minLines: 1,
+          maxLines: 1,
+          decoration: InputDecoration(
+            border: const OutlineInputBorder(),
+            isDense: false,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: (kTextFieldHeight - kFontSizeMedium) / 2,
+            ),
+            filled: Theme.of(context).inputDecorationTheme.filled,
+            fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+            floatingLabelBehavior: FloatingLabelBehavior.never,
+            suffixIconConstraints: const BoxConstraints(
+              minWidth: 40,
+              minHeight: 40,
+            ),
+            suffixIcon: Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 2,
+                children: [
+                  IconButton(
+                    tooltip: loc.deckEditorRemoveFieldTooltip,
+                    padding: EdgeInsets.zero,
+                    constraints: kIconBtnConstraints,
+                    onPressed: _fieldControllers.length == 2
+                        ? null
+                        : () {
+                            setState(() {
+                              _fieldControllers.removeAt(i).dispose();
+                            });
+                          },
+                    icon: Icon(
+                      LucideIcons.trash2,
+                      size: 18,
+                      color: _fieldControllers.length == 2
+                          ? Theme.of(context).disabledColor
+                          : Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                  if (showDragHandle)
+                    ReorderableDragStartListener(
+                      index: i,
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: kIconBtnConstraints,
+                        onPressed: () {},
+                        icon: Icon(
+                          LucideIcons.gripVertical,
+                          color: Theme.of(context).hintColor,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -181,145 +269,80 @@ class _DeckCreateState extends ConsumerState<DeckCreate> with DelayedInitMixin {
           ),
         ),
 
-        // TextFields for deck fields with reordering.
+        // TextFields for deck fields (reorder only when creating a new deck).
         Column(
           spacing: 16,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ReorderableListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              buildDefaultDragHandles: false,
-              onReorderStart: (index) {
-                setState(() {
-                  _draggingFieldIndex = index;
-                });
-              },
-              onReorder: (oldIndex, newIndex) {
-                setState(() {
-                  if (newIndex > oldIndex) {
-                    newIndex -= 1;
-                  }
-                  final controller = _fieldControllers.removeAt(oldIndex);
-                  _fieldControllers.insert(newIndex, controller);
-                  _draggingFieldIndex = null;
-                });
-              },
-              proxyDecorator: (child, index, animation) {
-                return AnimatedBuilder(
-                  animation: animation,
-                  child: child,
-                  builder: (context, child) {
-                    final scale = 1.0 + 0.05 * animation.value;
-                    return Transform.scale(
-                      scale: scale,
-                      child: Material(
-                        type: MaterialType.transparency,
-                        child: child,
+            if (_isEditingDeck)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var i = 0; i < _fieldControllers.length; i++)
+                    KeyedSubtree(
+                      key: ObjectKey(_fieldControllers[i]),
+                      child: _deckFieldEditor(
+                        context,
+                        loc,
+                        i,
+                        showDragHandle: false,
                       ),
-                    );
-                  },
-                );
-              },
-              itemCount: _fieldControllers.length,
-              itemBuilder: (context, i) {
-                final isDimmed =
-                    _draggingFieldIndex != null && _draggingFieldIndex != i;
-                return AnimatedOpacity(
-                  key: ValueKey('deck_field_$i'),
-                  duration: const Duration(milliseconds: 150),
-                  opacity: isDimmed ? 0.25 : 1,
-                  child: Stack(
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 4,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(4, 24, 4, 4),
-                            child: Text(
-                              '${context.loc.addFactFieldShortLabel} ${i + 1}',
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(fontSize: kFontSizeSmall),
-                            ),
-                          ),
-                          TextField(
-                            controller: _fieldControllers[i],
-                            minLines: 1,
-                            maxLines: 1,
-                            decoration: InputDecoration(
-                              border: const OutlineInputBorder(),
-                              isDense: false,
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical:
-                                    (kTextFieldHeight - kFontSizeMedium) / 2,
-                              ),
-                              filled: Theme.of(
-                                context,
-                              ).inputDecorationTheme.filled,
-                              fillColor: Theme.of(
-                                context,
-                              ).inputDecorationTheme.fillColor,
-                              floatingLabelBehavior:
-                                  FloatingLabelBehavior.never,
-                              suffixIconConstraints: const BoxConstraints(
-                                minWidth: 40,
-                                minHeight: 40,
-                              ),
-                              suffixIcon: Padding(
-                                padding: const EdgeInsets.only(right: 16),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  spacing: 2,
-                                  children: [
-                                    IconButton(
-                                      tooltip: loc.deckEditorRemoveFieldTooltip,
-                                      padding: EdgeInsets.zero,
-                                      constraints: kIconBtnConstraints,
-                                      onPressed: _fieldControllers.length == 2
-                                          ? null
-                                          : () {
-                                              setState(() {
-                                                _fieldControllers
-                                                    .removeAt(i)
-                                                    .dispose();
-                                              });
-                                            },
-                                      icon: Icon(
-                                        LucideIcons.trash2,
-                                        size: 18,
-                                        color: _fieldControllers.length == 2
-                                            ? Theme.of(context).disabledColor
-                                            : Theme.of(
-                                                context,
-                                              ).colorScheme.error,
-                                      ),
-                                    ),
-                                    ReorderableDragStartListener(
-                                      index: i,
-                                      child: IconButton(
-                                        padding: EdgeInsets.zero,
-                                        constraints: kIconBtnConstraints,
-                                        onPressed: () {},
-                                        icon: Icon(
-                                          LucideIcons.gripVertical,
-                                          color: Theme.of(context).hintColor,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                    ),
+                ],
+              )
+            else
+              ReorderableListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                buildDefaultDragHandles: false,
+                onReorderStart: (index) {
+                  setState(() {
+                    _draggingFieldIndex = index;
+                  });
+                },
+                onReorder: (oldIndex, newIndex) {
+                  setState(() {
+                    if (newIndex > oldIndex) {
+                      newIndex -= 1;
+                    }
+                    final controller = _fieldControllers.removeAt(oldIndex);
+                    _fieldControllers.insert(newIndex, controller);
+                    _draggingFieldIndex = null;
+                  });
+                },
+                proxyDecorator: (child, index, animation) {
+                  return AnimatedBuilder(
+                    animation: animation,
+                    child: child,
+                    builder: (context, child) {
+                      final scale = 1.0 + 0.05 * animation.value;
+                      return Transform.scale(
+                        scale: scale,
+                        child: Material(
+                          type: MaterialType.transparency,
+                          child: child,
+                        ),
+                      );
+                    },
+                  );
+                },
+                itemCount: _fieldControllers.length,
+                itemBuilder: (context, i) {
+                  final isDimmed =
+                      _draggingFieldIndex != null && _draggingFieldIndex != i;
+                  return AnimatedOpacity(
+                    key: ValueKey('deck_field_$i'),
+                    duration: const Duration(milliseconds: 150),
+                    opacity: isDimmed ? 0.25 : 1,
+                    child: _deckFieldEditor(
+                      context,
+                      loc,
+                      i,
+                      showDragHandle: true,
+                    ),
+                  );
+                },
+              ),
             // Add field button.
             Align(
               alignment: Alignment.center,

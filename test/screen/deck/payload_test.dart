@@ -3,14 +3,39 @@ import 'package:retentio/screen/deck/fact_add_composer/payload.dart';
 
 void main() {
   group('AddFactPayload', () {
-    test('resolveFieldLabels uses user, deck, then fallback', () {
-      final labels = AddFactPayload.resolveFieldLabels(
-        entryCount: 3,
-        userNamesByRow: ['Custom', null, ''],
-        deckFields: ['A', 'B'],
-        fallbackForIndex: (n) => 'F$n',
+    test('deckColumnLabel uses deck then fallback', () {
+      expect(
+        AddFactPayload.deckColumnLabel(
+          columnIndex: 0,
+          deckFields: ['A', 'B'],
+          fallbackForIndex: (n) => 'F$n',
+        ),
+        'A',
       );
-      expect(labels, ['Custom', 'B', 'F3']);
+      expect(
+        AddFactPayload.deckColumnLabel(
+          columnIndex: 1,
+          deckFields: ['A', 'B'],
+          fallbackForIndex: (n) => 'F$n',
+        ),
+        'B',
+      );
+      expect(
+        AddFactPayload.deckColumnLabel(
+          columnIndex: 2,
+          deckFields: ['A', 'B'],
+          fallbackForIndex: (n) => 'F$n',
+        ),
+        'F3',
+      );
+      expect(
+        AddFactPayload.deckColumnLabel(
+          columnIndex: 0,
+          deckFields: ['  ', 'B'],
+          fallbackForIndex: (n) => 'F$n',
+        ),
+        'F1',
+      );
     });
 
     test('buildEntryJson omits empty strings', () {
@@ -36,17 +61,20 @@ void main() {
       expect(e, {'text': 'x'});
     });
 
-    test('buildFactBody wraps single fact', () {
+    test('buildFactBody wraps single fact without per-fact fields', () {
       final b = AddFactPayload.buildFactBody(
         entries: [
           {'text': 'a'},
         ],
-        fields: ['Front'],
       );
       expect(b['facts'], isA<List>());
       final facts = b['facts'] as List;
       expect(facts.length, 1);
-      expect((facts.first as Map)['fields'], ['Front']);
+      final first = facts.first as Map;
+      expect(first.containsKey('fields'), isFalse);
+      expect(first['entries'], [
+        {'text': 'a'},
+      ]);
     });
   });
 }
