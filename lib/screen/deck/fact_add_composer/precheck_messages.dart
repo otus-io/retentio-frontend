@@ -15,7 +15,6 @@ class AddFactPrecheckMessages {
       case MediaPrecheck.fileTooLarge:
         final mb = switch (slot) {
           MediaSlotKind.image => 5,
-          MediaSlotKind.json => 2,
           MediaSlotKind.audio || MediaSlotKind.video => 200,
         };
         return loc.addFactFileTooLarge(mb);

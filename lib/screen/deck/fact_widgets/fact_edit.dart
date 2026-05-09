@@ -114,7 +114,6 @@ class _FactEditState extends ConsumerState<FactEdit>
         existingImageId: entry.image.trim().isEmpty ? null : entry.image.trim(),
         existingVideoId: entry.video.trim().isEmpty ? null : entry.video.trim(),
         existingAudioId: entry.audio.trim().isEmpty ? null : entry.audio.trim(),
-        existingJsonId: entry.json.trim().isEmpty ? null : entry.json.trim(),
       )..seedRowAttachmentPathsFromExisting();
     });
 
@@ -271,20 +270,12 @@ class _FactEditState extends ConsumerState<FactEdit>
           return;
         }
 
-        final jsonId = await _resolveMediaIdForSubmit(row, MediaSlotKind.json);
-        if (!mounted) return;
-        if (row.row.jsonPath != null && jsonId == null) {
-          _snack(loc.addFactUploadFailed);
-          return;
-        }
-
         entries.add(
           FactEntry(
             text: row.row.content.text.trim(),
             image: imageId ?? '',
             video: videoId ?? '',
             audio: audioId ?? '',
-            json: jsonId ?? '',
           ),
         );
       }

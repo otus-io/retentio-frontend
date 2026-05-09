@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/extensions/context_extension.dart';
-import 'package:retentio/models/transcript_sync.dart';
 import 'package:retentio/screen/deck/providers/audio_player.dart';
 
 class CardAudio extends StatefulWidget {
@@ -13,8 +12,6 @@ class CardAudio extends StatefulWidget {
     this.color,
     this.compact = false,
     this.useExternalScope = false,
-    this.transcriptForWordNav,
-    this.transcriptJsonUrl,
   });
 
   final Color? color;
@@ -25,13 +22,6 @@ class CardAudio extends StatefulWidget {
 
   /// When true, [audioUrlProvider] is already overridden above (e.g. by [FactContent]).
   final bool useExternalScope;
-
-  /// When non-null with words, compact prev/next jump by transcript timestamps instead of ±10s.
-  final TranscriptSync? transcriptForWordNav;
-
-  /// When non-empty, compact mode shows prev/next controls (word jumps or ±10s while loading).
-  /// Omit or leave empty when there is no paired JSON transcript URL.
-  final String? transcriptJsonUrl;
 
   @override
   State<CardAudio> createState() => _CardAudioState();
@@ -98,50 +88,19 @@ class _CardAudioState extends State<CardAudio>
         }
         if (widget.compact) {
           final notifier = ref.read(audioPlayerProvider.notifier);
-          final transcript = widget.transcriptForWordNav;
-          final wordNav = transcript != null && transcript.words.isNotEmpty
-              ? transcript
-              : null;
-          final jsonUrl = widget.transcriptJsonUrl?.trim() ?? '';
-          final showSkipButtons = jsonUrl.isNotEmpty;
-          void onPrev() {
-            final pos = ref.read(audioPlayerProvider).positionMs;
-            final nav = wordNav;
-            if (nav != null) {
-              notifier.seekToMs(nav.seekMsPrevFrom(pos));
-            } else {
-              notifier.skipSeconds(-10);
-            }
-          }
-
-          void onNext() {
-            final pos = ref.read(audioPlayerProvider).positionMs;
-            final nav = wordNav;
-            if (nav != null) {
-              final ms = nav.seekMsNextFrom(pos);
-              if (ms != null) notifier.seekToMs(ms);
-            } else {
-              notifier.skipSeconds(10);
-            }
-          }
-
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (showSkipButtons)
-                IconButton(
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints(
-                    minWidth: 28,
-                    minHeight: 36,
-                  ),
-                  iconSize: 18,
-                  color: accent,
-                  tooltip: wordNav != null ? 'Previous word' : 'Back 10s',
-                  onPressed: onPrev,
-                  icon: const Icon(LucideIcons.rotateCcw),
-                ),
+              IconButton(
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 36),
+                iconSize: 18,
+                color: accent,
+                tooltip: 'Back 10s',
+                onPressed: () => notifier.skipSeconds(-10),
+                icon: const Icon(LucideIcons.rotateCcw),
+              ),
               IconButton(
                 padding: EdgeInsets.zero,
                 visualDensity: VisualDensity.compact,
@@ -151,20 +110,16 @@ class _CardAudioState extends State<CardAudio>
                 onPressed: notifier.playPause,
                 icon: Icon(isPlaying ? LucideIcons.pause : LucideIcons.play),
               ),
-              if (showSkipButtons)
-                IconButton(
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints(
-                    minWidth: 28,
-                    minHeight: 36,
-                  ),
-                  iconSize: 18,
-                  color: accent,
-                  tooltip: wordNav != null ? 'Next word' : 'Forward 10s',
-                  onPressed: onNext,
-                  icon: const Icon(LucideIcons.rotateCw),
-                ),
+              IconButton(
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 36),
+                iconSize: 18,
+                color: accent,
+                tooltip: 'Forward 10s',
+                onPressed: () => notifier.skipSeconds(10),
+                icon: const Icon(LucideIcons.rotateCw),
+              ),
             ],
           );
         }

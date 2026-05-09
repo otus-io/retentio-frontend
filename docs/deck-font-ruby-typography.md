@@ -8,7 +8,7 @@
 - At **deck study** level, let the user set **two independent sizes**: main line (e.g. kanji) and ruby line (readings), via **sliders**.
 - Use a **Japanese-capable font** for this typography (applied to rendered card text that uses wiki ruby) so sizing and preview match real study content.
 - Show **default Japanese example text** in the settings UI (e.g. `[[例|れい]]の[[漢字|かんじ]]` or similar) so users see the effect immediately.
-- Changes apply to **every card** in that deck while studying: `lib/screen/deck/card_widgets/card_text.dart`, `lib/screen/deck/card_widgets/card_transcript_text.dart` (ruby path), and `lib/screen/deck/card_widgets/card_wiki_ruby_layout.dart` (`wikiRubyWrappedText`, `wikiRubyReadingStyle`).
+- Changes apply to **every card** in that deck while studying: `lib/screen/deck/card_widgets/card_text.dart` and `lib/screen/deck/card_widgets/card_wiki_ruby_layout.dart` (`wikiRubyWrappedText`, `wikiRubyReadingStyle`).
 
 ## Font (“word font” → working Japanese font)
 
@@ -48,7 +48,7 @@
 
 ## Tests
 
-- `test/screen/deck/deck_card_typography_test.dart` — `DeckCardTypography` / `DeckCardSidesTypography` models; hydrate (full, legacy, **partial front-only prefs**); **side-isolated** `setBaseFontSize`; `persistCurrent` (four keys); `CardText` (ruby front/back, **plain text**); **`CardTranscriptText`** back typography with annotated transcript; **`FactContent`** + `typographyIsFront: false`; `DeckFontSheet` (segment + **Back** tab slider writes **back** prefs only).
+- `test/screen/deck/deck_card_typography_test.dart` — `DeckCardTypography` / `DeckCardSidesTypography` models; hydrate (full, legacy, **partial front-only prefs**); **side-isolated** `setBaseFontSize`; `persistCurrent` (four keys); `CardText` (ruby front/back, **plain text**); **`FactContent`** + `typographyIsFront: false`; `DeckFontSheet` (segment + **Back** tab slider writes **back** prefs only).
 - Widget tests set `deckCardTypographyUsePlainTextStyleInTests` so `DeckCardTypography.baseTextStyle` skips Google Fonts HTTP (see `lib/screen/deck/providers/deck_card_typography.dart`).
 - `test/screen/deck/card_wiki_ruby_layout_test.dart` — `wikiRubyReadingStyle` with explicit `rubyFontSize`.
 

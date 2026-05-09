@@ -29,11 +29,10 @@ class AddFactRowModel {
   /// Bounds this row’s fields for focus detection (media target, minus button).
   final GlobalKey hostKey;
 
-  /// Up to one file per kind per row (API entry supports image + video + audio + json).
+  /// Up to one file per kind per row (API entry supports image + video + audio).
   String? imagePath;
   String? videoPath;
   String? audioPath;
-  String? jsonPath;
 
   void dispose() {
     fieldName.dispose();
@@ -43,10 +42,7 @@ class AddFactRowModel {
   bool get hasTextContent => content.text.trim().isNotEmpty;
 
   bool get hasAttachment =>
-      imagePath != null ||
-      videoPath != null ||
-      audioPath != null ||
-      jsonPath != null;
+      imagePath != null || videoPath != null || audioPath != null;
 
   String? pathFor(MediaSlotKind kind) {
     switch (kind) {
@@ -56,8 +52,6 @@ class AddFactRowModel {
         return videoPath;
       case MediaSlotKind.audio:
         return audioPath;
-      case MediaSlotKind.json:
-        return jsonPath;
     }
   }
 
@@ -69,8 +63,6 @@ class AddFactRowModel {
         videoPath = path;
       case MediaSlotKind.audio:
         audioPath = path;
-      case MediaSlotKind.json:
-        jsonPath = path;
     }
   }
 
@@ -82,8 +74,6 @@ class AddFactRowModel {
         videoPath = null;
       case MediaSlotKind.audio:
         audioPath = null;
-      case MediaSlotKind.json:
-        jsonPath = null;
     }
   }
 
@@ -91,7 +81,6 @@ class AddFactRowModel {
     imagePath = null;
     videoPath = null;
     audioPath = null;
-    jsonPath = null;
   }
 }
 

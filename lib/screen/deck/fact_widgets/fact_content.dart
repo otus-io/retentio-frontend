@@ -4,15 +4,12 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/extensions/widget_extension.dart';
 
 import '../../../models/card.dart';
-import '../../../models/transcript_sync.dart';
 import '../../../widgets/buttons_tab_bar.dart';
 import '../card_widgets/card_audio.dart';
 import '../card_widgets/card_image.dart';
 import '../card_widgets/card_text.dart';
-import '../card_widgets/card_transcript_text.dart';
 import '../card_widgets/card_video.dart';
 import '../providers/audio_player.dart';
-import '../providers/transcript_sync_provider.dart';
 
 class FactContent extends ConsumerWidget {
   const FactContent({
@@ -34,20 +31,10 @@ class FactContent extends ConsumerWidget {
     String() => LucideIcons.fileText,
   };
 
-  static String _fallbackTextFromItems(List<Item> textItems) {
-    final parts = <String>[];
-    for (final t in textItems) {
-      final v = t.value.trim();
-      if (v.isNotEmpty) parts.add(v);
-    }
-    return parts.join('\n\n');
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef _) {
     final textLikeItems = <Item>[];
     final audioItems = <Item>[];
-    final jsonItems = <Item>[];
     final mediaTabs = <Item>[];
 
     for (final e in items) {
@@ -55,7 +42,7 @@ class FactContent extends ConsumerWidget {
         case 'audio':
           audioItems.add(e);
         case 'json':
-          jsonItems.add(e);
+          break;
         case 'image':
         case 'video':
           mediaTabs.add(e);
@@ -65,9 +52,6 @@ class FactContent extends ConsumerWidget {
     }
 
     final singleAudioScope = audioItems.length == 1;
-    final transcriptUrl = singleAudioScope && jsonItems.length == 1
-        ? jsonItems.first.value
-        : null;
 
     final showCombinedTab = textLikeItems.isNotEmpty || audioItems.isNotEmpty;
 
@@ -79,7 +63,6 @@ class FactContent extends ConsumerWidget {
         _CombinedTextPane(
           textItems: textLikeItems,
           color: color,
-          transcriptUrl: transcriptUrl,
           typographyDeckId: typographyDeckId,
           typographyIsFront: typographyIsFront,
         ),
@@ -89,7 +72,6 @@ class FactContent extends ConsumerWidget {
           audioItems: audioItems,
           color: color,
           singleAudioScope: singleAudioScope,
-          transcriptUrl: transcriptUrl,
         ),
       ];
       tabWidgets.add(
@@ -173,30 +155,19 @@ class FactContent extends ConsumerWidget {
   }
 }
 
-class _CombinedAudioTrailing extends ConsumerWidget {
+class _CombinedAudioTrailing extends StatelessWidget {
   const _CombinedAudioTrailing({
     required this.audioItems,
     required this.color,
     required this.singleAudioScope,
-    this.transcriptUrl,
   });
 
   final List<Item> audioItems;
   final Color color;
   final bool singleAudioScope;
-  final String? transcriptUrl;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    TranscriptSync? sync;
-    final url = transcriptUrl;
-    if (url != null && url.isNotEmpty) {
-      final av = ref.watch(transcriptSyncProvider(url));
-      sync = switch (av) {
-        AsyncData(:final value) => value,
-        _ => null,
-      };
-    }
+  Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -206,8 +177,6 @@ class _CombinedAudioTrailing extends ConsumerWidget {
             color: color,
             compact: true,
             useExternalScope: singleAudioScope,
-            transcriptForWordNav: sync,
-            transcriptJsonUrl: url,
           ),
       ],
     );
@@ -219,14 +188,12 @@ class _CombinedTextPane extends StatelessWidget {
   const _CombinedTextPane({
     required this.textItems,
     required this.color,
-    this.transcriptUrl,
     this.typographyDeckId,
     this.typographyIsFront = true,
   });
 
   final List<Item> textItems;
   final Color color;
-  final String? transcriptUrl;
   final String? typographyDeckId;
   final bool typographyIsFront;
 
@@ -243,29 +210,18 @@ class _CombinedTextPane extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (transcriptUrl != null && transcriptUrl!.isNotEmpty)
-                    CardTranscriptText(
-                      transcriptUrl: transcriptUrl!,
-                      fallbackText: FactContent._fallbackTextFromItems(
-                        textItems,
-                      ),
-                      color: color,
-                      typographyDeckId: typographyDeckId,
-                      typographyIsFront: typographyIsFront,
-                    )
-                  else
-                    for (final t in textItems)
-                      if (t.value.trim().isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: CardText(
-                            text: t.value,
-                            color: color,
-                            scrollable: false,
-                            typographyDeckId: typographyDeckId,
-                            typographyIsFront: typographyIsFront,
-                          ),
+                  for (final t in textItems)
+                    if (t.value.trim().isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: CardText(
+                          text: t.value,
+                          color: color,
+                          scrollable: false,
+                          typographyDeckId: typographyDeckId,
+                          typographyIsFront: typographyIsFront,
                         ),
+                      ),
                 ],
               ),
             ),

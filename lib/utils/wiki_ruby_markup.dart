@@ -1,7 +1,5 @@
-import 'package:retentio/models/transcript_sync.dart';
-
 /// Parses `[[kanji|reading]]` segments (double brackets + pipe) into plain runs and
-/// ruby pairs. Used for deck / transcript text without colliding with single `[]`.
+/// ruby pairs. Used for deck text without colliding with single `[]`.
 sealed class WikiSeg {
   const WikiSeg({required this.composedStart, required this.composedEnd});
 
@@ -119,19 +117,16 @@ abstract final class WikiRubyMarkup {
     return composedLen;
   }
 
-  /// Maps each code unit index in [composed] to a word index, or null if [words]
+  /// Maps each code unit index in [composed] to a word index, or null if [wordTexts]
   /// do not exactly tile [composed].
-  static List<int>? charToWordIndex(
-    String composed,
-    List<TranscriptWord> words,
-  ) {
+  static List<int>? charToWordIndex(String composed, List<String> wordTexts) {
     if (composed.isEmpty) {
-      return words.isEmpty ? <int>[] : null;
+      return wordTexts.isEmpty ? <int>[] : null;
     }
     final out = List<int>.filled(composed.length, -1);
     var pos = 0;
-    for (var wi = 0; wi < words.length; wi++) {
-      final w = words[wi].word;
+    for (var wi = 0; wi < wordTexts.length; wi++) {
+      final w = wordTexts[wi];
       if (w.isEmpty) return null;
       if (pos + w.length > composed.length) return null;
       if (composed.substring(pos, pos + w.length) != w) return null;

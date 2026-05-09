@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:retentio/models/transcript_sync.dart';
 import 'package:retentio/utils/wiki_ruby_markup.dart';
 
 void main() {
@@ -82,10 +81,7 @@ void main() {
   group('WikiRubyMarkup.charToWordIndex', () {
     test('maps when words tile composed', () {
       const composed = '皆さんは';
-      final words = [
-        TranscriptWord(word: '皆さん', start: 0, end: 0.3),
-        TranscriptWord(word: 'は', start: 0.3, end: 0.5),
-      ];
+      const words = ['皆さん', 'は'];
       final m = WikiRubyMarkup.charToWordIndex(composed, words)!;
       expect(m, [0, 0, 0, 1]);
     });
@@ -95,32 +91,22 @@ void main() {
     });
 
     test('empty composed with non-empty words returns null', () {
-      expect(
-        WikiRubyMarkup.charToWordIndex('', [
-          TranscriptWord(word: 'a', start: 0, end: 1),
-        ]),
-        isNull,
-      );
+      expect(WikiRubyMarkup.charToWordIndex('', const ['a']), isNull);
     });
 
     test('returns null when word prefix does not match', () {
-      final words = [TranscriptWord(word: 'a', start: 0, end: 1)];
+      const words = ['a'];
       expect(WikiRubyMarkup.charToWordIndex('ab', words), isNull);
     });
 
     test('returns null when words leave remainder in composed', () {
-      final words = [TranscriptWord(word: 'a', start: 0, end: 1)];
+      const words = ['a'];
       expect(WikiRubyMarkup.charToWordIndex('a', words), isNotNull);
       expect(WikiRubyMarkup.charToWordIndex('ab', words), isNull);
     });
 
     test('returns null for empty word token', () {
-      expect(
-        WikiRubyMarkup.charToWordIndex('a', [
-          TranscriptWord(word: '', start: 0, end: 1),
-        ]),
-        isNull,
-      );
+      expect(WikiRubyMarkup.charToWordIndex('a', const ['']), isNull);
     });
   });
 
