@@ -5,30 +5,22 @@ class FactEntry {
     this.audio = '',
     this.image = '',
     this.video = '',
-    this.json = '',
   });
 
   final String text;
   final String audio;
   final String image;
   final String video;
-  final String json;
 
   factory FactEntry.fromJson(Map<String, dynamic> json) => FactEntry(
     text: json['text'] as String? ?? '',
     audio: json['audio'] as String? ?? '',
     image: json['image'] as String? ?? '',
     video: json['video'] as String? ?? '',
-    json: json['json'] as String? ?? '',
   );
 
-  FactEntry copyWithText(String newText) => FactEntry(
-    text: newText,
-    audio: audio,
-    image: image,
-    video: video,
-    json: json,
-  );
+  FactEntry copyWithText(String newText) =>
+      FactEntry(text: newText, audio: audio, image: image, video: video);
 
   /// JSON for PATCH `entries` (preserves media when non-empty).
   Map<String, dynamic> toJson() {
@@ -36,7 +28,6 @@ class FactEntry {
     if (audio.isNotEmpty) m['audio'] = audio;
     if (image.isNotEmpty) m['image'] = image;
     if (video.isNotEmpty) m['video'] = video;
-    if (json.isNotEmpty) m['json'] = json;
     return m;
   }
 }

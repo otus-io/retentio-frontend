@@ -195,7 +195,6 @@ class _FactAddState extends ConsumerState<FactAdd>
         String? imgId;
         String? vidId;
         String? audId;
-        String? jsonId;
 
         Future<bool> uploadIfPresent(
           String? path,
@@ -227,11 +226,6 @@ class _FactAddState extends ConsumerState<FactAdd>
               row.audioPath,
               MediaSlotKind.audio,
               (id) => audId = id,
-            ) ||
-            !await uploadIfPresent(
-              row.jsonPath,
-              MediaSlotKind.json,
-              (id) => jsonId = id,
             )) {
           if (mounted) _snack(loc.addFactUploadFailed);
           return;
@@ -243,7 +237,6 @@ class _FactAddState extends ConsumerState<FactAdd>
             imageId: imgId,
             videoId: vidId,
             audioId: audId,
-            jsonId: jsonId,
           ),
         );
       }

@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:retentio/services/index.dart';
 
-/// Matches API: image 5 MB; JSON attachment 2 MB; audio/video 200 MB.
-enum MediaSlotKind { image, video, audio, json }
+/// Matches API: image 5 MB; audio/video 200 MB.
+enum MediaSlotKind { image, video, audio }
 
 enum MediaPrecheck { ok, fileNotFound, unknownType, wrongType, fileTooLarge }
 
@@ -12,12 +12,10 @@ class MediaService {
   MediaService._();
 
   static const int maxImageBytes = 5 * 1024 * 1024;
-  static const int maxJsonBytes = 2 * 1024 * 1024;
   static const int maxAudioVideoBytes = 200 * 1024 * 1024;
 
   static int maxBytesFor(MediaSlotKind kind) => switch (kind) {
     MediaSlotKind.image => maxImageBytes,
-    MediaSlotKind.json => maxJsonBytes,
     MediaSlotKind.audio || MediaSlotKind.video => maxAudioVideoBytes,
   };
 
@@ -30,7 +28,6 @@ class MediaService {
     if (images.contains(ext)) return MediaSlotKind.image;
     if (video.contains(ext)) return MediaSlotKind.video;
     if (audio.contains(ext)) return MediaSlotKind.audio;
-    if (ext == 'json') return MediaSlotKind.json;
     return null;
   }
 
@@ -77,8 +74,6 @@ class MediaService {
         return 'video/quicktime';
       case '.webm':
         return 'video/webm';
-      case '.json':
-        return 'application/json';
       default:
         return null;
     }

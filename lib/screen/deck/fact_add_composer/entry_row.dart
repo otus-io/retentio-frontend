@@ -99,7 +99,6 @@ class _AddFactEntryRowState extends State<AddFactEntryRow> {
       MediaSlotKind.image,
       MediaSlotKind.video,
       MediaSlotKind.audio,
-      MediaSlotKind.json,
     ];
     final activeKinds = kindsOrder
         .where((k) => row.pathFor(k) != null)

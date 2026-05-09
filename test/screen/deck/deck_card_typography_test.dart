@@ -3,15 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retentio/models/card.dart';
-import 'package:retentio/models/transcript_sync.dart';
 import 'package:retentio/screen/deck/card_widgets/card_text.dart';
-import 'package:retentio/screen/deck/card_widgets/card_transcript_text.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_font_sheet.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_content.dart';
 import 'package:retentio/screen/deck/providers/deck_card_typography.dart';
 
 import '../../helpers/test_wrapper.dart';
-import '../../helpers/transcript_test_overrides.dart';
 
 String _formatTypo(DeckCardTypography t) =>
     '${t.baseFontSize.toStringAsFixed(1)}|${t.rubyFontSize.toStringAsFixed(1)}';
@@ -360,60 +357,6 @@ void main() {
       final plain = tester.widget<Text>(find.text('No ruby'));
       expect(plain.style!.fontSize, closeTo(20.0, 0.01));
     });
-  });
-
-  group('CardTranscriptText typography', () {
-    const transcriptUrl = 'https://example.com/tr-typo.json';
-    const audioUrl = 'https://example.com/a-typo.mp3';
-
-    testWidgets(
-      'annotated transcript uses back typography when typographyIsFront is false',
-      (tester) async {
-        SharedPreferences.setMockInitialValues({
-          'deck_typography_base_front_v1_d-tr': 18.0,
-          'deck_typography_ruby_front_v1_d-tr': 9.9,
-          'deck_typography_base_back_v1_d-tr': 26.0,
-          'deck_typography_ruby_back_v1_d-tr': 14.0,
-        });
-
-        final rubySync = TranscriptSync(
-          words: const [
-            TranscriptWord(word: '皆さん', start: 0, end: 0.3),
-            TranscriptWord(word: 'は', start: 0.3, end: 0.5),
-          ],
-          annotatedSourceText: '[[皆|みな]]さんは',
-        );
-
-        await tester.pumpWidget(
-          buildTestableWidgetWithOverrides(
-            SizedBox(
-              height: 400,
-              child: SingleChildScrollView(
-                child: CardTranscriptText(
-                  transcriptUrl: transcriptUrl,
-                  fallbackText: 'FB',
-                  color: Colors.black,
-                  typographyDeckId: 'd-tr',
-                  typographyIsFront: false,
-                ),
-              ),
-            ),
-            overrides: transcriptAudioTestOverrides(
-              transcriptUrl: transcriptUrl,
-              audioUrl: audioUrl,
-              transcriptAsync: AsyncData<TranscriptSync?>(rubySync),
-            ),
-          ),
-        );
-        await tester.pump();
-        await tester.pumpAndSettle();
-
-        final kanji = tester.widget<Text>(find.text('皆'));
-        final yomi = tester.widget<Text>(find.text('みな'));
-        expect(kanji.style!.fontSize, closeTo(26.0, 0.01));
-        expect(yomi.style!.fontSize, closeTo(14.0, 0.01));
-      },
-    );
   });
 
   group('FactContent typography', () {

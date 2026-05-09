@@ -11,7 +11,5 @@ IconData addFactAttachmentChipIcon(MediaSlotKind kind) {
       return LucideIcons.video;
     case MediaSlotKind.audio:
       return LucideIcons.audioLines;
-    case MediaSlotKind.json:
-      return LucideIcons.braces;
   }
 }

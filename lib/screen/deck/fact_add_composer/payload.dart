@@ -31,7 +31,6 @@ class AddFactPayload {
     String? imageId,
     String? videoId,
     String? audioId,
-    String? jsonId,
   }) {
     final m = <String, dynamic>{};
     final t = text.trim();
@@ -44,9 +43,6 @@ class AddFactPayload {
     }
     if (audioId != null && audioId.trim().isNotEmpty) {
       m['audio'] = audioId.trim();
-    }
-    if (jsonId != null && jsonId.trim().isNotEmpty) {
-      m['json'] = jsonId.trim();
     }
     return m;
   }
