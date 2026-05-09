@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/decks/widgets/deck_create.dart';
 import 'package:retentio/widgets/number_picker.dart';
 
@@ -109,6 +110,38 @@ void main() {
 
       expect(firstField.controller!.text, 'Second');
       expect(secondField.controller!.text, 'First');
+    });
+
+    testWidgets('edit deck does not expose field reorder drag handles', (
+      tester,
+    ) async {
+      final deck = Deck.fromJson({
+        'id': 'd1',
+        'name': 'My deck',
+        'stats': {
+          'cards_count': 0,
+          'facts_count': 0,
+          'unseen_cards': 0,
+          'due_cards': 0,
+        },
+        'rate': 20,
+        'owner': {'username': 'u', 'email': 'u@e.com'},
+        'fields': ['Front', 'Back'],
+      });
+
+      await tester.pumpWidget(
+        buildTestableWidget(
+          Scaffold(
+            body: SingleChildScrollView(child: DeckCreate(deck: deck)),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ReorderableDragStartListener), findsNothing);
+      expect(find.byType(ReorderableListView), findsNothing);
     });
   });
 }

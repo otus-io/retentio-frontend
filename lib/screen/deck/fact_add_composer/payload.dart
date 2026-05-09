@@ -2,27 +2,24 @@
 class AddFactPayload {
   AddFactPayload._();
 
-  /// One-based index for fallback labels (`Field 1`, …).
-  static List<String> resolveFieldLabels({
-    required int entryCount,
-    required List<String?> userNamesByRow,
+  /// Label for column [columnIndex] from the deck (or localized fallback).
+  static String deckColumnLabel({
+    required int columnIndex,
     required List<String> deckFields,
     required String Function(int oneBasedIndex) fallbackForIndex,
   }) {
-    return List.generate(entryCount, (i) {
-      final user = userNamesByRow[i];
-      if (user != null && user.isNotEmpty) return user;
-      if (i < deckFields.length) return deckFields[i];
-      return fallbackForIndex(i + 1);
-    });
+    if (columnIndex < deckFields.length) {
+      final s = deckFields[columnIndex].trim();
+      if (s.isNotEmpty) return s;
+    }
+    return fallbackForIndex(columnIndex + 1);
   }
 
   static Map<String, dynamic> buildFactBody({
     required List<Map<String, dynamic>> entries,
-    required List<String> fields,
   }) => {
     'facts': [
-      {'entries': entries, 'fields': fields},
+      {'entries': entries},
     ],
   };
 
