@@ -88,39 +88,14 @@ class _CardAudioState extends State<CardAudio>
         }
         if (widget.compact) {
           final notifier = ref.read(audioPlayerProvider.notifier);
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(minWidth: 28, minHeight: 36),
-                iconSize: 18,
-                color: accent,
-                tooltip: 'Back 10s',
-                onPressed: () => notifier.skipSeconds(-10),
-                icon: const Icon(LucideIcons.rotateCcw),
-              ),
-              IconButton(
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                iconSize: 22,
-                color: accent,
-                onPressed: notifier.playPause,
-                icon: Icon(isPlaying ? LucideIcons.pause : LucideIcons.play),
-              ),
-              IconButton(
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(minWidth: 28, minHeight: 36),
-                iconSize: 18,
-                color: accent,
-                tooltip: 'Forward 10s',
-                onPressed: () => notifier.skipSeconds(10),
-                icon: const Icon(LucideIcons.rotateCw),
-              ),
-            ],
+          return IconButton(
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            iconSize: 22,
+            color: accent,
+            onPressed: notifier.playPause,
+            icon: Icon(isPlaying ? LucideIcons.pause : LucideIcons.play),
           );
         }
         return SizedBox(

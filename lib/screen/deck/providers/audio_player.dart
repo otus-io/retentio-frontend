@@ -120,11 +120,6 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
     }
   }
 
-  Future<void> skipSeconds(int deltaSeconds) async {
-    final next = state.positionMs + deltaSeconds * 1000;
-    await seekToMs(next);
-  }
-
   Future<void> _loadAudio(String audioUrl) async {
     try {
       final path = await _localAudioCachePath(audioUrl);
