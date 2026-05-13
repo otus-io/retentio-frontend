@@ -3,23 +3,31 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/l10n/app_localizations.dart';
-import 'package:retentio/screen/deck/providers/card_review.dart';
+import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_edit.dart';
+import 'package:retentio/screen/deck/providers/deck_scope.dart';
 
 import '../../helpers/card_test_samples.dart';
+import '../../helpers/fake_deck_study_bloc.dart';
 import '../../helpers/fake_fact_api_interceptor.dart';
-import '../../helpers/test_card_notifiers.dart';
 import '../../helpers/test_wrapper.dart';
 
 void main() {
   group('FactEdit', () {
     testWidgets('loads fact and can save', (tester) async {
       await setupTestEnvironment();
-      addTearDown(tearDownTestEnvironment);
-
       final interceptor = attachFakeFactApiInterceptor();
-      addTearDown(() => detachFakeFactApiInterceptor(interceptor));
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: sampleDeck().id,
+        loadResults: [DeckStudyLoadResult(cardDetail: sampleCardDetail())],
+      );
+      addTearDown(() async {
+        detachFakeFactApiInterceptor(interceptor);
+        await harness.dispose();
+        tearDownTestEnvironment();
+      });
 
       final router = GoRouter(
         initialLocation: '/base',
@@ -44,8 +52,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            deckProvider.overrideWithValue(sampleDeck()),
-            cardProvider.overrideWith(NoOpGetCardNotifier.new),
+            currentDeckProvider.overrideWithValue(sampleDeck()),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
           ],
           child: MaterialApp.router(
             locale: const Locale('en'),
@@ -80,7 +88,8 @@ void main() {
       final saveButton = find.byType(FilledButton);
       expect(saveButton, findsOneWidget);
       await tester.tap(saveButton);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump(const Duration(milliseconds: 200));
     });
   });
 }

@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:retentio/services/index.dart';
+import 'package:retentio/core/network/network.dart';
 
 /// Intercepts GET/PATCH `/facts/{factId}` for [EditFactWidget] tests (no real server).
 class FakeFactApiInterceptor extends Interceptor {
@@ -45,13 +45,13 @@ class FakeFactApiInterceptor extends Interceptor {
   }
 }
 
-/// Register [FakeFactApiInterceptor] on the shared [dioClient]. Call [remove] in tearDown.
+/// Register [FakeFactApiInterceptor] on the shared [networkDioClient]. Call [remove] in tearDown.
 Interceptor attachFakeFactApiInterceptor() {
   final i = FakeFactApiInterceptor();
-  dioClient.dio.interceptors.add(i);
+  networkDioClient.dio.interceptors.add(i);
   return i;
 }
 
 void detachFakeFactApiInterceptor(Interceptor i) {
-  dioClient.dio.interceptors.remove(i);
+  networkDioClient.dio.interceptors.remove(i);
 }

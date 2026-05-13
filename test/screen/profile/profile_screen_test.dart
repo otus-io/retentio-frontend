@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/screen/profile/profile_screen.dart';
@@ -48,7 +47,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Three settings items (language, theme, logout) each have a trailing arrow
-      expect(find.byIcon(Icons.arrow_forward_ios), findsNWidgets(3));
+      expect(find.byIcon(LucideIcons.chevronRight), findsNWidgets(3));
     });
   });
 }
