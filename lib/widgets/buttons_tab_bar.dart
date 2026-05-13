@@ -1,14 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:retentio/theme/theme_tokens.dart';
+import 'package:retentio/widgets/app_button.dart';
 
 // Default values from the Flutter's TabBar.
 const double _kTabHeight = 46.0;
+const int _kDefaultDurationMs = 250;
+const double _kDefaultContentPaddingHorizontal = 5;
+const double _kDefaultContentPaddingVertical = 4;
+const double _kDefaultButtonMargin = 4;
+const double _kDefaultLabelSpacing = 4;
+const double _kDefaultRadius = 8;
+const double _kUnselectedLabelOpacity = 0.62;
+const double _kUnselectedBorderOpacity = 0.6;
+const double _kSelectedBorderOpacity = 0.85;
+const double _kUnselectedBgOpacity = 0.42;
+const double _kSelectedBgOpacity = 0.14;
+const double _kButtonMinSize = 40;
+const double _kTabIconSize = 20;
 
 class ButtonsTabBar extends StatefulWidget implements PreferredSizeWidget {
   ButtonsTabBar({
     super.key,
     required this.tabs,
     this.controller,
-    this.duration = 250,
+    this.duration = _kDefaultDurationMs,
     this.backgroundColor,
     this.unselectedBackgroundColor,
     this.decoration,
@@ -16,17 +31,17 @@ class ButtonsTabBar extends StatefulWidget implements PreferredSizeWidget {
     this.labelStyle,
     this.unselectedLabelStyle,
     this.splashColor,
-    this.borderWidth = 0,
-    this.borderColor = Colors.black,
-    this.unselectedBorderColor = Colors.black,
+    this.borderWidth = AppThemeTokens.borderWidthHairline,
+    this.borderColor,
+    this.unselectedBorderColor,
     this.physics = const BouncingScrollPhysics(),
     this.contentPadding = const EdgeInsets.symmetric(
-      horizontal: 5,
-      vertical: 4,
+      horizontal: _kDefaultContentPaddingHorizontal,
+      vertical: _kDefaultContentPaddingVertical,
     ),
-    this.buttonMargin = const EdgeInsets.all(4),
-    this.labelSpacing = 4.0,
-    this.radius = 7.0,
+    this.buttonMargin = const EdgeInsets.all(_kDefaultButtonMargin),
+    this.labelSpacing = _kDefaultLabelSpacing,
+    this.radius = _kDefaultRadius,
     this.elevation = 0,
     this.height = _kTabHeight,
     this.width,
@@ -99,13 +114,13 @@ class ButtonsTabBar extends StatefulWidget implements PreferredSizeWidget {
   /// The [Color] of solid [Border] for each button.
   ///
   /// The default value is: [Colors.black].
-  final Color borderColor;
+  final Color? borderColor;
 
   /// The [Color] of solid [Border] for each button. If no value is provided, the value of
   /// [this.borderColor] is used.
   ///
   /// The default value is: [Colors.black].
-  final Color unselectedBorderColor;
+  final Color? unselectedBorderColor;
 
   /// The physics used for the [ScrollController] of the tabs list.
   ///
@@ -313,6 +328,8 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
   }
 
   Widget _buildButton(int index, Tab tab) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final double animationValue;
     if (index == _currentIndex) {
       animationValue = _animationController.value;
@@ -323,23 +340,35 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     }
 
     final TextStyle? textStyle = TextStyle.lerp(
-      widget.unselectedLabelStyle ?? const TextStyle(color: Colors.black),
-      widget.labelStyle ?? const TextStyle(color: Colors.white),
+      widget.unselectedLabelStyle ??
+          theme.textTheme.labelMedium?.copyWith(
+            color: scheme.onSurface.withValues(alpha: _kUnselectedLabelOpacity),
+            fontWeight: FontWeight.w600,
+          ),
+      widget.labelStyle ??
+          theme.textTheme.labelMedium?.copyWith(
+            color: scheme.primary,
+            fontWeight: FontWeight.w700,
+          ),
       animationValue,
     );
     final Color? borderColor = Color.lerp(
-      widget.unselectedBorderColor,
-      widget.borderColor,
+      widget.unselectedBorderColor ??
+          scheme.outline.withValues(alpha: _kUnselectedBorderOpacity),
+      widget.borderColor ??
+          scheme.primary.withValues(alpha: _kSelectedBorderOpacity),
       animationValue,
     );
-    final Color foregroundColor = textStyle?.color ?? Colors.black;
+    final Color foregroundColor = textStyle?.color ?? scheme.onSurface;
 
     final BoxDecoration? boxDecoration = BoxDecoration.lerp(
       BoxDecoration(
         color:
             widget.unselectedDecoration?.color ??
             widget.unselectedBackgroundColor ??
-            Colors.grey[300],
+            scheme.surfaceContainerHighest.withValues(
+              alpha: _kUnselectedBgOpacity,
+            ),
         boxShadow: widget.unselectedDecoration?.boxShadow,
         gradient: widget.unselectedDecoration?.gradient,
         borderRadius:
@@ -350,7 +379,7 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
         color:
             widget.decoration?.color ??
             widget.backgroundColor ??
-            Theme.of(context).colorScheme.secondary,
+            scheme.primary.withValues(alpha: _kSelectedBgOpacity),
         boxShadow: widget.decoration?.boxShadow,
         gradient: widget.decoration?.gradient,
         borderRadius:
@@ -389,14 +418,17 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
       key: _tabKeys[index],
       // padding for the buttons
       padding: margin,
-      child: ElevatedButton(
+      child: AppButton(
         onPressed: () {
           _controller?.animateTo(index);
           if (widget.onTap != null) widget.onTap!(index);
         },
+        useElevated: true,
         style: ButtonStyle(
           elevation: WidgetStateProperty.all(widget.elevation),
-          minimumSize: WidgetStateProperty.all(const Size(40, 40)),
+          minimumSize: WidgetStateProperty.all(
+            const Size(_kButtonMinSize, _kButtonMinSize),
+          ),
           padding: WidgetStateProperty.all(EdgeInsets.zero),
           textStyle: WidgetStateProperty.all(textStyle),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -405,7 +437,7 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
               side: (widget.borderWidth == 0)
                   ? BorderSide.none
                   : BorderSide(
-                      color: borderColor ?? Colors.black,
+                      color: borderColor ?? scheme.outline,
                       width: widget.borderWidth,
                       style: BorderStyle.solid,
                     ),
@@ -427,7 +459,10 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
               children: <Widget>[
                 tab.icon != null
                     ? IconTheme.merge(
-                        data: IconThemeData(size: 24.0, color: foregroundColor),
+                        data: IconThemeData(
+                          size: _kTabIconSize,
+                          color: foregroundColor,
+                        ),
                         child: tab.icon!,
                       )
                     : Container(),

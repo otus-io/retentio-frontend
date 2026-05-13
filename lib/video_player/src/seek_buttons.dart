@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:retentio/theme/theme_tokens.dart';
 
 import 'custom_video_player_controller.dart';
 
@@ -41,7 +42,7 @@ class _SeekButtonsState extends State<SeekButtons> {
                   Material(
                     color: Colors.black12,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
+                      borderRadius: AppThemeTokens.borderRadiusXs,
                     ),
                     child: InkWell(
                       onTap: onSeekForward,
@@ -55,7 +56,7 @@ class _SeekButtonsState extends State<SeekButtons> {
                   Material(
                     color: Colors.black12,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
+                      borderRadius: AppThemeTokens.borderRadiusXs,
                     ),
                     child: InkWell(
                       onTap: onSeekBack,

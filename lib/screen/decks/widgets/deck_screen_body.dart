@@ -1,76 +1,88 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/l10n/app_localizations.dart';
-import 'package:retentio/screen/decks/providers/deck_list.dart';
+import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
+import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/common_refresher.dart';
 
 import 'deck_list_card.dart';
 
-class DeckScreenBody extends ConsumerWidget {
+const double _kDeckStateHorizontalPadding = 26;
+
+class DeckScreenBody extends StatelessWidget {
   const DeckScreenBody({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final deckState = ref.watch(deckListProvider);
-    final deckNotifier = ref.watch(deckListProvider.notifier);
+    final deckCubit = context.read<DeckListCubit>();
+    final scheme = Theme.of(context).colorScheme;
 
-    if (deckState.isLoading && deckState.decks.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    return BlocBuilder<DeckListCubit, DeckListState>(
+      builder: (context, state) {
+        if (state.isLoading && state.decks.isEmpty) {
+          return Center(child: CircularProgressIndicator(color: scheme.primary));
+        }
 
-    if (deckState.error != null && deckState.decks.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              'Error: ${deckState.error}',
-              style: const TextStyle(color: Colors.grey),
-              textAlign: TextAlign.center,
+        if (state.error != null && state.decks.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(_kDeckStateHorizontalPadding),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(LucideIcons.triangleAlert, size: 54, color: scheme.error),
+                  const SizedBox(height: 12),
+                  Text('Error: ${state.error}', textAlign: TextAlign.center),
+                  const SizedBox(height: 14),
+                  AppButton(
+                    label: loc.retry,
+                    variant: AppButtonVariant.primary,
+                    onPressed: deckCubit.onRefresh,
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                ref.read(deckListProvider.notifier).onRefresh();
-              },
-              child: Text(loc.retry),
-            ),
-          ],
-        ),
-      );
-    }
+          );
+        }
 
-    return CommonRefresher(
-      controller: deckNotifier.refreshController,
-      onRefresh: deckNotifier.onRefresh,
-      isEmpty: deckState.decks.isEmpty,
-      emptyView: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.inbox_outlined, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              loc.noDecksAvailable,
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+        return CommonRefresher(
+          controller: deckCubit.refreshController,
+          onRefresh: deckCubit.onRefresh,
+          onLoading: deckCubit.onLoading,
+          isEmpty: state.decks.isEmpty,
+          emptyView: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: _kDeckStateHorizontalPadding,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(LucideIcons.inbox, size: 58, color: scheme.outline),
+                  const SizedBox(height: 12),
+                  Text(loc.noDecksAvailable, textAlign: TextAlign.center),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
-      child: ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(
-          parent: BouncingScrollPhysics(),
-        ),
-        padding: const EdgeInsets.all(16),
-        itemCount: deckState.decks.length,
-        itemBuilder: (context, index) {
-          final deck = deckState.decks[index];
-          return DeckListCard(deck: deck);
-        },
-      ),
+          ),
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+            itemCount: state.decks.length,
+            itemBuilder: (context, index) {
+              final deck = state.decks[index];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: DeckListCard(deck: deck),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

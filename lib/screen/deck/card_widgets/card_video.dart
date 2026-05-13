@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:retentio/screen/deck/providers/card_review.dart';
+import 'package:retentio/features/deck_study/deck_study.dart';
 import 'package:video_player/video_player.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import '../../../mixins/delayed_init_mixin.dart';
@@ -9,16 +9,16 @@ import '../../../video_player/src/custom_video_player.dart';
 import '../../../video_player/src/custom_video_player_controller.dart';
 import '../../../video_player/src/models/custom_video_player_settings.dart';
 
-class CardVideo extends ConsumerStatefulWidget {
+class CardVideo extends StatefulWidget {
   const CardVideo({super.key, required this.url});
 
   final String url;
 
   @override
-  ConsumerState createState() => _CardVideoState();
+  State createState() => _CardVideoState();
 }
 
-class _CardVideoState extends ConsumerState<CardVideo>
+class _CardVideoState extends State<CardVideo>
     with AutomaticKeepAliveClientMixin, DelayedInitMixin {
   late final VideoPlayerController _controller;
   CustomVideoPlayerController? _customVideoPlayerController;
@@ -40,19 +40,12 @@ class _CardVideoState extends ConsumerState<CardVideo>
     _tabController = DefaultTabController.maybeOf(context);
     _currentIndex = _tabController?.index ?? 0;
     _tabController?.addListener(_handleController);
-    _currentIsBack = ref.read(cardProvider.select((value) => value.showAnswer));
-    ref.listenManual(cardProvider.select((value) => value.showAnswer), (
-      previous,
-      next,
-    ) {
-      if (_currentIsBack != next) {
-        _controller.pause();
-      }
-    });
+    _currentIsBack = context.read<DeckStudyBloc>().state.showAnswer;
   }
 
   @override
-  dispose() {
+  @override
+  void dispose() {
     _tabController?.removeListener(_handleController);
     final custom = _customVideoPlayerController;
     if (custom != null) {
@@ -94,25 +87,35 @@ class _CardVideoState extends ConsumerState<CardVideo>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return isInit && _customVideoPlayerController != null
-        ? CustomVideoPlayer(
-            customVideoPlayerController: _customVideoPlayerController!,
-          )
-        : isError
-        ? Center(
-            child: Row(
-              mainAxisSize: .min,
-              spacing: 5,
-              children: [Icon(LucideIcons.bug), Text('Error')],
+    return BlocListener<DeckStudyBloc, DeckStudyState>(
+      listenWhen: (previous, current) =>
+          previous.showAnswer != current.showAnswer,
+      listener: (_, state) {
+        if (_currentIsBack != state.showAnswer) {
+          _currentIsBack = state.showAnswer;
+          _controller.pause();
+        }
+      },
+      child: isInit && _customVideoPlayerController != null
+          ? CustomVideoPlayer(
+              customVideoPlayerController: _customVideoPlayerController!,
+            )
+          : isError
+          ? Center(
+              child: Row(
+                mainAxisSize: .min,
+                spacing: 5,
+                children: [Icon(LucideIcons.bug), Text('Error')],
+              ),
+            )
+          : Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: const CircularProgressIndicator(strokeWidth: 2),
+              ),
             ),
-          )
-        : Center(
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: const CircularProgressIndicator(strokeWidth: 2),
-            ),
-          );
+    );
   }
 
   @override

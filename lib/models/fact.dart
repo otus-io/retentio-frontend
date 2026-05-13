@@ -1,63 +1,61 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'fact.g.dart';
+
 /// Fact payload from GET/PATCH `/api/decks/{id}/facts/{factId}`.
+@JsonSerializable()
 class FactEntry {
-  FactEntry({
-    this.text = '',
-    this.audio = '',
-    this.image = '',
-    this.video = '',
+  const FactEntry({
+    @JsonKey(defaultValue: '') this.text = '',
+    @JsonKey(defaultValue: '') this.audio = '',
+    @JsonKey(defaultValue: '') this.image = '',
+    @JsonKey(defaultValue: '') this.video = '',
+    @JsonKey(defaultValue: '') this.json = '',
   });
 
   final String text;
   final String audio;
   final String image;
   final String video;
+  final String json;
 
-  factory FactEntry.fromJson(Map<String, dynamic> json) => FactEntry(
-    text: json['text'] as String? ?? '',
-    audio: json['audio'] as String? ?? '',
-    image: json['image'] as String? ?? '',
-    video: json['video'] as String? ?? '',
+  factory FactEntry.fromJson(Map<String, dynamic> json) =>
+      _$FactEntryFromJson(json);
+
+  FactEntry copyWithText(String newText) => FactEntry(
+    text: newText,
+    audio: audio,
+    image: image,
+    video: video,
+    json: json,
   );
-
-  FactEntry copyWithText(String newText) =>
-      FactEntry(text: newText, audio: audio, image: image, video: video);
 
   /// JSON for PATCH `entries` (preserves media when non-empty).
   Map<String, dynamic> toJson() {
-    final m = <String, dynamic>{'text': text};
-    if (audio.isNotEmpty) m['audio'] = audio;
-    if (image.isNotEmpty) m['image'] = image;
-    if (video.isNotEmpty) m['video'] = video;
+    final m = _$FactEntryToJson(this);
+    m.removeWhere(
+      (key, value) => key != 'text' && value is String && value.isEmpty,
+    );
     return m;
   }
 }
 
+@JsonSerializable(explicitToJson: true)
 class Fact {
-  Fact({required this.id, required this.entries, required this.fields});
+  const Fact({
+    @JsonKey(defaultValue: '') required this.id,
+    @JsonKey(defaultValue: <FactEntry>[]) required this.entries,
+    @JsonKey(defaultValue: <String>[]) required this.fields,
+  });
 
   final String id;
   final List<FactEntry> entries;
   final List<String> fields;
 
-  factory Fact.fromJson(Map<String, dynamic> json) {
-    final entriesRaw = json['entries'];
-    final fieldsRaw = json['fields'];
-    return Fact(
-      id: json['id'] as String? ?? '',
-      entries: entriesRaw is List
-          ? entriesRaw
-                .map(
-                  (e) => FactEntry.fromJson(
-                    Map<String, dynamic>.from(e as Map<dynamic, dynamic>),
-                  ),
-                )
-                .toList()
-          : [],
-      fields: fieldsRaw is List
-          ? fieldsRaw.map((e) => e as String? ?? '').toList()
-          : [],
-    );
-  }
+  factory Fact.fromJson(Map<String, dynamic> json) =>
+      _$FactFromJson(_normalizeFactJson(json));
+
+  Map<String, dynamic> toJson() => _$FactToJson(this);
 
   /// Body for PATCH update-fact; `fields` only if same length as [entries].
   Map<String, dynamic> toUpdateBody() {
@@ -83,4 +81,27 @@ class Fact {
     );
     return Fact(id: id, entries: merged, fields: fields);
   }
+}
+
+Map<String, dynamic> _normalizeFactJson(Map<String, dynamic> raw) {
+  final json = Map<String, dynamic>.from(raw);
+
+  final entriesRaw = json['entries'];
+  if (entriesRaw is List) {
+    json['entries'] = entriesRaw
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  } else {
+    json['entries'] = <Map<String, dynamic>>[];
+  }
+
+  final fieldsRaw = json['fields'];
+  if (fieldsRaw is List) {
+    json['fields'] = fieldsRaw.map((e) => e?.toString() ?? '').toList();
+  } else {
+    json['fields'] = <String>[];
+  }
+
+  return json;
 }

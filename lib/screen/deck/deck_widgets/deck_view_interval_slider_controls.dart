@@ -1,121 +1,174 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/features/deck_study/deck_study.dart';
 import 'package:retentio/extensions/widget_extension.dart';
 import 'package:retentio/l10n/app_localizations.dart';
+import 'package:retentio/screen/deck/bloc/deck_study_flip_card_controller_cubit.dart';
 import 'package:retentio/screen/deck/formatters/review_interval_label.dart';
-import 'package:retentio/screen/deck/providers/card_review.dart';
+import 'package:retentio/widgets/app_button.dart';
 
-class DeckViewIntervalSliderControls extends ConsumerWidget {
+// Backward-compatible provider bridge for existing tests that override
+// study bloc/state via Riverpod.
+final deckStudyBlocProvider = Provider.autoDispose<DeckStudyBloc>(
+  (ref) => throw UnimplementedError(
+    'deckStudyBlocProvider is test-only compatibility bridge. '
+    'Use BlocProvider<DeckStudyBloc> at runtime.',
+  ),
+);
+
+final deckStudyStateProvider = StreamProvider.autoDispose<DeckStudyState>((
+  ref,
+) async* {
+  final bloc = ref.watch(deckStudyBlocProvider);
+  yield bloc.state;
+  yield* bloc.stream;
+});
+
+DeckStudyBloc _readDeckStudyBloc(BuildContext context) {
+  try {
+    return context.read<DeckStudyBloc>();
+  } catch (_) {
+    final container = ProviderScope.containerOf(context, listen: false);
+    return container.read(deckStudyBlocProvider);
+  }
+}
+
+void requestDeckStudyShowAnswerToggle(BuildContext context) {
+  _readDeckStudyBloc(context).add(const DeckStudyShowAnswerToggled());
+}
+
+void requestDeckStudyShowAnswer(BuildContext context) {
+  _readDeckStudyBloc(context).add(const DeckStudyShowAnswerRequested());
+}
+
+void requestDeckStudyIntervalSelected(
+  BuildContext context,
+  double intervalSeconds,
+) {
+  _readDeckStudyBloc(context).add(DeckStudyIntervalSelected(intervalSeconds));
+}
+
+void requestDeckStudyNextCard(
+  BuildContext context, {
+  bool hideCurrentCard = false,
+}) {
+  _readDeckStudyBloc(
+    context,
+  ).add(DeckStudyNextCardRequested(hideCurrentCard: hideCurrentCard));
+}
+
+void requestDeckStudyDeleteCurrentCard(BuildContext context) {
+  _readDeckStudyBloc(context).add(const DeckStudyDeleteCurrentCardRequested());
+}
+
+void requestDeckStudyReloadCurrentCard(BuildContext context) {
+  _readDeckStudyBloc(context).add(const DeckStudyReloadRequested());
+}
+
+void requestDeckStudyReviewAgain(BuildContext context) {
+  _readDeckStudyBloc(context).add(const DeckStudyReviewAgainRequested());
+}
+
+class DeckViewIntervalSliderControls extends StatelessWidget {
+  static const _kActionContainerRadius = 12.0;
+  static const _kActionContainerBorderAlpha = 0.36;
+  static const _kActionContainerPadding = EdgeInsets.fromLTRB(8, 6, 8, 4);
+
   const DeckViewIntervalSliderControls({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final loc = AppLocalizations.of(context)!;
-    final showAnswer = ref.watch(
-      cardProvider.select((value) => value.showAnswer),
-    );
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
+    return BlocBuilder<DeckStudyBloc, DeckStudyState>(
+      builder: (context, state) {
+        final showAnswer = state.showAnswer;
+
+        return Container(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+          decoration: BoxDecoration(
+            color: scheme.surface,
+            border: Border(
+              top: BorderSide(
+                color: scheme.outline.withValues(alpha: 0.28),
+              ),
+            ),
           ),
-        ],
-      ),
-      child: SafeArea(
-        child: Column(
-          spacing: 8,
-          children: [
-            if (!showAnswer)
-              Consumer(
-                builder: (context, ref, child) {
-                  final interval = ref.watch(
-                    cardProvider.select((value) => value.selectedInterval),
-                  );
-                  final intervalRange = ref.read(
-                    cardProvider.notifier.select(
-                      (value) => value.intervalRange,
-                    ),
-                  );
-                  final label = formatReviewIntervalLabel(interval);
-                  return Row(
+          child: SafeArea(
+            top: false,
+            child: Column(
+              spacing: 8,
+              children: [
+                if (!showAnswer)
+                  Row(
                     children: [
                       Text(
                         loc.hard,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: scheme.onSurface.withValues(alpha: 0.35),
                         ),
                       ),
-                      Slider(
-                        value: interval.ceilToDouble(),
-                        min: intervalRange.first,
-                        max: intervalRange.last,
-                        divisions: 100,
-                        label: label,
-                        onChanged: (double value) {
-                          ref.read(cardProvider.notifier).selectInterval(value);
-                        },
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          trackHeight: 3,
+                          thumbShape: const RoundSliderThumbShape(
+                            enabledThumbRadius: 7,
+                          ),
+                          overlayShape: const RoundSliderOverlayShape(
+                            overlayRadius: 14,
+                          ),
+                          activeTrackColor: scheme.primary,
+                          inactiveTrackColor: scheme.outline.withValues(alpha: 0.25),
+                          thumbColor: scheme.primary,
+                          overlayColor: scheme.primary.withValues(alpha: 0.1),
+                        ),
+                        child: Slider(
+                          value: state.selectedInterval.ceilToDouble(),
+                          min: state.minInterval,
+                          max: state.maxInterval,
+                          divisions: 100,
+                          label: formatReviewIntervalLabel(state.selectedInterval),
+                          onChanged: (double value) {
+                            requestDeckStudyIntervalSelected(context, value);
+                          },
+                        ),
                       ).expanded(),
                       Text(
                         loc.easy,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: scheme.onSurface.withValues(alpha: 0.35),
                         ),
                       ),
                     ],
-                  );
-                },
-              ),
-            ElevatedButton(
-              onPressed: () async {
-                final isFond = ref
-                    .read(cardProvider.notifier)
-                    .flipCardController
-                    .isFront;
-                if (isFond) {
-                  ref.read(cardProvider.notifier).flipCardController.flip();
-                } else {
-                  await ref.read(cardProvider.notifier).nextCard();
-                  ref
-                      .read(cardProvider.notifier)
-                      .flipCardController
-                      .showFront();
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                spacing: 8,
-                children: [
-                  if (showAnswer) const Icon(Icons.visibility),
-                  Text(
-                    showAnswer ? loc.showAnswer : loc.review,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
                   ),
-                ],
-              ),
+                AppButton(
+                  label: showAnswer ? loc.showAnswer : loc.review,
+                  onPressed: () {
+                    final flipController = context
+                        .read<DeckStudyFlipCardControllerCubit>()
+                        .state;
+                    if (flipController.isFront) {
+                      flipController.flip();
+                      requestDeckStudyShowAnswerToggle(context);
+                    } else {
+                      requestDeckStudyNextCard(context);
+                      flipController.showFront();
+                      requestDeckStudyShowAnswer(context);
+                    }
+                  },
+                  variant: AppButtonVariant.primary,
+                  size: AppButtonSize.md,
+                  fullWidth: true,
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
