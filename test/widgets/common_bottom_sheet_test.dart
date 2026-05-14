@@ -53,11 +53,13 @@ void main() {
           of: find.byType(DraggableScrollableSheet),
           matching: find.byType(Scaffold),
         );
-        expect(scaffoldFinder, findsOneWidget);
-        expect(
-          tester.widget<Scaffold>(scaffoldFinder).resizeToAvoidBottomInset,
-          isFalse,
+        expect(scaffoldFinder, findsNothing);
+
+        final scrollFinder = find.descendant(
+          of: find.byType(DraggableScrollableSheet),
+          matching: find.byType(SingleChildScrollView),
         );
+        expect(scrollFinder, findsOneWidget);
       },
     );
 

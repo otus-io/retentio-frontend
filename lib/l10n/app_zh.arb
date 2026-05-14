@@ -77,6 +77,7 @@
     "noNetworkConnection": "网络连接不可用，请检查网络设置",
     "reviewAgain": "再次复习",
     "editDeck": "编辑卡组",
+    "editFact": "编辑词条",
     "hideCard": "隐藏卡片",
     "deleteCard": "删除卡片",
     "deleteCardConfirm": "只会删除这一张卡片；对应的词条及其他卡片仍会保留。",

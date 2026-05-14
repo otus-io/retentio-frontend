@@ -1,140 +1,145 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:retentio/l10n/app_localizations.dart';
+import 'package:retentio/theme/theme_tokens.dart';
 import 'package:retentio/utils/util.dart';
+import 'package:retentio/widgets/app_button.dart';
+import 'package:retentio/widgets/app_input.dart';
 
 import '../../services/apis/auth_service.dart';
+
 part 'register_controller.dart';
 
-class RegisterScreen extends StatefulWidget {
+const _kContentPadding = AppThemeTokens.spaceLg;
+const _kCardMaxWidth = 460.0;
+const _kCardPadding = AppThemeTokens.spaceXl;
+const _kCardShadowBlur = 18.0;
+const _kCardShadowOffset = Offset(0, 10);
+const _kSubtitleSpacing = AppThemeTokens.spaceXs;
+const _kIntroSpacing = 14.0;
+const _kFieldSpacing = AppThemeTokens.spaceMd;
+const _kPrimaryButtonTopSpacing = AppThemeTokens.spaceLg;
+const _kBottomActionSpacing = AppThemeTokens.spaceSm;
+
+class RegisterScreen extends HookWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
-}
-
-class _RegisterScreenState extends State<RegisterScreen> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmController = TextEditingController();
-
-  bool _isLoading = false;
-
-  @override
   Widget build(BuildContext context) {
+    final emailController = useTextEditingController();
+    final usernameController = useTextEditingController();
+    final passwordController = useTextEditingController();
+    final confirmController = useTextEditingController();
+    final isLoading = useState(false);
+
     final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return Scaffold(
-      body: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              children: [
-                const SizedBox(height: 100),
-                // 顶部标题
-                Text(
-                  loc.register,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
+      appBar: AppBar(title: Text(loc.register)),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(_kContentPadding),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: _kCardMaxWidth),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest,
+                  borderRadius: AppThemeTokens.borderRadiusXxl,
+                  border: Border.all(
+                    color: scheme.outline.withValues(alpha: 0.8),
+                    width: AppThemeTokens.borderWidthHairline,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: scheme.primary.withValues(alpha: 0.08),
+                      blurRadius: _kCardShadowBlur,
+                      offset: _kCardShadowOffset,
+                    ),
+                  ],
                 ),
-                Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(_kCardPadding),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      TextField(
-                        controller: _emailController,
-                        decoration: InputDecoration(
-                          labelText: loc.email,
-                          border: const OutlineInputBorder(),
+                      Text('Create account', style: theme.textTheme.titleLarge),
+                      const SizedBox(height: _kSubtitleSpacing),
+                      Text(
+                        'Start building your long-term memory decks',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurface.withValues(alpha: 0.64),
                         ),
+                      ),
+                      const SizedBox(height: _kIntroSpacing),
+                      AppInput(
+                        controller: emailController,
+                        label: loc.email,
                         keyboardType: TextInputType.emailAddress,
                       ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _usernameController,
-                        decoration: InputDecoration(
-                          labelText: loc.username,
-                          border: const OutlineInputBorder(),
-                        ),
+                      const SizedBox(height: _kFieldSpacing),
+                      AppInput(
+                        controller: usernameController,
+                        label: loc.username,
                       ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _passwordController,
-                        decoration: InputDecoration(
-                          labelText: loc.password,
-                          border: const OutlineInputBorder(),
-                        ),
+                      const SizedBox(height: _kFieldSpacing),
+                      AppInput(
+                        controller: passwordController,
+                        label: loc.password,
                         obscureText: true,
                       ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _confirmController,
-                        decoration: InputDecoration(
-                          labelText: loc.confirmPassword,
-                          border: const OutlineInputBorder(),
-                        ),
+                      const SizedBox(height: _kFieldSpacing),
+                      AppInput(
+                        controller: confirmController,
+                        label: loc.confirmPassword,
                         obscureText: true,
                       ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _isLoading
-                              ? null
-                              : () {
-                                  RegisterController.handleRegister(
-                                    context: context,
-                                    email: _emailController.text,
-                                    username: _usernameController.text,
-                                    password: _passwordController.text,
-                                    confirmPassword: _confirmController.text,
-                                    setLoading: (loading) {
-                                      setState(() => _isLoading = loading);
-                                    },
-                                    onSuccess: () {
-                                      if (!mounted) return;
-                                      Navigator.of(context).pop();
-                                    },
-                                  );
-                                },
-                          child: _isLoading
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text(loc.register),
+                      const SizedBox(height: _kPrimaryButtonTopSpacing),
+                      AppButton(
+                        label: loc.register,
+                        variant: AppButtonVariant.primary,
+                        isLoading: isLoading.value,
+                        fullWidth: true,
+                        size: AppButtonSize.lg,
+                        onPressed: isLoading.value
+                            ? null
+                            : () {
+                                RegisterController.handleRegister(
+                                  context: context,
+                                  email: emailController.text,
+                                  username: usernameController.text,
+                                  password: passwordController.text,
+                                  confirmPassword: confirmController.text,
+                                  setLoading: (loading) {
+                                    isLoading.value = loading;
+                                  },
+                                  onSuccess: () {
+                                    if (!context.mounted) return;
+                                    Navigator.of(context).pop();
+                                  },
+                                );
+                              },
+                      ),
+                      const SizedBox(height: _kBottomActionSpacing),
+                      Align(
+                        alignment: Alignment.center,
+                        child: AppButton(
+                          label: loc.backToLogin,
+                          variant: AppButtonVariant.ghost,
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-          // 底部居中返回登录页按钮
-          Positioned(
-            bottom: 32,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text(
-                  loc.backToLogin,
-                  style: const TextStyle(fontSize: 16),
-                ),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

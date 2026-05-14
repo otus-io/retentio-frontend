@@ -1,106 +1,163 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:retentio/extensions/context_extension.dart';
+import 'package:retentio/features/deck_study/deck_study.dart';
 import 'package:retentio/l10n/app_localizations.dart';
-import 'package:retentio/screen/deck/providers/card_review.dart';
+import 'package:retentio/screen/deck/bloc/deck_study_context_cubit.dart';
+import 'package:retentio/screen/deck/bloc/deck_study_flip_card_controller_cubit.dart';
+import 'package:retentio/screen/deck/card_widgets/card_flip.dart';
 import 'package:retentio/screen/deck/card_widgets/card_side_content.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
-import 'package:retentio/screen/deck/card_widgets/card_flip.dart';
+import 'package:retentio/theme/theme_tokens.dart';
+import 'package:retentio/widgets/app_button.dart';
 
-class DeckViewBody extends ConsumerWidget {
+const _kMessageIconSize = 84.0;
+const _kMessageTitleTopSpacing = 24.0;
+const _kMessageButtonTopSpacing = 16.0;
+
+class DeckViewBody extends StatelessWidget {
   const DeckViewBody({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final loc = AppLocalizations.of(context)!;
-    final deck = ref.watch(deckProvider);
-    final cardState = ref.watch(cardProvider);
+    final deck = context.select(
+      (DeckStudyContextCubit cubit) => cubit.state.deck,
+    );
 
-    if (cardState.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    return BlocBuilder<DeckStudyBloc, DeckStudyState>(
+      builder: (context, state) {
+        if (state.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    final totalCardsInSession =
-        cardState.refreshedCardsCount ?? deck.stats.cardsCount;
-    final cardsStudied = cardState.cardsStudied;
-    final cardDetail = cardState.cardDetail;
+        final totalCardsInSession =
+            state.refreshedCardsCount ?? deck.stats.cardsCount;
+        final cardsStudied = state.cardsStudied;
+        final cardDetail = state.cardDetail;
 
-    if (cardDetail == null) {
-      if (totalCardsInSession == 0) {
-        return _DeckStudyMessageColumn(
-          icon: LucideIcons.circleQuestionMark,
-          title: loc.noCardsInThisDeck,
-          theme: theme,
-        );
-      }
-      return _CaughtUpColumn(
-        loc: loc,
-        theme: theme,
-        onReviewAgain: () {
-          ref.read(cardProvider.notifier).reviewAgain();
-        },
-      );
-    }
+        if (cardDetail == null) {
+          if (totalCardsInSession == 0) {
+            return _DeckStudyMessageColumn(
+              icon: LucideIcons.circleQuestionMark,
+              title: loc.noCardsInThisDeck,
+              theme: theme,
+            );
+          }
+          return _CaughtUpColumn(
+            loc: loc,
+            theme: theme,
+            onReviewAgain: () {
+              requestDeckStudyReviewAgain(context);
+            },
+          );
+        }
 
-    if (totalCardsInSession == 0) {
-      return _DeckStudyMessageColumn(
-        icon: LucideIcons.circleQuestionMark,
-        title: loc.noCardsInThisDeck,
-        theme: theme,
-      );
-    }
+        if (totalCardsInSession == 0) {
+          return _DeckStudyMessageColumn(
+            icon: LucideIcons.circleQuestionMark,
+            title: loc.noCardsInThisDeck,
+            theme: theme,
+          );
+        }
 
-    final isCompleted = totalCardsInSession == cardsStudied;
-    if (isCompleted) {
-      return _CaughtUpColumn(
-        loc: loc,
-        theme: theme,
-        onReviewAgain: () {
-          ref.read(cardProvider.notifier).reviewAgain();
-        },
-      );
-    }
+        final isCompleted = totalCardsInSession == cardsStudied;
+        if (isCompleted) {
+          return _CaughtUpColumn(
+            loc: loc,
+            theme: theme,
+            onReviewAgain: () {
+              requestDeckStudyReviewAgain(context);
+            },
+          );
+        }
 
-    return Stack(
-      children: [
-        LinearProgressIndicator(
-          value: totalCardsInSession > 0
-              ? cardsStudied / totalCardsInSession
-              : 0.0,
-          minHeight: 4,
-          backgroundColor: theme.brightness == Brightness.dark
-              ? Colors.grey[800]
-              : Colors.grey[300],
-        ),
-        Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CardFlip(
-                height: context.width - 48 - 46,
-                flipCardController: ref
-                    .read(cardProvider.notifier)
-                    .flipCardController,
-                width: double.infinity,
-                frontWidget: CardSideContent(isFront: true),
-                backWidget: CardSideContent(isFront: false),
-                onFlip: (value) {
-                  ref.read(cardProvider.notifier).toggleShowAnswer();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
+              child: Column(
+                spacing: 6,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        '${cardsStudied + 1} / $totalCardsInSession',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: scheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${totalCardsInSession > 0 ? (cardsStudied / totalCardsInSession * 100).toStringAsFixed(0) : 0}%',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: scheme.onSurface.withValues(alpha: 0.45),
+                        ),
+                      ),
+                    ],
+                  ),
+                  LinearProgressIndicator(
+                    value: totalCardsInSession > 0
+                        ? cardsStudied / totalCardsInSession
+                        : 0.0,
+                    minHeight: 4,
+                    borderRadius: AppThemeTokens.borderRadiusPill,
+                    valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
+                    backgroundColor: scheme.outline.withValues(alpha: 0.18),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final screenWidth = MediaQuery.sizeOf(context).width;
+                  final idealCardHeight = screenWidth - 48 - 46;
+                  final maxCardHeight = (constraints.maxHeight - 150).clamp(
+                    180.0,
+                    idealCardHeight,
+                  );
+                  final cardHeight = maxCardHeight.toDouble();
+                  return Stack(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CardFlip(
+                              height: cardHeight,
+                              width: double.infinity,
+                              flipCardController: context
+                                  .read<DeckStudyFlipCardControllerCubit>()
+                                  .state,
+                              frontWidget: const CardSideContent(isFront: true),
+                              backWidget: const CardSideContent(isFront: false),
+                              onFlip: (_) {
+                                requestDeckStudyShowAnswerToggle(context);
+                              },
+                            ),
+                            const SizedBox(height: 100),
+                          ],
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        width: screenWidth,
+                        child: const DeckViewIntervalSliderControls(),
+                      ),
+                    ],
+                  );
                 },
               ),
-              const SizedBox(height: 100),
-            ],
-          ),
-        ),
-        Positioned(
-          bottom: 0,
-          width: context.width,
-          child: const DeckViewIntervalSliderControls(),
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -122,18 +179,23 @@ class _CaughtUpColumn extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(LucideIcons.circleCheckBig, size: 80, color: theme.primaryColor),
-          const SizedBox(height: 24),
+          Icon(
+            LucideIcons.circleCheckBig,
+            size: _kMessageIconSize,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(height: _kMessageTitleTopSpacing),
           Text(
             loc.allCaughtUp,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
-          ElevatedButton(
+          const SizedBox(height: _kMessageButtonTopSpacing),
+          AppButton(
+            label: loc.reviewAgain,
             onPressed: onReviewAgain,
-            child: Text(loc.reviewAgain),
+            variant: AppButtonVariant.primary,
           ),
         ],
       ),
@@ -158,8 +220,8 @@ class _DeckStudyMessageColumn extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 80, color: theme.primaryColor),
-          const SizedBox(height: 24),
+          Icon(icon, size: _kMessageIconSize, color: theme.colorScheme.primary),
+          const SizedBox(height: _kMessageTitleTopSpacing),
           Text(
             title,
             style: theme.textTheme.headlineSmall?.copyWith(

@@ -6,6 +6,12 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 import '../extensions/widget_extension.dart';
 
+const double _kFooterSpacing = 15;
+const int _kFooterCompleteDurationMs = 300;
+const double _kFooterContentIconSize = 25;
+const double _kFooterLoadingStrokeWidth = 2;
+const double _kFooterOnSurfaceOpacity = 0.56;
+
 class CommonRefresher extends StatelessWidget {
   const CommonRefresher({
     super.key,
@@ -101,7 +107,7 @@ class CustomClassicFooter extends LoadIndicator {
 
   final IconPosition iconPos;
 
-  final TextStyle textStyle;
+  final TextStyle? textStyle;
 
   final Duration completeDuration;
 
@@ -111,20 +117,22 @@ class CustomClassicFooter extends LoadIndicator {
     super.loadStyle,
     super.height,
     this.outerBuilder,
-    this.textStyle = const TextStyle(color: Colors.grey),
+    this.textStyle,
     this.loadingText,
     this.noDataText,
     this.noMoreIcon,
     this.idleText,
     this.failedText,
     this.canLoadingText,
-    this.failedIcon = const Icon(Icons.error, color: Colors.grey),
+    this.failedIcon,
     this.iconPos = IconPosition.left,
-    this.spacing = 15.0,
-    this.completeDuration = const Duration(milliseconds: 300),
+    this.spacing = _kFooterSpacing,
+    this.completeDuration = const Duration(
+      milliseconds: _kFooterCompleteDurationMs,
+    ),
     this.loadingIcon,
-    this.canLoadingIcon = const Icon(Icons.autorenew, color: Colors.grey),
-    this.idleIcon = const Icon(Icons.arrow_upward, color: Colors.grey),
+    this.canLoadingIcon,
+    this.idleIcon,
   });
 
   @override
@@ -134,7 +142,23 @@ class CustomClassicFooter extends LoadIndicator {
 }
 
 class _ClassicFooterState extends LoadIndicatorState<CustomClassicFooter> {
+  TextStyle _textStyle(BuildContext context, ColorScheme scheme) =>
+      widget.textStyle ??
+      (Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: scheme.onSurface.withValues(alpha: _kFooterOnSurfaceOpacity),
+          ) ??
+          TextStyle(
+            color: scheme.onSurface.withValues(alpha: _kFooterOnSurfaceOpacity),
+          ));
+
+  Widget _statusIcon({required ColorScheme scheme, required IconData icon}) =>
+      Icon(
+        icon,
+        color: scheme.onSurface.withValues(alpha: _kFooterOnSurfaceOpacity),
+      );
+
   Widget _buildText(LoadStatus? mode) {
+    final scheme = Theme.of(context).colorScheme;
     RefreshString strings =
         RefreshLocalizations.of(context)?.currentLocalization ??
         EnRefreshString();
@@ -148,27 +172,33 @@ class _ClassicFooterState extends LoadIndicatorState<CustomClassicFooter> {
           : LoadStatus.canLoading == mode
           ? widget.canLoadingText ?? strings.canLoadingText!
           : widget.idleText ?? strings.idleLoadingText!,
-      style: widget.textStyle,
+      style: _textStyle(context, scheme),
     );
   }
 
   Widget _buildIcon(LoadStatus? mode) {
+    final scheme = Theme.of(context).colorScheme;
     Widget? icon = mode == LoadStatus.loading
         ? widget.loadingIcon ??
               SizedBox(
-                width: 25.0,
-                height: 25.0,
+                width: _kFooterContentIconSize,
+                height: _kFooterContentIconSize,
                 child: defaultTargetPlatform == TargetPlatform.iOS
                     ? const CupertinoActivityIndicator()
-                    : const CircularProgressIndicator(strokeWidth: 2.0),
+                    : const CircularProgressIndicator(
+                        strokeWidth: _kFooterLoadingStrokeWidth,
+                      ),
               )
         : mode == LoadStatus.noMore
         ? widget.noMoreIcon
         : mode == LoadStatus.failed
-        ? widget.failedIcon
+        ? widget.failedIcon ??
+              _statusIcon(scheme: scheme, icon: Icons.error_outline_rounded)
         : mode == LoadStatus.canLoading
-        ? widget.canLoadingIcon
-        : widget.idleIcon;
+        ? widget.canLoadingIcon ??
+              _statusIcon(scheme: scheme, icon: Icons.autorenew_rounded)
+        : widget.idleIcon ??
+              _statusIcon(scheme: scheme, icon: Icons.arrow_upward_rounded);
     return icon ?? Container();
   }
 

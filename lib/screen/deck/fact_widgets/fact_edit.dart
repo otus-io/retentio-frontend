@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/l10n/app_localizations.dart';
@@ -16,6 +16,7 @@ import 'package:retentio/screen/deck/fact_add_composer/row_model.dart';
 import 'package:retentio/screen/deck/fact_add_composer/toolbars.dart';
 import 'package:record/record.dart';
 import 'package:retentio/services/apis/media_service.dart';
+import 'package:retentio/widgets/app_button.dart';
 
 import '../../../models/deck.dart';
 import '../../../models/fact.dart';
@@ -24,7 +25,17 @@ import '../../../services/apis/card_service.dart';
 import '../../../utils/media_client_id.dart';
 import '../../decks/widgets/deck_loading_state.dart';
 
-class FactEdit extends ConsumerStatefulWidget {
+const _kEditOutlineAlpha = 0.62;
+const _kEditCardPadding = EdgeInsets.fromLTRB(14, 12, 14, 8);
+const _kEditCardSurfaceAlpha = 0.35;
+const _kEditCardBorderAlpha = 0.3;
+const _kEditCardRadius = 16.0;
+const _kEditEntryRowBottomPadding = EdgeInsets.only(bottom: 10);
+const _kEditRowsTopSpacing = 4.0;
+const _kEditSubmitTopSpacing = 2.0;
+const _kEditLoadingPadding = EdgeInsets.all(24);
+
+class FactEdit extends StatefulHookConsumerWidget {
   const FactEdit({
     super.key,
     required this.deck,
@@ -313,7 +324,7 @@ class _FactEditState extends ConsumerState<FactEdit>
     for (final model in rows) {
       yield Padding(
         key: model.row.hostKey,
-        padding: const EdgeInsets.only(bottom: 10),
+        padding: _kEditEntryRowBottomPadding,
         child: AddFactEntryRow(
           key: ObjectKey(model.row),
           row: model.row,
@@ -347,7 +358,7 @@ class _FactEditState extends ConsumerState<FactEdit>
     if (_loading) {
       return const SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: _kEditLoadingPadding,
           child: Center(child: CircularProgressIndicator()),
         ),
       );
@@ -355,7 +366,7 @@ class _FactEditState extends ConsumerState<FactEdit>
     if (_error != null) {
       return SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: _kEditLoadingPadding,
           child: Text(_error!, textAlign: TextAlign.center),
         ),
       );
@@ -363,58 +374,63 @@ class _FactEditState extends ConsumerState<FactEdit>
 
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final rows = _rows!;
     final hasMediaOnTargetRow = factEditRowHasAttachment(
       rows[targetRowIndexForMedia()],
     );
-    final outline = theme.colorScheme.outline.withValues(alpha: 0.5);
+    final outline = scheme.outline.withValues(alpha: _kEditOutlineAlpha);
     return SafeArea(
       child: FocusTraversalGroup(
-        child: Column(
-          spacing: 12,
-          children: [
-            AddFactMediaToolbar(
-              loc: loc,
-              theme: theme,
-              hasMediaOnTargetRow: hasMediaOnTargetRow,
-              onPickFiles: pickMediaForTargetRow,
-              onPickGallery: pickGalleryMediaForTargetRow,
-              onClearTargetAttachment: clearTargetRowAttachment,
-              voiceRecorder: _voiceRecorder,
-              mediaPicksLocked: _recordingVoice,
-              showVoiceRecord: voiceRecordingAvailable,
-              isRecordingVoice: _recordingVoice,
-              onVoiceRecordTap: voiceRecordingAvailable
-                  ? toggleVoiceRecording
-                  : null,
-              onVoiceRecordLongPress: voiceRecordingAvailable
-                  ? onVoiceRecordLongPress
-                  : null,
+        child: Container(
+          padding: _kEditCardPadding,
+          decoration: BoxDecoration(
+            color: scheme.surface.withValues(alpha: _kEditCardSurfaceAlpha),
+            border: Border.all(
+              color: scheme.outline.withValues(alpha: _kEditCardBorderAlpha),
             ),
-            ..._buildEntryRows(loc, theme, outline),
-            AddFactRowControls(
-              loc: loc,
-              theme: theme,
-              rowCount: rows.length,
-              onAddRow: _addRow,
-              onRemoveRow: _removeRowOnMinusPressed,
-            ),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _recordingVoice ? null : _onSave,
-                child: Row(
-                  spacing: 5,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    DeckLoadingState(child: Icon(LucideIcons.save)),
-                    Text(loc.addFactSubmit),
-                  ],
-                ),
+            borderRadius: BorderRadius.circular(_kEditCardRadius),
+          ),
+          child: Column(
+            spacing: 12,
+            children: [
+              AddFactMediaToolbar(
+                loc: loc,
+                theme: theme,
+                hasMediaOnTargetRow: hasMediaOnTargetRow,
+                onPickFiles: pickMediaForTargetRow,
+                onPickGallery: pickGalleryMediaForTargetRow,
+                onClearTargetAttachment: clearTargetRowAttachment,
+                voiceRecorder: _voiceRecorder,
+                mediaPicksLocked: _recordingVoice,
+                showVoiceRecord: voiceRecordingAvailable,
+                isRecordingVoice: _recordingVoice,
+                onVoiceRecordTap: voiceRecordingAvailable
+                    ? toggleVoiceRecording
+                    : null,
+                onVoiceRecordLongPress: voiceRecordingAvailable
+                    ? onVoiceRecordLongPress
+                    : null,
               ),
-            ),
-          ],
+              const SizedBox(height: _kEditRowsTopSpacing),
+              ..._buildEntryRows(loc, theme, outline),
+              AddFactRowControls(
+                loc: loc,
+                theme: theme,
+                rowCount: rows.length,
+                onAddRow: _addRow,
+                onRemoveRow: _removeRowOnMinusPressed,
+              ),
+              const SizedBox(height: _kEditSubmitTopSpacing),
+              AppButton(
+                label: loc.addFactSubmit,
+                onPressed: _recordingVoice ? null : _onSave,
+                variant: AppButtonVariant.primary,
+                fullWidth: true,
+                leading: DeckLoadingState(child: Icon(LucideIcons.save)),
+              ),
+            ],
+          ),
         ),
       ),
     );

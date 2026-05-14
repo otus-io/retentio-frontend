@@ -1,4 +1,5 @@
 import 'package:path_provider/path_provider.dart';
+import 'package:retentio/core/network/network.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/index.dart';
 import 'package:retentio/services/storage/hydrated_storage.dart';
@@ -30,14 +31,14 @@ class PreConfig {
       await ApiService.init();
 
       // 配置网络客户端（Dio）
-      DioClient.of.config(
-        Env.host,
+      networkDioClient.configure(
+        baseUrl: Env.host,
         interceptors: [
-          HttpHeaderInterceptors(), // HTTP头部拦截器
-          ResponseInterceptors(), // 响应拦截器
-          if (!Env.isDistribute) LogInterceptors(), // 日志拦截器（仅在非分发环境下启用）
+          HeaderInterceptor(),
+          ResponseNormalizeInterceptor(),
+          if (!Env.isDistribute) NetworkLoggingInterceptor(),
         ],
-        proxyInterceptor: ProxyInterceptor.interceptor, // 代理拦截器
+        proxyClientFactory: ProxyClientFactory.create,
       );
 
       // 标记初始化完成

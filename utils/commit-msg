@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# =============================================================================
+# commit-msg hook — validate commit message convention:
+# <type>(<scope>): <subject>
+# =============================================================================
+
+set -e
+
+MSG_FILE="$1"
+
+if [ -z "$MSG_FILE" ] || [ ! -f "$MSG_FILE" ]; then
+  echo "Error: commit-msg hook did not receive a valid message file."
+  exit 1
+fi
+
+SUBJECT_LINE="$(sed -n '1p' "$MSG_FILE" | tr -d '\r')"
+
+# Allow git-generated commit subjects.
+case "$SUBJECT_LINE" in
+  Merge\ *|Revert\ *|fixup!\ *|squash!\ *)
+    exit 0
+    ;;
+esac
+
+if [ -z "$SUBJECT_LINE" ]; then
+  echo "✗ Empty commit message subject is not allowed."
+  exit 1
+fi
+
+TYPE_REGEX='(feat|fix|docs|style|refactor|perf|test|chore|ci)'
+SUBJECT_REGEX="^${TYPE_REGEX}\\(([a-z0-9-]+)\\): (.+)$"
+
+if [[ ! "$SUBJECT_LINE" =~ $SUBJECT_REGEX ]]; then
+  cat <<'EOF'
+✗ Commit subject must follow:
+  <type>(<scope>): <subject>
+
+Examples:
+  feat(deck): add card sorting
+  fix(auth): handle token refresh race
+EOF
+  exit 1
+fi
+
+SCOPE="${BASH_REMATCH[2]}"
+SUBJECT="${BASH_REMATCH[3]}"
+
+ALLOWED_SCOPES_REGEX='^(auth|deck|card|fact|media|api|app|mobile|frontend|ci)$'
+if [[ ! "$SCOPE" =~ $ALLOWED_SCOPES_REGEX ]]; then
+  echo "✗ Invalid scope: '$SCOPE'"
+  echo "  Allowed scopes: auth, deck, card, fact, media, api, app, mobile, frontend, ci"
+  exit 1
+fi
+
+if [ ${#SUBJECT} -gt 50 ]; then
+  echo "✗ Subject is too long (${#SUBJECT} > 50 characters)."
+  exit 1
+fi
+
+FIRST_CHAR="${SUBJECT:0:1}"
+if [[ "$FIRST_CHAR" =~ [A-Z] ]]; then
+  echo "✗ Subject should start with a lowercase letter."
+  exit 1
+fi
+
+if [[ "$SUBJECT" =~ [。.]$ ]]; then
+  echo "✗ Subject should not end with a period."
+  exit 1
+fi
+
+# Soft check for body line length (warn only).
+BODY_TOO_LONG=0
+while IFS= read -r line || [ -n "$line" ]; do
+  if [ ${#line} -gt 72 ] && [[ ! "$line" =~ ^https?:// ]]; then
+    BODY_TOO_LONG=1
+    break
+  fi
+done < <(tail -n +2 "$MSG_FILE")
+
+if [ "$BODY_TOO_LONG" -eq 1 ]; then
+  echo "⚠ Warning: commit body has lines longer than 72 chars (recommended wrap)."
+fi
+
+exit 0

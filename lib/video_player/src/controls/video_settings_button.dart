@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:retentio/theme/theme_tokens.dart';
 
 import '../custom_video_player_controller.dart';
 import 'video_settings_popup/video_settings_dialog.dart';
@@ -45,7 +46,7 @@ class CustomVideoPlayerSettingsButton extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       decoration: const BoxDecoration(
         color: Color.fromRGBO(0, 0, 0, 0.5),
-        borderRadius: BorderRadius.all(Radius.circular(10)),
+        borderRadius: AppThemeTokens.borderRadiusS,
       ),
       child: const Icon(CupertinoIcons.settings, color: Colors.white, size: 18),
     );

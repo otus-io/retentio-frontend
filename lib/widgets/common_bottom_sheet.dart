@@ -1,5 +1,19 @@
 import 'package:flutter/material.dart';
 
+const double _kSheetTopRadius = 20;
+const double _kSheetHandleWidth = 40;
+const double _kSheetHandleHeight = 4;
+const double _kSheetHandleRadius = 2;
+const double _kSheetHorizontalPadding = 20;
+const double _kSheetTopPadding = 16;
+const double _kSheetBottomPadding = 20;
+const double _kSheetHandleBottomMargin = 20;
+const double _kSheetTitleGapFullScreen = 28;
+const double _kSheetTitleGapDraggable = 48;
+const double _kSheetHandleOpacity = 0.6;
+const double _kSheetFullScreenMinChildSize = 0.35;
+const double _kSheetBarrierOpacity = 0.44;
+
 Future<T?> showCommonBottomSheet<T>({
   required BuildContext context,
   required Widget child,
@@ -34,56 +48,69 @@ Future<T?> showCommonBottomSheet<T>({
 }) {
   final resolvedInitial = fullScreen ? 1.0 : initialChildSize;
   final resolvedMax = fullScreen ? 1.0 : maxChildSize;
-  final resolvedMin = fullScreen ? 0.35 : minChildSize;
+  final resolvedMin = fullScreen ? _kSheetFullScreenMinChildSize : minChildSize;
   final resolvedExpand = fullScreen || expandSheet;
   final resolvedUseSafeArea = fullScreen || useSafeArea;
+  final resolvedSheetAnimationStyle =
+      sheetAnimationStyle ?? AnimationStyle.noAnimation;
 
   return showModalBottomSheet<T>(
     context: context,
     builder: (context) {
+      final theme = Theme.of(context);
+      final scheme = theme.colorScheme;
+      final titleStyle = theme.textTheme.titleLarge;
+      final handleColor = scheme.outline.withValues(
+        alpha: _kSheetHandleOpacity,
+      );
       // For full-screen usage (e.g. create/edit deck), avoid DraggableScrollableSheet.
       // Using a plain scroll view prevents the "double sheet" effect when dragging down.
       if (fullScreen) {
         final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
         return ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          child: Scaffold(
-            resizeToAvoidBottomInset: false,
-            body: SingleChildScrollView(
-              padding: EdgeInsets.only(
-                left: 20,
-                top: 16,
-                right: 20,
-                bottom: 20 + keyboardBottom,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 20),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(_kSheetTopRadius),
+          ),
+          child: Material(
+            color: scheme.surface,
+            child: RepaintBoundary(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  left: _kSheetHorizontalPadding,
+                  top: _kSheetTopPadding,
+                  right: _kSheetHorizontalPadding,
+                  bottom: _kSheetBottomPadding + keyboardBottom,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: _kSheetHandleWidth,
+                        height: _kSheetHandleHeight,
+                        margin: const EdgeInsets.only(
+                          bottom: _kSheetHandleBottomMargin,
+                        ),
+                        decoration: BoxDecoration(
+                          color: handleColor,
+                          borderRadius: BorderRadius.circular(
+                            _kSheetHandleRadius,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  Center(
-                    child: Text(
-                      title ?? '',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                    Center(
+                      child: Text(
+                        title ?? '',
+                        textAlign: TextAlign.center,
+                        style: titleStyle,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 28),
-                  child,
-                ],
+                    const SizedBox(height: _kSheetTitleGapFullScreen),
+                    child,
+                  ],
+                ),
               ),
             ),
           ),
@@ -101,50 +128,55 @@ Future<T?> showCommonBottomSheet<T>({
           // is applied as padding so the scroll view can still scroll above keys.
           final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
           return ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            child: Scaffold(
-              resizeToAvoidBottomInset: false,
-              body: Scrollbar(
-                controller: scrollController,
-                thumbVisibility: true,
-                child: SingleChildScrollView(
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(_kSheetTopRadius),
+            ),
+            child: Material(
+              color: scheme.surface,
+              child: RepaintBoundary(
+                child: Scrollbar(
                   controller: scrollController,
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      left: 20,
-                      top: 16,
-                      right: 20,
-                      bottom: 20 + keyboardBottom,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.max,
-                      children: [
-                        // Drag indicator.
-                        Center(
-                          child: Container(
-                            width: 40,
-                            height: 4,
-                            margin: const EdgeInsets.only(bottom: 20),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(2),
+                  thumbVisibility: true,
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: _kSheetHorizontalPadding,
+                        top: _kSheetTopPadding,
+                        right: _kSheetHorizontalPadding,
+                        bottom: _kSheetBottomPadding + keyboardBottom,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.max,
+                        children: [
+                          // Drag indicator.
+                          Center(
+                            child: Container(
+                              width: _kSheetHandleWidth,
+                              height: _kSheetHandleHeight,
+                              margin: const EdgeInsets.only(
+                                bottom: _kSheetHandleBottomMargin,
+                              ),
+                              decoration: BoxDecoration(
+                                color: handleColor,
+                                borderRadius: BorderRadius.circular(
+                                  _kSheetHandleRadius,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                        Center(
-                          child: Text(
-                            title ?? '',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                          Center(
+                            child: Text(
+                              title ?? '',
+                              textAlign: TextAlign.center,
+                              style: titleStyle,
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 48),
-                        child,
-                      ],
+                          const SizedBox(height: _kSheetTitleGapDraggable),
+                          child,
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -159,15 +191,23 @@ Future<T?> showCommonBottomSheet<T>({
     barrierLabel: barrierLabel,
     elevation: elevation,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(_kSheetTopRadius),
+      ),
     ),
     clipBehavior: clipBehavior,
     constraints: constraints,
-    barrierColor: barrierColor,
+    barrierColor:
+        barrierColor ?? Colors.black.withValues(alpha: _kSheetBarrierOpacity),
     isScrollControlled: isScrollControlled,
     useRootNavigator: useRootNavigator,
     isDismissible: isDismissible,
     enableDrag: enableDrag,
     useSafeArea: resolvedUseSafeArea,
+    transitionAnimationController: transitionAnimationController,
+    sheetAnimationStyle: resolvedSheetAnimationStyle,
+    routeSettings: routeSettings,
+    anchorPoint: anchorPoint,
+    requestFocus: requestFocus,
   );
 }

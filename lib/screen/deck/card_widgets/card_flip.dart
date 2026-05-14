@@ -1,18 +1,19 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 
 import 'card_flip_controller.dart';
 
 /// Y-axis flip between [frontWidget] and [backWidget] (study card shell).
-class CardFlip extends StatefulWidget {
+class CardFlip extends HookWidget {
   const CardFlip({
     required this.frontWidget,
     required this.backWidget,
     required this.flipCardController,
     this.onFlip,
     super.key,
-    this.duration = const Duration(milliseconds: 200),
+    this.duration = const Duration(milliseconds: 240),
     this.height = 200,
     this.width = 200,
   });
@@ -26,140 +27,133 @@ class CardFlip extends StatefulWidget {
   final ValueChanged<bool>? onFlip;
 
   @override
-  State createState() => _CardFlipState();
-}
+  Widget build(BuildContext context) {
+    final internalIsFront = useRef(true);
+    final controller = useAnimationController(duration: duration);
+    final backAnimation = useMemoized(
+      () => TweenSequence(<TweenSequenceItem<double>>[
+        TweenSequenceItem<double>(
+          tween: Tween(
+            begin: 0.0,
+            end: math.pi / 2,
+          ).chain(CurveTween(curve: Curves.linear)),
+          weight: 50.0,
+        ),
+        TweenSequenceItem<double>(
+          tween: ConstantTween<double>(math.pi / 2),
+          weight: 50.0,
+        ),
+      ]).animate(controller),
+      [controller],
+    );
+    final frontAnimation = useMemoized(
+      () => TweenSequence(<TweenSequenceItem<double>>[
+        TweenSequenceItem<double>(
+          tween: ConstantTween<double>(math.pi / 2),
+          weight: 50.0,
+        ),
+        TweenSequenceItem<double>(
+          tween: Tween(
+            begin: -math.pi / 2,
+            end: 0.0,
+          ).chain(CurveTween(curve: Curves.linear)),
+          weight: 50.0,
+        ),
+      ]).animate(controller),
+      [controller],
+    );
+    final initializedFromExternal = useRef(false);
+    final currentControllerRef = useRef<CardFlipController?>(null);
 
-class _CardFlipState extends State<CardFlip>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _frontAnimation;
-  late Animation<double> _backAnimation;
+    Future<void> triggerFlip(bool targetIsFront) async {
+      if (targetIsFront) {
+        await controller.reverse();
+      } else {
+        await controller.forward();
+      }
 
-  bool _internalIsFront = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: widget.duration);
-    widget.flipCardController?.addListener(_handleControllerChange);
-    if (widget.flipCardController != null) {
-      _internalIsFront = widget.flipCardController!.isFront;
-      if (!_internalIsFront) {
-        _controller.value = 1.0;
+      if (onFlip != null) {
+        onFlip!(targetIsFront);
       }
     }
-    _backAnimation = TweenSequence(<TweenSequenceItem<double>>[
-      TweenSequenceItem<double>(
-        tween: Tween(
-          begin: 0.0,
-          end: math.pi / 2,
-        ).chain(CurveTween(curve: Curves.linear)),
-        weight: 50.0,
-      ),
-      TweenSequenceItem<double>(
-        tween: ConstantTween<double>(math.pi / 2),
-        weight: 50.0,
-      ),
-    ]).animate(_controller);
 
-    _frontAnimation = TweenSequence(<TweenSequenceItem<double>>[
-      TweenSequenceItem<double>(
-        tween: ConstantTween<double>(math.pi / 2),
-        weight: 50.0,
-      ),
-      TweenSequenceItem<double>(
-        tween: Tween(
-          begin: -math.pi / 2,
-          end: 0.0,
-        ).chain(CurveTween(curve: Curves.linear)),
-        weight: 50.0,
-      ),
-    ]).animate(_controller);
-  }
+    void handleControllerChange() {
+      final external = currentControllerRef.value;
+      if (external == null) return;
+      final targetIsFront = external.isFront;
+      internalIsFront.value = targetIsFront;
+      triggerFlip(targetIsFront);
+    }
 
-  @override
-  void didUpdateWidget(CardFlip oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.flipCardController != oldWidget.flipCardController) {
-      oldWidget.flipCardController?.removeListener(_handleControllerChange);
-      widget.flipCardController?.addListener(_handleControllerChange);
-
-      if (widget.flipCardController != null) {
-        if (widget.flipCardController!.isFront) {
-          _controller.reverse();
-        } else {
-          _controller.forward();
+    useEffect(() {
+      final external = flipCardController;
+      if (external != null && !initializedFromExternal.value) {
+        initializedFromExternal.value = true;
+        internalIsFront.value = external.isFront;
+        if (!internalIsFront.value) {
+          controller.value = 1.0;
         }
       }
+      return null;
+    }, [flipCardController, controller]);
+
+    useEffect(() {
+      final previous = currentControllerRef.value;
+      if (previous != flipCardController) {
+        previous?.removeListener(handleControllerChange);
+        currentControllerRef.value = flipCardController;
+        flipCardController?.addListener(handleControllerChange);
+        final external = flipCardController;
+        if (external != null) {
+          if (external.isFront) {
+            controller.reverse();
+          } else {
+            controller.forward();
+          }
+        }
+      }
+      return () {
+        flipCardController?.removeListener(handleControllerChange);
+      };
+    }, [flipCardController, controller]);
+
+    void toggleSide() {
+      if (flipCardController != null) {
+        flipCardController!.flip();
+      } else {
+        internalIsFront.value = !internalIsFront.value;
+        triggerFlip(internalIsFront.value);
+      }
     }
-  }
 
-  @override
-  void dispose() {
-    widget.flipCardController?.removeListener(_handleControllerChange);
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _handleControllerChange() {
-    if (widget.flipCardController == null) return;
-
-    final bool targetIsFront = widget.flipCardController!.isFront;
-    _internalIsFront = targetIsFront;
-    _triggerFlip(targetIsFront);
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Stack(
       children: [
         GestureDetector(
-          onTap: _toggleSide,
+          onTap: toggleSide,
           child: _FlipCardFace(
-            animation: _backAnimation,
-            height: widget.height,
-            width: widget.width,
-            child: widget.frontWidget,
+            animation: backAnimation,
+            height: height,
+            width: width,
+            child: frontWidget,
           ),
         ),
         GestureDetector(
-          onTap: _toggleSide,
+          onTap: toggleSide,
           child: _FlipCardFace(
-            animation: _frontAnimation,
-            height: widget.height,
-            width: widget.width,
-            child: widget.backWidget,
+            animation: frontAnimation,
+            height: height,
+            width: width,
+            child: backWidget,
           ),
         ),
       ],
     );
   }
-
-  Future<void> _triggerFlip(bool targetIsFront) async {
-    if (targetIsFront) {
-      await _controller.reverse();
-    } else {
-      await _controller.forward();
-    }
-
-    if (widget.onFlip != null) {
-      widget.onFlip!(targetIsFront);
-    }
-  }
-
-  void _toggleSide() {
-    if (widget.flipCardController != null) {
-      widget.flipCardController!.flip();
-    } else {
-      setState(() {
-        _internalIsFront = !_internalIsFront;
-      });
-      _triggerFlip(_internalIsFront);
-    }
-  }
 }
 
-class _FlipCardFace extends StatelessWidget {
+class _FlipCardFace extends HookWidget {
+  static const _kCardRadius = 16.0;
+
   const _FlipCardFace({
     required this.child,
     required this.animation,
@@ -174,6 +168,7 @@ class _FlipCardFace extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return AnimatedBuilder(
       animation: animation,
       builder: _builder,
@@ -181,9 +176,13 @@ class _FlipCardFace extends StatelessWidget {
         height: height,
         width: width,
         child: Card(
-          elevation: 4,
+          elevation: 3,
+          shadowColor: Colors.black.withValues(alpha: 0.18),
+          surfaceTintColor: Colors.transparent,
+          margin: EdgeInsets.zero,
+          color: scheme.surfaceContainerHighest,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(_kCardRadius),
           ),
           borderOnForeground: false,
           child: child,

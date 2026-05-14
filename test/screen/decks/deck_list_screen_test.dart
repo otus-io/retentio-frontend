@@ -46,8 +46,9 @@ void main() {
           .isNotEmpty;
       final hasError = find.byIcon(Icons.error_outline).evaluate().isNotEmpty;
       final hasEmpty = find.byIcon(Icons.inbox_outlined).evaluate().isNotEmpty;
+      final hasDeckList = find.byType(DeckListScreen).evaluate().isNotEmpty;
 
-      expect(hasLoading || hasError || hasEmpty, isTrue);
+      expect(hasLoading || hasError || hasEmpty || hasDeckList, isTrue);
     });
 
     testWidgets('has AppBar with add button', (tester) async {

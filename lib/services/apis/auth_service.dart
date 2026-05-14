@@ -1,11 +1,46 @@
 // auth_service.dart
-import 'package:retentio/main.dart';
 import 'package:retentio/models/api_response.dart';
-import 'package:retentio/providers/auth_provider.dart';
+import 'package:retentio/core/di/app_service_locator.dart';
+import 'package:retentio/features/auth/presentation/bloc/auth_bloc.dart'
+    as feature_auth;
+import 'package:retentio/features/auth/presentation/bloc/auth_event.dart';
+import 'package:retentio/features/auth/presentation/bloc/auth_state.dart';
 import 'package:retentio/services/index.dart';
 import 'api_service.dart';
 
 class AuthService {
+  static Future<feature_auth.AuthBloc?> _getAuthBlocFromDi() async {
+    await registerCoreDependencies();
+    if (!sl.isRegistered<feature_auth.AuthBloc>()) {
+      return null;
+    }
+    return sl<feature_auth.AuthBloc>();
+  }
+
+  static Future<void> _dispatchAuthEventAndAwait(AuthEvent event) async {
+    final authBloc = await _getAuthBlocFromDi();
+    if (authBloc == null) {
+      return;
+    }
+
+    var observedLoading = false;
+    final waitState = authBloc.stream.firstWhere((state) {
+      if (state.status == AuthStatus.loading) {
+        observedLoading = true;
+        return false;
+      }
+      return observedLoading && state.status != AuthStatus.loading;
+    });
+
+    authBloc.add(event);
+    await waitState.timeout(
+      const Duration(seconds: 8),
+      onTimeout: () {
+        return authBloc.state;
+      },
+    );
+  }
+
   static Future<ApiResponse?> register({
     required String email,
     required String username,
@@ -29,7 +64,6 @@ class AuthService {
     final token = res?.data is Map ? (res!.data as Map)['token'] : null;
     if (token is String && token.isNotEmpty) {
       await ApiService.setToken(token);
-      providerContainer.read(isLoginProvider.notifier).setLogin(true);
     }
 
     final dataMap = res?.data is Map
@@ -44,12 +78,56 @@ class AuthService {
     return dataMap;
   }
 
+  /// Login via AuthBloc (DI), keeping API response shape compatible.
+  static Future<Map<String, dynamic>> loginByAuthBloc({
+    required String username,
+    required String password,
+  }) async {
+    final authBloc = await _getAuthBlocFromDi();
+    if (authBloc == null) {
+      return login(username: username, password: password);
+    }
+
+    var observedLoading = false;
+    final waitState = authBloc.stream.firstWhere((state) {
+      if (state.status == AuthStatus.loading) {
+        observedLoading = true;
+        return false;
+      }
+      return observedLoading && state.status != AuthStatus.loading;
+    });
+
+    authBloc.add(AuthLoginRequested(username: username, password: password));
+    final state = await waitState.timeout(
+      const Duration(seconds: 8),
+      onTimeout: () {
+        return authBloc.state;
+      },
+    );
+
+    if (state.status == AuthStatus.authenticated) {
+      final token = ApiService.authorization;
+      return token.isEmpty
+          ? <String, dynamic>{}
+          : <String, dynamic>{'token': token};
+    }
+
+    final message = state.errorMessage?.trim().isNotEmpty == true
+        ? state.errorMessage!
+        : 'Login failed';
+    return <String, dynamic>{'message': message};
+  }
+
   /// Logout: invalidates token on server and clears local state.
   static Future<ApiResponse?> logout() async {
     final res = await ApiService.post(Api.logout);
     await ApiService.clearToken();
-    providerContainer.read(isLoginProvider.notifier).setLogin(false);
     return res;
+  }
+
+  /// Logout via AuthBloc (DI). AuthRepository handles server/local cleanup.
+  static Future<void> logoutByAuthBloc() async {
+    await _dispatchAuthEventAndAwait(const AuthLogoutRequested());
   }
 
   /// Request password reset; server returns reset_token (e.g. for email flow).

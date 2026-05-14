@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
+import 'package:retentio/core/network/network.dart';
 import 'package:retentio/services/index.dart';
 
 /// Matches API: image 5 MB; audio/video 200 MB.
@@ -90,7 +91,7 @@ class MediaService {
     if (check != MediaPrecheck.ok) return null;
 
     final name = p.basename(filePath);
-    final res = await dioClient.uploadFile(
+    final res = await networkDioClient.uploadFile(
       Api.media,
       filePath: filePath,
       fileName: name,

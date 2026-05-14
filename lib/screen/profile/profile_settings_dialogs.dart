@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:retentio/l10n/app_localizations.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:retentio/providers/locale_provider.dart';
 import 'package:retentio/providers/theme_provider.dart';
-import 'package:retentio/screen/profile/providers/profile.dart';
+import 'package:retentio/screen/profile/bloc/profile_cubit.dart';
+import 'package:retentio/theme/theme_tokens.dart';
+import 'package:retentio/widgets/app_button.dart';
+
+const _kDialogOptionPadding = EdgeInsets.symmetric(horizontal: 2);
 
 String profileLanguageDisplayName(Locale locale) {
   switch (locale.languageCode) {
@@ -28,110 +32,72 @@ String profileThemeDisplayName(ThemeMode theme, AppLocalizations loc) {
   }
 }
 
-void showProfileLanguageDialog(
+Future<void> showProfileLanguageDialog(
   BuildContext context,
   WidgetRef ref,
+  Locale currentLocale,
   AppLocalizations loc,
-) {
-  showDialog(
+) async {
+  final selected = await showGeneralDialog<Locale>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: Text(loc.changeLanguage),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          RadioGroup(
-            onChanged: (value) {
-              if (value != null) {
-                ref.read(localeProvider.notifier).setLocale(value);
-                Navigator.of(context).pop();
-              }
-            },
-            groupValue: ref.read(localeProvider),
-            child: RadioListTile<Locale>(
-              title: const Text('English'),
-              value: const Locale('en'),
-            ),
-          ),
-          RadioGroup(
-            groupValue: ref.read(localeProvider),
-            onChanged: (value) {
-              if (value != null) {
-                ref.read(localeProvider.notifier).setLocale(value);
-                Navigator.of(context).pop();
-              }
-            },
-            child: RadioListTile<Locale>(
-              title: const Text('简体中文'),
-              value: const Locale('zh'),
-            ),
-          ),
-        ],
-      ),
-    ),
+    barrierDismissible: true,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Colors.black54,
+    transitionDuration: Duration.zero,
+    pageBuilder: (dialogContext, animation, secondaryAnimation) =>
+        _ProfileRadioDialog<Locale>(
+          title: loc.changeLanguage,
+          groupValue: currentLocale,
+          options: const [
+            _RadioOption(value: Locale('en'), label: 'English'),
+            _RadioOption(value: Locale('zh'), label: '简体中文'),
+          ],
+          onChanged: (value) {
+            Navigator.of(dialogContext).pop(value);
+          },
+        ),
   );
+
+  if (selected != null) {
+    ref.read(localeProvider.notifier).setLocale(selected);
+  }
 }
 
-void showProfileThemeDialog(
+Future<void> showProfileThemeDialog(
   BuildContext context,
   WidgetRef ref,
+  ThemeMode currentTheme,
   AppLocalizations loc,
-) {
-  showDialog(
+) async {
+  final selected = await showGeneralDialog<ThemeMode>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: Text(loc.changeTheme),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          RadioGroup(
-            groupValue: ref.read(themeModeProvider),
-            onChanged: (value) {
-              if (value != null) {
-                ref.read(themeModeProvider.notifier).setThemeMode(value);
-                Navigator.of(context).pop();
-              }
-            },
-            child: RadioListTile<ThemeMode>(
-              title: Text(loc.themeLight),
-              value: ThemeMode.light,
-            ),
-          ),
-          RadioGroup(
-            groupValue: ref.read(themeModeProvider),
-            onChanged: (value) {
-              if (value != null) {
-                ref.read(themeModeProvider.notifier).setThemeMode(value);
-                Navigator.of(context).pop();
-              }
-            },
-            child: RadioListTile<ThemeMode>(
-              title: Text(loc.themeDark),
-              value: ThemeMode.dark,
-            ),
-          ),
-          RadioGroup(
-            groupValue: ref.read(themeModeProvider),
-            onChanged: (value) {
-              if (value != null) {
-                ref.read(themeModeProvider.notifier).setThemeMode(value);
-                Navigator.of(context).pop();
-              }
-            },
-            child: RadioListTile<ThemeMode>(
-              title: Text(loc.themeSystem),
-              value: ThemeMode.system,
-            ),
-          ),
-        ],
-      ),
-    ),
+    barrierDismissible: true,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Colors.black54,
+    transitionDuration: Duration.zero,
+    pageBuilder: (dialogContext, animation, secondaryAnimation) =>
+        _ProfileRadioDialog<ThemeMode>(
+          title: loc.changeTheme,
+          groupValue: currentTheme,
+          options: [
+            _RadioOption(value: ThemeMode.light, label: loc.themeLight),
+            _RadioOption(value: ThemeMode.dark, label: loc.themeDark),
+            _RadioOption(value: ThemeMode.system, label: loc.themeSystem),
+          ],
+          onChanged: (value) {
+            Navigator.of(dialogContext).pop(value);
+          },
+        ),
   );
+
+  if (selected != null) {
+    ref.read(themeModeProvider.notifier).setThemeMode(selected);
+  }
 }
 
 void showProfileLogoutDialog(
   BuildContext context,
-  WidgetRef ref,
+  ProfileCubit profileCubit,
   AppLocalizations loc,
 ) {
   showDialog<bool>(
@@ -140,21 +106,86 @@ void showProfileLogoutDialog(
       title: Text(loc.logoutConfirmTitle),
       content: Text(loc.logoutConfirmMessage),
       actions: [
-        TextButton(
+        AppButton(
+          label: loc.cancel,
           onPressed: () {
             context.pop();
           },
-          child: Text(loc.cancel),
+          variant: AppButtonVariant.ghost,
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.onSurface,
+            textStyle: Theme.of(
+              context,
+            ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+          ),
         ),
-        TextButton(
+        AppButton(
+          label: loc.logout,
+          variant: AppButtonVariant.secondary,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.error,
+            side: BorderSide(
+              color: Theme.of(context).colorScheme.error,
+              width: AppThemeTokens.borderWidthHairline,
+            ),
+            textStyle: Theme.of(
+              context,
+            ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+          ),
           onPressed: () {
             context.pop();
-            ref.read(profileProvider.notifier).logout();
+            profileCubit.logout();
           },
-          style: TextButton.styleFrom(foregroundColor: Colors.red),
-          child: Text(loc.logout),
         ),
       ],
     ),
   );
+}
+
+class _ProfileRadioDialog<T> extends StatelessWidget {
+  final String title;
+  final T groupValue;
+  final List<_RadioOption<T>> options;
+  final ValueChanged<T> onChanged;
+
+  const _ProfileRadioDialog({
+    required this.title,
+    required this.groupValue,
+    required this.options,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(title),
+      content: RadioGroup<T>(
+        groupValue: groupValue,
+        onChanged: (value) {
+          if (value == null) {
+            return;
+          }
+          onChanged(value);
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final option in options)
+              RadioListTile<T>(
+                value: option.value,
+                title: Text(option.label),
+                contentPadding: _kDialogOptionPadding,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RadioOption<T> {
+  final T value;
+  final String label;
+
+  const _RadioOption({required this.value, required this.label});
 }

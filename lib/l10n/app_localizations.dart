@@ -554,6 +554,12 @@ abstract class AppLocalizations {
   /// **'Edit Deck'**
   String get editDeck;
 
+  /// Menu item to edit a fact
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Fact'**
+  String get editFact;
+
   /// Menu item to hide card
   ///
   /// In en, this message translates to:

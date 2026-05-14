@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:retentio/theme/theme_tokens.dart';
 
 import 'custom_video_player_controller.dart';
 
@@ -55,7 +56,7 @@ class _VolumeControlsState extends State<VolumeControls> {
                 height: _progress,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: AppThemeTokens.borderRadiusXxl,
                 ),
                 width: 15,
               ),
@@ -120,7 +121,7 @@ class _SlideControllerState extends State<SlideController> {
       key: widget.widgetKey,
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: AppThemeTokens.borderRadiusXxl,
       ),
       width: 15,
       alignment: Alignment.bottomCenter,

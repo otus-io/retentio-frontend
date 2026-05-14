@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:retentio/screen/deck/card_widgets/card_wiki_ruby_layout.dart';
 import 'package:retentio/screen/deck/providers/deck_card_typography.dart';
 import 'package:retentio/utils/wiki_ruby_markup.dart';
 
-class CardText extends ConsumerWidget {
+class CardText extends HookConsumerWidget {
+  static const _kFallbackLetterSpacing = 0.2;
+  static const _kFallbackHeight = 1.42;
+  static const _kInlinePadding = EdgeInsets.symmetric(
+    horizontal: 4,
+    vertical: 4,
+  );
+  static const _kScrollPadding = EdgeInsets.symmetric(
+    horizontal: 12,
+    vertical: 8,
+  );
+
   const CardText({
     super.key,
     required this.text,
@@ -29,6 +40,7 @@ class CardText extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final baseThemeStyle = Theme.of(context).textTheme.titleLarge;
     final deckId = typographyDeckId;
     final typography = deckId == null
         ? null
@@ -37,10 +49,16 @@ class CardText extends ConsumerWidget {
               .forSide(typographyIsFront);
     final style =
         typography?.baseTextStyle(color) ??
+        baseThemeStyle?.copyWith(
+          fontWeight: FontWeight.w500,
+          letterSpacing: _kFallbackLetterSpacing,
+          height: _kFallbackHeight,
+          color: color,
+        ) ??
         TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 1.2,
+          fontWeight: FontWeight.w500,
+          letterSpacing: _kFallbackLetterSpacing,
+          height: _kFallbackHeight,
           color: color,
         );
     final rubyStyle = typography?.rubyTextStyle(color);
@@ -52,15 +70,12 @@ class CardText extends ConsumerWidget {
           )
         : Text(text, textAlign: TextAlign.center, style: style);
     if (!scrollable) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: textWidget,
-      );
+      return Padding(padding: _kInlinePadding, child: textWidget);
     }
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: _kScrollPadding,
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Center(child: textWidget),

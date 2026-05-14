@@ -320,6 +320,10 @@
   "@editDeck": {
     "description": "Menu item to edit deck"
   },
+  "editFact": "Edit Fact",
+  "@editFact": {
+    "description": "Menu item to edit a fact"
+  },
   "hideCard": "Hide Card",
   "@hideCard": {
     "description": "Menu item to hide card"

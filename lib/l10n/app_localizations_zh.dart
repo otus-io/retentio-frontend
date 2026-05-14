@@ -241,6 +241,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get editDeck => '编辑卡组';
 
   @override
+  String get editFact => '编辑词条';
+
+  @override
   String get hideCard => '隐藏卡片';
 
   @override

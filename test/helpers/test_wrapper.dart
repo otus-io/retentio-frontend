@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod/misc.dart' show Override;
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:retentio/core/network/network.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/deck/providers/deck_card_typography.dart';
 import 'package:retentio/services/index.dart';
@@ -29,9 +30,7 @@ Future<void> setupTestEnvironment() async {
   SharedPreferences.setMockInitialValues({});
 
   // Initialize pre-config (this will now work with mocked plugins)
-  DioClient.of.config(
-    Env.host, // 代理拦截器
-  );
+  networkDioClient.configure(baseUrl: Env.host);
 
   // Deck study UI uses [GoogleFonts.notoSansJp] for per-deck typography; widget tests
   // must not hit the network (HttpClient returns 400 under TestWidgetsFlutterBinding).

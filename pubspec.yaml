@@ -17,6 +17,8 @@ dependencies:
   intl: ^0.20.2
   dio: ^5.9.2
   flutter_riverpod: ^3.2.1
+  hooks_riverpod: ^3.2.1
+  flutter_hooks: ^0.21.3+1
   collection: ^1.19.1
   shared_preferences: ^2.5.4
   logger: ^2.6.2
@@ -42,11 +44,18 @@ dependencies:
   file_picker: ^11.0.2
   image_picker: ^1.1.2
   record: ^6.2.0
+  flutter_bloc: ^9.1.1
+  get_it: ^8.0.3
+  json_annotation: ^4.11.0
+  freezed_annotation: ^3.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   video_player_platform_interface: ^6.6.0
+  build_runner: ^2.10.1
+  json_serializable: ^6.11.0
+  freezed: ^3.2.3
 
 # path_provider_foundation 2.6.0+ uses package:objective_c (native assets). That can
 # fail on iOS with missing SdkRoot during tooling and missing objective_c.framework in

@@ -8,58 +8,121 @@ alwaysApply: false
 
 ## Architecture
 
-- State management: Riverpod (flutter_riverpod) — wrap app in ProviderScope
-- Routing: go_router with GoRouter config in `routers/app_pages.dart`
-- HTTP: Dio client with interceptors in `services/dio_client/`
-- Storage: SharedPreferences for auth tokens, Hive for local data
-- i18n: flutter_localizations + intl (en, zh)
+- **State**: Riverpod (`flutter_riverpod`) — app wrapped in `ProviderScope`
+- **Routing**: `go_router` config in `routers/app_pages.dart`
+- **HTTP**: Dio client in `services/dio_client/`; all API calls go through `ApiService` / service classes in `services/apis/`
+- **Storage**: `SharedPreferences` for auth tokens; Hive for local data
+- **i18n**: `flutter_localizations` + `intl` (en, zh); strings in `lib/l10n/app_en.arb` and `app_zh.arb`; accessed via `AppLocalizations.of(context)!`
+- **Icons**: `lucide_icons_flutter` (`LucideIcons.*`) — use exclusively, avoid `Icons.*`
 
 ## File Organization
 
 ```
 lib/
-├── models/          # Data models with fromJson/toJson
-├── providers/       # Global Riverpod providers (auth, theme, locale)
-├── routers/         # Route definitions and GoRouter config
-├── screen/          # Feature screens, each with own providers/ and widgets/
-├── services/        # API clients, Dio config, storage
-├── widgets/         # Shared reusable widgets
-├── utils/           # Utility functions
-├── extensions/      # Dart extensions
-└── mixins/          # Reusable mixins
+├── models/           # Data models (fromJson/toJson)
+├── providers/        # Global Riverpod providers (auth, theme, locale)
+├── routers/          # GoRouter config
+├── screen/
+│   ├── login/        # Each feature owns providers/ and widgets/
+│   ├── register/
+│   ├── decks/
+│   ├── deck/
+│   └── profile/
+├── services/
+│   ├── apis/         # ApiService, CardService, MediaService…
+│   └── dio_client/   # DioClient singleton
+├── widgets/          # Shared reusable widgets (AppButton, AppInput, AppIconButton…)
+├── utils/
+├── extensions/
+└── mixins/
 ```
 
-## Coding Patterns
+## Shared UI Components — REQUIRED
 
-### Models
+Use these in all business screens. **Do NOT use raw Flutter widgets** (`ElevatedButton`, `TextButton`, `FilledButton`, `TextField`, `IconButton`) in `screen/`. Exceptions must include an inline comment with justification.
+
+### AppButton (`lib/widgets/app_button.dart`)
 
 ```dart
-// Always handle null and type conversion in fromJson
+AppButton(
+  label: loc.login,
+  onPressed: _submit,                   // null → disabled
+  variant: AppButtonVariant.primary,    // primary | secondary | ghost | danger
+  size: AppButtonSize.md,               // sm | md | lg
+  isLoading: _isLoading,
+  fullWidth: true,
+  leading: Icon(LucideIcons.logIn),     // optional
+)
+```
+
+### AppInput (`lib/widgets/app_input.dart`)
+
+```dart
+AppInput(
+  controller: _emailController,
+  label: loc.email,
+  hint: 'you@example.com',
+  errorText: _emailError,
+  obscureText: false,
+  prefix: Icon(LucideIcons.mail),
+  onChanged: _onEmailChanged,
+)
+```
+
+### AppIconButton (`lib/widgets/app_icon_button.dart`)
+
+```dart
+AppIconButton(
+  icon: LucideIcons.squarePlus,
+  onPressed: _openSheet,
+  variant: AppIconButtonVariant.subtle,  // default | subtle | danger
+  tooltip: loc.createDeck,
+)
+```
+
+## Riverpod Patterns
+
+- Screen-specific providers → `screen/<feature>/providers/`
+- Global providers → `providers/`
+- `ref.watch()` for reactive state; `ref.read()` for one-time actions
+- Prefer `ConsumerWidget` / `ConsumerStatefulWidget` for screens that need providers
+
+## Models
+
+```dart
 factory Deck.fromJson(Map<String, dynamic> json) {
-  // Handle null values with defaults
-  // Handle type mismatches (e.g., double → int)
+  // Always handle null with defaults
+  // Handle type mismatches (num → int, etc.)
 }
 ```
 
-### Riverpod Providers
+## API Calls
 
-- Screen-specific providers go in `screen/<feature>/providers/`
-- Global providers go in `providers/`
-- Use StateNotifier or ChangeNotifier patterns
+All calls go through service classes in `services/apis/`, never directly from widgets:
 
-### Screens
+```dart
+static Future<SomeModel?> doThing(String id) async {
+  try {
+    final res = await ApiService.get(Api.someEndpoint, pathParams: {'id': id});
+    if (res?.data == null) return null;
+    return SomeModel.fromJson(res!.data);
+  } catch (e) {
+    logger.e(e);
+    return null;
+  }
+}
+```
 
-- Each screen is a StatelessWidget or ConsumerWidget
-- Screen-specific widgets go in `screen/<feature>/widgets/`
-- Use `ref.watch()` for reactive state, `ref.read()` for one-time actions
+## i18n
 
-### API Calls
-
-- All API calls go through Dio client in `services/apis/`
-- Handle errors at the service layer, surface user-friendly messages
+- All user-visible strings in ARB files — no hardcoded strings in widgets
+- Key naming: `camelCase`, descriptive (`addFactUploadFailed` not `error1`)
+- Add to both `app_en.arb` and `app_zh.arb` in the same commit
 
 ## Checks Before Commit
 
-- `dart format .` — must pass with no changes
-- `flutter analyze` — must have zero errors
-- `flutter test` — all tests must pass
+```bash
+dart format .          # must exit clean
+flutter analyze        # zero errors
+flutter test           # all pass
+```

@@ -10,6 +10,7 @@ This document outlines the code quality standards and Pull Request (PR) conventi
 
 - [PR Submission Flow](#pr-submission-flow)
 - [Code Quality Standards](#code-quality-standards)
+- [Migration Architecture Rules](#migration-architecture-rules)
 - [Pull Request Guidelines](#pull-request-guidelines)
 - [Commit Guidelines](#commit-guidelines)
 - [PR Review Process](#pr-review-process)
@@ -54,6 +55,15 @@ When submitting a PR, follow this process:
 - Add comments for complex logic or non-obvious decisions
 - Update README or relevant documentation when adding new features
 - Include godoc/kdoc comments for public APIs
+
+## Migration Architecture Rules
+
+During the architecture migration window, follow these mandatory rules:
+
+1. **Target architecture**: New modules should follow **BLoC + Clean Architecture** (Presentation/Domain/Data).
+2. **Bridge period**: Riverpod is allowed only as a compatibility bridge for legacy modules while migration is ongoing.
+3. **Directory conventions**: Place DI wiring in `lib/core/di/`; keep auth migration work under `lib/features/auth/`; keep study migration work under `lib/features/deck_study/`.
+4. **Hard boundary**: Services and API clients must not directly update UI state containers (Riverpod providers, BLoCs, Cubits, controllers). They return data/results only; presentation state managers consume those outputs.
 
 ---
 

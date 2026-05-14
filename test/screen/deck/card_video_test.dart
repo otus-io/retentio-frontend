@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/deck/card_widgets/card_video.dart';
-import 'package:retentio/screen/deck/providers/card_review.dart';
+import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
+import 'package:retentio/screen/deck/providers/deck_scope.dart';
 import 'package:retentio/video_player/src/custom_video_player.dart';
 import 'package:video_player_platform_interface/video_player_platform_interface.dart';
 
-import '../../helpers/immediate_empty_card_notifier.dart';
+import '../../helpers/card_test_samples.dart';
+import '../../helpers/fake_deck_study_bloc.dart';
 import '../../helpers/test_video_player_platform.dart';
 
 void main() {
@@ -42,17 +46,26 @@ void main() {
     testWidgets('disposing before init completes does not throw', (
       tester,
     ) async {
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: testDeck.id,
+        loadResults: [DeckStudyLoadResult(cardDetail: sampleCardDetail())],
+      );
+      addTearDown(() async => harness.dispose());
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            deckProvider.overrideWithValue(testDeck),
-            cardProvider.overrideWith(ImmediateEmptyCardNotifier.new),
+            currentDeckProvider.overrideWithValue(testDeck),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
           ],
           child: MaterialApp(
             home: DefaultTabController(
               length: 1,
-              child: Scaffold(
-                body: CardVideo(url: 'https://example.com/dispose-early.mp4'),
+              child: BlocProvider.value(
+                value: harness.bloc,
+                child: Scaffold(
+                  body: CardVideo(url: 'https://example.com/dispose-early.mp4'),
+                ),
               ),
             ),
           ),
@@ -74,17 +87,26 @@ void main() {
     testWidgets('after init completes, shows CustomVideoPlayer', (
       tester,
     ) async {
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: testDeck.id,
+        loadResults: [DeckStudyLoadResult(cardDetail: sampleCardDetail())],
+      );
+      addTearDown(() async => harness.dispose());
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            deckProvider.overrideWithValue(testDeck),
-            cardProvider.overrideWith(ImmediateEmptyCardNotifier.new),
+            currentDeckProvider.overrideWithValue(testDeck),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
           ],
           child: MaterialApp(
             home: DefaultTabController(
               length: 1,
-              child: Scaffold(
-                body: CardVideo(url: 'https://example.com/ok.mp4'),
+              child: BlocProvider.value(
+                value: harness.bloc,
+                child: Scaffold(
+                  body: CardVideo(url: 'https://example.com/ok.mp4'),
+                ),
               ),
             ),
           ),

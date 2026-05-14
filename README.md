@@ -60,12 +60,25 @@ Full guide: [docs/pre_commit_hook_zh.md](docs/pre_commit_hook_zh.md) · [English
 | `docs/` | Project documentation: Markdown files in the `docs/` root (no subfolders). |
 | `utils/` | Helper scripts (e.g. pre-commit). |
 | `.github/` | GitHub templates and workflows. |
+| `lib/core/di/` | Dependency injection setup and composition roots for feature wiring. |
+| `lib/features/auth/` | Auth feature module (BLoC/use cases/repositories/data sources). |
+| `lib/features/deck_study/` | Deck study feature module under Clean boundaries. |
 
 ## Documentation
 
 - **API:** [docs/api.md](docs/api.md) ([中文](docs/api_zh.md))
 
 ## `lib/` — application code
+
+### Architecture (BLoC + Clean)
+
+The app is migrating to a **BLoC + Clean Architecture** baseline:
+
+- **Presentation**: screens/widgets + BLoC/Cubit for UI state and events.
+- **Domain**: use cases + entities (business rules, framework-agnostic).
+- **Data**: repositories + remote/local data sources.
+
+During the transition, **Riverpod remains supported as a compatibility bridge** for existing modules. New features should prefer BLoC-oriented boundaries while integrating with legacy Riverpod flows through adapters/facades.
 
 ### Bootstrap and configuration
 
@@ -124,8 +137,9 @@ Feature providers often sit next to their screen (`screen/<feature>/providers/`)
 
 1. **Startup** — `PreConfig` initializes storage, loads the auth token, configures **Dio** with base URL from **`Env`**.
 2. **Navigation** — **go_router** in `app_pages.dart` gates routes using login state; a **`ChangeNotifier`** on the auth notifier refreshes the router when auth changes.
-3. **Data flow** — UI **Consumer** / **ref.watch** → **Notifier** providers → **\*Service** classes → **ApiService** / **DioClient** → **`ApiResponse`** / domain **models**.
-4. **Scoped state** — Some routes wrap **`ProviderScope(overrides: …)`** so feature providers receive the correct `Deck` or parameters without global singletons.
+3. **Data flow** — Preferred: UI (Screen/Widget) → BLoC/Cubit → UseCase → Repository → DataSource (`ApiService` / `DioClient`) → Domain/DTO models. Legacy Riverpod Notifier flows may coexist during migration via bridge adapters.
+4. **Scoped state** — Some legacy routes wrap **`ProviderScope(overrides: …)`** so feature providers receive the correct `Deck` or parameters without global singletons.
+5. **Migration guardrail** — Services/API layers must not directly mutate UI state containers (Riverpod providers, BLoCs, Cubits, controllers). UI state changes go through presentation-layer inputs (events, intents, method calls on state managers).
 
 ## Tests
 
