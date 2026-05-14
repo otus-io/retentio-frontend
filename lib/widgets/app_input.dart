@@ -103,7 +103,8 @@ class AppInput extends StatelessWidget {
     final resolvedMaxLines = obscureText ? 1 : maxLines;
     final resolvedMinLines = obscureText ? 1 : minLines;
     final isSingleLine =
-        resolvedMaxLines == 1 && (resolvedMinLines == null || resolvedMinLines == 1);
+        resolvedMaxLines == 1 &&
+        (resolvedMinLines == null || resolvedMinLines == 1);
 
     final baseDecoration = InputDecoration(
       labelText: label,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/register/register_screen.dart';
+import 'package:retentio/widgets/app_button.dart';
 
 import '../../helpers/test_wrapper.dart';
 
@@ -44,7 +46,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byType(ElevatedButton), findsOneWidget);
+      expect(find.byType(AppButton), findsNWidgets(2));
+      final context = tester.element(find.byType(RegisterScreen));
+      final loc = AppLocalizations.of(context)!;
+      expect(find.text(loc.register), findsWidgets);
     });
 
     testWidgets('displays back to login button', (tester) async {

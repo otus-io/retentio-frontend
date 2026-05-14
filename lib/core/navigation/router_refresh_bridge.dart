@@ -12,7 +12,8 @@ class RouterRefreshBridge extends ChangeNotifier {
   final AuthBloc _authBloc;
   late final StreamSubscription<AuthState> _subscription;
 
-  bool get isAuthenticated => _authBloc.state.status == AuthStatus.authenticated;
+  bool get isAuthenticated =>
+      _authBloc.state.status == AuthStatus.authenticated;
 
   @override
   void dispose() {

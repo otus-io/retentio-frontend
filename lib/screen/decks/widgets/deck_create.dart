@@ -340,8 +340,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
             }
 
             if (!result.success) {
-              final msg =
-                  result.message?.isNotEmpty == true
+              final msg = result.message?.isNotEmpty == true
                   ? result.message!
                   : (loc.deckEditorNameRequired);
               messenger.showSnackBar(

@@ -53,8 +53,7 @@ class CardContentContainer extends HookWidget {
               typographyIsFront: typographyIsFront,
             ),
           ),
-          if (trailing != null)
-            Positioned(top: 4, right: 4, child: trailing!),
+          if (trailing != null) Positioned(top: 4, right: 4, child: trailing!),
         ],
       );
     }

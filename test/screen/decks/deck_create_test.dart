@@ -1,21 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/screen/decks/bloc/deck_create_cubit.dart';
 import 'package:retentio/screen/decks/widgets/deck_create.dart';
 import 'package:retentio/widgets/number_picker.dart';
 
 import '../../helpers/test_wrapper.dart';
 
 void main() {
+  Widget buildDeckCreateHarness(Widget child) {
+    return buildTestableWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (_) => DeckCreateCubit(
+              name: '',
+              rate: kDeckEditorRateDefault,
+              deckId: '',
+              cardType: DeckCardType.add,
+            ),
+          ),
+        ],
+        child: Scaffold(body: SingleChildScrollView(child: child)),
+      ),
+    );
+  }
+
   group('DeckCreate', () {
     testWidgets('rate NumberPicker is 1–1000 step 1 (create/edit deck)', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        buildTestableWidget(
-          const Scaffold(body: SingleChildScrollView(child: DeckCreate())),
-        ),
-      );
+      await tester.pumpWidget(buildDeckCreateHarness(const DeckCreate()));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
@@ -30,11 +46,7 @@ void main() {
     testWidgets(
       'shows name field, two default column inputs, and save button',
       (tester) async {
-        await tester.pumpWidget(
-          buildTestableWidget(
-            const Scaffold(body: SingleChildScrollView(child: DeckCreate())),
-          ),
-        );
+        await tester.pumpWidget(buildDeckCreateHarness(const DeckCreate()));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 400));
 
@@ -46,11 +58,7 @@ void main() {
     testWidgets('deletes a field when its remove button is tapped', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        buildTestableWidget(
-          const Scaffold(body: SingleChildScrollView(child: DeckCreate())),
-        ),
-      );
+      await tester.pumpWidget(buildDeckCreateHarness(const DeckCreate()));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
@@ -83,11 +91,7 @@ void main() {
     });
 
     testWidgets('reorders fields when dragged', (tester) async {
-      await tester.pumpWidget(
-        buildTestableWidget(
-          const Scaffold(body: SingleChildScrollView(child: DeckCreate())),
-        ),
-      );
+      await tester.pumpWidget(buildDeckCreateHarness(const DeckCreate()));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
@@ -121,7 +125,7 @@ void main() {
       );
     });
 
-    testWidgets('edit deck does not expose field reorder drag handles', (
+    testWidgets('edit deck exposes reorder list and drag handles', (
       tester,
     ) async {
       final deck = Deck.fromJson({
@@ -140,8 +144,20 @@ void main() {
 
       await tester.pumpWidget(
         buildTestableWidget(
-          Scaffold(
-            body: SingleChildScrollView(child: DeckCreate(deck: deck)),
+          MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (_) => DeckCreateCubit(
+                  name: '',
+                  rate: kDeckEditorRateDefault,
+                  deckId: '',
+                  cardType: DeckCardType.add,
+                ),
+              ),
+            ],
+            child: Scaffold(
+              body: SingleChildScrollView(child: DeckCreate(deck: deck)),
+            ),
           ),
         ),
       );
@@ -149,8 +165,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
 
-      expect(find.byType(ReorderableDragStartListener), findsNothing);
-      expect(find.byType(ReorderableListView), findsNothing);
+      expect(find.byType(ReorderableListView), findsOneWidget);
+      expect(find.byType(ReorderableDelayedDragStartListener), findsWidgets);
     });
   });
 }

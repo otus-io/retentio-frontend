@@ -14,7 +14,9 @@ final GetIt sl = GetIt.instance;
 
 Future<GetIt> registerCoreDependencies() async {
   if (!sl.isRegistered<LocalAuthDataSource>()) {
-    sl.registerLazySingleton<LocalAuthDataSource>(() => const LocalAuthDataSource());
+    sl.registerLazySingleton<LocalAuthDataSource>(
+      () => const LocalAuthDataSource(),
+    );
   }
 
   if (!sl.isRegistered<AuthRepository>()) {
@@ -30,15 +32,11 @@ Future<GetIt> registerCoreDependencies() async {
   }
 
   if (!sl.isRegistered<Login>()) {
-    sl.registerLazySingleton<Login>(
-      () => Login(sl<AuthRepository>()),
-    );
+    sl.registerLazySingleton<Login>(() => Login(sl<AuthRepository>()));
   }
 
   if (!sl.isRegistered<Logout>()) {
-    sl.registerLazySingleton<Logout>(
-      () => Logout(sl<AuthRepository>()),
-    );
+    sl.registerLazySingleton<Logout>(() => Logout(sl<AuthRepository>()));
   }
 
   if (!sl.isRegistered<AuthBloc>()) {

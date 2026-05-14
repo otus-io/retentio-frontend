@@ -33,9 +33,12 @@ class AuthService {
     });
 
     authBloc.add(event);
-    await waitState.timeout(const Duration(seconds: 8), onTimeout: () {
-      return authBloc.state;
-    });
+    await waitState.timeout(
+      const Duration(seconds: 8),
+      onTimeout: () {
+        return authBloc.state;
+      },
+    );
   }
 
   static Future<ApiResponse?> register({
@@ -95,17 +98,23 @@ class AuthService {
     });
 
     authBloc.add(AuthLoginRequested(username: username, password: password));
-    final state = await waitState.timeout(const Duration(seconds: 8), onTimeout: () {
-      return authBloc.state;
-    });
+    final state = await waitState.timeout(
+      const Duration(seconds: 8),
+      onTimeout: () {
+        return authBloc.state;
+      },
+    );
 
     if (state.status == AuthStatus.authenticated) {
       final token = ApiService.authorization;
-      return token.isEmpty ? <String, dynamic>{} : <String, dynamic>{'token': token};
+      return token.isEmpty
+          ? <String, dynamic>{}
+          : <String, dynamic>{'token': token};
     }
 
-    final message =
-        state.errorMessage?.trim().isNotEmpty == true ? state.errorMessage! : 'Login failed';
+    final message = state.errorMessage?.trim().isNotEmpty == true
+        ? state.errorMessage!
+        : 'Login failed';
     return <String, dynamic>{'message': message};
   }
 

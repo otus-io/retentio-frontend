@@ -37,10 +37,13 @@ class _FakeAuthRepository implements AuthRepository {
 }
 
 GoRoute _studyRouteFromAppPages() {
-  final studyRoute = AppPages.routes.configuration.routes.whereType<GoRoute>().firstWhere(
-    (route) => route.path == AppRoutes.study.path,
-    orElse: () => throw StateError('study route not found in AppPages.routes'),
-  );
+  final studyRoute = AppPages.routes.configuration.routes
+      .whereType<GoRoute>()
+      .firstWhere(
+        (route) => route.path == AppRoutes.study.path,
+        orElse: () =>
+            throw StateError('study route not found in AppPages.routes'),
+      );
   return studyRoute;
 }
 
@@ -148,7 +151,9 @@ void main() {
       );
     });
 
-    testWidgets('when unauthenticated /study redirects to /login', (tester) async {
+    testWidgets('when unauthenticated /study redirects to /login', (
+      tester,
+    ) async {
       final authBloc = await _bootstrapAuthBloc(authenticated: false);
       sl.registerLazySingleton<AuthBloc>(() => authBloc);
       sl.registerLazySingleton<RouterRefreshBridge>(

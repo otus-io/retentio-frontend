@@ -54,7 +54,9 @@ class CardSideContent extends StatelessWidget {
               textColor: contentColor,
               trailing: sideCards.isNotEmpty
                   ? CardMenu(
-                      color: scheme.onSurface.withValues(alpha: _kMenuColorAlpha),
+                      color: scheme.onSurface.withValues(
+                        alpha: _kMenuColorAlpha,
+                      ),
                     )
                   : null,
               typographyDeckId: deckId,

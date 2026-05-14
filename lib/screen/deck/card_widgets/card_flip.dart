@@ -153,7 +153,6 @@ class CardFlip extends HookWidget {
 
 class _FlipCardFace extends HookWidget {
   static const _kCardRadius = 16.0;
-  static const _kCardOutlineAlpha = 0.42;
 
   const _FlipCardFace({
     required this.child,

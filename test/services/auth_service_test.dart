@@ -52,7 +52,11 @@ class _FakeHttpClientAdapter implements HttpClientAdapter {
 
     if (options.path == '/auth/logout' && options.method == 'POST') {
       return ResponseBody.fromString(
-        jsonEncode({'code': 0, 'msg': 'logout ok', 'data': {'ok': true}}),
+        jsonEncode({
+          'code': 0,
+          'msg': 'logout ok',
+          'data': {'ok': true},
+        }),
         200,
         headers: {
           Headers.contentTypeHeader: [Headers.jsonContentType],
@@ -113,14 +117,17 @@ void main() {
       expect(ApiService.authorization, '');
     });
 
-    test('logout clears token regardless of backend response payload', () async {
-      await ApiService.setToken('token-before-logout');
-      expect(ApiService.authorization, 'token-before-logout');
+    test(
+      'logout clears token regardless of backend response payload',
+      () async {
+        await ApiService.setToken('token-before-logout');
+        expect(ApiService.authorization, 'token-before-logout');
 
-      final res = await AuthService.logout();
+        final res = await AuthService.logout();
 
-      expect(res, isA<ApiResponse?>());
-      expect(ApiService.authorization, '');
-    });
+        expect(res, isA<ApiResponse?>());
+        expect(ApiService.authorization, '');
+      },
+    );
   });
 }

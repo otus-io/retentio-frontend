@@ -77,51 +77,59 @@ void main() {
       expect(bloc.state, const AuthState.initial());
     });
 
-    test('restore emits loading then authenticated when session exists', () async {
-      repository.restoreSessionResult =
-          const AuthSession(token: 'token-restore', isLoggedIn: true);
+    test(
+      'restore emits loading then authenticated when session exists',
+      () async {
+        repository.restoreSessionResult = const AuthSession(
+          token: 'token-restore',
+          isLoggedIn: true,
+        );
 
-      final emitted = <AuthState>[];
-      final subscription = bloc.stream.listen(emitted.add);
-      addTearDown(subscription.cancel);
+        final emitted = <AuthState>[];
+        final subscription = bloc.stream.listen(emitted.add);
+        addTearDown(subscription.cancel);
 
-      bloc.add(const AuthRestoreSessionRequested());
+        bloc.add(const AuthRestoreSessionRequested());
 
-      await bloc.stream.firstWhere(
-        (state) => state.status == AuthStatus.authenticated,
-      );
+        await bloc.stream.firstWhere(
+          (state) => state.status == AuthStatus.authenticated,
+        );
 
-      expect(repository.restoreCalls, 1);
-      expect(emitted.map((e) => e.status), [
-        AuthStatus.loading,
-        AuthStatus.authenticated,
-      ]);
-      expect(bloc.state.session.token, 'token-restore');
-      expect(bloc.state.session.isLoggedIn, isTrue);
-      expect(bloc.state.errorMessage, isNull);
-    });
+        expect(repository.restoreCalls, 1);
+        expect(emitted.map((e) => e.status), [
+          AuthStatus.loading,
+          AuthStatus.authenticated,
+        ]);
+        expect(bloc.state.session.token, 'token-restore');
+        expect(bloc.state.session.isLoggedIn, isTrue);
+        expect(bloc.state.errorMessage, isNull);
+      },
+    );
 
-    test('restore emits loading then unauthenticated when no session', () async {
-      repository.restoreSessionResult = const AuthSession.unauthenticated();
+    test(
+      'restore emits loading then unauthenticated when no session',
+      () async {
+        repository.restoreSessionResult = const AuthSession.unauthenticated();
 
-      final emitted = <AuthState>[];
-      final subscription = bloc.stream.listen(emitted.add);
-      addTearDown(subscription.cancel);
+        final emitted = <AuthState>[];
+        final subscription = bloc.stream.listen(emitted.add);
+        addTearDown(subscription.cancel);
 
-      bloc.add(const AuthRestoreSessionRequested());
+        bloc.add(const AuthRestoreSessionRequested());
 
-      await bloc.stream.firstWhere(
-        (state) => state.status == AuthStatus.unauthenticated,
-      );
+        await bloc.stream.firstWhere(
+          (state) => state.status == AuthStatus.unauthenticated,
+        );
 
-      expect(repository.restoreCalls, 1);
-      expect(emitted.map((e) => e.status), [
-        AuthStatus.loading,
-        AuthStatus.unauthenticated,
-      ]);
-      expect(bloc.state.session, const AuthSession.unauthenticated());
-      expect(bloc.state.errorMessage, isNull);
-    });
+        expect(repository.restoreCalls, 1);
+        expect(emitted.map((e) => e.status), [
+          AuthStatus.loading,
+          AuthStatus.unauthenticated,
+        ]);
+        expect(bloc.state.session, const AuthSession.unauthenticated());
+        expect(bloc.state.errorMessage, isNull);
+      },
+    );
 
     test('restore failure emits loading then failure with message', () async {
       repository.throwOnRestore = true;
@@ -132,7 +140,9 @@ void main() {
 
       bloc.add(const AuthRestoreSessionRequested());
 
-      await bloc.stream.firstWhere((state) => state.status == AuthStatus.failure);
+      await bloc.stream.firstWhere(
+        (state) => state.status == AuthStatus.failure,
+      );
 
       expect(repository.restoreCalls, 1);
       expect(emitted.map((e) => e.status), [
@@ -143,56 +153,73 @@ void main() {
       expect(bloc.state.errorMessage, contains('restore failed'));
     });
 
-    test('login emits loading then authenticated and passes credentials', () async {
-      repository.loginResult = const AuthSession(token: 'token-login', isLoggedIn: true);
+    test(
+      'login emits loading then authenticated and passes credentials',
+      () async {
+        repository.loginResult = const AuthSession(
+          token: 'token-login',
+          isLoggedIn: true,
+        );
 
-      final emitted = <AuthState>[];
-      final subscription = bloc.stream.listen(emitted.add);
-      addTearDown(subscription.cancel);
+        final emitted = <AuthState>[];
+        final subscription = bloc.stream.listen(emitted.add);
+        addTearDown(subscription.cancel);
 
-      bloc.add(const AuthLoginRequested(username: 'alice', password: 'secret'));
+        bloc.add(
+          const AuthLoginRequested(username: 'alice', password: 'secret'),
+        );
 
-      await bloc.stream.firstWhere(
-        (state) => state.status == AuthStatus.authenticated,
-      );
+        await bloc.stream.firstWhere(
+          (state) => state.status == AuthStatus.authenticated,
+        );
 
-      expect(repository.loginCalls, 1);
-      expect(repository.lastUsername, 'alice');
-      expect(repository.lastPassword, 'secret');
-      expect(emitted.map((e) => e.status), [
-        AuthStatus.loading,
-        AuthStatus.authenticated,
-      ]);
-      expect(bloc.state.session.token, 'token-login');
-      expect(bloc.state.session.isLoggedIn, isTrue);
-      expect(bloc.state.errorMessage, isNull);
-    });
+        expect(repository.loginCalls, 1);
+        expect(repository.lastUsername, 'alice');
+        expect(repository.lastPassword, 'secret');
+        expect(emitted.map((e) => e.status), [
+          AuthStatus.loading,
+          AuthStatus.authenticated,
+        ]);
+        expect(bloc.state.session.token, 'token-login');
+        expect(bloc.state.session.isLoggedIn, isTrue);
+        expect(bloc.state.errorMessage, isNull);
+      },
+    );
 
-    test('login failure emits loading then failure and clears session', () async {
-      repository.throwOnLogin = true;
+    test(
+      'login failure emits loading then failure and clears session',
+      () async {
+        repository.throwOnLogin = true;
 
-      final emitted = <AuthState>[];
-      final subscription = bloc.stream.listen(emitted.add);
-      addTearDown(subscription.cancel);
+        final emitted = <AuthState>[];
+        final subscription = bloc.stream.listen(emitted.add);
+        addTearDown(subscription.cancel);
 
-      bloc.add(const AuthLoginRequested(username: 'alice', password: 'wrong'));
+        bloc.add(
+          const AuthLoginRequested(username: 'alice', password: 'wrong'),
+        );
 
-      await bloc.stream.firstWhere((state) => state.status == AuthStatus.failure);
+        await bloc.stream.firstWhere(
+          (state) => state.status == AuthStatus.failure,
+        );
 
-      expect(repository.loginCalls, 1);
-      expect(repository.lastUsername, 'alice');
-      expect(repository.lastPassword, 'wrong');
-      expect(emitted.map((e) => e.status), [
-        AuthStatus.loading,
-        AuthStatus.failure,
-      ]);
-      expect(bloc.state.session, const AuthSession.unauthenticated());
-      expect(bloc.state.errorMessage, contains('login failed'));
-    });
+        expect(repository.loginCalls, 1);
+        expect(repository.lastUsername, 'alice');
+        expect(repository.lastPassword, 'wrong');
+        expect(emitted.map((e) => e.status), [
+          AuthStatus.loading,
+          AuthStatus.failure,
+        ]);
+        expect(bloc.state.session, const AuthSession.unauthenticated());
+        expect(bloc.state.errorMessage, contains('login failed'));
+      },
+    );
 
     test('logout emits loading then unauthenticated', () async {
-      repository.loginResult =
-          const AuthSession(token: 'token-before-logout', isLoggedIn: true);
+      repository.loginResult = const AuthSession(
+        token: 'token-before-logout',
+        isLoggedIn: true,
+      );
 
       final emitted = <AuthState>[];
       final subscription = bloc.stream.listen(emitted.add);
@@ -220,8 +247,10 @@ void main() {
     });
 
     test('logout failure keeps current session and emits failure', () async {
-      repository.loginResult =
-          const AuthSession(token: 'token-still-there', isLoggedIn: true);
+      repository.loginResult = const AuthSession(
+        token: 'token-still-there',
+        isLoggedIn: true,
+      );
       repository.throwOnLogout = true;
 
       final emitted = <AuthState>[];
@@ -236,7 +265,9 @@ void main() {
       emitted.clear();
       bloc.add(const AuthLogoutRequested());
 
-      await bloc.stream.firstWhere((state) => state.status == AuthStatus.failure);
+      await bloc.stream.firstWhere(
+        (state) => state.status == AuthStatus.failure,
+      );
 
       expect(repository.logoutCalls, 1);
       expect(emitted.map((e) => e.status), [

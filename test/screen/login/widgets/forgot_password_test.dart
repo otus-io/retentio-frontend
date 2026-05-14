@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/screen/login/widgets/forgot_password.dart';
+import 'package:retentio/widgets/app_button.dart';
 
 import '../../../helpers/test_wrapper.dart';
 
@@ -49,7 +50,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Reset Password'), findsOneWidget);
-      expect(find.byType(ElevatedButton), findsOneWidget);
+      expect(find.byType(AppButton), findsOneWidget);
     });
 
     testWidgets('shows snackbar when submitting with empty email', (
@@ -63,7 +64,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap reset password without entering email
-      await tester.tap(find.byType(ElevatedButton));
+      await tester.tap(find.byType(AppButton));
       await tester.pump();
 
       expect(find.text('Please fill all fields'), findsOneWidget);

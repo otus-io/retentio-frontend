@@ -45,7 +45,10 @@ class FakeDeckStudyRepository implements DeckStudyRepository {
   }
 
   @override
-  Future<bool> deleteCard({required String deckId, required String cardId}) async {
+  Future<bool> deleteCard({
+    required String deckId,
+    required String cardId,
+  }) async {
     deleteCalls += 1;
     return deleteShouldSucceed;
   }
@@ -62,7 +65,9 @@ class FakeDeckStudyBlocHarness {
     List<DeckStudyLoadResult>? loadResults,
     bool submitShouldSucceed = true,
     bool deleteShouldSucceed = true,
-    DeckStudyLoadResult fallbackResult = const DeckStudyLoadResult(cardDetail: null),
+    DeckStudyLoadResult fallbackResult = const DeckStudyLoadResult(
+      cardDetail: null,
+    ),
     bool startImmediately = true,
   }) {
     final repository = FakeDeckStudyRepository(

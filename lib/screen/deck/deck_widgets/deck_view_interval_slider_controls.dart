@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/features/deck_study/deck_study.dart';
 import 'package:retentio/extensions/widget_extension.dart';
 import 'package:retentio/l10n/app_localizations.dart';
@@ -72,10 +71,6 @@ void requestDeckStudyReviewAgain(BuildContext context) {
 }
 
 class DeckViewIntervalSliderControls extends StatelessWidget {
-  static const _kActionContainerRadius = 12.0;
-  static const _kActionContainerBorderAlpha = 0.36;
-  static const _kActionContainerPadding = EdgeInsets.fromLTRB(8, 6, 8, 4);
-
   const DeckViewIntervalSliderControls({super.key});
 
   @override
@@ -93,9 +88,7 @@ class DeckViewIntervalSliderControls extends StatelessWidget {
           decoration: BoxDecoration(
             color: scheme.surface,
             border: Border(
-              top: BorderSide(
-                color: scheme.outline.withValues(alpha: 0.28),
-              ),
+              top: BorderSide(color: scheme.outline.withValues(alpha: 0.28)),
             ),
           ),
           child: SafeArea(
@@ -122,7 +115,9 @@ class DeckViewIntervalSliderControls extends StatelessWidget {
                             overlayRadius: 14,
                           ),
                           activeTrackColor: scheme.primary,
-                          inactiveTrackColor: scheme.outline.withValues(alpha: 0.25),
+                          inactiveTrackColor: scheme.outline.withValues(
+                            alpha: 0.25,
+                          ),
                           thumbColor: scheme.primary,
                           overlayColor: scheme.primary.withValues(alpha: 0.1),
                         ),
@@ -131,7 +126,9 @@ class DeckViewIntervalSliderControls extends StatelessWidget {
                           min: state.minInterval,
                           max: state.maxInterval,
                           divisions: 100,
-                          label: formatReviewIntervalLabel(state.selectedInterval),
+                          label: formatReviewIntervalLabel(
+                            state.selectedInterval,
+                          ),
                           onChanged: (double value) {
                             requestDeckStudyIntervalSelected(context, value);
                           },

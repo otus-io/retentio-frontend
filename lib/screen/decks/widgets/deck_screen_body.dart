@@ -22,7 +22,9 @@ class DeckScreenBody extends StatelessWidget {
     return BlocBuilder<DeckListCubit, DeckListState>(
       builder: (context, state) {
         if (state.isLoading && state.decks.isEmpty) {
-          return Center(child: CircularProgressIndicator(color: scheme.primary));
+          return Center(
+            child: CircularProgressIndicator(color: scheme.primary),
+          );
         }
 
         if (state.error != null && state.decks.isEmpty) {
@@ -32,7 +34,11 @@ class DeckScreenBody extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(LucideIcons.triangleAlert, size: 54, color: scheme.error),
+                  Icon(
+                    LucideIcons.triangleAlert,
+                    size: 54,
+                    color: scheme.error,
+                  ),
                   const SizedBox(height: 12),
                   Text('Error: ${state.error}', textAlign: TextAlign.center),
                   const SizedBox(height: 14),

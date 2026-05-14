@@ -23,7 +23,9 @@ class DeckViewBody extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final loc = AppLocalizations.of(context)!;
-    final deck = context.select((DeckStudyContextCubit cubit) => cubit.state.deck);
+    final deck = context.select(
+      (DeckStudyContextCubit cubit) => cubit.state.deck,
+    );
 
     return BlocBuilder<DeckStudyBloc, DeckStudyState>(
       builder: (context, state) {
@@ -72,8 +74,6 @@ class DeckViewBody extends StatelessWidget {
           );
         }
 
-        final screenWidth = MediaQuery.sizeOf(context).width;
-        final cardHeight = screenWidth - 48 - 46;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -113,35 +113,46 @@ class DeckViewBody extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: Stack(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CardFlip(
-                          height: cardHeight,
-                          width: double.infinity,
-                          flipCardController: context
-                              .read<DeckStudyFlipCardControllerCubit>()
-                              .state,
-                          frontWidget: const CardSideContent(isFront: true),
-                          backWidget: const CardSideContent(isFront: false),
-                          onFlip: (_) {
-                            requestDeckStudyShowAnswerToggle(context);
-                          },
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final screenWidth = MediaQuery.sizeOf(context).width;
+                  final idealCardHeight = screenWidth - 48 - 46;
+                  final maxCardHeight = (constraints.maxHeight - 150).clamp(
+                    180.0,
+                    idealCardHeight,
+                  );
+                  final cardHeight = maxCardHeight.toDouble();
+                  return Stack(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CardFlip(
+                              height: cardHeight,
+                              width: double.infinity,
+                              flipCardController: context
+                                  .read<DeckStudyFlipCardControllerCubit>()
+                                  .state,
+                              frontWidget: const CardSideContent(isFront: true),
+                              backWidget: const CardSideContent(isFront: false),
+                              onFlip: (_) {
+                                requestDeckStudyShowAnswerToggle(context);
+                              },
+                            ),
+                            const SizedBox(height: 100),
+                          ],
                         ),
-                        const SizedBox(height: 100),
-                      ],
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    width: screenWidth,
-                    child: const DeckViewIntervalSliderControls(),
-                  ),
-                ],
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        width: screenWidth,
+                        child: const DeckViewIntervalSliderControls(),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ],

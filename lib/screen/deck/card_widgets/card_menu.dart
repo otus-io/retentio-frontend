@@ -66,7 +66,11 @@ class CardMenu extends StatelessWidget {
               title: loc.editFact,
               onTap: () {
                 final deck = context.read<DeckStudyContextCubit>().state.deck;
-                final card = context.read<DeckStudyBloc>().state.cardDetail?.card;
+                final card = context
+                    .read<DeckStudyBloc>()
+                    .state
+                    .cardDetail
+                    ?.card;
                 if (card == null) return;
                 showCommonBottomSheet(
                   context: context,
@@ -75,9 +79,8 @@ class CardMenu extends StatelessWidget {
                   child: FactEdit(
                     deck: deck,
                     factId: card.factId,
-                    onSaved: () async => requestDeckStudyReloadCurrentCard(
-                      context,
-                    ),
+                    onSaved: () async =>
+                        requestDeckStudyReloadCurrentCard(context),
                   ),
                 );
               },

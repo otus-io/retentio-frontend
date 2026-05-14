@@ -89,7 +89,9 @@ void main() {
       expect(harness.repository.hideSubmitCalls, 1);
     });
 
-    testWidgets('Delete card confirm calls delete on repository', (tester) async {
+    testWidgets('Delete card confirm calls delete on repository', (
+      tester,
+    ) async {
       await setupTestEnvironment();
       final harness = FakeDeckStudyBlocHarness(
         deckId: sampleDeck().id,

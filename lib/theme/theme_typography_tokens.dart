@@ -150,7 +150,8 @@ class AppTypographySemantic extends ThemeExtension<AppTypographySemantic> {
       bodyPrimary:
           TextStyle.lerp(bodyPrimary, other.bodyPrimary, t) ?? bodyPrimary,
       bodySecondary:
-          TextStyle.lerp(bodySecondary, other.bodySecondary, t) ?? bodySecondary,
+          TextStyle.lerp(bodySecondary, other.bodySecondary, t) ??
+          bodySecondary,
       caption: TextStyle.lerp(caption, other.caption, t) ?? caption,
       controlLabel:
           TextStyle.lerp(controlLabel, other.controlLabel, t) ?? controlLabel,

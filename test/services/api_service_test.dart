@@ -73,15 +73,18 @@ void main() {
       expect(prefs.getString('token'), isNull);
     });
 
-    test('handle401Unauthorized is idempotent when called repeatedly', () async {
-      await ApiService.setToken('token-before-multi-401');
+    test(
+      'handle401Unauthorized is idempotent when called repeatedly',
+      () async {
+        await ApiService.setToken('token-before-multi-401');
 
-      ApiService.handle401Unauthorized();
-      ApiService.handle401Unauthorized();
-      ApiService.handle401Unauthorized();
-      await Future<void>.delayed(const Duration(milliseconds: 30));
+        ApiService.handle401Unauthorized();
+        ApiService.handle401Unauthorized();
+        ApiService.handle401Unauthorized();
+        await Future<void>.delayed(const Duration(milliseconds: 30));
 
-      expect(ApiService.authorization, '');
-    });
+        expect(ApiService.authorization, '');
+      },
+    );
   });
 }

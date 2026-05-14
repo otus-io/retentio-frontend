@@ -17,10 +17,14 @@ class DeckTextStyles {
   static TextStyle? metricLabel(ThemeData theme) => theme.textTheme.labelSmall
       ?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.62));
 
-  static TextStyle? progressLabel(ThemeData theme) => theme.textTheme.labelMedium
+  static TextStyle? progressLabel(ThemeData theme) => theme
+      .textTheme
+      .labelMedium
       ?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.55));
 
-  static TextStyle? progressValue(ThemeData theme) => theme.textTheme.labelMedium
+  static TextStyle? progressValue(ThemeData theme) => theme
+      .textTheme
+      .labelMedium
       ?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7));
 
   static TextStyle? rateValue(ThemeData theme) => theme.textTheme.bodyMedium;

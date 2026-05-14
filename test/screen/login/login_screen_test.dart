@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retentio/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retentio/screen/login/login_screen.dart';
 import 'package:retentio/services/storage/hydrated_storage.dart';
+import 'package:retentio/widgets/app_button.dart';
 
 import '../../helpers/in_memory_hydrated_storage.dart';
 import '../../helpers/test_wrapper.dart';
@@ -46,14 +48,16 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Login'), findsOneWidget);
-      expect(find.byType(ElevatedButton), findsOneWidget);
+      expect(find.byType(AppButton), findsNWidgets(3));
     });
 
-    testWidgets('displays register link', (tester) async {
+    testWidgets('displays register button', (tester) async {
       await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
       await tester.pumpAndSettle();
 
-      expect(find.text('Register'), findsOneWidget);
+      final context = tester.element(find.byType(LoginScreen));
+      final loc = AppLocalizations.of(context)!;
+      expect(find.text(loc.register), findsOneWidget);
     });
 
     testWidgets('displays forgot password link', (tester) async {

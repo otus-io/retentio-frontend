@@ -30,9 +30,7 @@ Future<void> setupTestEnvironment() async {
   SharedPreferences.setMockInitialValues({});
 
   // Initialize pre-config (this will now work with mocked plugins)
-  networkDioClient.configure(
-    baseUrl: Env.host,
-  );
+  networkDioClient.configure(baseUrl: Env.host);
 
   // Deck study UI uses [GoogleFonts.notoSansJp] for per-deck typography; widget tests
   // must not hit the network (HttpClient returns 400 under TestWidgetsFlutterBinding).

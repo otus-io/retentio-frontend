@@ -130,7 +130,9 @@ class DeckMenu extends StatelessWidget {
                     fullScreen: true,
                     child: MultiBlocProvider(
                       providers: [
-                        BlocProvider.value(value: context.read<DeckListCubit>()),
+                        BlocProvider.value(
+                          value: context.read<DeckListCubit>(),
+                        ),
                         BlocProvider<DeckCreateCubit>(
                           create: (_) => DeckCreateCubit(
                             name: deck.name,

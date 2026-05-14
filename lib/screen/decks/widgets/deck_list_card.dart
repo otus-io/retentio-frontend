@@ -113,10 +113,7 @@ class DeckListCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  loc.progress,
-                  style: DeckTextStyles.progressLabel(theme),
-                ),
+                Text(loc.progress, style: DeckTextStyles.progressLabel(theme)),
                 Text(
                   '${deck.learnedCards}/${deck.totalCards} (${deck.progress.toStringAsFixed(0)}%)',
                   style: DeckTextStyles.progressValue(theme),
@@ -148,7 +145,9 @@ class _StatBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isZero = value == '0';
-    final effectiveColor = isZero ? scheme.onSurface.withValues(alpha: 0.3) : color;
+    final effectiveColor = isZero
+        ? scheme.onSurface.withValues(alpha: 0.3)
+        : color;
 
     return Expanded(
       child: Container(

@@ -10,7 +10,8 @@ class CardAudioMicHandoffCubit extends Cubit<int> {
   CardAudioMicHandoffCubit() : super(0);
 
   int _nextId = 0;
-  final Map<int, Future<void> Function()> _pausers = <int, Future<void> Function()>{};
+  final Map<int, Future<void> Function()> _pausers =
+      <int, Future<void> Function()>{};
 
   int register(Future<void> Function() stopPlaybackForMic) {
     final id = _nextId++;

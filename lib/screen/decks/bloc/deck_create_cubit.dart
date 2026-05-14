@@ -121,9 +121,7 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
     );
   }
 
-  Future<DeckCreateResult> submit({
-    required List<String> fieldNames,
-  }) async {
+  Future<DeckCreateResult> submit({required List<String> fieldNames}) async {
     final name = nameController.text.trim();
     if (name.isEmpty) {
       return const DeckCreateResult(

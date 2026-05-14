@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
@@ -60,8 +61,11 @@ void main() {
           child: MaterialApp(
             home: DefaultTabController(
               length: 1,
-              child: Scaffold(
-                body: CardVideo(url: 'https://example.com/dispose-early.mp4'),
+              child: BlocProvider.value(
+                value: harness.bloc,
+                child: Scaffold(
+                  body: CardVideo(url: 'https://example.com/dispose-early.mp4'),
+                ),
               ),
             ),
           ),
@@ -98,7 +102,12 @@ void main() {
           child: MaterialApp(
             home: DefaultTabController(
               length: 1,
-              child: Scaffold(body: CardVideo(url: 'https://example.com/ok.mp4')),
+              child: BlocProvider.value(
+                value: harness.bloc,
+                child: Scaffold(
+                  body: CardVideo(url: 'https://example.com/ok.mp4'),
+                ),
+              ),
             ),
           ),
         ),

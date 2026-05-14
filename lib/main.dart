@@ -11,7 +11,6 @@ import 'package:retentio/providers/auth_provider.dart';
 import 'package:retentio/routers/app_pages.dart';
 import 'package:retentio/theme/app_theme.dart';
 
-import 'extensions/context_extension.dart';
 import 'providers/locale_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screen/decks/deck_list_screen.dart';

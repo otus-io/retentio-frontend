@@ -46,16 +46,16 @@ Future<void> showProfileLanguageDialog(
     transitionDuration: Duration.zero,
     pageBuilder: (dialogContext, animation, secondaryAnimation) =>
         _ProfileRadioDialog<Locale>(
-      title: loc.changeLanguage,
-      groupValue: currentLocale,
-      options: const [
-        _RadioOption(value: Locale('en'), label: 'English'),
-        _RadioOption(value: Locale('zh'), label: '简体中文'),
-      ],
-      onChanged: (value) {
-        Navigator.of(dialogContext).pop(value);
-      },
-    ),
+          title: loc.changeLanguage,
+          groupValue: currentLocale,
+          options: const [
+            _RadioOption(value: Locale('en'), label: 'English'),
+            _RadioOption(value: Locale('zh'), label: '简体中文'),
+          ],
+          onChanged: (value) {
+            Navigator.of(dialogContext).pop(value);
+          },
+        ),
   );
 
   if (selected != null) {
@@ -77,17 +77,17 @@ Future<void> showProfileThemeDialog(
     transitionDuration: Duration.zero,
     pageBuilder: (dialogContext, animation, secondaryAnimation) =>
         _ProfileRadioDialog<ThemeMode>(
-      title: loc.changeTheme,
-      groupValue: currentTheme,
-      options: [
-        _RadioOption(value: ThemeMode.light, label: loc.themeLight),
-        _RadioOption(value: ThemeMode.dark, label: loc.themeDark),
-        _RadioOption(value: ThemeMode.system, label: loc.themeSystem),
-      ],
-      onChanged: (value) {
-        Navigator.of(dialogContext).pop(value);
-      },
-    ),
+          title: loc.changeTheme,
+          groupValue: currentTheme,
+          options: [
+            _RadioOption(value: ThemeMode.light, label: loc.themeLight),
+            _RadioOption(value: ThemeMode.dark, label: loc.themeDark),
+            _RadioOption(value: ThemeMode.system, label: loc.themeSystem),
+          ],
+          onChanged: (value) {
+            Navigator.of(dialogContext).pop(value);
+          },
+        ),
   );
 
   if (selected != null) {
