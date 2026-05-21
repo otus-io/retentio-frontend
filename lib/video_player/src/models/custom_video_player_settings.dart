@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:retentio/theme/theme_tokens.dart';
+import 'package:retentio/theme/theme_typography_tokens.dart';
 
 import '../controls/fullscreen_button.dart';
 import '../controls/play_button.dart';
@@ -140,16 +142,20 @@ class CustomVideoPlayerSettings {
     this.exitFullscreenButton = const CustomVideoPlayerExitFullscreenButton(),
     this.controlBarDecoration = const BoxDecoration(
       color: Color.fromRGBO(0, 0, 0, 0.5),
-      borderRadius: BorderRadius.all(Radius.circular(10)),
+      borderRadius: AppThemeTokens.borderRadiusS,
     ),
     this.durationPlayedTextStyle = const TextStyle(
       color: Colors.white,
-      fontSize: 14,
+      fontWeight: AppTypographyTokens.weightRegular,
+      letterSpacing: AppTypographyTokens.trackingBodyMedium,
+      height: AppTypographyTokens.lineHeightBodyMedium,
       fontFeatures: [FontFeature.tabularFigures()],
     ),
     this.durationRemainingTextStyle = const TextStyle(
       color: Colors.white,
-      fontSize: 14,
+      fontWeight: AppTypographyTokens.weightRegular,
+      letterSpacing: AppTypographyTokens.trackingBodyMedium,
+      height: AppTypographyTokens.lineHeightBodyMedium,
       fontFeatures: [FontFeature.tabularFigures()],
     ),
     this.customVideoPlayerProgressBarSettings =
@@ -172,7 +178,9 @@ class CustomVideoPlayerSettings {
     this.playbackSpeedButtonAvailable = true,
     this.playbackButtonTextStyle = const TextStyle(
       color: Colors.white,
-      fontSize: 14,
+      fontWeight: AppTypographyTokens.weightRegular,
+      letterSpacing: AppTypographyTokens.trackingBodyMedium,
+      height: AppTypographyTokens.lineHeightBodyMedium,
       fontFeatures: [FontFeature.tabularFigures()],
     ),
     this.customVideoPlayerPopupSettings =

@@ -2,7 +2,7 @@ import 'dart:async' show unawaited;
 
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/deck/fact_add_composer/entry_row.dart';
@@ -17,15 +17,26 @@ import 'package:record/record.dart';
 import 'package:retentio/services/apis/card_service.dart';
 import 'package:retentio/services/apis/media_service.dart';
 import 'package:retentio/utils/media_client_id.dart';
+import 'package:retentio/widgets/app_button.dart';
 
-class FactAdd extends ConsumerStatefulWidget {
+const _kComposerOutlineAlpha = 0.62;
+const _kComposerCardPadding = EdgeInsets.fromLTRB(14, 12, 14, 8);
+const _kComposerCardSurfaceAlpha = 0.35;
+const _kComposerCardBorderAlpha = 0.3;
+const _kComposerCardRadius = 16.0;
+const _kEntryRowBottomPadding = EdgeInsets.only(bottom: 10);
+const _kToolbarRowsSpacing = 6.0;
+const _kRowControlsSpacing = 2.0;
+const _kSubmitTopSpacing = 16.0;
+
+class FactAdd extends StatefulHookConsumerWidget {
   const FactAdd({super.key, required this.deck, this.onStudyQueueRefresh});
 
   final Deck deck;
 
-  /// Refresh the current study card queue (e.g. [cardProvider]). Must be supplied
-  /// from a [WidgetRef] scoped under [deckProvider] — the modal sheet is not, so
-  /// this widget cannot call [cardProvider] safely by itself.
+  /// Refresh the current study card queue (via DeckStudy BLoC). Must be supplied
+  /// from a [WidgetRef] scoped under [currentDeckProvider] — the modal sheet is
+  /// not, so this widget cannot trigger the refresh by itself.
   final Future<void> Function()? onStudyQueueRefresh;
 
   @override
@@ -118,12 +129,10 @@ class _FactAddState extends ConsumerState<FactAdd>
   }
 
   void _addRow() {
-    if (widget.deck.fields.isNotEmpty) return;
     setState(() => _rows.add(AddFactRowModel()));
   }
 
   void _removeRowAt(int index) {
-    if (widget.deck.fields.isNotEmpty) return;
     if (_rows.length <= 1) return;
     if (index < 0 || index >= _rows.length) return;
     final removed = _rows[index];
@@ -242,7 +251,6 @@ class _FactAddState extends ConsumerState<FactAdd>
           ),
         );
       }
-
       final body = AddFactPayload.buildFactBody(entries: entries);
       final res = await CardService.addFacts(widget.deck.id, 'append', body);
       if (!mounted) return;
@@ -268,22 +276,16 @@ class _FactAddState extends ConsumerState<FactAdd>
     ThemeData theme,
     Color outline,
   ) sync* {
-    for (var i = 0; i < _rows.length; i++) {
-      final row = _rows[i];
+    for (final row in _rows) {
       yield Padding(
         key: row.hostKey,
-        padding: const EdgeInsets.only(bottom: 10),
+        padding: _kEntryRowBottomPadding,
         child: AddFactEntryRow(
           key: ObjectKey(row),
           row: row,
           loc: loc,
           theme: theme,
           outlineColor: outline,
-          headerLabel: AddFactPayload.deckColumnLabel(
-            columnIndex: i,
-            deckFields: widget.deck.fields,
-            fallbackForIndex: loc.addFactFieldFallback,
-          ),
           onClearSlot: (kind) {
             setState(() => row.clearSlot(kind));
           },
@@ -296,36 +298,50 @@ class _FactAddState extends ConsumerState<FactAdd>
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final hasMediaOnTargetRow = _rows[targetRowIndexForMedia()].hasAttachment;
-    final outline = theme.colorScheme.outline.withValues(alpha: 0.5);
+    final outline = scheme.outline.withValues(alpha: _kComposerOutlineAlpha);
 
     return TapRegion(
       onTapOutside: _onTapOutsideForm,
       child: ColoredBox(
         color: Colors.transparent,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            AddFactMediaToolbar(
-              loc: loc,
-              theme: theme,
-              hasMediaOnTargetRow: hasMediaOnTargetRow,
-              onPickFiles: pickMediaForTargetRow,
-              onPickGallery: pickGalleryMediaForTargetRow,
-              onClearTargetAttachment: clearTargetRowAttachment,
-              voiceRecorder: _voiceRecorder,
-              mediaPicksLocked: _recordingVoice,
-              showVoiceRecord: voiceRecordingAvailable,
-              isRecordingVoice: _recordingVoice,
-              onVoiceRecordTap: voiceRecordingAvailable
-                  ? toggleVoiceRecording
-                  : null,
-              onVoiceRecordLongPress: voiceRecordingAvailable
-                  ? onVoiceRecordLongPress
-                  : null,
+        child: Container(
+          padding: _kComposerCardPadding,
+          decoration: BoxDecoration(
+            color: scheme.surface.withValues(alpha: _kComposerCardSurfaceAlpha),
+            border: Border.all(
+              color: scheme.outline.withValues(
+                alpha: _kComposerCardBorderAlpha,
+              ),
             ),
-            ..._buildEntryRows(loc, theme, outline),
-            if (widget.deck.fields.isEmpty)
+            borderRadius: BorderRadius.circular(_kComposerCardRadius),
+          ),
+          child: Column(
+            spacing: 2,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AddFactMediaToolbar(
+                loc: loc,
+                theme: theme,
+                hasMediaOnTargetRow: hasMediaOnTargetRow,
+                onPickFiles: pickMediaForTargetRow,
+                onPickGallery: pickGalleryMediaForTargetRow,
+                onClearTargetAttachment: clearTargetRowAttachment,
+                voiceRecorder: _voiceRecorder,
+                mediaPicksLocked: _recordingVoice,
+                showVoiceRecord: voiceRecordingAvailable,
+                isRecordingVoice: _recordingVoice,
+                onVoiceRecordTap: voiceRecordingAvailable
+                    ? toggleVoiceRecording
+                    : null,
+                onVoiceRecordLongPress: voiceRecordingAvailable
+                    ? onVoiceRecordLongPress
+                    : null,
+              ),
+              const SizedBox(height: _kToolbarRowsSpacing),
+              ..._buildEntryRows(loc, theme, outline),
+              const SizedBox(height: _kRowControlsSpacing),
               AddFactRowControls(
                 loc: loc,
                 theme: theme,
@@ -333,18 +349,16 @@ class _FactAddState extends ConsumerState<FactAdd>
                 onAddRow: _addRow,
                 onRemoveRow: _removeRowOnMinusPressed,
               ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: (_submitting || _recordingVoice) ? null : _submit,
-              child: _submitting
-                  ? const SizedBox(
-                      height: 22,
-                      width: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(loc.addFactSubmit),
-            ),
-          ],
+              const SizedBox(height: _kSubmitTopSpacing),
+              AppButton(
+                label: loc.addFactSubmit,
+                onPressed: _recordingVoice ? null : _submit,
+                variant: AppButtonVariant.primary,
+                fullWidth: true,
+                isLoading: _submitting,
+              ),
+            ],
+          ),
         ),
       ),
     );

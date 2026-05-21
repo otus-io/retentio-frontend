@@ -44,12 +44,25 @@ flutter run
 | `docs/` | 项目文档：`docs/` 根目录下的 Markdown 文件（无子文件夹）。 |
 | `utils/` | 辅助脚本（例如 pre-commit）。 |
 | `.github/` | GitHub 模板与工作流。 |
+| `lib/core/di/` | 依赖注入配置与组合根（composition root），负责功能模块装配。 |
+| `lib/features/auth/` | 认证功能模块（BLoC/use case/repository/data source）。 |
+| `lib/features/deck_study/` | 卡组学习功能模块，按 Clean 边界组织。 |
 
 ## 文档
 
 - **API 文档：** [api_zh.md](api_zh.md)（[English](api.md)）
 
 ## `lib/` — 应用代码
+
+### 架构（BLoC + Clean）
+
+应用正在迁移到 **BLoC + Clean Architecture**：
+
+- **Presentation（表现层）**：screen/widget + BLoC/Cubit，负责 UI 状态与交互事件。
+- **Domain（领域层）**：use case + entity，承载业务规则（与框架解耦）。
+- **Data（数据层）**：repository + remote/local data source。
+
+迁移期内，**Riverpod 继续作为兼容桥接层** 支持存量模块。新功能优先按 BLoC 边界实现，并通过 adapter/facade 与旧 Riverpod 流程对接。
 
 ### 启动与配置
 
@@ -108,8 +121,9 @@ flutter run
 
 1. **启动** — `PreConfig` 初始化存储、加载 auth token，用 **`Env`** 中的 base URL 配置 **Dio**。
 2. **导航** — `app_pages.dart` 中的 **go_router** 根据登录状态控制路由；auth notifier 上的 **`ChangeNotifier`** 在登录态变化时刷新路由。
-3. **数据流** — UI **Consumer** / **ref.watch** → **Notifier** providers → **\*Service** → **ApiService** / **DioClient** → **`ApiResponse`** / 领域 **models**。
-4. **作用域状态** — 部分路由使用 **`ProviderScope(overrides: …)`**，向功能 provider 注入正确的 `Deck` 或参数，而无需全局单例。
+3. **数据流** — 推荐路径：UI（Screen/Widget）→ BLoC/Cubit → UseCase → Repository → DataSource（`ApiService` / `DioClient`）→ 领域模型/DTO。迁移期允许旧 Riverpod Notifier 流程并存，但需通过桥接适配层衔接。
+4. **作用域状态** — 部分存量路由使用 **`ProviderScope(overrides: …)`**，向功能 provider 注入正确的 `Deck` 或参数，而无需全局单例。
+5. **迁移期红线** — Service/API 层禁止直接操作 UI 状态容器（Riverpod provider、BLoC、Cubit、controller）。UI 状态变更必须通过表现层入口（event、intent、state manager 的公开方法）触发。
 
 ## 测试
 

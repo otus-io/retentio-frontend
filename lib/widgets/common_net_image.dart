@@ -8,11 +8,19 @@ import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/utils/log.dart';
+
+const double _kImageErrorIconSize = 20;
+const double _kImageErrorLabelThresholdHeight = 80;
+const double _kImageErrorTextGap = 8;
+const double _kImageErrorLabelLineHeight = 1.4;
+const double _kImageErrorIconOpacity = 0.48;
+const double _kImageErrorTextOpacity = 0.5;
 
 class CommonNetImage extends StatefulWidget {
   const CommonNetImage({
@@ -72,67 +80,66 @@ class _CommonNetImageState extends State<CommonNetImage> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        double? width = widget.width ?? constraints.maxWidth;
-        double? height = widget.height ?? constraints.maxHeight;
-        // 置空进行自适应父空间尺寸
-        if (width == double.infinity) {
-          width = null;
-        }
-        if (height == double.infinity) {
-          height = null;
-        }
-
-        return _DefaultExtendedImage.network(
-          widget.url,
-          fit: widget.fit ?? BoxFit.cover,
-          height: height,
-          width: width,
-          // 重新渲染的过程中是否展示上一张图片
-          gaplessPlayback: widget.gaplessPlayback,
-          // 加上这两个属性，在使用 hero 会导致图片重复加载？？？
-          // hero 动画效果很差
-          // clearMemoryCacheWhenDispose: true,
-          // cancelToken: _cancelToken,
-          compressionRatio: widget.compressionRatio,
-          enableSlideOutPage: widget.enableSlideOutPage,
-          mode: widget.mode,
-          imageCacheName: widget.imageCacheName,
-          initGestureConfigHandler: widget.initGestureConfigHandler,
-          loadStateChanged: widget.loadStateChanged,
-          imageBuilder: widget.imageBuilder,
-          errorWidget: (e, __) =>
-              widget.errorWidgetBuilder?.call(e, __) ??
-              _buildDefaultErrorWidget(context, height),
-          placeholder: (c) =>
-              widget.placeholder?.call(c) ??
-              Container(
-                alignment: Alignment.center,
-                child: const CupertinoActivityIndicator(),
-              ),
-        );
-      },
+    return _DefaultExtendedImage.network(
+      widget.url,
+      fit: widget.fit ?? BoxFit.cover,
+      height: widget.height,
+      width: widget.width,
+      // 重新渲染的过程中是否展示上一张图片
+      gaplessPlayback: widget.gaplessPlayback,
+      // 加上这两个属性，在使用 hero 会导致图片重复加载？？？
+      // hero 动画效果很差
+      // clearMemoryCacheWhenDispose: true,
+      // cancelToken: _cancelToken,
+      compressionRatio: widget.compressionRatio,
+      enableSlideOutPage: widget.enableSlideOutPage,
+      mode: widget.mode,
+      imageCacheName: widget.imageCacheName,
+      initGestureConfigHandler: widget.initGestureConfigHandler,
+      loadStateChanged: widget.loadStateChanged,
+      imageBuilder: widget.imageBuilder,
+      errorWidget: (e, __) =>
+          widget.errorWidgetBuilder?.call(e, __) ??
+          _buildDefaultErrorWidget(context, widget.height),
+      placeholder: (c) =>
+          widget.placeholder?.call(c) ??
+          Container(
+            alignment: Alignment.center,
+            child: const CupertinoActivityIndicator(),
+          ),
     );
   }
 
   Widget _buildDefaultErrorWidget(BuildContext context, double? height) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Container(
       alignment: Alignment.center,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.image_not_supported, color: Colors.grey, size: 20),
-          if (height != null && height > 80) ...[
-            const SizedBox(height: 8),
+          Icon(
+            LucideIcons.imageOff,
+            color: scheme.onSurface.withValues(alpha: _kImageErrorIconOpacity),
+            size: _kImageErrorIconSize,
+          ),
+          if (height != null && height > _kImageErrorLabelThresholdHeight) ...[
+            const SizedBox(height: _kImageErrorTextGap),
             Text(
               'load failed',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 10,
-                height: 14 / 10,
-                fontWeight: FontWeight.w300,
-              ),
+              style:
+                  theme.textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurface.withValues(
+                      alpha: _kImageErrorTextOpacity,
+                    ),
+                    height: _kImageErrorLabelLineHeight,
+                  ) ??
+                  TextStyle(
+                    color: scheme.onSurface.withValues(
+                      alpha: _kImageErrorTextOpacity,
+                    ),
+                    height: _kImageErrorLabelLineHeight,
+                  ),
             ),
           ],
         ],

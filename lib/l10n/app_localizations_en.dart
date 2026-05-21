@@ -243,6 +243,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editDeck => 'Edit Deck';
 
   @override
+  String get editFact => 'Edit Fact';
+
+  @override
   String get hideCard => 'Hide Card';
 
   @override

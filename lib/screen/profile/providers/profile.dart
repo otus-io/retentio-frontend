@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:retentio/providers/auth_provider.dart';
 import 'package:retentio/models/user.dart';
 import 'package:retentio/services/apis/api_service.dart';
+import 'package:retentio/services/apis/auth_service.dart';
 
 import '../../../services/index.dart';
 
@@ -48,9 +49,9 @@ class ProfileNotifier extends Notifier<UserState> {
     }
   }
 
-  void logout() {
+  Future<void> logout() async {
     state = UserState(user: User.empty());
-    ApiService.handle401Unauthorized();
+    await AuthService.logoutByAuthBloc();
   }
 }
 

@@ -19,8 +19,8 @@ class LoginController {
     setLoading(true);
 
     try {
-      final result = await AuthService.login(
-        username: username,
+      final result = await AuthService.loginByAuthBloc(
+        username: username.trim(),
         password: password,
       );
 
@@ -28,9 +28,7 @@ class LoginController {
 
       final isSuccess = result['token'] != null;
 
-      if (isSuccess) {
-        providerContainer.read(isLoginProvider.notifier).setLogin(true);
-      } else {
+      if (!isSuccess) {
         showSnack(context, result['message']);
       }
     } catch (e) {

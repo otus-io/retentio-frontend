@@ -1,11 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/deck/deck_view_screen.dart';
-import 'package:retentio/screen/deck/providers/card_review.dart';
+import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
+import 'package:retentio/screen/deck/providers/deck_scope.dart';
 
 import '../../helpers/card_test_samples.dart';
-import '../../helpers/immediate_empty_card_notifier.dart';
-import '../../helpers/test_card_notifiers.dart';
+import '../../helpers/fake_deck_study_bloc.dart';
 import '../../helpers/test_wrapper.dart';
 
 void main() {
@@ -27,12 +28,22 @@ void main() {
     testWidgets('shows empty deck message when session has no cards', (
       tester,
     ) async {
+      await setupTestEnvironment();
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: emptySessionDeck.id,
+        loadResults: const [DeckStudyLoadResult(cardDetail: null)],
+      );
+      addTearDown(() async {
+        await harness.dispose();
+        tearDownTestEnvironment();
+      });
+
       await tester.pumpWidget(
         buildTestableWidgetWithOverrides(
           DeckViewScreen(deck: emptySessionDeck),
           overrides: [
-            deckProvider.overrideWithValue(emptySessionDeck),
-            cardProvider.overrideWith(ImmediateEmptyCardNotifier.new),
+            currentDeckProvider.overrideWithValue(emptySessionDeck),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
           ],
         ),
       );
@@ -42,30 +53,38 @@ void main() {
       expect(find.text('No cards in this deck'), findsOneWidget);
     });
 
-    testWidgets('Review Again calls getCardDetail on notifier', (tester) async {
+    testWidgets('Review Again triggers one more card reload', (tester) async {
       await setupTestEnvironment();
-      addTearDown(tearDownTestEnvironment);
-
       final deck = sampleDeck(cardsCount: 5);
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: deck.id,
+        loadResults: [
+          const DeckStudyLoadResult(cardDetail: null, refreshedCardsCount: 5),
+          DeckStudyLoadResult(cardDetail: sampleCardDetail()),
+        ],
+      );
+      addTearDown(() async {
+        await harness.dispose();
+        tearDownTestEnvironment();
+      });
 
       await tester.pumpWidget(
         buildTestableWidgetWithOverrides(
           DeckViewScreen(deck: deck),
           overrides: [
-            deckProvider.overrideWithValue(deck),
-            cardProvider.overrideWith(
-              () => ReviewAgainHarnessNotifier(deckCardCount: 5),
-            ),
+            currentDeckProvider.overrideWithValue(deck),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
           ],
         ),
       );
       await tester.pumpAndSettle();
 
+      final before = harness.repository.loadCalls;
       expect(find.text('Review Again'), findsOneWidget);
       await tester.tap(find.text('Review Again'));
       await tester.pumpAndSettle();
 
-      expect(ReviewAgainHarnessNotifier.active?.getCardDetailCalls, 1);
+      expect(harness.repository.loadCalls, before + 1);
     });
   });
 }

@@ -152,6 +152,11 @@ class _NumberPickerState extends State<NumberPicker> {
         },
         child: Stack(
           children: [
+            _NumberPickerSelectedItemDecoration(
+              axis: widget.axis,
+              itemExtent: itemExtent,
+              decoration: widget.decoration,
+            ),
             ListView.builder(
               itemCount: listItemsCount,
               scrollDirection: widget.axis,
@@ -159,11 +164,6 @@ class _NumberPickerState extends State<NumberPicker> {
               itemExtent: itemExtent,
               itemBuilder: _itemBuilder,
               padding: EdgeInsets.zero,
-            ),
-            _NumberPickerSelectedItemDecoration(
-              axis: widget.axis,
-              itemExtent: itemExtent,
-              decoration: widget.decoration,
             ),
           ],
         ),

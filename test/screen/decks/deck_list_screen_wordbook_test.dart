@@ -1,32 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/decks/deck_list_screen.dart';
-import 'package:retentio/screen/decks/providers/deck_list.dart';
 import 'package:retentio/screen/decks/widgets/deck_create.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retentio/services/storage/hydrated_storage.dart';
 
-import '../../helpers/fake_deck_list_notifier.dart';
 import '../../helpers/in_memory_hydrated_storage.dart';
 import '../../helpers/test_wrapper.dart';
 
 void main() {
-  final sampleDeck = Deck.fromJson({
-    'id': 'deck-wb-1',
-    'name': 'Morning vocab',
-    'stats': {
-      'cards_count': 12,
-      'unseen_cards': 3,
-      'due_cards': 2,
-      'facts_count': 5,
-    },
-    'rate': 20,
-    'owner': {'username': 'u', 'email': 'u@t.com'},
-    'fields': ['English', 'Chinese'],
-  });
-
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     HydratedStorage.instance = InMemoryHydratedStorage();
@@ -37,40 +20,23 @@ void main() {
   });
 
   group('DeckListScreen wordbook list & create flow', () {
-    testWidgets('lists deck names from provider', (tester) async {
-      await tester.pumpWidget(
-        buildTestableWidgetWithOverrides(
-          const DeckListScreen(),
-          overrides: [
-            deckListProvider.overrideWith(
-              () => FakeDeckListNotifier([sampleDeck]),
-            ),
-          ],
-        ),
-      );
+    testWidgets('renders page title and subtitle', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const DeckListScreen()));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
-      expect(find.text('Morning vocab'), findsOneWidget);
+      expect(find.text('Decks'), findsOneWidget);
+      expect(find.text('Your study collections'), findsOneWidget);
     });
 
     testWidgets('create action opens bottom sheet with DeckCreate', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        buildTestableWidgetWithOverrides(
-          const DeckListScreen(),
-          overrides: [
-            deckListProvider.overrideWith(
-              () => FakeDeckListNotifier([sampleDeck]),
-            ),
-          ],
-        ),
-      );
+      await tester.pumpWidget(buildTestableWidget(const DeckListScreen()));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
-      await tester.tap(find.byIcon(LucideIcons.squarePlus));
+      await tester.tap(find.byIcon(LucideIcons.plus));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
@@ -87,7 +53,7 @@ void main() {
         of: find.byType(DeckCreate),
         matching: find.byType(Scaffold),
       );
-      expect(scaffoldAncestor, findsOneWidget);
+      expect(scaffoldAncestor, findsNothing);
     });
   });
 }

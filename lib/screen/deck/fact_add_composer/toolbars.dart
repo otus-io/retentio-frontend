@@ -2,11 +2,20 @@ import 'dart:math' as math;
 
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/deck/fact_add_composer/recorder_level_smooth.dart';
+import 'package:retentio/widgets/app_icon_button.dart';
 
-class AddFactMediaToolbar extends StatelessWidget {
+const _kToolbarPadding = EdgeInsets.symmetric(horizontal: 8, vertical: 6);
+const _kToolbarBorderAlpha = 0.35;
+const _kToolbarSurfaceAlpha = 0.72;
+const _kToolbarBorderRadius = 14.0;
+const _kRowControlsPadding = EdgeInsets.symmetric(horizontal: 6, vertical: 4);
+const _kRowControlsBorderRadius = 12.0;
+
+class AddFactMediaToolbar extends HookWidget {
   const AddFactMediaToolbar({
     super.key,
     required this.loc,
@@ -43,115 +52,118 @@ class AddFactMediaToolbar extends StatelessWidget {
     final accent = hasMediaOnTargetRow && !mediaPicksLocked
         ? theme.colorScheme.primary
         : null;
-    return Row(
-      children: [
-        Tooltip(
-          message: loc.addFactAttachMediaTooltip,
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            constraints: _iconBtn,
-            onPressed: mediaPicksLocked ? null : onPickFiles,
-            onLongPress: mediaPicksLocked || !hasMediaOnTargetRow
-                ? null
-                : onClearTargetAttachment,
-            icon: Icon(LucideIcons.paperclip, color: accent),
-          ),
+    final scheme = theme.colorScheme;
+    return Container(
+      padding: _kToolbarPadding,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(
+          alpha: _kToolbarSurfaceAlpha,
         ),
-        Tooltip(
-          message: loc.addFactGalleryMediaTooltip,
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            constraints: _iconBtn,
-            onPressed: mediaPicksLocked ? null : onPickGallery,
-            onLongPress: mediaPicksLocked || !hasMediaOnTargetRow
-                ? null
-                : onClearTargetAttachment,
-            icon: Icon(LucideIcons.images, color: accent),
-          ),
+        border: Border.all(
+          color: scheme.outline.withValues(alpha: _kToolbarBorderAlpha),
         ),
-        if (showVoiceRecord && onVoiceRecordTap != null)
+        borderRadius: BorderRadius.circular(_kToolbarBorderRadius),
+      ),
+      child: Row(
+        children: [
           Tooltip(
-            message: isRecordingVoice
-                ? loc.addFactStopRecordingTooltip
-                : loc.addFactRecordAudioTooltip,
-            child: IconButton(
+            message: loc.addFactAttachMediaTooltip,
+            child: AppIconButton(
               padding: EdgeInsets.zero,
               constraints: _iconBtn,
-              onPressed: onVoiceRecordTap,
-              onLongPress: onVoiceRecordLongPress,
-              icon: isRecordingVoice
-                  ? _InputReactiveMic(
-                      controller: voiceRecorder,
-                      color: theme.colorScheme.error,
-                    )
-                  : Icon(LucideIcons.mic, color: accent),
+              onPressed: mediaPicksLocked ? null : onPickFiles,
+              onLongPress: mediaPicksLocked || !hasMediaOnTargetRow
+                  ? null
+                  : onClearTargetAttachment,
+              icon: LucideIcons.paperclip,
+              color: accent,
             ),
           ),
-      ],
+          Tooltip(
+            message: loc.addFactGalleryMediaTooltip,
+            child: AppIconButton(
+              padding: EdgeInsets.zero,
+              constraints: _iconBtn,
+              onPressed: mediaPicksLocked ? null : onPickGallery,
+              onLongPress: mediaPicksLocked || !hasMediaOnTargetRow
+                  ? null
+                  : onClearTargetAttachment,
+              icon: LucideIcons.images,
+              color: accent,
+            ),
+          ),
+          if (showVoiceRecord && onVoiceRecordTap != null)
+            Tooltip(
+              message: isRecordingVoice
+                  ? loc.addFactStopRecordingTooltip
+                  : loc.addFactRecordAudioTooltip,
+              child: AppIconButton(
+                padding: EdgeInsets.zero,
+                constraints: _iconBtn,
+                onPressed: onVoiceRecordTap,
+                onLongPress: onVoiceRecordLongPress,
+                icon: LucideIcons.mic,
+                color: accent,
+                iconWidget: isRecordingVoice
+                    ? _InputReactiveMic(
+                        controller: voiceRecorder,
+                        color: theme.colorScheme.error,
+                      )
+                    : null,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
 
 /// Mic icon with continuous outward ripples; animation stays gentle when quiet
 /// and becomes much stronger when input level is high.
-class _InputReactiveMic extends StatefulWidget {
+class _InputReactiveMic extends HookWidget {
   const _InputReactiveMic({required this.controller, required this.color});
 
   final RecorderController controller;
   final Color color;
 
-  @override
-  State<_InputReactiveMic> createState() => _InputReactiveMicState();
-}
-
-class _InputReactiveMicState extends State<_InputReactiveMic>
-    with SingleTickerProviderStateMixin {
   static const _iconSize = 24.0;
-
-  late final AnimationController _wave;
-
-  double _level = 0;
-
-  void _onRecorder() {
-    if (!mounted) return;
-    double raw = 0.0;
-    try {
-      final data = widget.controller.waveData;
-      if (data.isNotEmpty) {
-        raw = data[data.length - 1];
-      }
-    } catch (_) {
-      raw = 0.0;
-    }
-    final next = smoothRecorderVisualizationLevel(_level, raw);
-    if (!mounted) return;
-    setState(() => _level = next);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _wave = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1600),
-    )..repeat();
-    widget.controller.addListener(_onRecorder);
-  }
-
-  @override
-  void dispose() {
-    widget.controller.removeListener(_onRecorder);
-    _wave.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
+    final level = useState(0.0);
+    final wave = useAnimationController(
+      duration: const Duration(milliseconds: 1600),
+    );
+
+    useEffect(() {
+      wave.repeat();
+      return () => wave.stop();
+    }, [wave]);
+
+    useEffect(() {
+      void onRecorder() {
+        double raw = 0.0;
+        try {
+          final data = controller.waveData;
+          if (data.isNotEmpty) {
+            raw = data[data.length - 1];
+          }
+        } catch (_) {
+          raw = 0.0;
+        }
+        final next = smoothRecorderVisualizationLevel(level.value, raw);
+        level.value = next;
+      }
+
+      controller.addListener(onRecorder);
+      return () => controller.removeListener(onRecorder);
+    }, [controller, level]);
+
     return AnimatedBuilder(
-      animation: _wave,
+      animation: wave,
       builder: (context, _) {
-        final t = _wave.value;
-        final w = _level.clamp(0.0, 1.0);
+        final t = wave.value;
+        final w = level.value.clamp(0.0, 1.0);
         // Ripples: linear blend — soft when quiet, full when loud.
         final ripple = 0.10 + 0.90 * w;
         // Icon pulse: ramps up faster at high levels so speech feels obvious.
@@ -174,7 +186,7 @@ class _InputReactiveMicState extends State<_InputReactiveMic>
                         (0.4 + 0.6 * math.sin(t * math.pi * 2 * 5.5)),
                 child: Icon(
                   LucideIcons.mic,
-                  color: widget.color.withValues(
+                  color: color.withValues(
                     alpha:
                         (0.84 +
                                 0.16 *
@@ -204,7 +216,7 @@ class _InputReactiveMicState extends State<_InputReactiveMic>
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: widget.color.withValues(alpha: opacity),
+            color: color.withValues(alpha: opacity),
             width: 1.5,
           ),
         ),
@@ -213,7 +225,7 @@ class _InputReactiveMicState extends State<_InputReactiveMic>
   }
 }
 
-class AddFactRowControls extends StatelessWidget {
+class AddFactRowControls extends HookWidget {
   const AddFactRowControls({
     super.key,
     required this.loc,
@@ -229,31 +241,39 @@ class AddFactRowControls extends StatelessWidget {
   final VoidCallback onAddRow;
   final VoidCallback onRemoveRow;
 
-  static const _iconBtn = BoxConstraints(minWidth: 44, minHeight: 44);
-
   @override
   Widget build(BuildContext context) {
+    final scheme = theme.colorScheme;
     return Align(
       alignment: Alignment.centerLeft,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            tooltip: loc.addFactAddRow,
-            padding: EdgeInsets.zero,
-            constraints: _iconBtn,
-            onPressed: onAddRow,
-            icon: Icon(LucideIcons.plus),
+      child: Container(
+        padding: _kRowControlsPadding,
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHighest.withValues(
+            alpha: _kToolbarSurfaceAlpha,
           ),
-          if (rowCount > 1)
-            IconButton(
-              tooltip: loc.addFactRemoveRow,
-              padding: EdgeInsets.zero,
-              constraints: _iconBtn,
-              onPressed: onRemoveRow,
-              icon: Icon(LucideIcons.minus, color: theme.colorScheme.error),
+          border: Border.all(
+            color: scheme.outline.withValues(alpha: _kToolbarBorderAlpha),
+          ),
+          borderRadius: BorderRadius.circular(_kRowControlsBorderRadius),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppIconButton(
+              icon: LucideIcons.plus,
+              onPressed: onAddRow,
+              tooltip: loc.addFactAddRow,
             ),
-        ],
+            if (rowCount > 1)
+              AppIconButton(
+                icon: LucideIcons.minus,
+                onPressed: onRemoveRow,
+                variant: AppIconButtonVariant.danger,
+                tooltip: loc.addFactRemoveRow,
+              ),
+          ],
+        ),
       ),
     );
   }

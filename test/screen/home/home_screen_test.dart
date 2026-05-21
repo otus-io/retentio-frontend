@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/screen/home/home_screen.dart';
 
 import '../../helpers/test_wrapper.dart';
@@ -15,34 +16,36 @@ void main() {
       expect(find.byType(HomeScreen), findsOneWidget);
     });
 
-    testWidgets('displays welcome text', (tester) async {
+    testWidgets('displays learning path text', (tester) async {
       await tester.pumpWidget(
         buildTestableWidgetWithoutProvider(const HomeScreen()),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Welcome to Retentio'), findsOneWidget);
+      expect(find.text('Learning Path'), findsOneWidget);
     });
 
-    testWidgets('displays instruction text', (tester) async {
+    testWidgets('displays focus instruction text', (tester) async {
       await tester.pumpWidget(
         buildTestableWidgetWithoutProvider(const HomeScreen()),
       );
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Start learning by checking your decks in the Decks tab'),
+        find.text(
+          'Finish one review round first, then add new facts from your study notes.',
+        ),
         findsOneWidget,
       );
     });
 
-    testWidgets('displays waving hand icon', (tester) async {
+    testWidgets('displays daily goal icon', (tester) async {
       await tester.pumpWidget(
         buildTestableWidgetWithoutProvider(const HomeScreen()),
       );
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.waving_hand), findsOneWidget);
+      expect(find.byIcon(LucideIcons.flame), findsOneWidget);
     });
 
     testWidgets('has AppBar with Home title', (tester) async {
@@ -73,8 +76,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // The hardcoded English text should still appear
-      expect(find.text('Welcome to Retentio'), findsOneWidget);
+      expect(find.text('Learning Path'), findsOneWidget);
     });
   });
 }

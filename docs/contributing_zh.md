@@ -10,6 +10,7 @@
 
 - [PR 提交流程](#pr-提交流程)
 - [代码质量标准](#代码质量标准)
+- [迁移架构约定](#迁移架构约定)
 - [Pull Request 指南](#pull-request-指南)
 - [提交规范](#提交规范)
 - [PR 审核流程](#pr-审核流程)
@@ -54,6 +55,15 @@
 - 为复杂逻辑或非显而易见的决策添加注释
 - 添加新功能时更新 README 或相关文档
 - 为公共 API 添加 godoc/kdoc 注释
+
+## 迁移架构约定
+
+在架构迁移窗口期，以下规则为强制要求：
+
+1. **目标架构**：新模块应遵循 **BLoC + Clean Architecture**（Presentation/Domain/Data）。
+2. **桥接期**：迁移未完成前，Riverpod 仅作为存量模块的兼容桥接层使用。
+3. **目录约定**：依赖注入装配放在 `lib/core/di/`；认证迁移优先落在 `lib/features/auth/`；学习流程迁移优先落在 `lib/features/deck_study/`。
+4. **硬性边界**：Service 与 API Client 禁止直接更新 UI 状态容器（Riverpod provider、BLoC、Cubit、controller）。它们只返回数据/结果；由表现层状态管理器消费并驱动 UI 变更。
 
 ---
 

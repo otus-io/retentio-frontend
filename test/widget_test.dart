@@ -11,6 +11,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(HomeScreen), findsOneWidget);
-    expect(find.text('Welcome to Retentio'), findsOneWidget);
+    expect(find.text('Learning Path'), findsOneWidget);
   });
 }

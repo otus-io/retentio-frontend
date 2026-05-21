@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/providers/loading_state_provider.dart';
+import 'package:retentio/screen/decks/deck_text_styles.dart';
 import '../../../main.dart';
 import '../../../mixins/notifier_mixin.dart';
 import '../../../services/apis/deck_service.dart';
@@ -104,15 +105,19 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
 
   Future<void> createDeck(BuildContext context, List<String> fieldNames) async {
     final loc = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
     final name = nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             loc?.deckEditorNameRequired ?? 'Please enter a deck name',
-            style: const TextStyle(color: Colors.white),
+            style: DeckTextStyles.feedbackMessage(
+              Theme.of(context),
+              scheme.onError,
+            ),
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: scheme.error,
         ),
       );
       return;
@@ -140,9 +145,12 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
             SnackBar(
               content: Text(
                 res!.msg,
-                style: const TextStyle(color: Colors.white),
+                style: DeckTextStyles.feedbackMessage(
+                  Theme.of(context),
+                  scheme.onError,
+                ),
               ),
-              backgroundColor: Colors.red,
+              backgroundColor: scheme.error,
             ),
           );
         }
@@ -163,9 +171,12 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
             SnackBar(
               content: Text(
                 res!.msg,
-                style: const TextStyle(color: Colors.white),
+                style: DeckTextStyles.feedbackMessage(
+                  Theme.of(context),
+                  scheme.onError,
+                ),
               ),
-              backgroundColor: Colors.red,
+              backgroundColor: scheme.error,
             ),
           );
         }

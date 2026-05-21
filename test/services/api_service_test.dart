@@ -60,5 +60,31 @@ void main() {
       final h = ApiService.buildHeaders(null);
       expect(h['Authorization'], 'Bearer from-prefs');
     });
+
+    test('handle401Unauthorized clears token eventually', () async {
+      await ApiService.setToken('token-before-401');
+      expect(ApiService.authorization, 'token-before-401');
+
+      ApiService.handle401Unauthorized();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(ApiService.authorization, '');
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('token'), isNull);
+    });
+
+    test(
+      'handle401Unauthorized is idempotent when called repeatedly',
+      () async {
+        await ApiService.setToken('token-before-multi-401');
+
+        ApiService.handle401Unauthorized();
+        ApiService.handle401Unauthorized();
+        ApiService.handle401Unauthorized();
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        expect(ApiService.authorization, '');
+      },
+    );
   });
 }

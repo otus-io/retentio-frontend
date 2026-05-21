@@ -1,22 +1,20 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'user.g.dart';
+
+@JsonSerializable()
 class User {
+  const User({
+    @JsonKey(defaultValue: '') required this.email,
+    @JsonKey(defaultValue: '') required this.username,
+  });
+
   final String email;
   final String username;
 
-  User({required this.email, required this.username});
+  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
 
-  /// 从 JSON 创建 User 对象
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      email: json['email'] as String? ?? '',
-      username: json['username'] as String? ?? '',
-    );
-  }
-  factory User.empty() {
-    return User(email: '', username: '');
-  }
+  factory User.empty() => const User(email: '', username: '');
 
-  /// 转换为 JSON
-  Map<String, dynamic> toJson() {
-    return {'email': email, 'username': username};
-  }
+  Map<String, dynamic> toJson() => _$UserToJson(this);
 }

@@ -1,129 +1,61 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:retentio/core/di/app_service_locator.dart';
+import 'package:retentio/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:retentio/features/auth/presentation/bloc/auth_event.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/pre_config.dart';
 import 'package:retentio/providers/auth_provider.dart';
 import 'package:retentio/routers/app_pages.dart';
+import 'package:retentio/theme/app_theme.dart';
 
-import 'extensions/context_extension.dart';
 import 'providers/locale_provider.dart';
 import 'providers/theme_provider.dart';
-import 'screen/home/home_screen.dart';
 import 'screen/decks/deck_list_screen.dart';
+import 'screen/home/home_screen.dart';
 import 'screen/profile/profile_screen.dart';
+import 'widgets/app_navigation_bar.dart';
 
-// 全局导航键
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
-// 全局 ProviderContainer
-final providerContainer = ProviderContainer();
+final ThemeData _lightTheme = AppTheme.light();
+final ThemeData _darkTheme = AppTheme.dark();
 
 void main() async {
-  // 确保 Flutter 绑定初始化
   WidgetsFlutterBinding.ensureInitialized();
-
-  // 初始化预配置
   await PreConfig.init();
+  await registerCoreDependencies();
+  final authBloc = sl<AuthBloc>();
+  authBloc.add(const AuthRestoreSessionRequested());
+
   runApp(
-    UncontrolledProviderScope(
-      container: providerContainer,
-      child: ProviderScope(child: const MyApp()),
+    BlocProvider<AuthBloc>.value(
+      value: authBloc,
+      child: const ProviderScope(child: MyApp()),
     ),
   );
 }
 
-class MyApp extends ConsumerStatefulWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  ConsumerState<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends ConsumerState<MyApp> {
-  bool _isInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initialize();
-  }
-
-  Future<void> _initialize() async {
-    // 等待登录状态加载完成
-    await Future.delayed(const Duration(milliseconds: 100));
-    if (mounted) {
-      setState(() {
-        _isInitialized = true;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     final locale = ref.watch(localeProvider);
-    ref.watch(isLoginProvider);
-    ThemeMode flutterThemeMode;
-    switch (themeMode) {
-      case ThemeMode.light:
-        flutterThemeMode = ThemeMode.light;
-        break;
-      case ThemeMode.dark:
-        flutterThemeMode = ThemeMode.dark;
-        break;
-      case ThemeMode.system:
-        flutterThemeMode = ThemeMode.system;
-        break;
-    }
-
-    // 显示加载界面直到初始化完成
-    if (!_isInitialized) {
-      return MaterialApp(
-        home: Scaffold(body: Center(child: CircularProgressIndicator())),
-      );
-    }
+    // Initialize auth lifecycle side effects without subscribing this widget
+    // to login-state changes.
+    ref.read(isLoginProvider);
 
     return MaterialApp.router(
+      debugShowCheckedModeBanner: false,
       routerConfig: AppPages.routes,
-      // light theme
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.light,
-        ),
-        scaffoldBackgroundColor: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.light,
-        ).surface,
-        appBarTheme: AppBarTheme(
-          backgroundColor: ColorScheme.fromSeed(
-            seedColor: Colors.blue,
-            brightness: Brightness.light,
-          ).surface,
-          scrolledUnderElevation: 0,
-        ),
-      ),
-      // dark theme
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.dark,
-        ),
-        scaffoldBackgroundColor: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.dark,
-        ).surface,
-        appBarTheme: AppBarTheme(
-          backgroundColor: ColorScheme.fromSeed(
-            seedColor: Colors.blue,
-            brightness: Brightness.dark,
-          ).surface,
-          scrolledUnderElevation: 0,
-        ),
-      ),
-      themeMode: flutterThemeMode,
+      theme: _lightTheme,
+      darkTheme: _darkTheme,
+      themeAnimationDuration: Duration.zero,
+      themeAnimationCurve: Curves.linear,
+      themeMode: themeMode,
       locale: locale,
       supportedLocales: const [Locale('en'), Locale('zh')],
       localizationsDelegates: const [
@@ -144,39 +76,22 @@ class MainTabScreen extends StatefulWidget {
 }
 
 class _MainTabScreenState extends State<MainTabScreen> {
-  int _currentIndex = 0;
-
-  final List<Widget> _pages = [
-    const DeckListScreen(),
-    const HomeScreen(),
-    const ProfileScreen(),
+  static const List<Widget> _pages = <Widget>[
+    DeckListScreen(),
+    HomeScreen(),
+    ProfileScreen(),
   ];
+
+  int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(LucideIcons.library),
-            label: context.loc.decks,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(LucideIcons.scanEye),
-            label: context.loc.review,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(LucideIcons.user),
-            label: context.loc.profile,
-          ),
-        ],
-
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+      body: IndexedStack(index: _currentIndex, children: _pages),
+      bottomNavigationBar: AppNavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) {
+          setState(() => _currentIndex = index);
         },
       ),
     );
