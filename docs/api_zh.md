@@ -91,20 +91,20 @@
 | `/auth/forgot-password`                       | POST   | 请求密码重置令牌                                                                                                                                     |
 | `/auth/reset-password`                        | POST   | 使用令牌重置密码                                                                                                                                     |
 | `/api/profile`                                | GET    | 获取当前用户资料                                                                                                                                     |
-| `/api/decks`                                  | POST   | 创建卡组                                                                                                                                             |
+| `/api/decks`                                  | POST   | 创建卡组。请求体：`name`、`fields`、`rate`，及可选 **`tags`**（标签**名称**；不存在则自动创建）。                                                    |
 | `/api/decks`                                  | GET    | 获取所有卡组                                                                                                                                         |
 | `/api/decks/{id}`                             | GET    | 获取卡组详情                                                                                                                                         |
 | `/api/decks/{id}`                             | PATCH  | 更新卡组                                                                                                                                             |
 | `/api/decks/{id}`                             | DELETE | 删除卡组                                                                                                                                             |
-| `/api/decks/{id}/facts/{operation}`           | POST   | 添加词条：operation 为 append/prepend/shuffle/spread。请求体：facts（必填）及可选 template。为已有词条添加一张卡请使用 POST `/api/decks/{id}/card`。 |
+| `/api/decks/{id}/facts/{operation}`           | POST   | 添加词条：operation 为 append/prepend/shuffle/spread。请求体：facts（必填）、可选 template，以及每项词条可选 **`tags`**（标签**名称**；不存在则自动创建）。列名在卡组上维护（`PATCH /api/decks/{id}` → `fields`），不在每条词条上。为已有词条添加一张卡请使用 POST `/api/decks/{id}/card`。 |
 | `/api/decks/{id}/facts`                       | GET    | 获取词条（分页）：默认 `limit` **50**、`offset` **0**；`limit` 最大 **200**。`meta` 含 `count`、`has_more`、`limit`、`offset`、`total`。 |
 | `/api/decks/{id}/facts/{factId}`              | GET    | 获取单个词条                                                                                                                                         |
 | `/api/decks/{id}/facts/{factId}`              | PATCH  | 更新词条                                                                                                                                             |
 | `/api/decks/{id}/facts/{factId}`              | DELETE | 删除词条                                                                                                                                             |
-| `/api/decks/{id}/card`                        | GET    | 获取最紧急卡片                                                                                                                                       |
+| `/api/decks/{id}/card`                        | GET    | 获取最紧急卡片。可选查询：`tag_id`，仅在当前卡组中从带该标签的词条对应卡片里选取下一张。                                                           |
 | `/api/decks/{id}/card`                        | POST   | 为已有词条添加一张卡（如反向卡）。请求体：fact_id、template，可选 operation。                                                                        |
 | `/api/decks/{id}/card`                        | PATCH  | 更新卡片间隔或可见性（按 card_id）                                                                                                                   |
-| `/api/decks/{id}/cards`                       | GET    | 获取卡片统计                                                                                                                                         |
+| `/api/decks/{id}/cards`                       | GET    | 获取卡片统计。可选查询：`tag_id`，按当前卡组中该标签对应词条过滤卡片。                                                                             |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE | 删除单张卡片（词条及其他卡片不变）                                                                                                                   |
 | `/api/decks/{id}/reschedule`                  | POST   | 假期模式：按天数平移卡片复习计划                                                                                                                     |
 | `/api/tags`                                   | POST   | 创建标签（`name`、可选 `description`）。成功时 **201**。                                                                                             |
@@ -266,9 +266,24 @@
 {
   "fields": ["English", "Japanese"],
   "name": "English Japanese IELTS Deck",
-  "rate": 20
+  "rate": 20,
+  "tags": ["IELTS", "vocabulary"]
 }
 ```
+
+#### 可选标签（创建时）
+
+请求可带可选 **`tags`**：标签**名称**（字符串）数组，不是标签 ID。不需要标签时可省略或传 `[]`。
+
+| 行为 | 说明 |
+|------|------|
+| **校验** | 与 [`POST /api/tags`](#创建标签) 名称规则相同。非法名称 → **400**。 |
+| **复用** | 按规范化名称匹配当前用户已有标签并复用。 |
+| **创建** | 不存在的名称自动创建；计入**每用户 100 个标签**上限。 |
+| **去重** | 同一次请求内重复名称（如 `"Noun"` 与 `" noun "`）合并为一条关联。 |
+| **上限** | 解析后同一卡组最多 **20** 个不同标签 → **400** `maximum tags per deck reached`。 |
+| **存储** | 标签不写入卡组 JSON；创建后用 [`GET /api/decks/{id}/tags`](#列出卡组上的标签) 查看。 |
+| **创建响应** | 仅返回 `deck_id`，不含标签对象。 |
 
 > **理解 `rate`（速率）：**
 >
@@ -423,6 +438,10 @@
 
 > 除 `name` 外，所有字段都是可选的。如果提供了 `fields`，数量必须与现有字段数匹配。`rate` 必须在 1 到 1000 之间。
 
+当请求体中的 **`rate`** 与卡组当前 **`rate`** **不同** 时，服务器对**未学习**卡片（`due_date - last_review == 1`）做**仅调整间隔（gap）**的重排：按加载顺序，**第一张**未学习卡的时间戳不变；之后每张未学习卡的 `due_date` 相对前一张按 **`86400 / 新 rate`** 秒递增（与新增卡片时的间隔定义一致）。**已学习**卡片时间戳不变。卡组 JSON 与相关卡片键在同一 Redis 事务中写入。若未传 `rate` 或 `rate` 未变化，则不重写卡片时间戳。
+
+设计说明见 [rate-change-update.md](../design-doc/rate-change-update.md)。
+
 **响应:**
 
 ```json
@@ -498,14 +517,29 @@
 - `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 - `operation`: `append`
 
-**请求体：** 词条数组（每项含 `entries`）及可选的 `template`。每条 **entry** 为对象，含可选字段 `text`、`audio`、`image`、`video`（至少填一项）。服务端为每个词条生成唯一 ID，并根据 `template` 为每个词条创建一张或多张卡片（见下方 **模板：默认与兄弟卡**）。
+**请求体：** 对象，含必填 **`facts`** 数组与可选 **`template`**。每条词条项含必填 **`entries`** 与可选 **`tags`**。每条 **entry** 为对象，含可选 `text`、`audio`、`image`、`video`、`json`（整条词条至少有一项有内容）。**不在每条词条上传 `fields`** — 列名使用 **`GET /api/decks/{id}`**（或 `PATCH` 卡组）中的 `fields`，与学习时下一张卡各 entry 的 `field` 标签对应。服务端为每个词条生成唯一 ID，并根据 `template` 创建一张或多张卡片（见下方 **模板：默认与兄弟卡**）。
+
+#### 可选标签（按词条）
+
+**`facts`** 中每一项可带 **`tags`**：标签**名称**（字符串）数组，不是标签 ID。该字段**可选** — 不需要标签时可省略或传 `[]`。
+
+| 行为 | 说明 |
+|------|------|
+| **作用范围** | 按**本条词条**生效（同一批中 A 可有标签、B 可无）。 |
+| **校验** | 与 [`POST /api/tags`](#创建标签) 名称规则相同（字母、数字、空格、`-`、`'`；最长 50 字符）。非法名称 → **400**。 |
+| **复用** | 名称经规范化后若已存在于当前用户，则复用该标签。 |
+| **创建** | 不存在的名称会为当前用户自动创建并关联到新词条；计入**每用户 100 个标签**上限。 |
+| **去重** | **同一条**词条内重复名称（如 `"Noun"` 与 `" noun "`）合并为一条关联。 |
+| **存储** | 标签**不**写入 Redis 中 `fact:{id}` 的 JSON；关联单独存储，仅在 GET 时返回。 |
+| **添加响应** | `POST …/facts/{operation}` 仅返回 `fact_length`，**不**返回标签对象。创建成功后请用 [`GET /api/decks/{id}/facts`](#获取所有词条) 或 [获取单个词条](#获取单个词条) 查看 `tags`。 |
+| **更新** | [`PATCH /api/decks/{id}/facts/{factId}`](#更新词条) **不接受** `tags`；请用 [词条标签 `PUT`/`DELETE`](#将标签关联到词条) 或在添加时传入 `tags`。 |
 
 ```json
 {
   "facts": [
-    { "entries": [{ "text": "Apple" }, { "text": "りんご" }] },
+    { "entries": [{ "text": "Apple" }, { "text": "りんご" }], "tags": ["food", "noun"] },
     { "entries": [{ "text": "Book" }, { "text": "本" }] },
-    { "entries": [{ "text": "Water" }, { "text": "水" }] },
+    { "entries": [{ "text": "Water" }, { "text": "水" }], "tags": ["noun"] },
     { "entries": [{ "text": "School" }, { "text": "学校" }] }
   ]
 }
@@ -523,18 +557,11 @@
     { "video": "vid789" },
     { "text": "I go to school every day.", "audio": "ex1aud" },
     { "text": "School starts at nine.", "audio": "ex2aud" }
-  ],
-  "fields": [
-    "Word",
-    "Translation",
-    "Pronunciation",
-    "Picture",
-    "Clip",
-    "Example 1",
-    "Example 2"
   ]
 }
 ```
+
+将上述对象放入完整请求的 `"facts": [ … ]` 中。请通过 **`PATCH /api/decks/{id}`** 确保卡组 `fields` 有 **七个** 与上述七个 entry 顺序一致的列名，以便学习时标签正确。
 
 #### 模板：默认与兄弟卡
 
@@ -577,8 +604,8 @@
 
 > **理解请求体：**
 >
-> - **`entries`**：entry 对象数组。每个 entry 含可选 `text`、`audio`、`image`、`video`（至少一项）。第 `i` 个 entry 对应第 `i` 列，可用 `fields[i]` 作为标签。在同一 entry 中同时写文本与音频（如 `{ "text": "I go to school.", "audio": "ex1id" }`）可明确该音频对应该句。
-> - **`fields`**（可选）：该词条各列的显示名称；第 `i` 个条目对应 `fields[i]`。省略则使用卡组默认 `fields`。若提供，长度须与 `entries` 一致。
+> - **`entries`**：entry 对象数组。每个 entry 含可选 `text`、`audio`、`image`、`video`、`json`（整条词条至少有一项有内容）。第 `i` 个 entry 与卡组 **`fields[i]`** 对应（见 **获取下一张最紧急卡片**）。在同一 entry 中同时写文本与音频（如 `{ "text": "I go to school.", "audio": "ex1id" }`）可明确该音频对应该句。
+> - **`tags`**（可选，按词条）：标签**名称**字符串数组。无标签时可省略。详见上文 [可选标签（按词条）](#可选标签按词条)。
 > - **`template`**（可选）：省略或为空时，每个词条生成**一张卡**，默认布局 `[[0], [1, 2, ...]]`。若提供，须为**三维**数组：二维模板的列表。**每个**词条会按该列表中的每个二维模板各生成一张卡（兄弟卡）。每个二维模板须对当前所有词条有效（条目数一致）；索引须在范围内、互不重复且覆盖全部条目。
 
 **响应:**
@@ -593,6 +620,8 @@
   }
 }
 ```
+
+添加词条的响应**不会**返回新建的词条 ID 或标签关联。若需要每条词条的 `id` 与 `tags`，请在创建成功后调用 **GET** 词条列表或单个词条接口。
 
 ### 获取所有词条
 
@@ -715,7 +744,7 @@ Authorization: Bearer <token>
 
 ## 4. 标签
 
-标签按**用户**隔离：先用 `POST /api/tags` 创建，再通过 **`PUT`**（无 JSON 请求体）挂到**卡组**和/或**词条**上。同一标签可关联多个卡组、多个词条。键空间与命名规则见 **[标签系统设计文档](../design-doc/tagging-system.md)**。
+标签按**用户**隔离：先用 `POST /api/tags` 创建，再通过 **`PUT`**（无 JSON 请求体）挂到**卡组**和/或**词条**上。也可在 [创建卡组](#创建卡组) 或 [添加词条](#添加词条) 时传入可选 **`tags`**（名称字符串）；服务端会创建缺失的标签并在同一请求中完成关联。同一标签可关联多个卡组、多个词条。键空间与命名规则见 **[标签系统设计文档](../design-doc/tagging-system.md)**。
 
 **限制：** 每用户最多 **100** 个不同标签；单个卡组最多关联 **20** 个标签。标签**名称**允许 Unicode 字母与数字、空格、连字符 `-`、撇号 `'`；首尾空白会去掉，连续空白合并为一个。唯一性按**规范化**结果校验（去首尾空白 → 合并空白 → 小写）。**`tag_id`** 为 8 位小写字母数字。
 
@@ -962,6 +991,14 @@ Authorization: Bearer <token>
 ### 获取下一张最紧急卡片
 
 **接口:** `GET /api/decks/{id}/card`
+
+**查询参数（可选）：**
+
+| 参数     | 说明 |
+|----------|------|
+| `tag_id` | 标签 ID。提供后，仅在当前卡组中、其 `fact_id` 对应到该标签词条的卡片范围内进行“下一张”选择。 |
+
+示例：`GET /api/decks/{id}/card?tag_id=Kt8QmNz2`
 
 **参数:**
 
@@ -1299,18 +1336,43 @@ Authorization: Bearer <token>
 
 **接口：** `GET /api/decks/{id}/cards`
 
+**查询参数（可选）：**
+
+| 参数     | 说明 |
+|----------|------|
+| `tag_id` | 标签 ID。提供后，仅统计当前卡组中、其 `fact_id` 对应到该标签词条的卡片。 |
+
+示例：`GET /api/decks/{id}/cards?tag_id=Kt8QmNz2`
+
 **响应示例：**
 
 ```json
 {
   "data": {
     "total_cards": 20,
-    "hidden_count": 3,
-    "hidden_facts": [
+    "hidden_cards_count": 3,
+    "due_cards": 7,
+    "unseen_cards": 5,
+    "hidden_cards_list": [
       {
-        "id": "h1d2e3n4",
-        "entries": ["Hidden word", "隠れた語"],
-        "fields": ["English", "Japanese"]
+        "id": "cd1ef2gh",
+        "fact_id": "h1d2e3n4",
+        "template": [[0], [1]],
+        "last_review": 1710000000,
+        "due_date": 1710500000,
+        "hidden": true,
+        "created_at": 1709000000
+      }
+    ],
+    "cards": [
+      {
+        "id": "cd1ef2gh",
+        "fact_id": "h1d2e3n4",
+        "template": [[0], [1]],
+        "last_review": 1710000000,
+        "due_date": 1710500000,
+        "hidden": true,
+        "created_at": 1709000000
       }
     ],
     "orphaned_hidden_cards": 0

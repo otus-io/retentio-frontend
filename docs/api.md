@@ -91,20 +91,20 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/auth/forgot-password`                       | POST   | Request password reset token                                                                                                                                                                    |
 | `/auth/reset-password`                        | POST   | Reset password with token                                                                                                                                                                       |
 | `/api/profile`                                | GET    | Get current user profile                                                                                                                                                                        |
-| `/api/decks`                                  | POST   | Create deck                                                                                                                                                                                     |
+| `/api/decks`                                  | POST   | Create deck. Body: `name`, `fields`, `rate`, and optional **`tags`** (tag **names**; auto-created if missing).                                                                                  |
 | `/api/decks`                                  | GET    | List all decks                                                                                                                                                                                  |
 | `/api/decks/{id}`                             | GET    | Get deck details                                                                                                                                                                                |
 | `/api/decks/{id}`                             | PATCH  | Update deck                                                                                                                                                                                     |
 | `/api/decks/{id}`                             | DELETE | Delete deck                                                                                                                                                                                     |
-| `/api/decks/{id}/facts/{operation}`           | POST   | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`). Body: `facts` (required) and optional `template`. To add a card for an existing fact, use POST `/api/decks/{id}/card` instead. |
+| `/api/decks/{id}/facts/{operation}`           | POST   | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`). Body: `facts` (required), optional `template`, and optional **`tags`** per fact item (tag **names**; auto-created if missing). Column labels live on the deck (`PATCH /api/decks/{id}` → `fields`), not on each fact. To add a card for an existing fact, use POST `/api/decks/{id}/card` instead. |
 | `/api/decks/{id}/facts`                       | GET    | List facts (paged): default `limit` **50**, `offset` **0**; max `limit` **200**. `meta`: `count`, `has_more`, `limit`, `offset`, `total`. |
 | `/api/decks/{id}/facts/{factId}`              | GET    | Get a specific fact                                                                                                                                                                             |
-| `/api/decks/{id}/facts/{factId}`              | PATCH  | Update a fact                                                                                                                                                                                   |
+| `/api/decks/{id}/facts/{factId}`              | PATCH  | Update a fact’s `entries` only (column names are edited on the deck).                                                                                                                                                          |
 | `/api/decks/{id}/facts/{factId}`              | DELETE | Delete a fact                                                                                                                                                                                   |
-| `/api/decks/{id}/card`                        | GET    | Get most urgent card                                                                                                                                                                            |
+| `/api/decks/{id}/card`                        | GET    | Get most urgent card. Optional query: `tag_id` to restrict selection to cards whose facts have this tag in this deck.                                                                        |
 | `/api/decks/{id}/card`                        | POST   | Add one card from an existing fact (e.g. reversed). Body: `fact_id`, `template`, optional `operation`.                                                                                          |
 | `/api/decks/{id}/card`                        | PATCH  | Update card interval or visibility (by card_id)                                                                                                                                                 |
-| `/api/decks/{id}/cards`                       | GET    | Get card stats (total, hidden count, hidden facts)                                                                                                                                              |
+| `/api/decks/{id}/cards`                       | GET    | Get card stats (total, hidden count, hidden facts). Optional query: `tag_id` to filter cards by fact tag in this deck.                                                                        |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE | Delete a single card (fact and other cards unchanged)                                                                                                                                           |
 | `/api/decks/{id}/reschedule`                  | POST   | Reschedule deck cards (shift due dates by N days)                                                                                                                                               |
 | `/api/tags`                                   | POST   | Create a tag (`name`, optional `description`). **201** on success.                                                                                                                              |
@@ -256,9 +256,24 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 {
   "fields": ["English", "Japanese"],
   "name": "English Japanese IELTS Deck",
-  "rate": 20
+  "rate": 20,
+  "tags": ["IELTS", "vocabulary"]
 }
 ```
+
+#### Optional tags (on create)
+
+The request may include optional **`tags`**: an array of tag **names** (strings), not tag IDs. Omit the field or use `[]` for an untagged deck.
+
+| Behavior | Detail |
+|----------|--------|
+| **Validation** | Same name rules as [`POST /api/tags`](#create-a-tag). Invalid names → **400**. |
+| **Reuse** | Existing user tags (by normalized name) are reused. |
+| **Create** | Missing names are auto-created; counts toward **100 tags per user**. |
+| **Dedup** | Duplicate names in the same request (e.g. `"Noun"` and `" noun "`) collapse to one association. |
+| **Limit** | At most **20** distinct tags on the deck after resolution → **400** `maximum tags per deck reached`. |
+| **Storage** | Tags are not stored in deck JSON; use [`GET /api/decks/{id}/tags`](#list-tags-on-a-deck) after create. |
+| **Create response** | Returns only `deck_id` — not tag objects. |
 
 > **Understanding `rate`:**
 >
@@ -284,6 +299,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 ```
 
 > 📝 Save the `deck_id` - you'll need it for the next steps.
+> **`fields`:** You can send an empty array when creating a deck before uploading facts in batches; set column names later with **`PATCH /api/decks/{id}`**. Otherwise use one or more strings (same order as fact `entries` indices when studying).
 > **Why no template on deck?** Templates are not stored on the deck. When you add facts, you can pass an optional `template` (see [Add Facts](#add-facts)). By default you get **one card per fact** (front = first entry, back = rest). To get **sibling cards** (multiple cards from the same fact), send a 3D template—see below.
 
 ---
@@ -304,7 +320,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
     "id": "a1b2c3d4e5f6",
     "name": "English Japanese IELTS Deck",
     "owner": "swagger",
-    "field": ["English", "Japanese"],
+    "fields": ["English", "Japanese"],
     "rate": 20,
     "stats": {
       "cards_count": 0,
@@ -339,7 +355,7 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
         "id": "a1b2c3d4e5f6",
         "name": "English Japanese IELTS Deck",
         "owner": "swagger",
-        "field": ["English", "Japanese"],
+        "fields": ["English", "Japanese"],
         "rate": 20,
         "stats": {
           "cards_count": 0,
@@ -412,9 +428,13 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 }
 ```
 
-> All fields are optional except `name`. If `fields` is provided,
-> the count must match the existing number of fields.
-> `rate` must be between 1 and 1000.
+> All keys except `name` are optional. **`name`** is required on every request.
+> If **`fields`** is sent as a **non-empty** array, it **replaces** the deck’s column-name list (any length ≥ 1). Omit `fields` or send an empty array to leave column names unchanged.
+> **`rate`** must be between 1 and 1000 when provided.
+
+When **`rate`** is present and **differs** from the stored deck rate, the server applies a **gap-only restagger** to **unseen** cards (`DueDate - LastReview == 1`): unseen rows are ordered by **introduction queue** (`DueDate` ascending, then `card_id`); the **first** in that order (earliest due) keeps its timestamps; each following unseen gets `DueDate` spaced by **`86400 / new_rate`** seconds from the previous unseen’s `DueDate` (same gap definition as new-card introduction). **Seen** cards are unchanged. Deck JSON and card keys are updated in **one** Redis transaction. If `rate` is omitted or unchanged, card timestamps are not rewritten.
+
+See [rate-change-update.md](../design-doc/rate-change-update.md) for the full design.
 
 **Response:**
 
@@ -491,20 +511,35 @@ Shifts due dates and last_review of all cards in the deck by N days (1–365). O
 - `id`: `a1b2c3d4e5f6` (your deck ID)
 - `operation`: `append`
 
-**Request Body:** An array of fact items (each with `entries`) and optional `template`. Each **entry** is an object with optional `text`, `audio`, `image`, `video` (at least one required). The server generates a unique fact ID for each fact and creates one or more **cards** per fact depending on `template` (see **Template: default and sibling cards** below).
+**Request Body:** An object with a required **`facts`** array and optional **`template`**. Each fact item has required **`entries`** and optional **`tags`**. Each **entry** is an object with optional `text`, `audio`, `image`, `video`, `json` (at least one content field required across the fact). **`fields` are not sent per fact** — use **`GET /api/decks/{id}`** (or PATCH the deck) for the deck’s `fields` list; that list supplies labels when studying (e.g. next-card `field` on each entry). The server generates a unique fact ID for each fact and creates one or more **cards** per fact depending on `template` (see **Template: default and sibling cards** below).
+
+#### Optional tags (per fact)
+
+Each element of **`facts`** may include **`tags`**: an array of tag **names** (strings), not tag IDs. The field is **optional** — omit it or use `[]` for facts that should have no tags.
+
+| Behavior | Detail |
+|----------|--------|
+| **Scope** | Tags apply **per fact** in the batch (fact A can have tags while fact B has none). |
+| **Validation** | Same name rules as [`POST /api/tags`](#create-a-tag) (letters, numbers, spaces, `-`, `'`; max 50 characters). Invalid names → **400**. |
+| **Reuse** | If a name already exists for your user (after normalization), that tag is reused. |
+| **Create** | Missing names are auto-created for your user, then linked to the new fact. Counts toward the **100 tags per user** limit. |
+| **Dedup** | Duplicate names on the **same** fact (e.g. `"Noun"` and `" noun "`) are collapsed to one association. |
+| **Storage** | Tags are **not** embedded in the fact JSON in Redis; associations are stored separately and returned on GET. |
+| **Add response** | `POST …/facts/{operation}` returns only `fact_length` — **not** tag objects. Use [`GET /api/decks/{id}/facts`](#get-all-facts) or [Get one fact](#get-one-fact) to read tags after create. |
+| **Update** | [`PATCH /api/decks/{id}/facts/{factId}`](#update-a-fact) does **not** accept `tags`; add or remove tags with the [fact tag `PUT`/`DELETE`](#associate-a-tag-with-a-fact) routes or tag at create time. |
 
 ```json
 {
   "facts": [
-    { "entries": [{ "text": "Apple" }, { "text": "りんご" }] },
+    { "entries": [{ "text": "Apple" }, { "text": "りんご" }], "tags": ["food", "noun"] },
     { "entries": [{ "text": "Book" }, { "text": "本" }] },
-    { "entries": [{ "text": "Water" }, { "text": "水" }] },
+    { "entries": [{ "text": "Water" }, { "text": "水" }], "tags": ["noun"] },
     { "entries": [{ "text": "School" }, { "text": "学校" }] }
   ]
 }
 ```
 
-Example with media and multiple example sentences (each with its own audio):
+Example with media and multiple example sentences (each with its own audio). Put this object inside `"facts": [ … ]` in the full request. Ensure the deck’s `fields` (via **`PATCH /api/decks/{id}`**) has **seven** names in the same order as these seven entries so labels match when you study.
 
 ```json
 {
@@ -516,15 +551,6 @@ Example with media and multiple example sentences (each with its own audio):
     { "video": "vid789" },
     { "text": "I go to school every day.", "audio": "ex1aud" },
     { "text": "School starts at nine.", "audio": "ex2aud" }
-  ],
-  "fields": [
-    "Word",
-    "Translation",
-    "Pronunciation",
-    "Picture",
-    "Clip",
-    "Example 1",
-    "Example 2"
   ]
 }
 ```
@@ -570,8 +596,8 @@ Each fact gets one card with front=0/back=1 and one with front=1/back=0. To add 
 
 > **Understanding the request:**
 >
-> - **`entries`**: Array of entry objects. Each entry has optional `text`, `audio`, `image`, `video` (at least one required). Entry `i` corresponds to deck column `i`; use `fields[i]` as its label. Putting text and audio in the same entry (e.g. `{ "text": "I go to school.", "audio": "ex1id" }`) keeps that audio clearly associated with that sentence.
-> - **`fields`** (optional): Column names for this fact; entry `i` is shown under `fields[i]`. If omitted, use the deck's default `fields`. When provided, length must equal `len(entries)`.
+> - **`entries`**: Array of entry objects. Each entry has optional `text`, `audio`, `image`, `video`, `json` (at least one entry in the fact must have content). Entry index `i` lines up with **`deck.fields[i]`** for display labels when studying (see **Get Next Urgent Card**). Putting text and audio in the same entry (e.g. `{ "text": "I go to school.", "audio": "ex1id" }`) keeps that audio clearly associated with that sentence.
+> - **`tags`** (optional, per fact): Array of tag **name** strings. Omit for untagged facts. See [Optional tags (per fact)](#optional-tags-per-fact) above.
 > - **`template`** (optional): When empty or omitted, each fact gets **one card** with default `[[0], [1, 2, ...]]`. When provided, it must be a **3D** array: a list of 2D templates. **Every** fact gets one card per 2D template in that list (sibling cards). Each 2D template must be valid for every fact (same number of entries); indices must be in range, disjoint, and cover all entries.
 
 **Response:**
@@ -586,6 +612,8 @@ Each fact gets one card with front=0/back=1 and one with front=1/back=0. To add 
   }
 }
 ```
+
+The add-facts response does **not** echo created fact IDs or tag assignments. After a successful create, call **GET** facts (or GET one fact) if you need `id` and `tags` on each fact.
 
 ### Get all facts
 
@@ -614,7 +642,6 @@ Authorization: Bearer <token>
       {
         "id": "x9k2m4np",
         "entries": [{ "text": "Apple" }, { "text": "りんご" }],
-        "fields": ["English", "Japanese"],
         "tags": [
           { "id": "a1b2c3d4", "name": "food", "description": "" },
           { "id": "f6e5d4c3", "name": "noun", "description": "Parts of speech" }
@@ -638,7 +665,7 @@ Authorization: Bearer <token>
 }
 ```
 
-Each fact always includes **`tags`**: an array of `{ "id", "name", "description" }` objects (empty array when none). A fact can have **many** tags; the list is sorted by **tag name** in list/detail responses. Tags are not stored inside the fact record in Redis; the API resolves them from per-user association keys.
+Each fact always includes **`tags`**: an array of `{ "id", "name", "description" }` objects (empty array when none). A fact can have **many** tags; the list is sorted by **tag name** in list/detail responses. Tags are not stored inside the fact record in Redis; the API resolves them from per-user association keys. **Column labels are not returned on each fact** — use the deck’s **`fields`** from **`GET /api/decks/{id}`** (same order as `entries` indices).
 
 ### Get one fact
 
@@ -652,7 +679,6 @@ Each fact always includes **`tags`**: an array of `{ "id", "name", "description"
     "fact": {
       "id": "x9k2m4np",
       "entries": [{ "text": "Apple" }, { "text": "りんご" }],
-      "fields": ["English", "Japanese"],
       "tags": [
         { "id": "a1b2c3d4", "name": "food", "description": "" },
         { "id": "f6e5d4c3", "name": "noun", "description": "Parts of speech" }
@@ -669,12 +695,11 @@ Each fact always includes **`tags`**: an array of `{ "id", "name", "description"
 
 **Parameters:** `id` (deck ID), `factId` (fact ID from GET facts or add-facts).
 
-**Request Body:** Optional `entries` (array of entry objects with optional `text`, `audio`, `image`, `video`) and `fields`. If `entries` is provided it replaces the fact's entries; if `fields` is provided its length must equal `len(entries)`.
+**Request Body:** Optional **`entries`** only — array of entry objects with optional `text`, `audio`, `image`, `video`, `json`. When provided, it replaces the fact’s entries. To rename or reorder **column labels**, use **`PATCH /api/decks/{id}`** with a new `fields` array (not this endpoint).
 
 ```json
 {
-  "entries": [{ "text": "Apple" }, { "text": "りんご" }],
-  "fields": ["English", "Japanese"]
+  "entries": [{ "text": "Apple" }, { "text": "りんご" }]
 }
 ```
 
@@ -708,7 +733,7 @@ Permanently deletes the fact and all cards derived from it.
 
 ## 4. Tags
 
-Tags are **per user**: you create them with `POST /api/tags`, then attach them to **decks** and/or **facts** with `PUT` routes (no JSON body on those `PUT`s). Same tag can label many decks and many facts. For key layout and naming rules, see **[Tagging system design doc](../design-doc/tagging-system.md)**.
+Tags are **per user**: you create them with `POST /api/tags`, then attach them to **decks** and/or **facts** with `PUT` routes (no JSON body on those `PUT`s). You can also pass optional **`tags`** (name strings) when [creating a deck](#create-a-deck) or on each fact when [adding facts](#add-facts); the server creates missing tags and links them in the same request. Same tag can label many decks and many facts. For key layout and naming rules, see **[Tagging system design doc](../design-doc/tagging-system.md)**.
 
 **Limits:** up to **100** distinct tags per user; up to **20** tags associated with a single deck. Tag **names** allow Unicode letters and numbers, spaces, hyphen (`-`), and apostrophe (`'`); leading/trailing space is trimmed and internal runs of spaces collapse to one. Uniqueness is enforced on a **normalized** form (trim → collapse spaces → lowercase). **`tag_id`** is 8 lowercase alphanumeric characters.
 
@@ -956,13 +981,21 @@ By default there is **one card per fact**. To add a second card for a fact (e.g.
 
 **Endpoint:** `GET /api/decks/{id}/card`
 
+**Query (optional):**
+
+| Query    | Description |
+|----------|-------------|
+| `tag_id` | Tag ID. When provided, next-card selection only considers cards whose `fact_id` belongs to facts tagged with this tag in the same deck. |
+
+Example: `GET /api/decks/{id}/card?tag_id=Kt8QmNz2`
+
 **Parameters:**
 
 - `id`: `a1b2c3d4e5f6` (your deck ID)
 
-**Response shape:** `front` and `back` are arrays of **entry objects** in **template order** (one object per fact entry index on that side). Each object matches a fact **entry**: optional **`field`** (label) and optional **`text`**, **`audio`**, **`image`**, **`video`** string keys (omitted when empty). Text and its pronunciation clip are explicit siblings on the same object (e.g. `"text": "Hello"` and `"audio": "https://…/api/media/…"`). For media keys, values are **full media URLs** when the server can determine a base URL. Use each URL with the same `Authorization: Bearer <token>` to download the file.
+**Response shape:** `front` and `back` are arrays of **entry objects** in **template order** (one object per fact entry index on that side). Each object matches a fact **entry**: optional **`field`** (label) and optional **`text`**, **`audio`**, **`image`**, **`video`**, **`json`** string keys (omitted when empty). When present, **`field`** comes from the deck’s **`fields`** list (`fields[i]` for entry index `i`); if the deck has fewer names than entries, some objects may omit `field`. Text and its pronunciation clip are explicit siblings on the same object (e.g. `"text": "Hello"` and `"audio": "https://…/api/media/…"`). For media keys, values are **full media URLs** when the server can determine a base URL. Use each URL with the same `Authorization: Bearer <token>` to download the file.
 
-Each JSON example below has a matching integration test in [`api/tests/integration/card_test.go`](../../api/tests/integration/card_test.go): `TestGetNextCard` (with field names) and `TestNextCardUrgencySelection` (no field names, text+audio+image, multi-front, front-only, split template `[[0,1],[2,3]]`, and full URL host).
+Each JSON example below has a matching integration test in [`api/tests/integration/card_test.go`](../../api/tests/integration/card_test.go): `TestGetNextCard` (with field names from the deck) and `TestNextCardUrgencySelection` (no field names when deck labels are missing/short, text+audio+image, multi-front, front-only, split template `[[0,1],[2,3]]`, and full URL host).
 
 **Response (no field names):**
 
@@ -1295,18 +1328,43 @@ Permanently remove a single card from a deck. The fact and any other cards for t
 
 **Endpoint:** `GET /api/decks/{id}/cards`
 
+**Query (optional):**
+
+| Query    | Description |
+|----------|-------------|
+| `tag_id` | Tag ID. When provided, only cards whose `fact_id` belongs to facts tagged with this tag **in the same deck** are included in all counts/lists. |
+
+Example: `GET /api/decks/{id}/cards?tag_id=Kt8QmNz2`
+
 **Response:**
 
 ```json
 {
   "data": {
     "total_cards": 20,
-    "hidden_count": 3,
-    "hidden_facts": [
+    "hidden_cards_count": 3,
+    "due_cards": 7,
+    "unseen_cards": 5,
+    "hidden_cards_list": [
       {
-        "id": "h1d2e3n4",
-        "entries": ["Hidden word", "隠れた語"],
-        "fields": ["English", "Japanese"]
+        "id": "cd1ef2gh",
+        "fact_id": "h1d2e3n4",
+        "template": [[0], [1]],
+        "last_review": 1710000000,
+        "due_date": 1710500000,
+        "hidden": true,
+        "created_at": 1709000000
+      }
+    ],
+    "cards": [
+      {
+        "id": "cd1ef2gh",
+        "fact_id": "h1d2e3n4",
+        "template": [[0], [1]],
+        "last_review": 1710000000,
+        "due_date": 1710500000,
+        "hidden": true,
+        "created_at": 1709000000
       }
     ],
     "orphaned_hidden_cards": 0
@@ -1319,7 +1377,7 @@ Permanently remove a single card from a deck. The fact and any other cards for t
 
 ## 6. Media (Audio / Images)
 
-You can attach audio, images, and video to facts. Fact fields reference media by ID using markers `[audio:id]`, `[image:id]`, and `[video:id]`.
+You can attach audio, images, and video to facts. Each **entry** object uses string values for media IDs on keys `audio`, `image`, `video`, and `json` (not bracket markers in JSON).
 
 **Size limits:** Images max **5 MB**; audio and video max **200 MB** each. Env overrides: `MEDIA_MAX_SIZE_IMAGE`, `MEDIA_MAX_SIZE_VIDEO`, `MEDIA_MAX_SIZE_AUDIO`.
 
@@ -1439,15 +1497,15 @@ For full design (upload, delete, display, sync), see **[Media Upload design doc]
 | `/api/decks/{id}`                             | GET         | `{ "data": { deck + stats }, "meta": { "msg" } }`                                                                                                          |
 | `/api/decks/{id}`                             | PATCH       | `{ "data": { "deck_id" }, "meta": { "msg", "updated_at" } }`                                                                                               |
 | `/api/decks/{id}`                             | DELETE      | `{ "data": { "deck_id" }, "meta": { "msg" } }`                                                                                                             |
-| `/api/decks/{id}/facts/{op}`                  | POST        | Add facts: `{ "data": { "fact_length" }, "meta": { "msg" } }`                                                                                              |
+| `/api/decks/{id}/facts/{op}`                  | POST        | Add facts: body `facts[]` with optional `tags` (names) per item; `{ "data": { "fact_length" }, "meta": { "msg" } }` (no tags in response)                  |
 | `/api/decks/{id}/card`                        | POST        | Add card from existing fact: `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                |
 | `/api/decks/{id}/facts`                       | GET         | `{ "data": { "facts": [ … ] }, "meta": { "msg", "count", "has_more", "limit", "offset", "total" } }` — defaults `limit` 50, `offset` 0 |
 | `/api/decks/{id}/facts/{factId}`              | GET         | `{ "data": { "fact": { …, "tags": [ … ] } }, "meta": { "msg" } }`                                                                                          |
 | `/api/decks/{id}/facts/{factId}`              | PATCH       | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks/{id}/facts/{factId}`              | DELETE      | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                             |
-| `/api/decks/{id}/card`                        | GET         | `{ "data": { "card": { id, fact_id, template, …, front[], back[] }, "urgency" }, "meta": { "msg", … } }`                                                   |
+| `/api/decks/{id}/card`                        | GET         | Optional query `tag_id`. Response shape unchanged: `{ "data": { "card": { id, fact_id, template, …, front[], back[] }, "urgency" }, "meta": { "msg", … } }` |
 | `/api/decks/{id}/card`                        | PATCH       | Interval: `{ "data": { "last_review", "due_date", "new_interval" }, "meta": { "msg" } }`; visibility: `{ "data": { "hidden_status" }, "meta": { "msg" } }` |
-| `/api/decks/{id}/cards`                       | GET         | `{ "data": { "total_cards", "hidden_count", "hidden_facts", "orphaned_hidden_cards" }, "meta": { "msg" } }`                                                |
+| `/api/decks/{id}/cards`                       | GET         | Optional query `tag_id`. Response shape unchanged: `{ "data": { "total_cards", "hidden_count", "hidden_facts", "orphaned_hidden_cards" }, "meta": { "msg" } }` |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE      | `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks/{id}/reschedule`                  | POST        | `{ "data": { "cards_shifted", "days", "max_days_away" }, "meta": { "msg" } }`                                                                              |
 | `/api/tags`                                   | POST        | `{ "data": { "tag": { id, name, description } }, "meta": { "msg" } }` — **201**                                                                            |
