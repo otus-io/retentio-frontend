@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/models/fact.dart';
 import 'package:retentio/screen/deck/fact_add_composer/fact_edit_logic.dart';
 import 'package:retentio/screen/deck/fact_add_composer/row_model.dart';
 import 'package:retentio/services/apis/media_service.dart';
@@ -138,6 +139,88 @@ void main() {
       final model = FactEditRowModel(row: row);
       expect(factEditRowHasAnyContent(model), isFalse);
       row.dispose();
+    });
+  });
+
+  group('factEditRowCount', () {
+    test('uses deck field count when deck defines columns', () {
+      expect(
+        factEditRowCount(deckFields: ['A', 'B', 'C'], factEntryCount: 2),
+        3,
+      );
+    });
+
+    test('keeps extra fact entries when fact has more than deck fields', () {
+      expect(factEditRowCount(deckFields: ['A', 'B'], factEntryCount: 5), 5);
+    });
+
+    test('falls back to fact entry count when deck fields are empty', () {
+      expect(factEditRowCount(deckFields: [], factEntryCount: 4), 4);
+    });
+  });
+
+  group('buildFactEditRowsFromFact', () {
+    test('pads rows for deck columns missing on the fact', () {
+      final fact = Fact(
+        id: 'f1',
+        entries: [
+          const FactEntry(text: 'one'),
+          const FactEntry(text: 'two'),
+        ],
+        fields: const [],
+      );
+      final rows = buildFactEditRowsFromFact(
+        fact: fact,
+        deckFields: ['Front', 'Back', 'Extra'],
+      );
+
+      expect(rows, hasLength(3));
+      expect(rows[0].row.fieldName.text, 'Front');
+      expect(rows[0].row.content.text, 'one');
+      expect(rows[2].row.fieldName.text, 'Extra');
+      expect(rows[2].row.content.text, isEmpty);
+      for (final r in rows) {
+        r.row.dispose();
+      }
+    });
+  });
+
+  group('factEditInitialFieldName', () {
+    test('prefers deck field names over fact.fields', () {
+      expect(
+        factEditInitialFieldName(
+          index: 0,
+          deckFields: ['Front', 'Back'],
+          factFields: ['LegacyA', 'LegacyB'],
+        ),
+        'Front',
+      );
+      expect(
+        factEditInitialFieldName(
+          index: 1,
+          deckFields: ['Front', 'Back'],
+          factFields: ['LegacyA', 'LegacyB'],
+        ),
+        'Back',
+      );
+    });
+
+    test('falls back to fact.fields when deck has no name at index', () {
+      expect(
+        factEditInitialFieldName(
+          index: 1,
+          deckFields: ['Front'],
+          factFields: ['', 'Extra'],
+        ),
+        'Extra',
+      );
+    });
+
+    test('returns null when no name is available', () {
+      expect(
+        factEditInitialFieldName(index: 0, deckFields: [], factFields: []),
+        isNull,
+      );
     });
   });
 

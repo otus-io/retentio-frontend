@@ -94,8 +94,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
       await tester.pumpAndSettle();
 
-      expect(find.text('FieldA'), findsOneWidget);
-      expect(find.text('FieldB'), findsOneWidget);
+      expect(find.text('Front'), findsOneWidget);
+      expect(find.text('Back'), findsOneWidget);
       expect(find.text('Alpha'), findsOneWidget);
       expect(find.text('Beta'), findsOneWidget);
 

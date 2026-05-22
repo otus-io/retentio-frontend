@@ -1,4 +1,5 @@
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/models/fact.dart';
 import 'package:retentio/services/apis/media_service.dart';
 import 'package:retentio/screen/deck/fact_add_composer/row_model.dart';
 
@@ -68,6 +69,70 @@ bool factEditRowHasAttachment(FactEditRowModel row) {
 bool factEditRowHasAnyContent(FactEditRowModel row) {
   return row.row.content.text.trim().isNotEmpty ||
       factEditRowHasAttachment(row);
+}
+
+/// How many entry rows to show when editing — matches [AddFactRowModel.listForDeckFields].
+///
+/// Uses every deck column; keeps extra fact entries when the fact has more slots
+/// than the deck currently defines.
+int factEditRowCount({
+  required List<String> deckFields,
+  required int factEntryCount,
+}) {
+  if (deckFields.isNotEmpty) {
+    return factEntryCount > deckFields.length
+        ? factEntryCount
+        : deckFields.length;
+  }
+  return factEntryCount > 0 ? factEntryCount : 2;
+}
+
+/// Builds edit rows for all deck columns, prefilled from [fact] entries by index.
+List<FactEditRowModel> buildFactEditRowsFromFact({
+  required Fact fact,
+  required List<String> deckFields,
+}) {
+  final rowCount = factEditRowCount(
+    deckFields: deckFields,
+    factEntryCount: fact.entries.length,
+  );
+  return List.generate(rowCount, (i) {
+    final entry = i < fact.entries.length ? fact.entries[i] : const FactEntry();
+    final row = AddFactRowModel(
+      initialFieldName: factEditInitialFieldName(
+        index: i,
+        deckFields: deckFields,
+        factFields: fact.fields,
+      ),
+    );
+    row.content.text = entry.text;
+    final model = FactEditRowModel(
+      row: row,
+      existingImageId: entry.image.trim().isEmpty ? null : entry.image.trim(),
+      existingVideoId: entry.video.trim().isEmpty ? null : entry.video.trim(),
+      existingAudioId: entry.audio.trim().isEmpty ? null : entry.audio.trim(),
+    )..seedRowAttachmentPathsFromExisting();
+    return model;
+  });
+}
+
+/// Label for entry row [index] when opening edit fact.
+///
+/// Column names live on the deck ([Deck.fields]); GET fact returns entries only.
+String? factEditInitialFieldName({
+  required int index,
+  required List<String> deckFields,
+  List<String> factFields = const [],
+}) {
+  if (index < deckFields.length) {
+    final fromDeck = deckFields[index].trim();
+    if (fromDeck.isNotEmpty) return fromDeck;
+  }
+  if (index < factFields.length) {
+    final fromFact = factFields[index].trim();
+    if (fromFact.isNotEmpty) return fromFact;
+  }
+  return null;
 }
 
 List<String> factEditResolveFields({

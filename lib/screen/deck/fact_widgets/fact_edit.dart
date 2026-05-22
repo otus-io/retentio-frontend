@@ -9,10 +9,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/deck/fact_add_composer/entry_row.dart';
 import 'package:retentio/screen/deck/fact_add_composer/fact_edit_logic.dart';
-import 'package:retentio/screen/deck/fact_add_composer/focus.dart';
 import 'package:retentio/screen/deck/fact_add_composer/media_handling_coordinator.dart';
 import 'package:retentio/screen/deck/providers/card_audio_mic_handoff.dart';
-import 'package:retentio/screen/deck/fact_add_composer/row_model.dart';
 import 'package:retentio/screen/deck/fact_add_composer/toolbars.dart';
 import 'package:record/record.dart';
 import 'package:retentio/services/apis/media_service.dart';
@@ -20,10 +18,9 @@ import 'package:retentio/widgets/app_button.dart';
 
 import '../../../models/deck.dart';
 import '../../../models/fact.dart';
-import '../../../providers/loading_state_provider.dart';
 import '../../../services/apis/card_service.dart';
+import '../../../services/apis/deck_service.dart';
 import '../../../utils/media_client_id.dart';
-import '../../decks/widgets/deck_loading_state.dart';
 
 const _kEditOutlineAlpha = 0.62;
 const _kEditCardPadding = EdgeInsets.fromLTRB(14, 12, 14, 8);
@@ -54,8 +51,10 @@ class FactEdit extends StatefulHookConsumerWidget {
 class _FactEditState extends ConsumerState<FactEdit>
     with MediaHandlingCoordinator<FactEdit> {
   bool _loading = true;
+  bool _submitting = false;
   String? _error;
   Fact? _loaded;
+  Deck? _deckForFields;
   List<FactEditRowModel>? _rows;
 
   bool _recordingVoice = false;
@@ -98,7 +97,17 @@ class _FactEditState extends ConsumerState<FactEdit>
   }
 
   Future<void> _loadFact() async {
-    final fact = await CardService.getFact(widget.deck.id, widget.factId);
+    final factFuture = CardService.getFact(widget.deck.id, widget.factId);
+    final deckFuture = DeckService.of.getDeckDetail(widget.deck.id);
+
+    final fact = await factFuture;
+    Deck deckForFields = widget.deck;
+    try {
+      deckForFields = await deckFuture;
+    } catch (_) {
+      // Fall back to the deck snapshot passed into the sheet.
+    }
+
     if (!mounted) return;
     if (fact == null) {
       setState(() {
@@ -107,7 +116,7 @@ class _FactEditState extends ConsumerState<FactEdit>
       });
       return;
     }
-    if (fact.entries.isEmpty) {
+    if (fact.entries.isEmpty && deckForFields.fields.isEmpty) {
       setState(() {
         _loading = false;
         _error = 'Fact has no entries';
@@ -115,21 +124,14 @@ class _FactEditState extends ConsumerState<FactEdit>
       return;
     }
 
-    final rows = List<FactEditRowModel>.generate(fact.entries.length, (i) {
-      final entry = fact.entries[i];
-      final initialFieldName = i < fact.fields.length ? fact.fields[i] : null;
-      final row = AddFactRowModel(initialFieldName: initialFieldName);
-      row.content.text = entry.text;
-      return FactEditRowModel(
-        row: row,
-        existingImageId: entry.image.trim().isEmpty ? null : entry.image.trim(),
-        existingVideoId: entry.video.trim().isEmpty ? null : entry.video.trim(),
-        existingAudioId: entry.audio.trim().isEmpty ? null : entry.audio.trim(),
-      )..seedRowAttachmentPathsFromExisting();
-    });
+    final rows = buildFactEditRowsFromFact(
+      fact: fact,
+      deckFields: deckForFields.fields,
+    );
 
     setState(() {
       _loaded = fact;
+      _deckForFields = deckForFields;
       _rows = rows;
       _loading = false;
       _error = null;
@@ -175,40 +177,6 @@ class _FactEditState extends ConsumerState<FactEdit>
     });
   }
 
-  void _addRow() {
-    final rows = _rows;
-    if (rows == null) return;
-    setState(() {
-      rows.add(FactEditRowModel(row: AddFactRowModel()));
-    });
-  }
-
-  void _removeRowAt(int index) {
-    final rows = _rows;
-    if (rows == null || rows.length <= 1) return;
-    if (index < 0 || index >= rows.length) return;
-    final removed = rows[index];
-    setState(() {
-      rows.removeAt(index);
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      removed.row.dispose();
-    });
-  }
-
-  void _removeRowOnMinusPressed() {
-    final rows = _rows;
-    if (rows == null) return;
-    final idx = addFactIndexToRemoveOnMinus(
-      rowCount: rows.length,
-      focusContext: FocusManager.instance.primaryFocus?.context,
-      hostKeys: _hostKeys,
-    );
-    if (idx != null) {
-      _removeRowAt(idx);
-    }
-  }
-
   Future<String?> _resolveMediaIdForSubmit(
     FactEditRowModel row,
     MediaSlotKind kind,
@@ -239,6 +207,7 @@ class _FactEditState extends ConsumerState<FactEdit>
     final rows = _rows;
     final loc = AppLocalizations.of(context)!;
     if (loaded == null || rows == null) return;
+    if (_submitting || _recordingVoice) return;
 
     for (var i = 0; i < rows.length; i++) {
       if (!factEditRowHasAnyContent(rows[i])) {
@@ -247,7 +216,7 @@ class _FactEditState extends ConsumerState<FactEdit>
       }
     }
 
-    ref.read(loadingStateProvider.notifier).showLoading();
+    setState(() => _submitting = true);
     try {
       final entries = <FactEntry>[];
       for (final row in rows) {
@@ -293,7 +262,7 @@ class _FactEditState extends ConsumerState<FactEdit>
 
       final fields = factEditResolveFields(
         rows: rows,
-        deck: widget.deck,
+        deck: _deckForFields ?? widget.deck,
         fallbackForIndex: _fieldFallbackLabel,
       );
 
@@ -311,7 +280,7 @@ class _FactEditState extends ConsumerState<FactEdit>
       await widget.onSaved();
       if (mounted) context.pop();
     } finally {
-      ref.read(loadingStateProvider.notifier).showLoaded();
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -414,20 +383,14 @@ class _FactEditState extends ConsumerState<FactEdit>
               ),
               const SizedBox(height: _kEditRowsTopSpacing),
               ..._buildEntryRows(loc, theme, outline),
-              AddFactRowControls(
-                loc: loc,
-                theme: theme,
-                rowCount: rows.length,
-                onAddRow: _addRow,
-                onRemoveRow: _removeRowOnMinusPressed,
-              ),
               const SizedBox(height: _kEditSubmitTopSpacing),
               AppButton(
                 label: loc.addFactSubmit,
-                onPressed: _recordingVoice ? null : _onSave,
+                onPressed: _recordingVoice || _submitting ? null : _onSave,
                 variant: AppButtonVariant.primary,
                 fullWidth: true,
-                leading: DeckLoadingState(child: Icon(LucideIcons.save)),
+                isLoading: _submitting,
+                leading: const Icon(LucideIcons.save),
               ),
             ],
           ),

@@ -42,7 +42,6 @@ class FakeFactApiInterceptor extends Interceptor {
                   {'text': 'Alpha'},
                   {'text': 'Beta'},
                 ],
-                'fields': ['FieldA', 'FieldB'],
               },
             },
           },
