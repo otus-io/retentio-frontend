@@ -81,13 +81,20 @@ class _DeckListScreenState extends State<DeckListScreen> {
                     context: context,
                     title: loc.createDeck,
                     fullScreen: true,
-                    child: BlocProvider<DeckCreateCubit>(
-                      create: (_) => DeckCreateCubit(
-                        name: '',
-                        rate: kDeckEditorRateDefault,
-                        deckId: '',
-                        cardType: DeckCardType.add,
-                      ),
+                    child: MultiBlocProvider(
+                      providers: [
+                        BlocProvider<DeckListCubit>.value(
+                          value: _deckListCubit,
+                        ),
+                        BlocProvider<DeckCreateCubit>(
+                          create: (_) => DeckCreateCubit(
+                            name: '',
+                            rate: kDeckEditorRateDefault,
+                            deckId: '',
+                            cardType: DeckCardType.add,
+                          ),
+                        ),
+                      ],
                       child: const DeckCreate(),
                     ),
                   );

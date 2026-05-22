@@ -6,7 +6,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/deck/fact_add_composer/entry_row.dart';
-import 'package:retentio/screen/deck/fact_add_composer/focus.dart';
 import 'package:retentio/screen/deck/fact_add_composer/media_handling_coordinator.dart';
 import 'package:retentio/screen/deck/fact_add_composer/payload.dart';
 import 'package:retentio/screen/deck/fact_add_composer/row_model.dart';
@@ -26,7 +25,6 @@ const _kComposerCardBorderAlpha = 0.3;
 const _kComposerCardRadius = 16.0;
 const _kEntryRowBottomPadding = EdgeInsets.only(bottom: 10);
 const _kToolbarRowsSpacing = 6.0;
-const _kRowControlsSpacing = 2.0;
 const _kSubmitTopSpacing = 16.0;
 
 class FactAdd extends StatefulHookConsumerWidget {
@@ -126,33 +124,6 @@ class _FactAddState extends ConsumerState<FactAdd>
     setState(() {
       _rows[idx].clearAllAttachments();
     });
-  }
-
-  void _addRow() {
-    setState(() => _rows.add(AddFactRowModel()));
-  }
-
-  void _removeRowAt(int index) {
-    if (_rows.length <= 1) return;
-    if (index < 0 || index >= _rows.length) return;
-    final removed = _rows[index];
-    setState(() {
-      _rows.removeAt(index);
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      removed.dispose();
-    });
-  }
-
-  void _removeRowOnMinusPressed() {
-    final idx = addFactIndexToRemoveOnMinus(
-      rowCount: _rows.length,
-      focusContext: FocusManager.instance.primaryFocus?.context,
-      hostKeys: _hostKeys,
-    );
-    if (idx != null) {
-      _removeRowAt(idx);
-    }
   }
 
   void _resetForm() {
@@ -341,14 +312,6 @@ class _FactAddState extends ConsumerState<FactAdd>
               ),
               const SizedBox(height: _kToolbarRowsSpacing),
               ..._buildEntryRows(loc, theme, outline),
-              const SizedBox(height: _kRowControlsSpacing),
-              AddFactRowControls(
-                loc: loc,
-                theme: theme,
-                rowCount: _rows.length,
-                onAddRow: _addRow,
-                onRemoveRow: _removeRowOnMinusPressed,
-              ),
               const SizedBox(height: _kSubmitTopSpacing),
               AppButton(
                 label: loc.addFactSubmit,

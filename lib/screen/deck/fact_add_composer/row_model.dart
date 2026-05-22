@@ -10,11 +10,15 @@ class AddFactRowModel {
       hostKey = GlobalKey();
 
   /// One row per deck column when [deckFields] is non-empty; otherwise two rows
-  /// for legacy unnamed decks. Column titles come from the deck in the parent
-  /// ([FactAdd]); [fieldName] is only used where entry rows stay editable (e.g. edit fact).
+  /// for legacy unnamed decks. Prefills each row's [fieldName] from the deck.
   static List<AddFactRowModel> listForDeckFields(List<String> deckFields) {
-    final n = deckFields.isEmpty ? 2 : deckFields.length;
-    return List.generate(n, (_) => AddFactRowModel());
+    if (deckFields.isEmpty) {
+      return List.generate(2, (_) => AddFactRowModel());
+    }
+    return [
+      for (final field in deckFields)
+        AddFactRowModel(initialFieldName: field.trim()),
+    ];
   }
 
   final TextEditingController fieldName;

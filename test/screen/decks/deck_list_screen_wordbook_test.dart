@@ -6,6 +6,7 @@ import 'package:retentio/screen/decks/widgets/deck_create.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retentio/services/storage/hydrated_storage.dart';
 
+import '../../helpers/fake_deck_api_interceptor.dart';
 import '../../helpers/in_memory_hydrated_storage.dart';
 import '../../helpers/test_wrapper.dart';
 
@@ -54,6 +55,38 @@ void main() {
         matching: find.byType(Scaffold),
       );
       expect(scaffoldAncestor, findsNothing);
+    });
+
+    testWidgets('create save succeeds when DeckListCubit is in sheet tree', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      final interceptor = attachFakeDeckApiInterceptor();
+      addTearDown(() {
+        detachFakeDeckApiInterceptor(interceptor);
+        tearDownTestEnvironment();
+      });
+
+      await tester.pumpWidget(buildTestableWidget(const DeckListScreen()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(LucideIcons.plus));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DeckCreate), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).first, 'My new deck');
+      await tester.pump();
+
+      await tester.tap(find.text('Save'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(DeckCreate), findsNothing);
+      expect(find.text('My new deck'), findsOneWidget);
     });
   });
 }
