@@ -98,8 +98,8 @@ class _CommonNetImageState extends State<CommonNetImage> {
       initGestureConfigHandler: widget.initGestureConfigHandler,
       loadStateChanged: widget.loadStateChanged,
       imageBuilder: widget.imageBuilder,
-      errorWidget: (e, __) =>
-          widget.errorWidgetBuilder?.call(e, __) ??
+      errorWidget: (e, stackTrace) =>
+          widget.errorWidgetBuilder?.call(e, stackTrace) ??
           _buildDefaultErrorWidget(context, widget.height),
       placeholder: (c) =>
           widget.placeholder?.call(c) ??

@@ -206,11 +206,8 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
                   _draggingFieldIndex = index;
                 });
               },
-              onReorder: (oldIndex, newIndex) {
+              onReorderItem: (oldIndex, newIndex) {
                 setState(() {
-                  if (newIndex > oldIndex) {
-                    newIndex -= 1;
-                  }
                   final controller = _fieldControllers.removeAt(oldIndex);
                   final focusNode = _fieldFocusNodes.removeAt(oldIndex);
                   _fieldControllers.insert(newIndex, controller);
