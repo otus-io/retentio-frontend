@@ -97,16 +97,23 @@ class _FactEditState extends ConsumerState<FactEdit>
   }
 
   Future<void> _loadFact() async {
-    final factFuture = CardService.getFact(widget.deck.id, widget.factId);
-    final deckFuture = DeckService.of.getDeckDetail(widget.deck.id);
+    final deckFuture = DeckService.of
+        .getDeckDetail(widget.deck.id)
+        .catchError((_) => widget.deck);
 
-    final fact = await factFuture;
-    Deck deckForFields = widget.deck;
+    Fact? fact;
     try {
-      deckForFields = await deckFuture;
+      fact = await CardService.getFact(widget.deck.id, widget.factId);
     } catch (_) {
-      // Fall back to the deck snapshot passed into the sheet.
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'Could not load fact';
+      });
+      return;
     }
+
+    final deckForFields = await deckFuture;
 
     if (!mounted) return;
     if (fact == null) {

@@ -72,5 +72,5 @@ Extend `ApiService.post` with optional `Map<String, String>? pathParams` and pas
 ## Out of scope
 
 - Bulk facts or bulk media not tied to the single fact being composed.
-- Shared / admin media endpoints (WIP in API).
+- Shared media endpoints (WIP in API).
 - Full parity with an external media-upload design doc until reviewed alongside [api.md](api.md).
