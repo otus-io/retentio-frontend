@@ -74,15 +74,12 @@
 | `GET /api/media/{id}/meta` | 获取媒体元数据 | ❌ | ✅ |
 | `DELETE /api/media/{id}` | 删除媒体 | ❌ | ✅ |
 
-### 共享媒体（管理员）
+### 共享媒体
 
 | 接口 | 说明 | 前端 | 后端 |
 | --- | --- | --- | --- |
-| `POST /api/admin/media/shared` | 上传共享媒体（管理员） | ❌ | ✅ |
-| `GET /api/media/shared/{id}` | 下载共享媒体 | ❌ | ✅ |
-| `GET /api/media/shared?word=...&lang=...` | 按单词查询共享媒体 | ❌ | ✅ |
-| `DELETE /api/admin/media/shared/{id}` | 删除共享媒体（管理员） | ❌ | ✅ |
-| `POST /api/admin/decks/import` | 批量导入共享卡组（ZIP + manifest） | ❌ | ✅ |
+| `GET /api/media/shared/{id}` | 下载共享媒体 | ❌ | ❌ |
+| `GET /api/media/shared?word=...&lang=...` | 按单词查询共享媒体 | ❌ | ❌ |
 
 ### 分页支持
 

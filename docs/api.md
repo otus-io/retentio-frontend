@@ -58,7 +58,6 @@ This guide walks you through using the Retentio API via Swagger UI.
   - [Delete media](#delete-media)
   - [List or lookup shared media (work in progress)](#list-or-lookup-shared-media-work-in-progress)
   - [Download shared media (work in progress)](#download-shared-media-work-in-progress)
-  - [Admin shared media (work in progress)](#admin-shared-media-work-in-progress)
   - [Using media in facts (work in progress)](#using-media-in-facts)
 - [Response examples reference](#response-examples-reference)
 - [Next Steps](#next-steps)
@@ -126,9 +125,6 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/api/media/{id}/meta`                        | GET    | Get media metadata (no file body)                                                                                                                                                               |
 | `/api/media/{id}`                             | GET    | Download media file                                                                                                                                                                             |
 | `/api/media/{id}`                             | DELETE | Delete media                                                                                                                                                                                    |
-| `/api/admin/media/shared`                     | POST   | **(Admin)** Upload shared media                                                                                                                                                                 |
-| `/api/admin/media/shared/{id}`                | DELETE | **(Admin)** Delete shared media                                                                                                                                                                 |
-| `/api/admin/decks/import`                     | POST   | **(Admin)** Import shared deck (zip with manifest)                                                                                                                                              |
 
 ---
 
@@ -1470,10 +1466,6 @@ Returns the media file (binary) for user-owned media by ID. Requires `Authorizat
 
 **Endpoint:** `GET /api/media/shared/{id}` — download shared media file by ID.
 
-### Admin shared media (work in progress)
-
-**Endpoints:** `POST /api/admin/media/shared` (upload), `DELETE /api/admin/media/shared/{id}` (delete). Admin-only.
-
 ### Using media in facts
 
 Each entry is an object with optional `text`, `audio`, `image`, `video`. Use a dedicated entry for media (e.g. `{ "audio": "abc123" }`) or combine with text in one entry (e.g. `{ "text": "Example sentence.", "audio": "ex1id" }`) so the audio is clearly for that sentence. Use optional `template` for custom front/back layout per fact; omit for default (front = first entry, back = rest).
@@ -1525,9 +1517,6 @@ For full design (upload, delete, display, sync), see **[Media Upload design doc]
 | `/api/media/{id}/meta`                        | GET         | `{ "data": { id, owner, filename, mime, size, checksum, created_at }, "meta": { "msg" } }`                                                                 |
 | `/api/media/{id}`                             | GET         | Download media (binary)                                                                                                                                    |
 | `/api/media/{id}`                             | DELETE      | `{ "data": { "msg": "media deleted" } }`                                                                                                                   |
-| `/api/admin/media/shared`                     | POST        | **(Admin)** Upload shared media                                                                                                                            |
-| `/api/admin/media/shared/{id}`                | DELETE      | **(Admin)** Delete shared media                                                                                                                            |
-| `/api/admin/decks/import`                     | POST        | **(Admin)** Import shared deck                                                                                                                             |
 
 Full JSON examples for each are in the sections above.
 

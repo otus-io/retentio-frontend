@@ -55,10 +55,23 @@ void main() {
       }
     });
 
-    test('listForDeckFields yields one row per deck column', () {
-      final rows = AddFactRowModel.listForDeckFields(['Term', 'Definition']);
-      expect(rows, hasLength(2));
-      expect(rows.every((r) => r.fieldName.text.isEmpty), isTrue);
+    test(
+      'listForDeckFields yields one row per deck column with names prefilled',
+      () {
+        final rows = AddFactRowModel.listForDeckFields(['Term', 'Definition']);
+        expect(rows, hasLength(2));
+        expect(rows[0].fieldName.text, 'Term');
+        expect(rows[1].fieldName.text, 'Definition');
+        for (final r in rows) {
+          r.dispose();
+        }
+      },
+    );
+
+    test('listForDeckFields trims deck field labels', () {
+      final rows = AddFactRowModel.listForDeckFields(['  Front  ', 'Back']);
+      expect(rows[0].fieldName.text, 'Front');
+      expect(rows[1].fieldName.text, 'Back');
       for (final r in rows) {
         r.dispose();
       }

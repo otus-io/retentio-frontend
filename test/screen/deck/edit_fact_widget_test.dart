@@ -19,9 +19,10 @@ import '../../helpers/test_wrapper.dart';
 
 void main() {
   group('FactEdit', () {
-    testWidgets('loads fact and can save', (tester) async {
+    testWidgets('loads fact and saves edits', (tester) async {
       await setupTestEnvironment();
       final interceptor = attachFakeFactApiInterceptor();
+      var saved = false;
       final harness = FakeDeckStudyBlocHarness(
         deckId: sampleDeck().id,
         loadResults: [DeckStudyLoadResult(cardDetail: sampleCardDetail())],
@@ -45,7 +46,9 @@ void main() {
               body: FactEdit(
                 deck: sampleDeck(),
                 factId: 'fact-test-1',
-                onSaved: () async {},
+                onSaved: () async {
+                  saved = true;
+                },
               ),
             ),
           ),
@@ -91,16 +94,26 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
       await tester.pumpAndSettle();
 
-      expect(find.text('FieldA'), findsOneWidget);
-      expect(find.text('FieldB'), findsOneWidget);
+      expect(find.text('Front'), findsOneWidget);
+      expect(find.text('Back'), findsOneWidget);
       expect(find.text('Alpha'), findsOneWidget);
       expect(find.text('Beta'), findsOneWidget);
+
+      final alphaField = find.byWidgetPredicate(
+        (w) => w is TextField && w.controller?.text == 'Alpha',
+      );
+      expect(alphaField, findsOneWidget);
+      await tester.enterText(alphaField, 'Alpha updated');
+      await tester.pump();
 
       final saveButton = find.byType(AppButton);
       expect(saveButton, findsOneWidget);
       await tester.tap(saveButton);
-      await tester.pump(const Duration(milliseconds: 200));
-      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(interceptor.patchFactCount, 1);
+      expect(saved, isTrue);
     });
   });
 }

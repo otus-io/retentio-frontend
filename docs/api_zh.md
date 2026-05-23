@@ -59,7 +59,6 @@
   - [删除媒体](#删除媒体)
   - [列出或查询共享媒体（开发中）](#列出或查询共享媒体开发中)
   - [下载共享媒体（开发中）](#下载共享媒体开发中)
-  - [管理端共享媒体（开发中）](#管理端共享媒体开发中)
   - [在词条中使用媒体（开发中）](#在词条中使用媒体开发中)
 - [响应示例速查](#响应示例速查)
 - [后续步骤](#后续步骤)
@@ -126,11 +125,6 @@
 | `/api/media/{id}/meta`                        | GET    | 获取媒体元数据（不含文件体）                                                                                                                         |
 | `/api/media/{id}`                             | GET    | 下载媒体文件                                                                                                                                         |
 | `/api/media/{id}`                             | DELETE | 删除媒体                                                                                                                                             |
-| `/api/admin/media/shared`                     | POST   | **（管理端）** 上传共享媒体                                                                                                                          |
-| `/api/admin/media/shared/{id}`                | DELETE | **（管理端）** 删除共享媒体                                                                                                                          |
-| `/api/admin/decks/import`                     | POST   | **（管理端）** 导入共享卡组（zip + manifest）                                                                                                        |
-
-> **说明：** 管理端媒体相关接口为**开发中**，行为可能变更。
 
 ---
 
@@ -1477,10 +1471,6 @@ Authorization: Bearer <token>
 ### 下载共享媒体（开发中）
 
 **接口：** `GET /api/media/shared/{id}` — 按 ID 下载共享媒体文件。
-
-### 管理端共享媒体（开发中）
-
-**接口：** `POST /api/admin/media/shared`（上传）、`DELETE /api/admin/media/shared/{id}`（删除）。仅管理端。
 
 ### 在词条中使用媒体（开发中）
 

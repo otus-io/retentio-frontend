@@ -101,7 +101,7 @@ class ApiService {
       'Content-Type': 'application/json',
       if (_token != null) 'Authorization': 'Bearer $_token',
     };
-    return {...defaultHeaders, if (headers != null) ...headers};
+    return {...defaultHeaders, ...?headers};
   }
 
   /// 处理 401 未授权，清理本地登录态。

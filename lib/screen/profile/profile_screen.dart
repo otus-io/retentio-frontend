@@ -41,61 +41,67 @@ class ProfileScreen extends HookConsumerWidget {
               children: [
                 const ProfileUserHeader(),
                 const SizedBox(height: _kHeaderToCardSpacing),
-                Container(
-                  margin: const EdgeInsets.symmetric(
+                Padding(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: _kCardHorizontalMargin,
                   ),
-                  decoration: BoxDecoration(
-                    borderRadius: AppThemeTokens.borderRadiusXl,
+                  child: Material(
                     color: scheme.surfaceContainerHighest,
-                    border: Border.all(
-                      color: scheme.outline,
-                      width: AppThemeTokens.borderWidthHairline,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppThemeTokens.borderRadiusXl,
+                      side: BorderSide(
+                        color: scheme.outline,
+                        width: AppThemeTokens.borderWidthHairline,
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    children: [
-                      _ProfileTileWidget(
-                        icon: LucideIcons.globe,
-                        title: loc.changeLanguage,
-                        subtitle: profileLanguageDisplayName(currentLocale),
-                        onTap: () => showProfileLanguageDialog(
-                          context,
-                          ref,
-                          currentLocale,
-                          loc,
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      children: [
+                        _ProfileTileWidget(
+                          icon: LucideIcons.globe,
+                          title: loc.changeLanguage,
+                          subtitle: profileLanguageDisplayName(currentLocale),
+                          onTap: () => showProfileLanguageDialog(
+                            context,
+                            ref,
+                            currentLocale,
+                            loc,
+                          ),
                         ),
-                      ),
-                      Divider(
-                        height: dividerTheme.space ?? 1,
-                        indent: _kDividerHorizontalInset,
-                        endIndent: _kDividerHorizontalInset,
-                      ),
-                      _ProfileTileWidget(
-                        icon: LucideIcons.palette,
-                        title: loc.changeTheme,
-                        subtitle: profileThemeDisplayName(currentTheme, loc),
-                        onTap: () => showProfileThemeDialog(
-                          context,
-                          ref,
-                          currentTheme,
-                          loc,
+                        Divider(
+                          height: dividerTheme.space ?? 1,
+                          indent: _kDividerHorizontalInset,
+                          endIndent: _kDividerHorizontalInset,
                         ),
-                      ),
-                      Divider(
-                        height: dividerTheme.space ?? 1,
-                        indent: _kDividerHorizontalInset,
-                        endIndent: _kDividerHorizontalInset,
-                      ),
-                      _ProfileTileWidget(
-                        icon: LucideIcons.logOut,
-                        title: loc.logout,
-                        titleColor: scheme.error,
-                        iconColor: scheme.error,
-                        onTap: () =>
-                            showProfileLogoutDialog(context, profileCubit, loc),
-                      ),
-                    ],
+                        _ProfileTileWidget(
+                          icon: LucideIcons.palette,
+                          title: loc.changeTheme,
+                          subtitle: profileThemeDisplayName(currentTheme, loc),
+                          onTap: () => showProfileThemeDialog(
+                            context,
+                            ref,
+                            currentTheme,
+                            loc,
+                          ),
+                        ),
+                        Divider(
+                          height: dividerTheme.space ?? 1,
+                          indent: _kDividerHorizontalInset,
+                          endIndent: _kDividerHorizontalInset,
+                        ),
+                        _ProfileTileWidget(
+                          icon: LucideIcons.logOut,
+                          title: loc.logout,
+                          titleColor: scheme.error,
+                          iconColor: scheme.error,
+                          onTap: () => showProfileLogoutDialog(
+                            context,
+                            profileCubit,
+                            loc,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
