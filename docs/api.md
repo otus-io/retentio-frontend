@@ -24,6 +24,12 @@ This guide walks you through using the Retentio API via Swagger UI.
   - [Update a Deck](#update-a-deck)
   - [Delete a Deck](#delete-a-deck)
   - [Reschedule deck](#reschedule-deck)
+  - [Deck sharing (overview)](#deck-sharing-overview)
+  - [Publish a deck](#publish-a-deck)
+  - [Import a published deck](#import-a-published-deck)
+  - [Get import updates (diff)](#get-import-updates-diff)
+  - [Sync an imported deck](#sync-an-imported-deck)
+  - [Sharing: extended deck & fact behavior](#sharing-extended-deck--fact-behavior)
 - [3. Facts](#3-facts)
   - [Add Facts](#add-facts)
   - [Get all facts](#get-all-facts)
@@ -90,16 +96,20 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/auth/forgot-password`                       | POST   | Request password reset token                                                                                                                                                                    |
 | `/auth/reset-password`                        | POST   | Reset password with token                                                                                                                                                                       |
 | `/api/profile`                                | GET    | Get current user profile                                                                                                                                                                        |
-| `/api/decks`                                  | POST   | Create deck. Body: `name`, `fields`, `rate`, and optional **`tags`** (tag **names**; auto-created if missing).                                                                                  |
+| `/api/decks`                                  | POST   | Create deck. Body: `name`, **`fields`** (≥1 column name, required), **`rate`** (required, 1–1000), optional **`tags`**.                                                                         |
 | `/api/decks`                                  | GET    | List all decks                                                                                                                                                                                  |
-| `/api/decks/{id}`                             | GET    | Get deck details                                                                                                                                                                                |
-| `/api/decks/{id}`                             | PATCH  | Update deck                                                                                                                                                                                     |
-| `/api/decks/{id}`                             | DELETE | Delete deck                                                                                                                                                                                     |
-| `/api/decks/{id}/facts/{operation}`           | POST   | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`). Body: `facts` (required), optional `template`, and optional **`tags`** per fact item (tag **names**; auto-created if missing). Column labels live on the deck (`PATCH /api/decks/{id}` → `fields`), not on each fact. To add a card for an existing fact, use POST `/api/decks/{id}/card` instead. |
+| `/api/decks/{id}`                             | GET    | Get deck details. Source decks include `visibility`, `published_version`. Import decks include `source_deck_id`, `source_version`, `imported_at`.              |
+| `/api/decks/{id}`                             | PATCH  | Update deck. Source: optional `visibility` before first publish. Import: **`rate` only** (not `name`, `fields`, or `visibility`).                                                              |
+| `/api/decks/{id}`                             | DELETE | Delete deck. **409** if source deck has `published_version > 0`. Import decks revoke media grants on delete.                                                                                    |
+| `/api/decks/import`                           | POST   | **(Sharing)** Create an import study copy from a published public source deck. Body: `source_deck_id`. **201**.                                                  |
+| `/api/decks/{id}/publish`                     | POST   | **(Sharing)** Author: snapshot working copy into next `published_version`. First publish requires `visibility: "public"`. **200**.                             |
+| `/api/decks/{id}/updates`                     | GET    | **(Sharing)** Importer: diff between pinned `source_version` and source’s latest publish. Import deck only.                                                       |
+| `/api/decks/{id}/sync`                        | POST   | **(Sharing)** Importer: accept a newer snapshot (optional `target_version`). Import deck only. **200**.                                                         |
+| `/api/decks/{id}/facts/{operation}`           | POST   | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`). Body: `facts` (required), optional `template`, and optional **`tags`** per fact item (tag **names**; auto-created if missing). Column labels live on the deck (`PATCH /api/decks/{id}` → `fields`), not on each fact. To add a card for an existing fact, use POST `/api/decks/{id}/card` instead. **403** on imported decks. |
 | `/api/decks/{id}/facts`                       | GET    | List facts (paged): default `limit` **50**, `offset` **0**; max `limit` **200**. `meta`: `count`, `has_more`, `limit`, `offset`, `total`. |
 | `/api/decks/{id}/facts/{factId}`              | GET    | Get a specific fact                                                                                                                                                                             |
-| `/api/decks/{id}/facts/{factId}`              | PATCH  | Update a fact’s `entries` only (column names are edited on the deck).                                                                                                                                                          |
-| `/api/decks/{id}/facts/{factId}`              | DELETE | Delete a fact                                                                                                                                                                                   |
+| `/api/decks/{id}/facts/{factId}`              | PATCH  | Update a fact’s `entries` only (column names are edited on the deck). **403** on imported decks.                                                                                                                               |
+| `/api/decks/{id}/facts/{factId}`              | DELETE | Delete a fact. **403** on imported decks.                                                                                                                                                       |
 | `/api/decks/{id}/card`                        | GET    | Get most urgent card. Optional query: `tag_id` to restrict selection to cards whose facts have this tag in this deck.                                                                        |
 | `/api/decks/{id}/card`                        | POST   | Add one card from an existing fact (e.g. reversed). Body: `fact_id`, `template`, optional `operation`.                                                                                          |
 | `/api/decks/{id}/card`                        | PATCH  | Update card interval or visibility (by card_id)                                                                                                                                                 |
@@ -244,6 +254,37 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 
 ## 2. Decks
 
+### Deck, facts, and cards (relationship)
+
+A **deck** is the study container: metadata (`name`, `fields`, `rate`, owner) plus two membership lists — which **facts** belong to the deck and which **cards** you review. **Facts** hold the vocabulary content (`entries`: text and optional media ids). **Cards** are the schedulable review units: each card points at one fact via `fact_id` and stores a **template** (which entry indices are front vs back) plus spaced-repetition state (`due_date`, `last_review`, `hidden`).
+
+Column labels (`English`, `Japanese`, …) live on the **deck** only (`fields`). Facts do not store column names; entry index `0` is the first column, `1` the second, and so on.
+
+| Concept | Role | Typical API |
+|--------|------|-------------|
+| **Deck** | Container + column schema + daily `rate` | `POST/GET/PATCH/DELETE /api/decks/{id}` |
+| **Fact** | Immutable-ish content you learn (entries) | `POST …/facts/{operation}`, `GET/PATCH/DELETE …/facts/{factId}` |
+| **Card** | One reviewable direction/layout for a fact | Created with facts (default template) or `POST …/card`; reviewed via `GET/PATCH …/card` |
+
+#### Cardinality
+
+- One deck → many facts (set membership).
+- One deck → many cards (set membership).
+- One fact in a deck → **one or more** cards (default: one card; **sibling** cards = same fact, different `template`, e.g. reversed).
+- One card → exactly one `fact_id` (must stay in the deck’s fact set).
+
+#### Lifecycle (source deck)
+
+1. Create deck → empty fact/card sets.
+2. Add facts → new `fact:{id}` rows + new card(s) per fact + `SADD` into deck sets.
+3. Study → `GET …/card` picks the most urgent card in the deck; response joins card + fact + template.
+4. Delete fact → removes that fact and **all** cards in the deck that reference it.
+5. Delete card → removes only that card; fact and other cards for the same fact remain.
+
+**Imported decks ([sharing](#deck-sharing-overview)):** fact **bodies** are read-only (pinned snapshot); deck metadata is mostly snapshot-driven — importers may **`PATCH` only `rate`** on the import deck. The importer still owns a **separate card set** with full card `PATCH` / hide / delete behavior. Tags on import decks are importer-scoped labels — see [§4 Tags](#4-tags).
+
+---
+
 ### Create a Deck
 
 **Endpoint:** `POST /api/decks`
@@ -295,7 +336,9 @@ The request may include optional **`tags`**: an array of tag **names** (strings)
 ```
 
 > 📝 Save the `deck_id` - you'll need it for the next steps.
-> **`fields`:** You can send an empty array when creating a deck before uploading facts in batches; set column names later with **`PATCH /api/decks/{id}`**. Otherwise use one or more strings (same order as fact `entries` indices when studying).
+> **`fields`:** Required — at least one column name (same order as `entries` indices when studying). Empty array → **400** `fields must contain at least one column name`.
+> **`rate`:** Required — integer 1–1000. Omitted → **400**.
+> To rename columns on a **source** deck later, **`PATCH /api/decks/{id}`** with a non-empty `fields` array that **replaces** the list.
 > **Why no template on deck?** Templates are not stored on the deck. When you add facts, you can pass an optional `template` (see [Add Facts](#add-facts)). By default you get **one card per fact** (front = first entry, back = rest). To get **sibling cards** (multiple cards from the same fact), send a 3D template—see below.
 
 ---
@@ -329,13 +372,30 @@ The request may include optional **`tags`**: an array of tag **names** (strings)
       "last_reviewed_at": 0
     },
     "created_at": "2026-02-08T12:00:00Z",
-    "updated_at": "2026-02-08T12:00:00Z"
+    "updated_at": "2026-02-08T12:00:00Z",
+    "visibility": "public",
+    "published_version": 2
   },
   "meta": {
     "msg": "Deck retrieved successfully"
   }
 }
 ```
+
+**Source deck (author)** — optional fields when you own the canonical deck:
+
+| Field | Description |
+| ----- | ----------- |
+| `visibility` | `private` (default) or `public`. Who may import once published. |
+| `published_version` | Latest published snapshot version. `0` = never published. |
+
+**Import deck (subscriber)** — optional fields when `source_deck_id` is set:
+
+| Field | Description |
+| ----- | ----------- |
+| `source_deck_id` | Author’s source deck ID (12 characters). |
+| `source_version` | Pinned snapshot version for fact/media reads. |
+| `imported_at` | ISO 8601 timestamp when the import was created. |
 
 ### List All Decks
 
@@ -405,6 +465,8 @@ The request may include optional **`tags`**: an array of tag **names** (strings)
 > By default you get **one card per fact** (see [Template: default and sibling cards](#template-default-and-sibling-cards)). To add another card for a fact (e.g. reversed), use `POST /api/decks/{id}/card` with body `{"fact_id": "<factId>", "template": [[1], [0]]}`. The backend returns 400 if that template already exists for the fact.
 >
 > To calculate a progress percentage on the client side: `reviewed_cards / cards_count * 100`.
+>
+> List entries use the same optional sharing fields as [Get a Single Deck](#get-a-single-deck) (`visibility` / `published_version` on source decks; `source_deck_id` / `source_version` / `imported_at` on imports).
 
 ### Update a Deck
 
@@ -420,13 +482,17 @@ The request may include optional **`tags`**: an array of tag **names** (strings)
 {
   "name": "Updated Deck Name",
   "fields": ["English", "Japanese"],
-  "rate": 30
+  "rate": 30,
+  "visibility": "public"
 }
 ```
 
-> All keys except `name` are optional. **`name`** is required on every request.
-> If **`fields`** is sent as a **non-empty** array, it **replaces** the deck’s column-name list (any length ≥ 1). Omit `fields` or send an empty array to leave column names unchanged.
+> **Source decks:** all keys except `name` are optional. **`name`** is required on every request.
+> **`visibility`** (`private` \| `public`) applies to **source decks only**, and only while `published_version == 0`. After the first successful publish, visibility is **immutable** (omit the field or repeat the current value → **400** if you send a different value).
+> If **`fields`** is sent as a **non-empty** array on a source deck, it **replaces** the deck’s column-name list (any length ≥ 1). Omit `fields` or send an empty array to leave column names unchanged.
 > **`rate`** must be between 1 and 1000 when provided.
+>
+> **Imported decks** (`source_deck_id` set): only **`rate`** may change. **`rate`** is **required** on every PATCH (e.g. `{ "rate": 30 }` only). Do **not** send **`name`** or **`fields`** (even unchanged values) → **400** `cannot change name on an imported deck` / `cannot change fields on an imported deck`. Non-empty **`visibility`** → **400**. Deck title and column schema follow the pinned snapshot and are refreshed from the author on [sync](#sync-an-imported-deck).
 
 When **`rate`** is present and **differs** from the stored deck rate, the server applies a **gap-only restagger** to **unseen** cards (`DueDate - LastReview == 1`): unseen rows are ordered by **introduction queue** (`DueDate` ascending, then `card_id`); the **first** in that order (earliest due) keeps its timestamps; each following unseen gets `DueDate` spaced by **`86400 / new_rate`** seconds from the previous unseen’s `DueDate` (same gap definition as new-card introduction). **Seen** cards are unchanged. Deck JSON and card keys are updated in **one** Redis transaction. If `rate` is omitted or unchanged, card timestamps are not rewritten.
 
@@ -454,7 +520,13 @@ See [rate-change-update.md](../design-doc/rate-change-update.md) for the full de
 
 - `id`: `a1b2c3d4e5f6` (your deck ID)
 
-> This permanently deletes the deck and all its associated facts and cards.
+> This permanently deletes the deck and all its associated facts and cards (importer-owned keys only for import decks; versioned snapshots and the author’s working copy are not removed).
+
+| Deck kind | Delete behavior |
+| --------- | ---------------- |
+| **Source** with `published_version == 0` | Allowed (**200**). |
+| **Source** with `published_version > 0` | **409** — `published decks cannot be deleted`. |
+| **Import** | Allowed (**200**). Revokes `user:{you}:readable_media_versions` grants created for this import. |
 
 **Response:**
 
@@ -496,11 +568,274 @@ Shifts due dates and last_review of all cards in the deck by N days (1–365). O
 
 ---
 
+## Deck sharing (overview)
+
+User-to-user deck sharing lets an **author** publish versioned snapshots of a deck so other users can **import** a personal study copy. Each import is a **new deck** owned by the importer with its own cards and scheduling; **facts and embedded media** are read-only and resolved through pinned snapshot versions.
+
+See [deck-sharing-feature.md](../design-doc/deck-sharing-feature.md) for the full design.
+
+### Concepts
+
+| Term | Meaning |
+| ---- | ------- |
+| **Source deck** | Author’s working copy (`source_deck_id` empty). Full fact/media CRUD. |
+| **Publish** | Snapshot working copy → immutable `v1`, `v2`, … (`published_version`). |
+| **Import deck** | New deck owned by importer; `source_deck_id` + pinned `source_version`. |
+| **Working copy** | Live `fact:{id}` / `media:{id}` — visible to author only until published. |
+| **Snapshot** | `deck:{src}:snapshot:v{N}` manifest + versioned `fact:{id}:v{N}` / `media:{id}:v{N}`. |
+
+**Rules:**
+
+- First publish must use **`visibility: "public"`** (imports require a public, published source).
+- After first publish, **visibility cannot change** and the **source deck cannot be deleted** (**409**).
+- Author edits to the working copy are **invisible** to importers until the author publishes again.
+- Importers **opt in** to updates via `GET …/updates` + `POST …/sync` (no auto-sync).
+- Republish uses **copy-on-write**: only facts/media whose content changed get a new version in the manifest; unchanged rows reuse prior versions (so update diffs list only real changes).
+
+All sharing routes require **`Authorization: Bearer <token>`** (same as other `/api` routes).
+
+---
+
+### Publish a deck
+
+**Endpoint:** `POST /api/decks/{id}/publish`
+
+**Who:** Owner of a **source** deck (not an import row).
+
+**Request body:**
+
+```json
+{
+  "visibility": "public"
+}
+```
+
+| Case | `visibility` in body |
+| ---- | -------------------- |
+| **First publish** (`published_version == 0`) | **Required** — must be `"public"`. |
+| **Republish** (`published_version > 0`) | Omit, or send exactly the stored value. A different value → **400** `cannot change visibility after publishing`. |
+
+**Success (200):**
+
+```json
+{
+  "data": {
+    "published_version": 2,
+    "visibility": "public"
+  },
+  "meta": {
+    "msg": "published"
+  }
+}
+```
+
+**Server behavior:** Increments `published_version`, writes `deck:{id}:snapshot:v{N}`, copy-on-write versioned facts/media, updates deck `visibility` on first publish.
+
+**Errors:**
+
+| Status | Typical `msg` |
+| ------ | ------------- |
+| **400** | `first publish requires visibility public`, `invalid visibility`, `cannot change visibility after publishing`, `cannot publish an imported deck` |
+| **403** | `Not authorized` |
+| **404** | `Deck not found` |
+| **409** | `no changes to publish` (working copy identical to previous snapshot) |
+
+---
+
+### Import a published deck
+
+**Endpoint:** `POST /api/decks/import`
+
+**Who:** Any authenticated user (need not own the source).
+
+**Request body:**
+
+```json
+{
+  "source_deck_id": "a1b2c3d4e5f6"
+}
+```
+
+`source_deck_id` is required (empty → **400** `source_deck_id is required`).
+
+**Success (201):**
+
+```json
+{
+  "data": {
+    "id": "z9y8x7w6v5u4",
+    "source_deck_id": "a1b2c3d4e5f6",
+    "source_version": 3,
+    "imported_at": "2026-05-22T12:00:00.000000000Z"
+  },
+  "meta": {
+    "msg": "imported"
+  }
+}
+```
+
+Use **`data.id`** as the import deck ID for study and for `GET/POST …/updates` and `…/sync`.
+
+**Requirements on source:**
+
+- Deck exists.
+- `published_version > 0`.
+- `visibility` is **`public`** (effective visibility).
+- Source is not itself an import (`cannot import an imported deck`).
+
+**Errors:**
+
+| Status | Typical `msg` |
+| ------ | ------------- |
+| **404** | `source deck not found` |
+| **403** | `source deck is not importable`, `source deck has not been published`, `cannot import an imported deck` |
+| **400** | Other validation failures |
+
+---
+
+### Get import updates (diff)
+
+**Endpoint:** `GET /api/decks/{importId}/updates`
+
+**Who:** Owner of an **import** deck.
+
+**Request:** No body.
+
+**Success (200):** Diff from the import’s pinned `source_version` to the source’s latest `published_version`.
+
+```json
+{
+  "data": {
+    "source_version": 3,
+    "latest_version": 5,
+    "added_facts": [{ "fact_id": "abcd1234" }],
+    "removed_facts": [{ "fact_id": "efgh5678" }],
+    "edited_facts": [
+      {
+        "fact_id": "ijkl9012",
+        "before": { "id": "ijkl9012", "entries": [{ "text": "old" }, { "text": "old2" }] },
+        "after": { "id": "ijkl9012", "entries": [{ "text": "new" }, { "text": "old2" }] }
+      }
+    ],
+    "media_changes": [
+      {
+        "media_id": "pron123456",
+        "before_hash": "sha256:abc…",
+        "after_hash": "sha256:def…",
+        "before_bytes": 12345,
+        "after_bytes": 23456
+      }
+    ],
+    "change_summary": ""
+  },
+  "meta": {
+    "msg": "ok"
+  }
+}
+```
+
+When already up to date: `source_version == latest_version` and diff arrays are empty.
+
+`edited_facts` lists only facts whose **versioned content** differs between snapshots (not every fact in the deck).
+
+**Errors:**
+
+| Status | Typical `msg` |
+| ------ | ------------- |
+| **400** | `updates are only available for imported decks`, or source missing |
+| **403** | `Not authorized` |
+| **404** | `Deck not found` |
+
+---
+
+### Sync an imported deck
+
+**Endpoint:** `POST /api/decks/{importId}/sync`
+
+**Who:** Owner of the import deck.
+
+**Request body (optional):**
+
+```json
+{
+  "target_version": 5
+}
+```
+
+| Field | Behavior |
+| ----- | -------- |
+| Omitted or `0` | Advance to the source’s current `published_version`. |
+| `target_version` | Must satisfy `source_version < target_version <= source.published_version`. |
+
+**Success (200):**
+
+```json
+{
+  "data": {
+    "source_version": 5
+  },
+  "meta": {
+    "msg": "synced"
+  }
+}
+```
+
+**Server behavior:** Bumps pinned version; rebuilds import fact set from target manifest; removes importer cards for deleted facts; adds cards for new facts; updates `user:{importer}:readable_media_versions` grants. Also copies **`name`**, **`fields`**, and **`rate`** from the target snapshot manifest into the import deck row (overwriting any prior importer `rate` set via PATCH).
+
+**Errors:**
+
+| Status | Typical `msg` |
+| ------ | ------------- |
+| **400** | `not an imported deck`, `invalid target version`, … |
+| **403** | `Not authorized` |
+| **404** | `Deck not found` |
+
+---
+
+### Sharing: extended deck & fact behavior
+
+#### PATCH deck on import decks
+
+| Field | Import deck |
+| ----- | ----------- |
+| **`rate`** | **Required.** Only mutable deck field. Must be 1–1000. Changing rate restaggers **unseen** cards the same way as on source decks (see [Update a Deck](#update-a-deck)). |
+| **`name`** | Locked to snapshot / sync. Must be **omitted** (non-empty value → **400** `cannot change name on an imported deck`). |
+| **`fields`** | Locked. Must be **omitted** (non-empty array → **400** `cannot change fields on an imported deck`). |
+| **`visibility`** | Not applicable. Non-empty value → **400** `cannot change visibility on an imported deck`. |
+
+Omitting **`rate`** on an import deck PATCH → **400** `Rate is required for imported deck updates`.
+
+#### Facts on import decks
+
+| Method | Path | Import deck |
+| ------ | ---- | ------------- |
+| GET | `/api/decks/{id}/facts`, `…/facts/{factId}` | Reads **versioned snapshot** content (not author working copy). |
+| POST / PATCH / DELETE | facts routes | **403** `cannot modify facts on an imported deck` |
+
+#### Cards on import decks
+
+Same as a normal owned deck: `GET/POST/PATCH/DELETE` card routes work; scheduling and templates are importer-specific.
+
+#### Media for importers
+
+- Importers download author media via `GET /api/media/{id}` when `(media_id, version)` is granted in `user:{username}:readable_media_versions` (member format `mediaId@version`).
+- Bytes are served from the **versioned** blob, not the author’s working copy.
+- If multiple grants exist for the same `media_id`, use query **`?v=<version>`** (required when ambiguous).
+- Importers cannot upload or delete another user’s working-copy media.
+
+#### Tags on import decks
+
+Tag associations are keyed by the **importer** (independent from the author). Fact tag mutations that imply editing read-only fact bodies may still be restricted; see tag routes in [§4 Tags](#4-tags).
+
+---
+
 ## 3. Facts
 
 ### Add Facts
 
 **Endpoint:** `POST /api/decks/{id}/facts/{operation}`
+
+> **Imported decks:** **403** `cannot modify facts on an imported deck`. Use [Sync an imported deck](#sync-an-imported-deck) to accept new content from the author.
 
 **Parameters:**
 
@@ -689,6 +1024,8 @@ Each fact always includes **`tags`**: an array of `{ "id", "name", "description"
 
 **Endpoint:** `PATCH /api/decks/{id}/facts/{factId}`
 
+> **Imported decks:** **403** `cannot modify facts on an imported deck`.
+
 **Parameters:** `id` (deck ID), `factId` (fact ID from GET facts or add-facts).
 
 **Request Body:** Optional **`entries`** only — array of entry objects with optional `text`, `audio`, `image`, `video`, `json`. When provided, it replaces the fact’s entries. To rename or reorder **column labels**, use **`PATCH /api/decks/{id}`** with a new `fields` array (not this endpoint).
@@ -712,6 +1049,8 @@ Each fact always includes **`tags`**: an array of `{ "id", "name", "description"
 
 **Endpoint:** `DELETE /api/decks/{id}/facts/{factId}`
 
+> **Imported decks:** **403** `cannot modify facts on an imported deck`.
+
 **Parameters:** `id` (deck ID), `factId` (fact ID).
 
 Permanently deletes the fact and all cards derived from it.
@@ -729,7 +1068,12 @@ Permanently deletes the fact and all cards derived from it.
 
 ## 4. Tags
 
-Tags are **per user**: you create them with `POST /api/tags`, then attach them to **decks** and/or **facts** with `PUT` routes (no JSON body on those `PUT`s). You can also pass optional **`tags`** (name strings) when [creating a deck](#create-a-deck) or on each fact when [adding facts](#add-facts); the server creates missing tags and links them in the same request. Same tag can label many decks and many facts. For key layout and naming rules, see **[Tagging system design doc](../design-doc/tagging-system.md)**.
+Tags are **per user**: you create them with `POST /api/tags`, then attach them to **decks** and/or **facts** with `PUT` routes (no JSON body on those `PUT`s). You can also pass optional **`tags`** (name strings) in the same request when:
+
+- **[Creating a deck](#create-a-deck)** (`POST /api/decks`) — see [Optional tags (on create)](#optional-tags-on-create).
+- **[Adding facts](#add-facts)** (`POST /api/decks/{id}/facts/{operation}`) — optional `tags` on each fact item; see [Optional tags (per fact)](#optional-tags-per-fact).
+
+The server creates missing tags and links them in that request. Same tag can label many decks and many facts. For key layout and naming rules, see **[Tagging system design doc](../design-doc/tagging-system.md)**.
 
 **Limits:** up to **100** distinct tags per user; up to **20** tags associated with a single deck. Tag **names** allow Unicode letters and numbers, spaces, hyphen (`-`), and apostrophe (`'`); leading/trailing space is trimmed and internal runs of spaces collapse to one. Uniqueness is enforced on a **normalized** form (trim → collapse spaces → lowercase). **`tag_id`** is 8 lowercase alphanumeric characters.
 
@@ -1446,6 +1790,8 @@ Returns metadata only (id, owner, filename, mime, size, checksum, created_at), n
 
 Returns the media file (binary) for user-owned media by ID. Requires `Authorization: Bearer <token>`. Response headers include `Content-Type`, `Content-Length`, and `ETag` (same as `checksum`). Send `If-None-Match: <ETag>` to get `304 Not Modified` when the file is unchanged. The **Get Next Card** response puts full URLs in the `audio`, `image`, and `video` fields of each front/back entry (e.g. `https://api.retentio.app:8443/api/media/{id}`); use that URL with the same auth header to load the file.
 
+**Deck sharing (importers):** If you imported a deck, you may download the author’s media when your account has a grant `mediaId@version` from that snapshot. The server serves **versioned** bytes. Append **`?v=<version>`** when the API returns multiple possible versions for the same `media_id` (some fact responses include `?v=` on media URLs automatically).
+
 ### Delete media
 
 **Endpoint:** `DELETE /api/media/{id}`
@@ -1500,6 +1846,10 @@ For full design (upload, delete, display, sync), see **[Media Upload design doc]
 | `/api/decks/{id}/cards`                       | GET         | Optional query `tag_id`. Response shape unchanged: `{ "data": { "total_cards", "hidden_count", "hidden_facts", "orphaned_hidden_cards" }, "meta": { "msg" } }` |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE      | `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks/{id}/reschedule`                  | POST        | `{ "data": { "cards_shifted", "days", "max_days_away" }, "meta": { "msg" } }`                                                                              |
+| `/api/decks/import`                           | POST        | **201** — `{ "data": { "id", "source_deck_id", "source_version", "imported_at" }, "meta": { "msg" } }`                                                    |
+| `/api/decks/{id}/publish`                     | POST        | `{ "data": { "published_version", "visibility" }, "meta": { "msg": "published" } }`                                                                      |
+| `/api/decks/{id}/updates`                     | GET         | `{ "data": { "source_version", "latest_version", "added_facts", "removed_facts", "edited_facts", "media_changes" }, "meta": { "msg" } }`                   |
+| `/api/decks/{id}/sync`                        | POST        | `{ "data": { "source_version" }, "meta": { "msg": "synced" } }`                                                                                            |
 | `/api/tags`                                   | POST        | `{ "data": { "tag": { id, name, description } }, "meta": { "msg" } }` — **201**                                                                            |
 | `/api/tags`                                   | GET         | `{ "data": { "tags": [ … ] }, "meta": { "msg" } }`                                                                                                         |
 | `/api/tags/{tagId}`                           | GET         | `{ "data": { "tag": { … } }, "meta": { "msg" } }`                                                                                                          |
@@ -1524,6 +1874,7 @@ Full JSON examples for each are in the sections above.
 
 ## Next Steps
 
+- Share decks with **[Deck sharing](#deck-sharing-overview)** (publish → import → review updates → sync)
 - Organize content with **[Tags](#4-tags)** (deck- and fact-level associations)
 - Keep reviewing cards by repeating the **Get Next Urgent Card** and **Review a Card** steps in [Cards](#5-cards)
 - **Offline sync** — sync data when back online (planned)

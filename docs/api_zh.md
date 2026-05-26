@@ -25,6 +25,12 @@
   - [更新卡组](#更新卡组)
   - [删除卡组](#删除卡组)
   - [假期模式（平移复习计划）](#假期模式平移复习计划)
+  - [卡组共享（概述）](#卡组共享概述)
+  - [发布卡组](#发布卡组)
+  - [导入已发布卡组](#导入已发布卡组)
+  - [获取导入更新（差异）](#获取导入更新差异)
+  - [同步导入卡组](#同步导入卡组)
+  - [共享：卡组与词条扩展行为](#共享卡组与词条扩展行为)
 - [3. 词条](#3-词条)
   - [添加词条](#添加词条)
   - [获取所有词条](#获取所有词条)
@@ -90,16 +96,20 @@
 | `/auth/forgot-password`                       | POST   | 请求密码重置令牌                                                                                                                                     |
 | `/auth/reset-password`                        | POST   | 使用令牌重置密码                                                                                                                                     |
 | `/api/profile`                                | GET    | 获取当前用户资料                                                                                                                                     |
-| `/api/decks`                                  | POST   | 创建卡组。请求体：`name`、`fields`、`rate`，及可选 **`tags`**（标签**名称**；不存在则自动创建）。                                                    |
+| `/api/decks`                                  | POST   | 创建卡组。请求体：`name`、**`fields`**（≥1 列名，必填）、**`rate`**（必填，1–1000）、可选 **`tags`**。                                                    |
 | `/api/decks`                                  | GET    | 获取所有卡组                                                                                                                                         |
-| `/api/decks/{id}`                             | GET    | 获取卡组详情                                                                                                                                         |
-| `/api/decks/{id}`                             | PATCH  | 更新卡组                                                                                                                                             |
-| `/api/decks/{id}`                             | DELETE | 删除卡组                                                                                                                                             |
-| `/api/decks/{id}/facts/{operation}`           | POST   | 添加词条：operation 为 append/prepend/shuffle/spread。请求体：facts（必填）、可选 template，以及每项词条可选 **`tags`**（标签**名称**；不存在则自动创建）。列名在卡组上维护（`PATCH /api/decks/{id}` → `fields`），不在每条词条上。为已有词条添加一张卡请使用 POST `/api/decks/{id}/card`。 |
+| `/api/decks/{id}`                             | GET    | 获取卡组详情。源卡组含 `visibility`、`published_version`；导入卡组含 `source_deck_id`、`source_version`、`imported_at`。                             |
+| `/api/decks/{id}`                             | PATCH  | 更新卡组。源卡组：首次发布前可改 `visibility`。导入卡组：**仅可改 `rate`**（不可改 `name`、`fields`、`visibility`）。                              |
+| `/api/decks/{id}`                             | DELETE | 删除卡组。源卡组若 `published_version > 0` → **409**。导入卡组删除时撤销媒体授权。                                                                 |
+| `/api/decks/import`                           | POST   | **（共享）** 从已发布的公开源卡组创建导入学习副本。请求体：`source_deck_id`。**201**。                                                               |
+| `/api/decks/{id}/publish`                     | POST   | **（共享）** 作者：将工作副本快照为下一 `published_version`。首次发布须 `visibility: "public"`。**200**。                                            |
+| `/api/decks/{id}/updates`                     | GET    | **（共享）** 导入者：对比钉住的 `source_version` 与源卡组最新发布版本。仅导入卡组。                                                                  |
+| `/api/decks/{id}/sync`                        | POST   | **（共享）** 导入者：接受较新快照（可选 `target_version`）。仅导入卡组。**200**。                                                                    |
+| `/api/decks/{id}/facts/{operation}`           | POST   | 添加词条：operation 为 append/prepend/shuffle/spread。请求体：facts（必填）、可选 template，以及每项词条可选 **`tags`**（标签**名称**；不存在则自动创建）。列名在卡组上维护（`PATCH /api/decks/{id}` → `fields`），不在每条词条上。为已有词条添加一张卡请使用 POST `/api/decks/{id}/card`。导入卡组 → **403**。 |
 | `/api/decks/{id}/facts`                       | GET    | 获取词条（分页）：默认 `limit` **50**、`offset` **0**；`limit` 最大 **200**。`meta` 含 `count`、`has_more`、`limit`、`offset`、`total`。 |
 | `/api/decks/{id}/facts/{factId}`              | GET    | 获取单个词条                                                                                                                                         |
-| `/api/decks/{id}/facts/{factId}`              | PATCH  | 更新词条                                                                                                                                             |
-| `/api/decks/{id}/facts/{factId}`              | DELETE | 删除词条                                                                                                                                             |
+| `/api/decks/{id}/facts/{factId}`              | PATCH  | 仅更新词条 `entries`（列名在卡组上改）。导入卡组 → **403**。                                                                                         |
+| `/api/decks/{id}/facts/{factId}`              | DELETE | 删除词条。导入卡组 → **403**。                                                                                                                       |
 | `/api/decks/{id}/card`                        | GET    | 获取最紧急卡片。可选查询：`tag_id`，仅在当前卡组中从带该标签的词条对应卡片里选取下一张。                                                           |
 | `/api/decks/{id}/card`                        | POST   | 为已有词条添加一张卡（如反向卡）。请求体：fact_id、template，可选 operation。                                                                        |
 | `/api/decks/{id}/card`                        | PATCH  | 更新卡片间隔或可见性（按 card_id）                                                                                                                   |
@@ -303,6 +313,9 @@
 ```
 
 > 📝 保存 `deck_id` - 后续步骤需要用到。
+> **`fields`：** 必填 — 至少一个列名（与学习时 `entries` 下标顺序一致）。空数组 → **400** `fields must contain at least one column name`。
+> **`rate`：** 必填 — 整数 1–1000。省略 → **400**。
+> 之后在**源卡组**上重命名列名请用 **`PATCH /api/decks/{id}`** 传非空 `fields` 数组（**整体替换**）。
 > **为什么卡组没有 template？** 模板不存储在卡组上。添加词条时可传入可选参数 `template`（详见下方 [添加词条](#添加词条)）。默认每词条**一张卡**（正面第一条、背面其余）。若要生成**兄弟卡**（同一词条的多张卡），需传入三维 template，见下文。
 
 ---
@@ -323,7 +336,7 @@
     "id": "a1b2c3d4e5f6",
     "name": "English Japanese IELTS Deck",
     "owner": "swagger",
-    "field": ["English", "Japanese"],
+    "fields": ["English", "Japanese"],
     "rate": 20,
     "stats": {
       "cards_count": 0,
@@ -336,13 +349,30 @@
       "last_reviewed_at": 0
     },
     "created_at": "2026-02-08T12:00:00Z",
-    "updated_at": "2026-02-08T12:00:00Z"
+    "updated_at": "2026-02-08T12:00:00Z",
+    "visibility": "public",
+    "published_version": 2
   },
   "meta": {
     "msg": "Deck retrieved successfully"
   }
 }
 ```
+
+**源卡组（作者）** — 当你拥有 canonical 卡组时的可选字段：
+
+| 字段 | 说明 |
+| ----- | ----------- |
+| `visibility` | `private`（默认）或 `public`。发布后决定谁可导入。 |
+| `published_version` | 最新已发布快照版本。`0` = 从未发布。 |
+
+**导入卡组（订阅者）** — 当设置了 `source_deck_id` 时的可选字段：
+
+| 字段 | 说明 |
+| ----- | ----------- |
+| `source_deck_id` | 作者源卡组 ID（12 位）。 |
+| `source_version` | 钉住的快照版本，用于读取词条/媒体。 |
+| `imported_at` | 创建导入时的 ISO 8601 时间戳。 |
 
 ### 获取所有卡组
 
@@ -358,7 +388,7 @@
         "id": "a1b2c3d4e5f6",
         "name": "English Japanese IELTS Deck",
         "owner": "swagger",
-        "field": ["English", "Japanese"],
+        "fields": ["English", "Japanese"],
         "rate": 20,
         "stats": {
           "cards_count": 0,
@@ -411,6 +441,8 @@
 > 默认每词条一张卡（见 [模板：默认与兄弟卡](#模板默认与兄弟卡)）。若需为某词条再增加一张卡（如反向卡），请调用 `POST /api/decks/{id}/card`，body 传 `{"fact_id": "<factId>", "template": [[1], [0]]}`。若该 template 已存在则返回 400。
 >
 > 客户端计算学习进度百分比：`reviewed_cards / cards_count * 100`。
+>
+> 列表项与 [获取单个卡组](#获取单个卡组) 使用相同的可选共享字段（源卡组含 `visibility` / `published_version`；导入卡组含 `source_deck_id` / `source_version` / `imported_at`）。
 
 ### 更新卡组
 
@@ -426,11 +458,17 @@
 {
   "name": "更新后的卡组名称",
   "fields": ["English", "Japanese"],
-  "rate": 30
+  "rate": 30,
+  "visibility": "public"
 }
 ```
 
-> 除 `name` 外，所有字段都是可选的。如果提供了 `fields`，数量必须与现有字段数匹配。`rate` 必须在 1 到 1000 之间。
+> **源卡组：** 除 `name` 外，其余键均为可选。**每次请求 `name` 必填。**
+> **`visibility`**（`private` \| `public`）仅适用于**源卡组**，且仅在 `published_version == 0` 时可改。首次成功发布后可见性**不可变**（省略或传当前值；传不同值 → **400**）。
+> 在**源卡组**上，若 **`fields`** 以**非空**数组发送，则**整体替换**列名列表（长度 ≥ 1 即可）。省略 `fields` 或传空数组则列名不变。
+> 提供 **`rate`** 时须在 1–1000 之间。
+>
+> **导入卡组**（已设置 `source_deck_id`）：仅 **`rate`** 可改。**每次 PATCH 必须带 `rate`**（例如仅 `{ "rate": 30 }`）。**不得**发送 **`name`** 或 **`fields`**（即使与当前值相同）→ **400** `cannot change name on an imported deck` / `cannot change fields on an imported deck`。非空 **`visibility`** → **400**。卡组标题与列结构来自钉住的快照，并在 [同步](#同步导入卡组) 时从作者侧刷新。
 
 当请求体中的 **`rate`** 与卡组当前 **`rate`** **不同** 时，服务器对**未学习**卡片（`due_date - last_review == 1`）做**仅调整间隔（gap）**的重排：按加载顺序，**第一张**未学习卡的时间戳不变；之后每张未学习卡的 `due_date` 相对前一张按 **`86400 / 新 rate`** 秒递增（与新增卡片时的间隔定义一致）。**已学习**卡片时间戳不变。卡组 JSON 与相关卡片键在同一 Redis 事务中写入。若未传 `rate` 或 `rate` 未变化，则不重写卡片时间戳。
 
@@ -458,7 +496,13 @@
 
 - `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 
-> 此操作会永久删除卡组及其所有关联的词条和卡片。
+> 永久删除卡组及其关联词条与卡片（导入卡组仅删除导入方拥有的键；版本化快照与作者工作副本不删除）。
+
+| 卡组类型 | 删除行为 |
+| --------- | ---------------- |
+| **源卡组**，`published_version == 0` | 允许（**200**）。 |
+| **源卡组**，`published_version > 0` | **409** — `published decks cannot be deleted`。 |
+| **导入卡组** | 允许（**200**）。撤销本导入创建的 `user:{你}:readable_media_versions` 授权。 |
 
 **响应:**
 
@@ -500,11 +544,274 @@
 
 ---
 
+## 卡组共享（概述）
+
+用户间卡组共享让**作者**发布卡组版本化快照，其他用户可**导入**个人学习副本。每次导入是导入者拥有的**新卡组**，拥有独立卡片与调度；**词条与内嵌媒体**为只读，通过钉住的快照版本解析。
+
+完整设计见 [deck-sharing-feature.md](../design-doc/deck-sharing-feature.md)。
+
+### 概念
+
+| 术语 | 含义 |
+| ---- | ------- |
+| **源卡组** | 作者工作副本（`source_deck_id` 为空）。可对词条/媒体完整增删改。 |
+| **发布** | 将工作副本快照为不可变 `v1`、`v2`、…（`published_version`）。 |
+| **导入卡组** | 导入者拥有的新卡组；含 `source_deck_id` + 钉住的 `source_version`。 |
+| **工作副本** | 实时 `fact:{id}` / `media:{id}` — 发布前仅作者可见。 |
+| **快照** | `deck:{src}:snapshot:v{N}` 清单 + 版本化 `fact:{id}:v{N}` / `media:{id}:v{N}`。 |
+
+**规则：**
+
+- 首次发布须 **`visibility: "public"`**（导入要求源卡组已发布且公开）。
+- 首次发布后**可见性不可改**，**源卡组不可删除**（**409**）。
+- 作者对工作副本的编辑在再次发布前对导入者**不可见**。
+- 导入者通过 `GET …/updates` + `POST …/sync` **主动**接受更新（无自动同步）。
+- 再次发布采用**写时复制**：仅内容变化的词条/媒体获得新版本；未变行复用旧版本（更新差异仅列出真实变更）。
+
+所有共享接口均需 **`Authorization: Bearer <token>`**（与其他 `/api` 路由相同）。
+
+---
+
+### 发布卡组
+
+**接口：** `POST /api/decks/{id}/publish`
+
+**调用方：** **源**卡组所有者（非导入行）。
+
+**请求体：**
+
+```json
+{
+  "visibility": "public"
+}
+```
+
+| 情况 | 请求体中的 `visibility` |
+| ---- | -------------------- |
+| **首次发布**（`published_version == 0`） | **必填** — 须为 `"public"`。 |
+| **再次发布**（`published_version > 0`） | 可省略，或传与存储值完全相同；不同值 → **400** `cannot change visibility after publishing`。 |
+
+**成功（200）：**
+
+```json
+{
+  "data": {
+    "published_version": 2,
+    "visibility": "public"
+  },
+  "meta": {
+    "msg": "published"
+  }
+}
+```
+
+**服务端行为：** `published_version` 递增，写入 `deck:{id}:snapshot:v{N}`，写时复制版本化词条/媒体，首次发布时更新卡组 `visibility`。
+
+**错误：**
+
+| 状态码 | 典型 `msg` |
+| ------ | ------------- |
+| **400** | `first publish requires visibility public`、`invalid visibility`、`cannot change visibility after publishing`、`cannot publish an imported deck` |
+| **403** | `Not authorized` |
+| **404** | `Deck not found` |
+| **409** | `no changes to publish`（工作副本与上一快照相同） |
+
+---
+
+### 导入已发布卡组
+
+**接口：** `POST /api/decks/import`
+
+**调用方：** 任意已认证用户（无需拥有源卡组）。
+
+**请求体：**
+
+```json
+{
+  "source_deck_id": "a1b2c3d4e5f6"
+}
+```
+
+`source_deck_id` 必填（为空 → **400** `source_deck_id is required`）。
+
+**成功（201）：**
+
+```json
+{
+  "data": {
+    "id": "z9y8x7w6v5u4",
+    "source_deck_id": "a1b2c3d4e5f6",
+    "source_version": 3,
+    "imported_at": "2026-05-22T12:00:00.000000000Z"
+  },
+  "meta": {
+    "msg": "imported"
+  }
+}
+```
+
+学习与 `GET/POST …/updates`、`…/sync` 请使用 **`data.id`** 作为导入卡组 ID。
+
+**源卡组要求：**
+
+- 卡组存在。
+- `published_version > 0`。
+- `visibility` 为 **`public`**（有效可见性）。
+- 源卡组本身不是导入行（`cannot import an imported deck`）。
+
+**错误：**
+
+| 状态码 | 典型 `msg` |
+| ------ | ------------- |
+| **404** | `source deck not found` |
+| **403** | `source deck is not importable`、`source deck has not been published`、`cannot import an imported deck` |
+| **400** | 其他校验失败 |
+
+---
+
+### 获取导入更新（差异）
+
+**接口：** `GET /api/decks/{importId}/updates`
+
+**调用方：** **导入**卡组所有者。
+
+**请求：** 无请求体。
+
+**成功（200）：** 从导入卡组钉住的 `source_version` 到源卡组最新 `published_version` 的差异。
+
+```json
+{
+  "data": {
+    "source_version": 3,
+    "latest_version": 5,
+    "added_facts": [{ "fact_id": "abcd1234" }],
+    "removed_facts": [{ "fact_id": "efgh5678" }],
+    "edited_facts": [
+      {
+        "fact_id": "ijkl9012",
+        "before": { "id": "ijkl9012", "entries": [{ "text": "old" }, { "text": "old2" }] },
+        "after": { "id": "ijkl9012", "entries": [{ "text": "new" }, { "text": "old2" }] }
+      }
+    ],
+    "media_changes": [
+      {
+        "media_id": "pron123456",
+        "before_hash": "sha256:abc…",
+        "after_hash": "sha256:def…",
+        "before_bytes": 12345,
+        "after_bytes": 23456
+      }
+    ],
+    "change_summary": ""
+  },
+  "meta": {
+    "msg": "ok"
+  }
+}
+```
+
+已是最新时：`source_version == latest_version`，差异数组为空。
+
+`edited_facts` 仅列出**版本化内容**在快照间不同的词条（非卡组内全部词条）。
+
+**错误：**
+
+| 状态码 | 典型 `msg` |
+| ------ | ------------- |
+| **400** | `updates are only available for imported decks`，或源卡组缺失 |
+| **403** | `Not authorized` |
+| **404** | `Deck not found` |
+
+---
+
+### 同步导入卡组
+
+**接口：** `POST /api/decks/{importId}/sync`
+
+**调用方：** 导入卡组所有者。
+
+**请求体（可选）：**
+
+```json
+{
+  "target_version": 5
+}
+```
+
+| 字段 | 行为 |
+| ----- | -------- |
+| 省略或为 `0` | 推进到源卡组当前 `published_version`。 |
+| `target_version` | 须满足 `source_version < target_version <= source.published_version`。 |
+
+**成功（200）：**
+
+```json
+{
+  "data": {
+    "source_version": 5
+  },
+  "meta": {
+    "msg": "synced"
+  }
+}
+```
+
+**服务端行为：** 提升钉住版本；按目标清单重建导入词条集；删除已移除词条的导入者卡片；为新词条添加卡片；更新 `user:{导入者}:readable_media_versions` 授权。同时将目标快照清单中的 **`name`**、**`fields`**、**`rate`** 写入导入卡组行（会覆盖导入者此前通过 PATCH 设置的 `rate`）。
+
+**错误：**
+
+| 状态码 | 典型 `msg` |
+| ------ | ------------- |
+| **400** | `not an imported deck`、`invalid target version` 等 |
+| **403** | `Not authorized` |
+| **404** | `Deck not found` |
+
+---
+
+### 共享：卡组与词条扩展行为
+
+#### 导入卡组的 PATCH 卡组
+
+| 字段 | 导入卡组 |
+| ----- | ----------- |
+| **`rate`** | **必填。** 唯一可改的卡组字段。须在 1–1000 之间。修改 `rate` 时对**未学习**卡片的重排规则与源卡组相同（见 [更新卡组](#更新卡组)）。 |
+| **`name`** | 锁定（来自快照 / 同步）。必须**省略**（非空值 → **400** `cannot change name on an imported deck`）。 |
+| **`fields`** | 锁定。必须**省略**（非空数组 → **400** `cannot change fields on an imported deck`）。 |
+| **`visibility`** | 不适用。非空值 → **400** `cannot change visibility on an imported deck`。 |
+
+导入卡组 PATCH 时省略 **`rate`** → **400** `Rate is required for imported deck updates`。
+
+#### 导入卡组上的词条
+
+| 方法 | 路径 | 导入卡组 |
+| ------ | ---- | ------------- |
+| GET | `/api/decks/{id}/facts`、`…/facts/{factId}` | 读取**版本化快照**内容（非作者工作副本）。 |
+| POST / PATCH / DELETE | 词条相关路由 | **403** `cannot modify facts on an imported deck` |
+
+#### 导入卡组上的卡片
+
+与普通自有卡组相同：`GET/POST/PATCH/DELETE` 卡片路由可用；调度与模板由导入者自行管理。
+
+#### 导入者的媒体
+
+- 当 `user:{username}:readable_media_versions` 中有 `(media_id, version)` 授权（成员格式 `mediaId@version`）时，可通过 `GET /api/media/{id}` 下载作者媒体。
+- 返回**版本化**二进制，非作者工作副本。
+- 同一 `media_id` 存在多条授权时，使用查询参数 **`?v=<version>`**（歧义时必填）。
+- 导入者不能上传或删除他人工作副本媒体。
+
+#### 导入卡组上的标签
+
+标签关联以**导入者**为键（与作者独立）。若某标签操作隐含修改只读词条内容，可能仍受限；详见 [§4 标签](#4-标签)。
+
+---
+
 ## 3. 词条
 
 ### 添加词条
 
 **接口:** `POST /api/decks/{id}/facts/{operation}`
+
+> **导入卡组：** **403** `cannot modify facts on an imported deck`。请通过 [同步导入卡组](#同步导入卡组) 接受作者新内容。
 
 **参数:**
 
@@ -697,14 +1004,15 @@ Authorization: Bearer <token>
 
 **接口：** `PATCH /api/decks/{id}/facts/{factId}`
 
-**参数：** `id`（卡组 ID）、`factId`（词条 ID，来自 GET 词条或添加词条响应）。
+> **导入卡组：** **403** `cannot modify facts on an imported deck`。
 
-**请求体：** 可选 `entries` 与 `fields`。若提供 `entries` 则替换该词条内容；若提供 `fields`，其长度须与 `entries` 一致。
+**参数：** `id`（卡组 ID）、`factId`（词条 ID，来自 GET 词条或添加词条）。
+
+**请求体：** 仅可选 **`entries`** — entry 对象数组，含可选 `text`、`audio`、`image`、`video`、`json`。提供时替换该词条 entries。重命名或重排列名请用 **`PATCH /api/decks/{id}`** 的 `fields`（非本接口）。
 
 ```json
 {
-  "entries": [{ "text": "Apple" }, { "text": "りんご" }],
-  "fields": ["English", "Japanese"]
+  "entries": [{ "text": "Apple" }, { "text": "りんご" }]
 }
 ```
 
@@ -720,6 +1028,8 @@ Authorization: Bearer <token>
 ### 删除词条
 
 **接口：** `DELETE /api/decks/{id}/facts/{factId}`
+
+> **导入卡组：** **403** `cannot modify facts on an imported deck`。
 
 **参数：** `id`（卡组 ID）、`factId`（词条 ID）。
 
@@ -738,7 +1048,12 @@ Authorization: Bearer <token>
 
 ## 4. 标签
 
-标签按**用户**隔离：先用 `POST /api/tags` 创建，再通过 **`PUT`**（无 JSON 请求体）挂到**卡组**和/或**词条**上。也可在 [创建卡组](#创建卡组) 或 [添加词条](#添加词条) 时传入可选 **`tags`**（名称字符串）；服务端会创建缺失的标签并在同一请求中完成关联。同一标签可关联多个卡组、多个词条。键空间与命名规则见 **[标签系统设计文档](../design-doc/tagging-system.md)**。
+标签按**用户**隔离：先用 `POST /api/tags` 创建，再通过 **`PUT`**（无 JSON 请求体）挂到**卡组**和/或**词条**上。也可在同一请求中传入可选 **`tags`**（名称字符串）：
+
+- **[创建卡组](#创建卡组)**（`POST /api/decks`）— 见 [可选标签（创建时）](#可选标签创建时)。
+- **[添加词条](#添加词条)**（`POST /api/decks/{id}/facts/{operation}`）— 每条词条项可带 `tags`；见 [可选标签（按词条）](#可选标签按词条)。
+
+服务端会创建缺失的标签并在该请求中完成关联。同一标签可关联多个卡组、多个词条。键空间与命名规则见 **[标签系统设计文档](../design-doc/tagging-system.md)**。
 
 **限制：** 每用户最多 **100** 个不同标签；单个卡组最多关联 **20** 个标签。标签**名称**允许 Unicode 字母与数字、空格、连字符 `-`、撇号 `'`；首尾空白会去掉，连续空白合并为一个。唯一性按**规范化**结果校验（去首尾空白 → 合并空白 → 小写）。**`tag_id`** 为 8 位小写字母数字。
 
@@ -1452,6 +1767,8 @@ Authorization: Bearer <token>
 
 按 ID 返回用户拥有的媒体文件（二进制）。需在请求头中携带 `Authorization: Bearer <token>`。响应头包含 `Content-Type`、`Content-Length` 和 `ETag`（与 `checksum` 一致）。请求头中携带 `If-None-Match: <ETag>` 可在文件未变更时获得 `304 Not Modified`。**获取下一张卡片** 接口会在每个正面/背面词条对象的 `audio`、`image`、`video` 字段中给出完整 URL（如 `https://api.retentio.app:8443/api/media/{id}`）；使用该 URL 并携带相同认证头即可加载文件。
 
+**卡组共享（导入者）：** 若已导入卡组，当你的账号在 `user:{username}:readable_media_versions` 中有来自该快照的 `mediaId@version` 授权时，可下载作者媒体。服务端返回**版本化**字节。同一 `media_id` 存在多个可能版本时，请追加 **`?v=<version>`**（部分词条响应中的媒体 URL 已自动带 `?v=`）。
+
 ### 删除媒体
 
 **接口：** `DELETE /api/media/{id}`
@@ -1482,12 +1799,22 @@ Authorization: Bearer <token>
 
 ## 响应示例速查
 
-上述各节均包含完整 JSON 示例。接口与响应结构对应关系与 [Response examples reference](api.md#response-examples-reference)（英文 `api.md`）一致，此处不重复列表。
+上述各节均包含完整 JSON 示例。完整接口与响应结构对照表见英文 [Response examples reference](api.md#response-examples-reference)。卡组共享相关条目摘要：
+
+| 接口 | 方法 | 响应结构 |
+| --- | --- | --- |
+| `/api/decks/import` | POST | **201** — `{ "data": { "id", "source_deck_id", "source_version", "imported_at" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/publish` | POST | `{ "data": { "published_version", "visibility" }, "meta": { "msg": "published" } }` |
+| `/api/decks/{id}/updates` | GET | `{ "data": { "source_version", "latest_version", "added_facts", "removed_facts", "edited_facts", "media_changes" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/sync` | POST | `{ "data": { "source_version" }, "meta": { "msg": "synced" } }` |
+
+其余接口与英文 `api.md` 响应示例表一致。
 
 ---
 
 ## 后续步骤
 
+- 通过 **[卡组共享](#卡组共享概述)** 分享卡组（发布 → 导入 → 查看更新 → 同步）
 - 使用 **[标签](#4-标签)** 在卡组与词条维度整理内容
 - 在 [卡片](#5-卡片) 中重复 **获取下一张最紧急卡片** 与 **复习卡片** 步骤以持续复习
 - **离线同步** — 恢复联网后同步数据（规划中）
