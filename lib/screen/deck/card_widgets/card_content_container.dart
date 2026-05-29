@@ -427,7 +427,8 @@ class _SphereCloud extends HookWidget {
                       data: chips[point.index],
                       z: point.z,
                       perspective: _perspective,
-                      isCentered: point.index == centerIdx &&
+                      isCentered:
+                          point.index == centerIdx &&
                           point.z >= _centerZThreshold,
                       accentColor: accentColor,
                       textColor: textColor,
@@ -565,9 +566,11 @@ class _SphereChip extends StatelessWidget {
     final scale = baseScale * centerBoost;
 
     final alpha = (0.3 + depth * 0.7).clamp(0.0, 1.0);
-    final color = Color.lerp(textColor, accentColor, depth)!.withValues(
-      alpha: alpha,
-    );
+    final color = Color.lerp(
+      textColor,
+      accentColor,
+      depth,
+    )!.withValues(alpha: alpha);
     final bgAlpha = (depth * (isCentered ? 0.22 : 0.12)).clamp(0.0, 0.3);
 
     const baseFontSize = 18.0;
@@ -635,7 +638,7 @@ class _SphereChip extends StatelessWidget {
       alignment: Alignment.center,
       transform: Matrix4.identity()
         ..setEntry(3, 2, perspective)
-        ..scale(scale),
+        ..scaleByDouble(scale),
       child: chip,
     );
   }
@@ -668,10 +671,7 @@ class _SelectedFieldPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final headerStyle =
-        labelStyle?.copyWith(
-          color: accentColor,
-          fontWeight: FontWeight.w600,
-        ) ??
+        labelStyle?.copyWith(color: accentColor, fontWeight: FontWeight.w600) ??
         TextStyle(color: accentColor, fontWeight: FontWeight.w600);
 
     return Column(
