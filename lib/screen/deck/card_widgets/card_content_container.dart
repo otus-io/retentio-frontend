@@ -2,11 +2,14 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/extensions/widget_extension.dart';
 import 'package:retentio/models/card.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_content.dart';
 import 'package:retentio/widgets/buttons_tab_bar.dart';
 import 'package:retentio/widgets/common_net_image.dart';
+
+final _whitespacePattern = RegExp(r'\s+');
 
 class CardContentContainer extends HookWidget {
   static const _kAnimDuration = Duration(milliseconds: 220);
@@ -37,18 +40,20 @@ class CardContentContainer extends HookWidget {
     final textTheme = theme.textTheme;
     final effectiveAccent = accentColor ?? color;
     final effectiveText = textColor ?? scheme.onSurface;
+    final selected = useState<int?>(null);
 
     if (cards.isEmpty) {
-      return _EmptyCardContent(
-        color: color,
-        trailing: trailing,
-        typographyDeckId: typographyDeckId,
-        typographyIsFront: typographyIsFront,
-      );
+      return _buildEmptyContent();
     }
 
-    final cloudSlots = cards.where((slot) => slot.items.isNotEmpty).toList();
-    if (cloudSlots.length < 3) {
+    var nonEmptyFieldCount = 0;
+    for (final slot in cards) {
+      if (slot.items.isNotEmpty) {
+        nonEmptyFieldCount++;
+        if (nonEmptyFieldCount >= 3) break;
+      }
+    }
+    if (nonEmptyFieldCount < 3) {
       return _TabbedFieldsView(
         cards: cards,
         color: color,
@@ -62,7 +67,6 @@ class CardContentContainer extends HookWidget {
       );
     }
 
-    final selected = useState<int?>(null);
     final chips = <_SphereChipData>[];
 
     for (var i = 0; i < cards.length; i++) {
@@ -75,12 +79,7 @@ class CardContentContainer extends HookWidget {
     }
 
     if (chips.isEmpty) {
-      return _EmptyCardContent(
-        color: color,
-        trailing: trailing,
-        typographyDeckId: typographyDeckId,
-        typographyIsFront: typographyIsFront,
-      );
+      return _buildEmptyContent();
     }
 
     final hasSelection =
@@ -99,8 +98,6 @@ class CardContentContainer extends HookWidget {
                     slot: cards[selected.value!],
                     color: color,
                     accentColor: effectiveAccent,
-                    textColor: effectiveText,
-                    surfaceColor: scheme.surface,
                     labelStyle: textTheme.labelLarge,
                     typographyDeckId: typographyDeckId,
                     typographyIsFront: typographyIsFront,
@@ -115,9 +112,27 @@ class CardContentContainer extends HookWidget {
                   ),
           ),
         ),
-        if (trailing != null) Positioned(top: 4, right: 4, child: trailing!),
+        if (trailing != null) _CardTrailingOverlay(child: trailing!),
       ],
     );
+  }
+
+  Widget _buildEmptyContent() => _EmptyCardContent(
+    color: color,
+    trailing: trailing,
+    typographyDeckId: typographyDeckId,
+    typographyIsFront: typographyIsFront,
+  );
+}
+
+class _CardTrailingOverlay extends StatelessWidget {
+  const _CardTrailingOverlay({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(top: 4, right: 4, child: child);
   }
 }
 
@@ -146,17 +161,25 @@ class _EmptyCardContent extends StatelessWidget {
             typographyIsFront: typographyIsFront,
           ),
         ),
-        if (trailing != null) Positioned(top: 4, right: 4, child: trailing!),
+        if (trailing != null) _CardTrailingOverlay(child: trailing!),
       ],
     );
   }
 }
 
 String _truncate(String s, int max) {
-  final trimmed = s.trim().replaceAll(RegExp(r'\s+'), ' ');
+  final trimmed = s.trim().replaceAll(_whitespacePattern, ' ');
   if (trimmed.length <= max) return trimmed;
   return '${trimmed.substring(0, max - 1)}…';
 }
+
+TextStyle _tabBarLabelStyle(
+  TextStyle? base,
+  Color color,
+  FontWeight fontWeight,
+) =>
+    base?.copyWith(color: color, fontWeight: fontWeight) ??
+    TextStyle(color: color, fontWeight: fontWeight);
 
 class _TabbedFieldsView extends StatelessWidget {
   const _TabbedFieldsView({
@@ -190,6 +213,9 @@ class _TabbedFieldsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final labelMedium = textTheme.labelMedium;
+    final unselectedColor = textColor.withValues(alpha: 0.4);
+
     return DefaultTabController(
       length: cards.length,
       child: Column(
@@ -204,7 +230,6 @@ class _TabbedFieldsView extends StatelessWidget {
               ),
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.max,
               children: [
                 ButtonsTabBar(
                   backgroundColor: Colors.transparent,
@@ -218,24 +243,16 @@ class _TabbedFieldsView extends StatelessWidget {
                     horizontal: 3,
                     vertical: 5,
                   ),
-                  labelStyle:
-                      textTheme.labelMedium?.copyWith(
-                        color: accentColor,
-                        fontWeight: FontWeight.w600,
-                      ) ??
-                      TextStyle(
-                        color: accentColor,
-                        fontWeight: FontWeight.w600,
-                      ),
-                  unselectedLabelStyle:
-                      textTheme.labelMedium?.copyWith(
-                        color: textColor.withValues(alpha: 0.4),
-                        fontWeight: FontWeight.w500,
-                      ) ??
-                      TextStyle(
-                        color: textColor.withValues(alpha: 0.4),
-                        fontWeight: FontWeight.w500,
-                      ),
+                  labelStyle: _tabBarLabelStyle(
+                    labelMedium,
+                    accentColor,
+                    FontWeight.w600,
+                  ),
+                  unselectedLabelStyle: _tabBarLabelStyle(
+                    labelMedium,
+                    unselectedColor,
+                    FontWeight.w500,
+                  ),
                   tabs: cards.map((slot) => Tab(text: slot.field)).toList(),
                 ).expanded(),
                 ?trailing,
@@ -323,6 +340,11 @@ class _SphereCloud extends HookWidget {
   static const double _perspective = 0.0018;
   static const double _radiusFactor = 0.40;
   static const double _centerZThreshold = 0.82;
+  static const double _velocityEpsilon = 1e-5;
+
+  void _ensureTickerRunning(AnimationController ticker) {
+    if (!ticker.isAnimating) ticker.repeat();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -335,11 +357,13 @@ class _SphereCloud extends HookWidget {
     final ticker = useAnimationController(duration: const Duration(days: 1));
 
     useEffect(() {
-      ticker.repeat();
-
       void onTick() {
         if (dragging.value) return;
-        if (velX.value.abs() < 1e-5 && velY.value.abs() < 1e-5) return;
+        if (velX.value.abs() < _velocityEpsilon &&
+            velY.value.abs() < _velocityEpsilon) {
+          if (ticker.isAnimating) ticker.stop();
+          return;
+        }
         velY.value *= _friction;
         velX.value *= _friction;
         rotY.value += velY.value;
@@ -373,14 +397,11 @@ class _SphereCloud extends HookWidget {
         }
         positioned.sort((a, b) => a.z.compareTo(b.z));
 
-        var centerIdx = 0;
-        var centerZ = -2.0;
-        for (final point in positioned) {
-          if (point.z > centerZ) {
-            centerZ = point.z;
-            centerIdx = point.index;
-          }
-        }
+        final centerChip = positioned.fold<_ProjectedChip?>(
+          null,
+          (best, point) => best == null || point.z > best.z ? point : best,
+        );
+        final centerIdx = centerChip?.index ?? 0;
 
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -388,6 +409,7 @@ class _SphereCloud extends HookWidget {
             dragging.value = true;
             velX.value = 0;
             velY.value = 0;
+            _ensureTickerRunning(ticker);
           },
           onPanUpdate: (details) {
             rotY.value += details.delta.dx * _dragSensitivity;
@@ -395,9 +417,11 @@ class _SphereCloud extends HookWidget {
                 .clamp(-_maxPitch, _maxPitch);
             velY.value = details.delta.dx * _dragSensitivity;
             velX.value = -details.delta.dy * _dragSensitivity;
+            _ensureTickerRunning(ticker);
           },
           onPanEnd: (_) {
             dragging.value = false;
+            _ensureTickerRunning(ticker);
           },
           onPanCancel: () {
             dragging.value = false;
@@ -413,6 +437,8 @@ class _SphereCloud extends HookWidget {
                       cx: centerX,
                       cy: centerY,
                       color: accentColor,
+                      rotX: rotX.value,
+                      rotY: rotY.value,
                     ),
                   ),
                 ),
@@ -451,6 +477,8 @@ class _SphereConnectionsPainter extends CustomPainter {
     required this.cx,
     required this.cy,
     required this.color,
+    required this.rotX,
+    required this.rotY,
   });
 
   final List<_ProjectedChip> points;
@@ -458,10 +486,17 @@ class _SphereConnectionsPainter extends CustomPainter {
   final double cx;
   final double cy;
   final Color color;
+  final double rotX;
+  final double rotY;
 
   @override
   void paint(Canvas canvas, Size size) {
     if (points.length < 2) return;
+
+    final paint = Paint()
+      ..strokeWidth = 0.6
+      ..style = PaintingStyle.stroke
+      ..isAntiAlias = true;
 
     for (var i = 0; i < points.length; i++) {
       for (var j = i + 1; j < points.length; j++) {
@@ -469,11 +504,7 @@ class _SphereConnectionsPainter extends CustomPainter {
         final b = points[j];
         final depth = ((a.z + b.z) / 2 + 1) / 2;
         final alpha = (0.05 + depth * 0.35).clamp(0.0, 0.4);
-        final paint = Paint()
-          ..color = color.withValues(alpha: alpha)
-          ..strokeWidth = 0.6
-          ..style = PaintingStyle.stroke
-          ..isAntiAlias = true;
+        paint.color = color.withValues(alpha: alpha);
 
         final p1 = Offset(cx + a.x * radius, cy + a.y * radius);
         final p2 = Offset(cx + b.x * radius, cy + b.y * radius);
@@ -491,11 +522,13 @@ class _SphereConnectionsPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SphereConnectionsPainter old) =>
-      old.points != points ||
+      old.rotX != rotX ||
+      old.rotY != rotY ||
       old.radius != radius ||
       old.cx != cx ||
       old.cy != cy ||
-      old.color != color;
+      old.color != color ||
+      old.points.length != points.length;
 }
 
 List<double> _fibonacciPoint(int index, int count) {
@@ -539,6 +572,7 @@ class _ProjectedChip {
 class _SphereChip extends StatelessWidget {
   static const _kImageChipSize = 84.0;
   static const _kImageChipOuterPadding = 10.0;
+  static const _kChipAnimDuration = Duration(milliseconds: 180);
 
   const _SphereChip({
     required this.data,
@@ -601,7 +635,7 @@ class _SphereChip extends StatelessWidget {
     Widget chip;
     if (data.imageUrl != null) {
       chip = AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+        duration: _kChipAnimDuration,
         padding: const EdgeInsets.all(_kImageChipOuterPadding),
         decoration: decoration,
         child: ClipRRect(
@@ -615,7 +649,7 @@ class _SphereChip extends StatelessWidget {
       );
     } else {
       chip = AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+        duration: _kChipAnimDuration,
         padding: EdgeInsets.symmetric(
           horizontal: isCentered ? 18 : 14,
           vertical: isCentered ? 10 : 8,
@@ -650,8 +684,6 @@ class _SelectedFieldPane extends StatelessWidget {
     required this.slot,
     required this.color,
     required this.accentColor,
-    required this.textColor,
-    required this.surfaceColor,
     required this.labelStyle,
     required this.typographyDeckId,
     required this.typographyIsFront,
@@ -661,8 +693,6 @@ class _SelectedFieldPane extends StatelessWidget {
   final CardSlot slot;
   final Color color;
   final Color accentColor;
-  final Color textColor;
-  final Color surfaceColor;
   final TextStyle? labelStyle;
   final String? typographyDeckId;
   final bool typographyIsFront;
@@ -691,7 +721,7 @@ class _SelectedFieldPane extends StatelessWidget {
                     minWidth: 32,
                     minHeight: 32,
                   ),
-                  icon: Icon(Icons.arrow_back_ios_new, color: accentColor),
+                  icon: Icon(LucideIcons.chevronLeft, color: accentColor),
                   onPressed: onClose,
                 ),
                 const SizedBox(width: 4),
