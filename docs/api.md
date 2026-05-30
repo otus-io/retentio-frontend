@@ -25,6 +25,7 @@ This guide walks you through using the Retentio API via Swagger UI.
   - [Delete a Deck](#delete-a-deck)
   - [Reschedule deck](#reschedule-deck)
   - [Deck sharing (overview)](#deck-sharing-overview)
+  - [Deck catalog](#deck-catalog)
   - [Publish a deck](#publish-a-deck)
   - [Import a published deck](#import-a-published-deck)
   - [Get import updates (diff)](#get-import-updates-diff)
@@ -62,9 +63,7 @@ This guide walks you through using the Retentio API via Swagger UI.
   - [Get media metadata](#get-media-metadata)
   - [Download media](#download-media)
   - [Delete media](#delete-media)
-  - [List or lookup shared media (work in progress)](#list-or-lookup-shared-media-work-in-progress)
-  - [Download shared media (work in progress)](#download-shared-media-work-in-progress)
-  - [Using media in facts (work in progress)](#using-media-in-facts)
+  - [Using media in facts](#using-media-in-facts)
 - [Response examples reference](#response-examples-reference)
 - [Next Steps](#next-steps)
 
@@ -102,9 +101,14 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/api/decks/{id}`                             | PATCH  | Update deck. Source: optional `visibility` before first publish. Import: **`rate` only** (not `name`, `fields`, or `visibility`).                                                              |
 | `/api/decks/{id}`                             | DELETE | Delete deck. **409** if source deck has `published_version > 0`. Import decks revoke media grants on delete.                                                                                    |
 | `/api/decks/import`                           | POST   | **(Sharing)** Create an import study copy from a published public source deck. Body: `source_deck_id`. **201**.                                                  |
+| `/api/decks/catalog`                          | GET    | **(Sharing)** List public published source decks (importable catalog). Query: `limit`, `offset`, optional `query` (name, owner, deck tag names). Newest publish first. |
 | `/api/decks/{id}/publish`                     | POST   | **(Sharing)** Author: snapshot working copy into next `published_version`. First publish requires `visibility: "public"`. **200**.                             |
 | `/api/decks/{id}/updates`                     | GET    | **(Sharing)** Importer: diff between pinned `source_version` and source’s latest publish. Import deck only.                                                       |
 | `/api/decks/{id}/sync`                        | POST   | **(Sharing)** Importer: accept a newer snapshot (optional `target_version`). Import deck only. **200**.                                                         |
+| `/api/decks/{id}/feedback`                    | POST   | **(Sharing)** Importer: submit fact feedback / proposal to the source deck author. Body on **import** deck id. **201**. **429** when daily limit (20/source/day) exceeded. |
+| `/api/decks/{id}/feedback`                    | GET    | **(Sharing)** Author: list feedback inbox on **source** deck id. Query: `limit`, `offset`, optional `status`, `fact_id`. |
+| `/api/decks/{id}/feedback/{feedbackId}`       | PATCH  | **(Sharing)** Author: update feedback `status` (`open`, `resolved`, `dismissed`). Source deck only. |
+| `/api/decks/{id}/feedback/{feedbackId}/accept` | POST | **(Sharing)** Author: apply `proposed_entries` to working copy; sets status `accepted`. Does not publish. Source deck only. |
 | `/api/decks/{id}/facts/{operation}`           | POST   | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`). Body: `facts` (required), optional `template`, and optional **`tags`** per fact item (tag **names**; auto-created if missing). Column labels live on the deck (`PATCH /api/decks/{id}` → `fields`), not on each fact. To add a card for an existing fact, use POST `/api/decks/{id}/card` instead. **403** on imported decks. |
 | `/api/decks/{id}/facts`                       | GET    | List facts (paged): default `limit` **50**, `offset` **0**; max `limit` **200**. `meta`: `count`, `has_more`, `limit`, `offset`, `total`. |
 | `/api/decks/{id}/facts/{factId}`              | GET    | Get a specific fact                                                                                                                                                                             |
@@ -130,8 +134,6 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/api/decks/{id}/facts/{factId}/tags`         | GET    | List tags on one fact only                                                                                                                                                                      |
 | `/api/media`                                  | POST   | Upload media (audio/image)                                                                                                                                                                      |
 | `/api/media`                                  | GET    | List user's media (sync manifest)                                                                                                                                                               |
-| `/api/media/shared`                           | GET    | List or lookup shared media (`?word=...&lang=...`)                                                                                                                                              |
-| `/api/media/shared/{id}`                      | GET    | Download shared media file                                                                                                                                                                      |
 | `/api/media/{id}/meta`                        | GET    | Get media metadata (no file body)                                                                                                                                                               |
 | `/api/media/{id}`                             | GET    | Download media file                                                                                                                                                                             |
 | `/api/media/{id}`                             | DELETE | Delete media                                                                                                                                                                                    |
@@ -300,7 +302,16 @@ Column labels (`English`, `Japanese`, …) live on the **deck** only (`fields`).
 
 #### Optional tags (on create)
 
-The request may include optional **`tags`**: an array of tag **names** (strings), not tag IDs. Omit the field or use `[]` for an untagged deck.
+The request may include optional deck tags in **one** of two forms (not both):
+
+| Field | Type | Use when |
+|-------|------|----------|
+| **`tags`** | tag **names** (`string[]`) | Bulk import / scripts — missing names are auto-created |
+| **`tag_ids`** | existing tag **IDs** (`string[]`) | TagPicker UI — tags must already exist (`POST /api/tags`) |
+
+Omit both fields or use `[]` for an untagged deck. Sending **`tags` and `tag_ids` together** → **400** `provide either tags or tag_ids, not both`.
+
+##### `tags` (names)
 
 | Behavior | Detail |
 |----------|--------|
@@ -308,6 +319,20 @@ The request may include optional **`tags`**: an array of tag **names** (strings)
 | **Reuse** | Existing user tags (by normalized name) are reused. |
 | **Create** | Missing names are auto-created; counts toward **100 tags per user**. |
 | **Dedup** | Duplicate names in the same request (e.g. `"Noun"` and `" noun "`) collapse to one association. |
+
+##### `tag_ids` (existing IDs)
+
+| Behavior | Detail |
+|----------|--------|
+| **Validation** | Each id must be non-empty; unknown id → **404** `tag not found`. |
+| **Ownership** | Tag must belong to the current user. |
+| **Create** | Never auto-creates tags. |
+| **Dedup** | Duplicate ids in the same request collapse to one association. |
+
+##### Both forms
+
+| Behavior | Detail |
+|----------|--------|
 | **Limit** | At most **20** distinct tags on the deck after resolution → **400** `maximum tags per deck reached`. |
 | **Storage** | Tags are not stored in deck JSON; use [`GET /api/decks/{id}/tags`](#list-tags-on-a-deck) after create. |
 | **Create response** | Returns only `deck_id` — not tag objects. |
@@ -496,7 +521,7 @@ The request may include optional **`tags`**: an array of tag **names** (strings)
 
 When **`rate`** is present and **differs** from the stored deck rate, the server applies a **gap-only restagger** to **unseen** cards (`DueDate - LastReview == 1`): unseen rows are ordered by **introduction queue** (`DueDate` ascending, then `card_id`); the **first** in that order (earliest due) keeps its timestamps; each following unseen gets `DueDate` spaced by **`86400 / new_rate`** seconds from the previous unseen’s `DueDate` (same gap definition as new-card introduction). **Seen** cards are unchanged. Deck JSON and card keys are updated in **one** Redis transaction. If `rate` is omitted or unchanged, card timestamps are not rewritten.
 
-See [rate-change-update.md](../design-doc/rate-change-update.md) for the full design.
+See [rate-change-update.md](rate-change-update.md) for the full design.
 
 **Response:**
 
@@ -572,7 +597,7 @@ Shifts due dates and last_review of all cards in the deck by N days (1–365). O
 
 User-to-user deck sharing lets an **author** publish versioned snapshots of a deck so other users can **import** a personal study copy. Each import is a **new deck** owned by the importer with its own cards and scheduling; **facts and embedded media** are read-only and resolved through pinned snapshot versions.
 
-See [deck-sharing-feature.md](../design-doc/deck-sharing-feature.md) for the full design.
+See [deck-sharing-feature.md](deck-sharing-feature.md) for the full design.
 
 ### Concepts
 
@@ -593,6 +618,80 @@ See [deck-sharing-feature.md](../design-doc/deck-sharing-feature.md) for the ful
 - Republish uses **copy-on-write**: only facts/media whose content changed get a new version in the manifest; unchanged rows reuse prior versions (so update diffs list only real changes).
 
 All sharing routes require **`Authorization: Bearer <token>`** (same as other `/api` routes).
+
+---
+
+### Deck catalog
+
+**Endpoint:** `GET /api/decks/catalog`
+
+**Who:** Any authenticated user.
+
+**Purpose:** Browse **importable** source decks — public, published, not import rows — before calling [Import a published deck](#import-a-published-deck). Results are ordered **newest publish first** (Redis `catalog:decks` ZSET, updated on each successful publish).
+
+**Query parameters:**
+
+| Parameter | Default | Description |
+| --------- | ------- | ----------- |
+| `limit` | `50` | Page size (max **200**). |
+| `offset` | `0` | Number of matching rows to skip. |
+| `query` | *(empty)* | Optional case-insensitive substring filter on **deck name**, **owner username**, or **deck tag names** from the latest snapshot. |
+
+Example: `GET /api/decks/catalog?limit=20&offset=0&query=JLPT`
+
+**Success (200):**
+
+```json
+{
+  "data": {
+    "decks": [
+      {
+        "id": "a1b2c3d4e5f6",
+        "name": "JLPT N5 Core",
+        "owner": "alice",
+        "fields": ["English", "Japanese"],
+        "published_version": 3,
+        "fact_count": 120,
+        "deck_tag_names": ["JLPT N5", "verbs"],
+        "published_at": "2026-05-22T12:00:00Z"
+      }
+    ]
+  },
+  "meta": {
+    "msg": "ok",
+    "count": "1",
+    "total": "1",
+    "limit": "50",
+    "offset": "0",
+    "has_more": "false"
+  }
+}
+```
+
+| Field | Meaning |
+| ----- | ------- |
+| `id` | Source deck ID — pass as `source_deck_id` to `POST /api/decks/import`. |
+| `name`, `fields` | From the latest published snapshot manifest. |
+| `owner` | Author username. |
+| `published_version` | Latest published snapshot version on the source. |
+| `fact_count` | Number of facts in that snapshot. |
+| `deck_tag_names` | Tag names on the deck in that snapshot (omitted when empty). |
+| `published_at` | UTC timestamp when that snapshot was created. |
+
+**Inclusion rules** (same as import eligibility):
+
+- Source deck only (`source_deck_id` empty).
+- `visibility` is **`public`**.
+- `published_version > 0`.
+
+Unpublished or non-public decks do not appear. Private decks never appear even if published.
+
+**Errors:**
+
+| Status | Typical cause |
+| ------ | ------------- |
+| **401** | Missing or invalid JWT. |
+| **500** | Server error listing catalog (`Error listing catalog decks`). |
 
 ---
 
@@ -646,7 +745,7 @@ All sharing routes require **`Authorization: Bearer <token>`** (same as other `/
 
 **Endpoint:** `POST /api/decks/import`
 
-**Who:** Any authenticated user (need not own the source).
+**Who:** Any authenticated user (need not own the source). Use [Deck catalog](#deck-catalog) to find a `source_deck_id`, or pass an ID you already know.
 
 **Request body:**
 
@@ -809,8 +908,17 @@ Omitting **`rate`** on an import deck PATCH → **400** `Rate is required for im
 
 | Method | Path | Import deck |
 | ------ | ---- | ------------- |
-| GET | `/api/decks/{id}/facts`, `…/facts/{factId}` | Reads **versioned snapshot** content (not author working copy). |
+| GET | `/api/decks/{id}/facts`, `…/facts/{factId}`, next-card | Snapshot `entries` from the pinned version. |
 | POST / PATCH / DELETE | facts routes | **403** `cannot modify facts on an imported deck` |
+
+#### Feedback (import → author)
+
+| Method | Path | Who |
+| ------ | ---- | --- |
+| POST | `/api/decks/{importDeckId}/feedback` | Import deck owner. Body: `fact_id` (required), optional `category` (`translation` \| `audio` \| `typo` \| `other`, default `other`), `message` (required if `proposed_entries` omitted; 1–2000 chars), optional `entry_index`, optional `proposed_entries` (same shape as fact PATCH `entries`; must differ from snapshot). **201** returns `feedback_id`, `source_deck_id`, `fact_id`, `status`. **429** after 20 submissions per source deck per UTC day. |
+| GET | `/api/decks/{sourceDeckId}/feedback` | Source deck owner only. Optional query: `status`, `fact_id`, `limit`, `offset`. |
+| PATCH | `/api/decks/{sourceDeckId}/feedback/{feedbackId}` | Source deck owner. Body: `{ "status": "resolved" \| "dismissed" \| "open" }`. |
+| POST | `/api/decks/{sourceDeckId}/feedback/{feedbackId}/accept` | Source deck owner. Requires `proposed_entries` on the feedback row. Updates author **working copy**. Author must still **POST /publish** and importers **POST /sync**. |
 
 #### Cards on import decks
 
@@ -1024,11 +1132,11 @@ Each fact always includes **`tags`**: an array of `{ "id", "name", "description"
 
 **Endpoint:** `PATCH /api/decks/{id}/facts/{factId}`
 
-> **Imported decks:** **403** `cannot modify facts on an imported deck`.
-
 **Parameters:** `id` (deck ID), `factId` (fact ID from GET facts or add-facts).
 
 **Request Body:** Optional **`entries`** only — array of entry objects with optional `text`, `audio`, `image`, `video`, `json`. When provided, it replaces the fact’s entries. To rename or reorder **column labels**, use **`PATCH /api/decks/{id}`** with a new `fields` array (not this endpoint).
+
+> **Imported decks:** **403** `cannot modify facts on an imported deck`. Use [Sync an imported deck](#sync-an-imported-deck) to accept new content from the author, or `POST …/feedback` to propose corrections to the author.
 
 ```json
 {
@@ -1073,7 +1181,7 @@ Tags are **per user**: you create them with `POST /api/tags`, then attach them t
 - **[Creating a deck](#create-a-deck)** (`POST /api/decks`) — see [Optional tags (on create)](#optional-tags-on-create).
 - **[Adding facts](#add-facts)** (`POST /api/decks/{id}/facts/{operation}`) — optional `tags` on each fact item; see [Optional tags (per fact)](#optional-tags-per-fact).
 
-The server creates missing tags and links them in that request. Same tag can label many decks and many facts. For key layout and naming rules, see **[Tagging system design doc](../design-doc/tagging-system.md)**.
+The server creates missing tags and links them in that request. Same tag can label many decks and many facts. For key layout and naming rules, see **[Tagging system design doc](tagging-system.md)**.
 
 **Limits:** up to **100** distinct tags per user; up to **20** tags associated with a single deck. Tag **names** allow Unicode letters and numbers, spaces, hyphen (`-`), and apostrophe (`'`); leading/trailing space is trimmed and internal runs of spaces collapse to one. Uniqueness is enforced on a **normalized** form (trim → collapse spaces → lowercase). **`tag_id`** is 8 lowercase alphanumeric characters.
 
@@ -1333,9 +1441,9 @@ Example: `GET /api/decks/{id}/card?tag_id=Kt8QmNz2`
 
 - `id`: `a1b2c3d4e5f6` (your deck ID)
 
-**Response shape:** `front` and `back` are arrays of **entry objects** in **template order** (one object per fact entry index on that side). Each object matches a fact **entry**: optional **`field`** (label) and optional **`text`**, **`audio`**, **`image`**, **`video`**, **`json`** string keys (omitted when empty). When present, **`field`** comes from the deck’s **`fields`** list (`fields[i]` for entry index `i`); if the deck has fewer names than entries, some objects may omit `field`. Text and its pronunciation clip are explicit siblings on the same object (e.g. `"text": "Hello"` and `"audio": "https://…/api/media/…"`). For media keys, values are **full media URLs** when the server can determine a base URL. Use each URL with the same `Authorization: Bearer <token>` to download the file.
+**Response shape:** `front` and `back` are arrays of **entry objects** in **template order** (one object per fact entry index on that side). Each object matches a fact **entry**: optional **`field`** (label) and optional **`text`**, **`audio`**, **`image`**, **`video`**, **`json`** string keys (omitted when empty). When present, **`field`** comes from the deck’s **`fields`** list (`fields[i]` for entry index `i`); if the deck has fewer names than entries, some objects may omit `field`. Text and its pronunciation clip are explicit siblings on the same object (e.g. `"text": "Hello"` and `"audio": "https://.../api/media/…"`). For media keys, values are **full media URLs** when the server can determine a base URL. Use each URL with the same `Authorization: Bearer <token>` to download the file.
 
-Each JSON example below has a matching integration test in [`api/tests/integration/card_test.go`](../../api/tests/integration/card_test.go): `TestGetNextCard` (with field names from the deck) and `TestNextCardUrgencySelection` (no field names when deck labels are missing/short, text+audio+image, multi-front, front-only, split template `[[0,1],[2,3]]`, and full URL host).
+Each JSON example below has a matching integration test in [`api/tests/integration/card_test.go`](../api/tests/integration/card_test.go): `TestGetNextCard` (with field names from the deck) and `TestNextCardUrgencySelection` (no field names when deck labels are missing/short, text+audio+image, multi-front, front-only, split template `[[0,1],[2,3]]`, and full URL host).
 
 **Response (no field names):**
 
@@ -1782,7 +1890,7 @@ You can attach audio, images, and video to facts. Each **entry** object uses str
 
 **Endpoint:** `GET /api/media/{id}/meta`
 
-Returns metadata only (id, owner, filename, mime, size, checksum, created_at), no file body.
+Returns metadata only (id, owner, filename, mime, size, checksum, created_at), no file body. **Owners** receive working-copy metadata. **Importers** with a deck-sharing grant receive **versioned** snapshot metadata (same grant and **`?v=`** rules as download).
 
 ### Download media
 
@@ -1804,19 +1912,11 @@ Returns the media file (binary) for user-owned media by ID. Requires `Authorizat
 }
 ```
 
-### List or lookup shared media (work in progress)
-
-**Endpoint:** `GET /api/media/shared` — list shared pronunciation assets; optional `?word=...&lang=...` to lookup.
-
-### Download shared media (work in progress)
-
-**Endpoint:** `GET /api/media/shared/{id}` — download shared media file by ID.
-
 ### Using media in facts
 
 Each entry is an object with optional `text`, `audio`, `image`, `video`. Use a dedicated entry for media (e.g. `{ "audio": "abc123" }`) or combine with text in one entry (e.g. `{ "text": "Example sentence.", "audio": "ex1id" }`) so the audio is clearly for that sentence. Use optional `template` for custom front/back layout per fact; omit for default (front = first entry, back = rest).
 
-For full design (upload, delete, display, sync), see **[Media Upload design doc](../design-doc/media-upload.md)**.
+For full design (upload, delete, display, sync), see **[Media Upload design doc](media-upload.md)**.
 
 ---
 
@@ -1846,6 +1946,7 @@ For full design (upload, delete, display, sync), see **[Media Upload design doc]
 | `/api/decks/{id}/cards`                       | GET         | Optional query `tag_id`. Response shape unchanged: `{ "data": { "total_cards", "hidden_count", "hidden_facts", "orphaned_hidden_cards" }, "meta": { "msg" } }` |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE      | `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks/{id}/reschedule`                  | POST        | `{ "data": { "cards_shifted", "days", "max_days_away" }, "meta": { "msg" } }`                                                                              |
+| `/api/decks/catalog`                          | GET         | `{ "data": { "decks": [ … ] }, "meta": { "msg", "count", "total", "limit", "offset", "has_more" } }` — defaults `limit` 50, `offset` 0; optional `query` |
 | `/api/decks/import`                           | POST        | **201** — `{ "data": { "id", "source_deck_id", "source_version", "imported_at" }, "meta": { "msg" } }`                                                    |
 | `/api/decks/{id}/publish`                     | POST        | `{ "data": { "published_version", "visibility" }, "meta": { "msg": "published" } }`                                                                      |
 | `/api/decks/{id}/updates`                     | GET         | `{ "data": { "source_version", "latest_version", "added_facts", "removed_facts", "edited_facts", "media_changes" }, "meta": { "msg" } }`                   |
@@ -1862,8 +1963,6 @@ For full design (upload, delete, display, sync), see **[Media Upload design doc]
 | `/api/decks/{id}/facts/{factId}/tags`         | GET         | `{ "data": { "tags": [ … ] }, "meta": { "msg" } }`                                                                                                         |
 | `/api/media`                                  | POST        | `{ "data": { id, owner, filename, mime, size, checksum, created_at }, "meta": { "msg" } }`                                                                 |
 | `/api/media`                                  | GET         | `{ "data": [ MediaSwagger, … ], "meta": { "count", "has_more" } }`                                                                                         |
-| `/api/media/shared`                           | GET         | List or lookup shared media (query: `word`, `lang`)                                                                                                        |
-| `/api/media/shared/{id}`                      | GET         | Download shared media (binary)                                                                                                                             |
 | `/api/media/{id}/meta`                        | GET         | `{ "data": { id, owner, filename, mime, size, checksum, created_at }, "meta": { "msg" } }`                                                                 |
 | `/api/media/{id}`                             | GET         | Download media (binary)                                                                                                                                    |
 | `/api/media/{id}`                             | DELETE      | `{ "data": { "msg": "media deleted" } }`                                                                                                                   |

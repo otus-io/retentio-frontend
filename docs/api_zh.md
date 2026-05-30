@@ -26,6 +26,7 @@
   - [删除卡组](#删除卡组)
   - [假期模式（平移复习计划）](#假期模式平移复习计划)
   - [卡组共享（概述）](#卡组共享概述)
+  - [卡组目录](#卡组目录)
   - [发布卡组](#发布卡组)
   - [导入已发布卡组](#导入已发布卡组)
   - [获取导入更新（差异）](#获取导入更新差异)
@@ -63,9 +64,7 @@
   - [获取媒体元数据](#获取媒体元数据)
   - [下载媒体](#下载媒体)
   - [删除媒体](#删除媒体)
-  - [列出或查询共享媒体（开发中）](#列出或查询共享媒体开发中)
-  - [下载共享媒体（开发中）](#下载共享媒体开发中)
-  - [在词条中使用媒体（开发中）](#在词条中使用媒体开发中)
+  - [在词条中使用媒体](#在词条中使用媒体)
 - [响应示例速查](#响应示例速查)
 - [后续步骤](#后续步骤)
 
@@ -102,7 +101,12 @@
 | `/api/decks/{id}`                             | PATCH  | 更新卡组。源卡组：首次发布前可改 `visibility`。导入卡组：**仅可改 `rate`**（不可改 `name`、`fields`、`visibility`）。                              |
 | `/api/decks/{id}`                             | DELETE | 删除卡组。源卡组若 `published_version > 0` → **409**。导入卡组删除时撤销媒体授权。                                                                 |
 | `/api/decks/import`                           | POST   | **（共享）** 从已发布的公开源卡组创建导入学习副本。请求体：`source_deck_id`。**201**。                                                               |
+| `/api/decks/catalog`                          | GET    | **（共享）** 列出可导入的公开已发布源卡组（目录）。查询：`limit`、`offset`，可选 `query`（名称、所有者、卡组标签名）。按最新发布时间排序。           |
 | `/api/decks/{id}/publish`                     | POST   | **（共享）** 作者：将工作副本快照为下一 `published_version`。首次发布须 `visibility: "public"`。**200**。                                            |
+| `/api/decks/{id}/feedback`                    | POST   | **（共享）** 导入者：向源卡组作者提交词条反馈/修改建议。路径使用**导入**卡组 id。**201**；超过每日上限（每源卡组每天 20 条）→ **429**。              |
+| `/api/decks/{id}/feedback`                    | GET    | **（共享）** 作者：在**源**卡组 id 上查看反馈收件箱。查询：`limit`、`offset`，可选 `status`、`fact_id`。                                             |
+| `/api/decks/{id}/feedback/{feedbackId}`       | PATCH  | **（共享）** 作者：更新反馈 `status`（`open`、`resolved`、`dismissed`）。仅源卡组。                                                                 |
+| `/api/decks/{id}/feedback/{feedbackId}/accept` | POST | **（共享）** 作者：将 `proposed_entries` 应用到工作副本；状态设为 `accepted`。不自动发布。仅源卡组。                                                   |
 | `/api/decks/{id}/updates`                     | GET    | **（共享）** 导入者：对比钉住的 `source_version` 与源卡组最新发布版本。仅导入卡组。                                                                  |
 | `/api/decks/{id}/sync`                        | POST   | **（共享）** 导入者：接受较新快照（可选 `target_version`）。仅导入卡组。**200**。                                                                    |
 | `/api/decks/{id}/facts/{operation}`           | POST   | 添加词条：operation 为 append/prepend/shuffle/spread。请求体：facts（必填）、可选 template，以及每项词条可选 **`tags`**（标签**名称**；不存在则自动创建）。列名在卡组上维护（`PATCH /api/decks/{id}` → `fields`），不在每条词条上。为已有词条添加一张卡请使用 POST `/api/decks/{id}/card`。导入卡组 → **403**。 |
@@ -130,8 +134,6 @@
 | `/api/decks/{id}/facts/{factId}/tags`         | GET    | 仅列出某词条上的标签                                                                                                                                 |
 | `/api/media`                                  | POST   | 上传媒体（音频/图片）                                                                                                                                |
 | `/api/media`                                  | GET    | 列出用户媒体（同步清单）                                                                                                                             |
-| `/api/media/shared`                           | GET    | 列出或查询共享媒体（`?word=...&lang=...`）                                                                                                           |
-| `/api/media/shared/{id}`                      | GET    | 下载共享媒体文件                                                                                                                                     |
 | `/api/media/{id}/meta`                        | GET    | 获取媒体元数据（不含文件体）                                                                                                                         |
 | `/api/media/{id}`                             | GET    | 下载媒体文件                                                                                                                                         |
 | `/api/media/{id}`                             | DELETE | 删除媒体                                                                                                                                             |
@@ -262,6 +264,37 @@
 
 ## 2. 卡组
 
+### 卡组、词条与卡片（关系）
+
+**卡组（deck）** 是学习容器：元数据（`name`、`fields`、`rate`、所有者）加上两个成员列表——哪些**词条（facts）**属于该卡组、哪些**卡片（cards）**用于复习。**词条**保存词汇内容（`entries`：文本及可选媒体 id）。**卡片**是可调度的复习单元：每张卡通过 `fact_id` 指向一条词条，并保存 **template**（哪些 entry 索引在正面/背面）以及间隔重复状态（`due_date`、`last_review`、`hidden`）。
+
+列名（如 `English`、`Japanese`）仅存在于**卡组**的 `fields` 上。词条不存列名；entry 索引 `0` 为第一列，`1` 为第二列，依此类推。
+
+| 概念 | 作用 | 典型 API |
+|--------|------|-------------|
+| **卡组** | 容器 + 列结构 + 每日 `rate` | `POST/GET/PATCH/DELETE /api/decks/{id}` |
+| **词条** | 学习内容（entries） | `POST …/facts/{operation}`、`GET/PATCH/DELETE …/facts/{factId}` |
+| **卡片** | 某词条的一种可复习方向/布局 | 添加词条时默认创建，或 `POST …/card`；复习经 `GET/PATCH …/card` |
+
+#### 数量关系
+
+- 一个卡组 → 多条词条（集合成员）。
+- 一个卡组 → 多张卡片（集合成员）。
+- 卡组内一条词条 → **一张或多张**卡片（默认一张；**兄弟卡** = 同一词条、不同 `template`，如反向卡）。
+- 一张卡片 → 恰好一个 `fact_id`（须仍在卡组词条集合中）。
+
+#### 生命周期（源卡组）
+
+1. 创建卡组 → 词条/卡片集合为空。
+2. 添加词条 → 新建 `fact:{id}` 行 + 每条词条一张或多张卡 + `SADD` 进卡组集合。
+3. 学习 → `GET …/card` 选取卡组中最紧急的卡片；响应合并卡片 + 词条 + template。
+4. 删除词条 → 删除该词条及卡组中所有引用它的卡片。
+5. 删除卡片 → 仅删该卡；词条及同词条的其他卡片保留。
+
+**导入卡组（[卡组共享](#卡组共享概述)）：** 词条**正文**只读（钉住快照）；卡组元数据大多来自快照——导入者仅可对导入卡组 **`PATCH` `rate`**。导入者仍拥有**独立的卡片集合**，卡片 `PATCH` / 隐藏 / 删除行为与自有卡组相同。导入卡组上的标签以导入者为键——见 [§4 标签](#4-标签)。
+
+---
+
 ### 创建卡组
 
 **接口:** `POST /api/decks`
@@ -277,7 +310,16 @@
 
 #### 可选标签（创建时）
 
-请求可带可选 **`tags`**：标签**名称**（字符串）数组，不是标签 ID。不需要标签时可省略或传 `[]`。
+请求可通过 **二选一** 的方式附带卡组标签（不可同时使用）：
+
+| 字段 | 类型 | 适用场景 |
+|------|------|----------|
+| **`tags`** | 标签**名称**（`string[]`） | 批量导入 / 脚本 — 不存在的名称会自动创建 |
+| **`tag_ids`** | 已有标签 **ID**（`string[]`） | TagPicker UI — 标签须已存在（`POST /api/tags`） |
+
+两者都省略或传 `[]` 表示无标签。同时传 **`tags` 与 `tag_ids`** → **400** `provide either tags or tag_ids, not both`。
+
+##### `tags`（名称）
 
 | 行为 | 说明 |
 |------|------|
@@ -285,6 +327,20 @@
 | **复用** | 按规范化名称匹配当前用户已有标签并复用。 |
 | **创建** | 不存在的名称自动创建；计入**每用户 100 个标签**上限。 |
 | **去重** | 同一次请求内重复名称（如 `"Noun"` 与 `" noun "`）合并为一条关联。 |
+
+##### `tag_ids`（已有 ID）
+
+| 行为 | 说明 |
+|------|------|
+| **校验** | 每个 id 须非空；未知 id → **404** `tag not found`。 |
+| **归属** | 标签须属于当前用户。 |
+| **创建** | 不会自动创建标签。 |
+| **去重** | 同一次请求内重复 id 合并为一条关联。 |
+
+##### 两种形式共通
+
+| 行为 | 说明 |
+|------|------|
 | **上限** | 解析后同一卡组最多 **20** 个不同标签 → **400** `maximum tags per deck reached`。 |
 | **存储** | 标签不写入卡组 JSON；创建后用 [`GET /api/decks/{id}/tags`](#列出卡组上的标签) 查看。 |
 | **创建响应** | 仅返回 `deck_id`，不含标签对象。 |
@@ -470,9 +526,9 @@
 >
 > **导入卡组**（已设置 `source_deck_id`）：仅 **`rate`** 可改。**每次 PATCH 必须带 `rate`**（例如仅 `{ "rate": 30 }`）。**不得**发送 **`name`** 或 **`fields`**（即使与当前值相同）→ **400** `cannot change name on an imported deck` / `cannot change fields on an imported deck`。非空 **`visibility`** → **400**。卡组标题与列结构来自钉住的快照，并在 [同步](#同步导入卡组) 时从作者侧刷新。
 
-当请求体中的 **`rate`** 与卡组当前 **`rate`** **不同** 时，服务器对**未学习**卡片（`due_date - last_review == 1`）做**仅调整间隔（gap）**的重排：按加载顺序，**第一张**未学习卡的时间戳不变；之后每张未学习卡的 `due_date` 相对前一张按 **`86400 / 新 rate`** 秒递增（与新增卡片时的间隔定义一致）。**已学习**卡片时间戳不变。卡组 JSON 与相关卡片键在同一 Redis 事务中写入。若未传 `rate` 或 `rate` 未变化，则不重写卡片时间戳。
+当请求体中的 **`rate`** 存在且与卡组当前 **`rate`** **不同** 时，服务器对**未学习**卡片（`DueDate - LastReview == 1`）做**仅调整间隔（gap）**的重排：未学习行按**引入顺序**（`DueDate` 升序，再 `card_id`）排列；该顺序中**第一张**（最早到期）保留时间戳；其后每张未学习的 `DueDate` 相对前一张未学习卡按 **`86400 / 新 rate`** 秒递增（与新增卡片引入间隔定义一致）。**已学习**卡片不变。卡组 JSON 与卡片键在**同一** Redis 事务中更新。省略 `rate` 或 `rate` 未变则不重写卡片时间戳。
 
-设计说明见 [rate-change-update.md](../design-doc/rate-change-update.md)。
+设计说明见 [rate-change-update.md](rate-change-update.md)。
 
 **响应:**
 
@@ -548,7 +604,7 @@
 
 用户间卡组共享让**作者**发布卡组版本化快照，其他用户可**导入**个人学习副本。每次导入是导入者拥有的**新卡组**，拥有独立卡片与调度；**词条与内嵌媒体**为只读，通过钉住的快照版本解析。
 
-完整设计见 [deck-sharing-feature.md](../design-doc/deck-sharing-feature.md)。
+完整设计见 [deck-sharing-feature.md](deck-sharing-feature.md)。
 
 ### 概念
 
@@ -569,6 +625,80 @@
 - 再次发布采用**写时复制**：仅内容变化的词条/媒体获得新版本；未变行复用旧版本（更新差异仅列出真实变更）。
 
 所有共享接口均需 **`Authorization: Bearer <token>`**（与其他 `/api` 路由相同）。
+
+---
+
+### 卡组目录
+
+**接口：** `GET /api/decks/catalog`
+
+**调用方：** 任意已认证用户。
+
+**用途：** 在调用 [导入已发布卡组](#导入已发布卡组) 之前，浏览可**导入**的源卡组（已发布、公开、非导入行）。结果按**最新发布时间**排序（Redis `catalog:decks` ZSET，每次成功发布后更新）。
+
+**查询参数：**
+
+| 参数 | 默认 | 说明 |
+| --------- | ------- | ----------- |
+| `limit` | `50` | 每页条数（最大 **200**）。 |
+| `offset` | `0` | 跳过条数。 |
+| `query` | *（空）* | 可选；对**卡组名**、**所有者用户名**、最新快照中的**卡组标签名**做不区分大小写的子串匹配。 |
+
+示例：`GET /api/decks/catalog?limit=20&offset=0&query=JLPT`
+
+**成功（200）：**
+
+```json
+{
+  "data": {
+    "decks": [
+      {
+        "id": "a1b2c3d4e5f6",
+        "name": "JLPT N5 Core",
+        "owner": "alice",
+        "fields": ["English", "Japanese"],
+        "published_version": 3,
+        "fact_count": 120,
+        "deck_tag_names": ["JLPT N5", "verbs"],
+        "published_at": "2026-05-22T12:00:00Z"
+      }
+    ]
+  },
+  "meta": {
+    "msg": "ok",
+    "count": "1",
+    "total": "1",
+    "limit": "50",
+    "offset": "0",
+    "has_more": "false"
+  }
+}
+```
+
+| 字段 | 含义 |
+| ----- | ------- |
+| `id` | 源卡组 ID — 作为 `source_deck_id` 传给 `POST /api/decks/import`。 |
+| `name`, `fields` | 来自最新已发布快照清单。 |
+| `owner` | 作者用户名。 |
+| `published_version` | 源卡组上的最新发布版本号。 |
+| `fact_count` | 该快照中的词条数。 |
+| `deck_tag_names` | 快照中的卡组标签名（无标签时可省略）。 |
+| `published_at` | 该快照创建的 UTC 时间。 |
+
+**收录条件**（与导入资格相同）：
+
+- 仅源卡组（`source_deck_id` 为空）。
+- `visibility` 为 **`public`**。
+- `published_version > 0`。
+
+未发布或非公开的卡组不会出现；即使已发布，私有卡组也不会出现在目录中。
+
+**错误：**
+
+| 状态码 | 典型原因 |
+| ------ | ------------- |
+| **401** | 缺少或无效 JWT。 |
+| **500** | 列出目录失败（`Error listing catalog decks`）。 |
 
 ---
 
@@ -622,7 +752,7 @@
 
 **接口：** `POST /api/decks/import`
 
-**调用方：** 任意已认证用户（无需拥有源卡组）。
+**调用方：** 任意已认证用户（无需拥有源卡组）。可通过 [卡组目录](#卡组目录) 获取 `source_deck_id`，或直接使用已知的源卡组 ID。
 
 **请求体：**
 
@@ -785,8 +915,17 @@
 
 | 方法 | 路径 | 导入卡组 |
 | ------ | ---- | ------------- |
-| GET | `/api/decks/{id}/facts`、`…/facts/{factId}` | 读取**版本化快照**内容（非作者工作副本）。 |
+| GET | `/api/decks/{id}/facts`、`…/facts/{factId}`、下一张卡 | 读取钉住版本的快照 `entries`。 |
 | POST / PATCH / DELETE | 词条相关路由 | **403** `cannot modify facts on an imported deck` |
+
+#### 反馈（导入者 → 作者）
+
+| 方法 | 路径 | 角色 |
+| ------ | ---- | --- |
+| POST | `/api/decks/{importDeckId}/feedback` | 导入卡组所有者。请求体：`fact_id`（必填），可选 `category`（`translation` \| `audio` \| `typo` \| `other`，默认 `other`），`message`（未提供 `proposed_entries` 时必填；1–2000 字符），可选 `entry_index`，可选 `proposed_entries`（与词条 PATCH `entries` 同形；须与快照不同）。**201** 返回 `feedback_id`、`source_deck_id`、`fact_id`、`status`。每源卡组每 UTC 日 20 条后 **429**。 |
+| GET | `/api/decks/{sourceDeckId}/feedback` | 仅源卡组所有者。可选查询：`status`、`fact_id`、`limit`、`offset`。 |
+| PATCH | `/api/decks/{sourceDeckId}/feedback/{feedbackId}` | 源卡组所有者。请求体：`{ "status": "resolved" \| "dismissed" \| "open" }`。 |
+| POST | `/api/decks/{sourceDeckId}/feedback/{feedbackId}/accept` | 源卡组所有者。反馈行须含 `proposed_entries`。更新作者**工作副本**；作者仍须 **POST /publish**，导入者 **POST /sync**。 |
 
 #### 导入卡组上的卡片
 
@@ -1004,7 +1143,7 @@ Authorization: Bearer <token>
 
 **接口：** `PATCH /api/decks/{id}/facts/{factId}`
 
-> **导入卡组：** **403** `cannot modify facts on an imported deck`。
+> **导入卡组：** **403** `cannot modify facts on an imported deck`。请通过 [同步导入卡组](#同步导入卡组) 接受作者新内容，或使用 `POST …/feedback` 向作者提议修改。
 
 **参数：** `id`（卡组 ID）、`factId`（词条 ID，来自 GET 词条或添加词条）。
 
@@ -1053,7 +1192,7 @@ Authorization: Bearer <token>
 - **[创建卡组](#创建卡组)**（`POST /api/decks`）— 见 [可选标签（创建时）](#可选标签创建时)。
 - **[添加词条](#添加词条)**（`POST /api/decks/{id}/facts/{operation}`）— 每条词条项可带 `tags`；见 [可选标签（按词条）](#可选标签按词条)。
 
-服务端会创建缺失的标签并在该请求中完成关联。同一标签可关联多个卡组、多个词条。键空间与命名规则见 **[标签系统设计文档](../design-doc/tagging-system.md)**。
+服务端会创建缺失的标签并在该请求中完成关联。同一标签可关联多个卡组、多个词条。键空间与命名规则见 **[标签系统设计文档](tagging-system.md)**。
 
 **限制：** 每用户最多 **100** 个不同标签；单个卡组最多关联 **20** 个标签。标签**名称**允许 Unicode 字母与数字、空格、连字符 `-`、撇号 `'`；首尾空白会去掉，连续空白合并为一个。唯一性按**规范化**结果校验（去首尾空白 → 合并空白 → 小写）。**`tag_id`** 为 8 位小写字母数字。
 
@@ -1313,7 +1452,9 @@ Authorization: Bearer <token>
 
 - `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 
-**响应结构：** `front` 与 `back` 为**词条对象数组**，顺序按 **template**（每个对象对应 template 在该侧的一个词条索引）。每个对象与事实中的**词条（entry）**一致：可选 **`field`**（标签），以及可选的 **`text`**、**`audio`**、**`image`**、**`video`** 字符串键（无内容则省略）。正文与对应读音音频在同一对象上并列（例如 `"text": "Hello"` 与 `"audio": "https://…/api/media/…"`），对应关系明确。`audio` / `image` / `video` 在服务端能解析 base URL 时为**完整媒体 URL**（如 `https://api.retentio.app:8443/api/media/abc123`）。使用该 URL 并携带相同 `Authorization: Bearer <token>` 即可下载。
+**响应结构：** `front` 与 `back` 为按 **template 顺序**排列的 **entry 对象数组**（正面/背面每一侧每个 fact entry 索引对应一个对象）。每个对象与 fact **entry** 一致：可选 **`field`**（列名标签）及可选 **`text`**、**`audio`**、**`image`**、**`video`**、**`json`** 字符串键（无内容则省略）。存在 **`field`** 时来自卡组 **`fields`**（entry 索引 `i` 对应 `fields[i]`）；卡组列名少于 entry 数时，部分对象可能无 `field`。正文与读音可在同一对象并列（如 `"text": "Hello"` 与 `"audio": "https://.../api/media/…"`）。媒体键在服务端能确定 base URL 时为**完整 URL**；用相同 `Authorization: Bearer <token>` 下载。
+
+下列 JSON 示例均有对应集成测试：[`api/tests/integration/card_test.go`](../api/tests/integration/card_test.go) 中的 `TestGetNextCard`（含卡组字段名）与 `TestNextCardUrgencySelection`（卡组列名缺失/过短、text+audio+image、多正面、仅正面、分屏 template `[[0,1],[2,3]]`、完整 URL host）。
 
 **响应（无字段名）：**
 
@@ -1781,34 +1922,62 @@ Authorization: Bearer <token>
 }
 ```
 
-### 列出或查询共享媒体（开发中）
+### 在词条中使用媒体
 
-**接口：** `GET /api/media/shared` — 列出共享发音资源；可选查询参数 `?word=...&lang=...` 进行查询。
+每条 entry 为对象，含可选 `text`、`audio`、`image`、`video`。可为媒体单独建 entry（如 `{ "audio": "abc123" }`），或与正文合并在同一 entry（如 `{ "text": "Example sentence.", "audio": "ex1id" }`）以标明音频属于该句。可选用 `template` 指定每词条正/背面布局；省略则默认（正面第一条 entry、背面其余）。
 
-### 下载共享媒体（开发中）
-
-**接口：** `GET /api/media/shared/{id}` — 按 ID 下载共享媒体文件。
-
-### 在词条中使用媒体（开发中）
-
-每条 entry 为对象，含可选 `text`、`audio`、`image`、`video`。可选用 `template` 指定每词条的正/背面布局；省略则使用默认（正面第一条、背面其余）。
-
-完整设计（上传、删除、展示、同步）见 **[媒体上传设计文档](../design-doc/media-upload.md)**。
+完整设计（上传、删除、展示、同步）见 **[媒体上传设计文档](media-upload.md)**。
 
 ---
 
 ## 响应示例速查
 
-上述各节均包含完整 JSON 示例。完整接口与响应结构对照表见英文 [Response examples reference](api.md#response-examples-reference)。卡组共享相关条目摘要：
+| 接口                                          | 方法        | 响应结构                                                                                                                                             |
+| --------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/auth/register`                              | POST        | `{ "data": { … }, "meta": { "msg": "..." } }` — 见 [创建用户](#创建用户)                                                                             |
+| `/auth/login`                                 | POST        | `{ "data": { "token", "expires" }, "meta": { "expires" } }`                                                                                          |
+| `/auth/logout`                                | POST        | `{ "data": { "msg": "Logged out successfully" }, "meta": null }`                                                                                     |
+| `/auth/forgot-password`                       | POST        | `{ "data": { "reset_token" }, "meta": { "expires_in" } }`                                                                                            |
+| `/auth/reset-password`                        | POST        | `{ "data": { "msg": "Password reset successfully" }, "meta": null }`                                                                                 |
+| `/api/profile`                                | GET         | `{ "data": { 用户资料 }, "meta": { "msg" } }`                                                                                                        |
+| `/api/decks`                                  | POST        | `{ "data": { "deck_id" }, "meta": { "msg" } }`                                                                                                       |
+| `/api/decks`                                  | GET         | `{ "data": { "decks": [ … ] }, "meta": { "total", "msg" } }`                                                                                         |
+| `/api/decks/{id}`                             | GET         | `{ "data": { 卡组 + 统计 }, "meta": { "msg" } }`                                                                                                     |
+| `/api/decks/{id}`                             | PATCH       | `{ "data": { "deck_id" }, "meta": { "msg", "updated_at" } }`                                                                                         |
+| `/api/decks/{id}`                             | DELETE      | `{ "data": { "deck_id" }, "meta": { "msg" } }`                                                                                                       |
+| `/api/decks/{id}/facts/{op}`                  | POST        | 添加词条：body `facts[]` 每项可选 `tags`（名称）；`{ "data": { "fact_length" }, "meta": { "msg" } }`（响应不含标签）                                 |
+| `/api/decks/{id}/card`                        | POST        | 为已有词条加卡：`{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                       |
+| `/api/decks/{id}/facts`                       | GET         | `{ "data": { "facts": [ … ] }, "meta": { "msg", "count", "has_more", "limit", "offset", "total" } }` — 默认 `limit` 50、`offset` 0                  |
+| `/api/decks/{id}/facts/{factId}`              | GET         | `{ "data": { "fact": { …, "tags": [ … ] } }, "meta": { "msg" } }`                                                                                    |
+| `/api/decks/{id}/facts/{factId}`              | PATCH       | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                       |
+| `/api/decks/{id}/facts/{factId}`              | DELETE      | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                       |
+| `/api/decks/{id}/card`                        | GET         | 可选查询 `tag_id`。形状不变：`{ "data": { "card": { id, fact_id, template, …, front[], back[] }, "urgency" }, "meta": { "msg", … } }`                |
+| `/api/decks/{id}/card`                        | PATCH       | 间隔：`{ "data": { "last_review", "due_date", "new_interval" }, "meta": { "msg" } }`；可见性：`{ "data": { "hidden_status" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/cards`                       | GET         | 可选查询 `tag_id`。形状不变：`{ "data": { "total_cards", "hidden_count", "hidden_facts", "orphaned_hidden_cards" }, "meta": { "msg" } }`              |
+| `/api/decks/{id}/cards/{cardId}`              | DELETE      | `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                                       |
+| `/api/decks/{id}/reschedule`                  | POST        | `{ "data": { "cards_shifted", "days", "max_days_away" }, "meta": { "msg" } }`                                                                        |
+| `/api/decks/catalog`                          | GET         | `{ "data": { "decks": [ … ] }, "meta": { "msg", "count", "total", "limit", "offset", "has_more" } }` — 默认 `limit` 50、`offset` 0；可选 `query` |
+| `/api/decks/import`                           | POST        | **201** — `{ "data": { "id", "source_deck_id", "source_version", "imported_at" }, "meta": { "msg" } }`                                               |
+| `/api/decks/{id}/publish`                     | POST        | `{ "data": { "published_version", "visibility" }, "meta": { "msg": "published" } }`                                                                 |
+| `/api/decks/{id}/updates`                     | GET         | `{ "data": { "source_version", "latest_version", "added_facts", "removed_facts", "edited_facts", "media_changes" }, "meta": { "msg" } }`           |
+| `/api/decks/{id}/sync`                        | POST        | `{ "data": { "source_version" }, "meta": { "msg": "synced" } }`                                                                                    |
+| `/api/tags`                                   | POST        | `{ "data": { "tag": { id, name, description } }, "meta": { "msg" } }` — **201**                                                                    |
+| `/api/tags`                                   | GET         | `{ "data": { "tags": [ … ] }, "meta": { "msg" } }`                                                                                                   |
+| `/api/tags/{tagId}`                           | GET         | `{ "data": { "tag": { … } }, "meta": { "msg" } }`                                                                                                    |
+| `/api/tags/{tagId}`                           | PATCH       | `{ "data": { "tag": { … } }, "meta": { "msg" } }`                                                                                                    |
+| `/api/tags/{tagId}`                           | DELETE      | `{ "data": { "decks_untagged" }, "meta": { "msg" } }`                                                                                                |
+| `/api/tags/{tagId}/facts`                     | GET         | `{ "data": { "facts": [ { "deck_id", "fact_id" }, … ] }, "meta": { "msg" } }`                                                                        |
+| `/api/decks/{id}/tags/{tagId}`                | PUT, DELETE | `{ "data": { "tags": [ … ] }, "meta": { "msg" } }`                                                                                                   |
+| `/api/decks/{id}/tags`                        | GET         | `{ "data": { "tags": [ … ] }, "meta": { "msg" } }`                                                                                                   |
+| `/api/decks/{id}/facts/{factId}/tags/{tagId}` | PUT, DELETE | `{ "data": { "tags": [ … ] }, "meta": { "msg" } }`                                                                                                   |
+| `/api/decks/{id}/facts/{factId}/tags`         | GET         | `{ "data": { "tags": [ … ] }, "meta": { "msg" } }`                                                                                                   |
+| `/api/media`                                  | POST        | `{ "data": { id, owner, filename, mime, size, checksum, created_at }, "meta": { "msg" } }`                                                           |
+| `/api/media`                                  | GET         | `{ "data": [ MediaSwagger, … ], "meta": { "count", "has_more" } }`                                                                                   |
+| `/api/media/{id}/meta`                        | GET         | `{ "data": { id, owner, filename, mime, size, checksum, created_at }, "meta": { "msg" } }`                                                           |
+| `/api/media/{id}`                             | GET         | 下载媒体（二进制）                                                                                                                                   |
+| `/api/media/{id}`                             | DELETE      | `{ "data": { "msg": "media deleted" } }`                                                                                                             |
 
-| 接口 | 方法 | 响应结构 |
-| --- | --- | --- |
-| `/api/decks/import` | POST | **201** — `{ "data": { "id", "source_deck_id", "source_version", "imported_at" }, "meta": { "msg" } }` |
-| `/api/decks/{id}/publish` | POST | `{ "data": { "published_version", "visibility" }, "meta": { "msg": "published" } }` |
-| `/api/decks/{id}/updates` | GET | `{ "data": { "source_version", "latest_version", "added_facts", "removed_facts", "edited_facts", "media_changes" }, "meta": { "msg" } }` |
-| `/api/decks/{id}/sync` | POST | `{ "data": { "source_version" }, "meta": { "msg": "synced" } }` |
-
-其余接口与英文 `api.md` 响应示例表一致。
+上文各节含完整 JSON 示例。
 
 ---
 
