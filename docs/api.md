@@ -109,7 +109,7 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/api/decks/{id}/feedback`                    | GET    | **(Sharing)** Author: list feedback inbox on **source** deck id. Query: `limit`, `offset`, optional `status`, `fact_id`. |
 | `/api/decks/{id}/feedback/{feedbackId}`       | PATCH  | **(Sharing)** Author: update feedback `status` (`open`, `resolved`, `dismissed`). Source deck only. |
 | `/api/decks/{id}/feedback/{feedbackId}/accept` | POST | **(Sharing)** Author: apply `proposed_entries` to working copy; sets status `accepted`. Does not publish. Source deck only. |
-| `/api/decks/{id}/facts/{operation}`           | POST   | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`). Body: `facts` (required), optional `template`, and optional **`tags`** per fact item (tag **names**; auto-created if missing). Column labels live on the deck (`PATCH /api/decks/{id}` → `fields`), not on each fact. To add a card for an existing fact, use POST `/api/decks/{id}/card` instead. **403** on imported decks. |
+| `/api/decks/{id}/facts/{operation}`           | POST   | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`). Body: `facts` (required), optional `template`, and optional **`tags`** or **`tag_ids`** per fact item (mutually exclusive per item; `tags` = names auto-created if missing, `tag_ids` = existing IDs). Column labels live on the deck (`PATCH /api/decks/{id}` → `fields`), not on each fact. To add a card for an existing fact, use POST `/api/decks/{id}/card` instead. **403** on imported decks. |
 | `/api/decks/{id}/facts`                       | GET    | List facts (paged): default `limit` **50**, `offset` **0**; max `limit` **200**. `meta`: `count`, `has_more`, `limit`, `offset`, `total`. |
 | `/api/decks/{id}/facts/{factId}`              | GET    | Get a specific fact                                                                                                                                                                             |
 | `/api/decks/{id}/facts/{factId}`              | PATCH  | Update a fact’s `entries` only (column names are edited on the deck). **403** on imported decks.                                                                                                                               |
@@ -950,11 +950,20 @@ Tag associations are keyed by the **importer** (independent from the author). Fa
 - `id`: `a1b2c3d4e5f6` (your deck ID)
 - `operation`: `append`
 
-**Request Body:** An object with a required **`facts`** array and optional **`template`**. Each fact item has required **`entries`** and optional **`tags`**. Each **entry** is an object with optional `text`, `audio`, `image`, `video`, `json` (at least one content field required across the fact). **`fields` are not sent per fact** — use **`GET /api/decks/{id}`** (or PATCH the deck) for the deck’s `fields` list; that list supplies labels when studying (e.g. next-card `field` on each entry). The server generates a unique fact ID for each fact and creates one or more **cards** per fact depending on `template` (see **Template: default and sibling cards** below).
+**Request Body:** An object with a required **`facts`** array and optional **`template`**. Each fact item has required **`entries`** and optional **`tags`** or **`tag_ids`** (not both on the same item). Each **entry** is an object with optional `text`, `audio`, `image`, `video`, `json` (at least one content field required across the fact). **`fields` are not sent per fact** — use **`GET /api/decks/{id}`** (or PATCH the deck) for the deck’s `fields` list; that list supplies labels when studying (e.g. next-card `field` on each entry). The server generates a unique fact ID for each fact and creates one or more **cards** per fact depending on `template` (see **Template: default and sibling cards** below).
 
 #### Optional tags (per fact)
 
-Each element of **`facts`** may include **`tags`**: an array of tag **names** (strings), not tag IDs. The field is **optional** — omit it or use `[]` for facts that should have no tags.
+Each element of **`facts`** may include optional tags in **one** of two forms on that item (not both):
+
+| Field | Type | Use when |
+|-------|------|----------|
+| **`tags`** | tag **names** (`string[]`) | Bulk import / scripts — missing names are auto-created |
+| **`tag_ids`** | existing tag **IDs** (`string[]`) | TagPicker UI — tags must already exist (`POST /api/tags`) |
+
+Omit both fields or use `[]` for facts that should have no tags. Sending **`tags` and `tag_ids` on the same fact item** → **400** `provide either tags or tag_ids, not both`.
+
+##### `tags` (names)
 
 | Behavior | Detail |
 |----------|--------|
@@ -963,9 +972,23 @@ Each element of **`facts`** may include **`tags`**: an array of tag **names** (s
 | **Reuse** | If a name already exists for your user (after normalization), that tag is reused. |
 | **Create** | Missing names are auto-created for your user, then linked to the new fact. Counts toward the **100 tags per user** limit. |
 | **Dedup** | Duplicate names on the **same** fact (e.g. `"Noun"` and `" noun "`) are collapsed to one association. |
+
+##### `tag_ids` (existing IDs)
+
+| Behavior | Detail |
+|----------|--------|
+| **Validation** | Each id must be non-empty; unknown id → **404** `tag not found`. |
+| **Ownership** | Tag must belong to the current user. |
+| **Create** | Never auto-creates tags. |
+| **Dedup** | Duplicate ids on the **same** fact collapse to one association. |
+
+##### Both forms
+
+| Behavior | Detail |
+|----------|--------|
 | **Storage** | Tags are **not** embedded in the fact JSON in Redis; associations are stored separately and returned on GET. |
 | **Add response** | `POST …/facts/{operation}` returns only `fact_length` — **not** tag objects. Use [`GET /api/decks/{id}/facts`](#get-all-facts) or [Get one fact](#get-one-fact) to read tags after create. |
-| **Update** | [`PATCH /api/decks/{id}/facts/{factId}`](#update-a-fact) does **not** accept `tags`; add or remove tags with the [fact tag `PUT`/`DELETE`](#associate-a-tag-with-a-fact) routes or tag at create time. |
+| **Update** | [`PATCH /api/decks/{id}/facts/{factId}`](#update-a-fact) does **not** accept `tags` or `tag_ids`; add or remove tags with the [fact tag `PUT`/`DELETE`](#associate-a-tag-with-a-fact) routes or tag at create time. |
 
 ```json
 {

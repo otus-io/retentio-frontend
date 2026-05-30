@@ -109,7 +109,7 @@
 | `/api/decks/{id}/feedback/{feedbackId}/accept` | POST | **（共享）** 作者：将 `proposed_entries` 应用到工作副本；状态设为 `accepted`。不自动发布。仅源卡组。                                                   |
 | `/api/decks/{id}/updates`                     | GET    | **（共享）** 导入者：对比钉住的 `source_version` 与源卡组最新发布版本。仅导入卡组。                                                                  |
 | `/api/decks/{id}/sync`                        | POST   | **（共享）** 导入者：接受较新快照（可选 `target_version`）。仅导入卡组。**200**。                                                                    |
-| `/api/decks/{id}/facts/{operation}`           | POST   | 添加词条：operation 为 append/prepend/shuffle/spread。请求体：facts（必填）、可选 template，以及每项词条可选 **`tags`**（标签**名称**；不存在则自动创建）。列名在卡组上维护（`PATCH /api/decks/{id}` → `fields`），不在每条词条上。为已有词条添加一张卡请使用 POST `/api/decks/{id}/card`。导入卡组 → **403**。 |
+| `/api/decks/{id}/facts/{operation}`           | POST   | 添加词条：operation 为 append/prepend/shuffle/spread。请求体：facts（必填）、可选 template，以及每项词条可选 **`tags`** 或 **`tag_ids`**（同一条词条上互斥；`tags` 为名称、不存在则自动创建，`tag_ids` 为已有 ID）。列名在卡组上维护（`PATCH /api/decks/{id}` → `fields`），不在每条词条上。为已有词条添加一张卡请使用 POST `/api/decks/{id}/card`。导入卡组 → **403**。 |
 | `/api/decks/{id}/facts`                       | GET    | 获取词条（分页）：默认 `limit` **50**、`offset` **0**；`limit` 最大 **200**。`meta` 含 `count`、`has_more`、`limit`、`offset`、`total`。 |
 | `/api/decks/{id}/facts/{factId}`              | GET    | 获取单个词条                                                                                                                                         |
 | `/api/decks/{id}/facts/{factId}`              | PATCH  | 仅更新词条 `entries`（列名在卡组上改）。导入卡组 → **403**。                                                                                         |
@@ -957,11 +957,20 @@
 - `id`: `a1b2c3d4e5f6`（您的卡组 ID）
 - `operation`: `append`
 
-**请求体：** 对象，含必填 **`facts`** 数组与可选 **`template`**。每条词条项含必填 **`entries`** 与可选 **`tags`**。每条 **entry** 为对象，含可选 `text`、`audio`、`image`、`video`、`json`（整条词条至少有一项有内容）。**不在每条词条上传 `fields`** — 列名使用 **`GET /api/decks/{id}`**（或 `PATCH` 卡组）中的 `fields`，与学习时下一张卡各 entry 的 `field` 标签对应。服务端为每个词条生成唯一 ID，并根据 `template` 创建一张或多张卡片（见下方 **模板：默认与兄弟卡**）。
+**请求体：** 对象，含必填 **`facts`** 数组与可选 **`template`**。每条词条项含必填 **`entries`** 与可选 **`tags`** 或 **`tag_ids`**（同一条词条上不可同时传）。每条 **entry** 为对象，含可选 `text`、`audio`、`image`、`video`、`json`（整条词条至少有一项有内容）。**不在每条词条上传 `fields`** — 列名使用 **`GET /api/decks/{id}`**（或 `PATCH` 卡组）中的 `fields`，与学习时下一张卡各 entry 的 `field` 标签对应。服务端为每个词条生成唯一 ID，并根据 `template` 创建一张或多张卡片（见下方 **模板：默认与兄弟卡**）。
 
 #### 可选标签（按词条）
 
-**`facts`** 中每一项可带 **`tags`**：标签**名称**（字符串）数组，不是标签 ID。该字段**可选** — 不需要标签时可省略或传 `[]`。
+**`facts`** 中每一项可按需附带标签，**二选一**（同一条词条上不可同时传）：
+
+| 字段 | 类型 | 适用场景 |
+|------|------|----------|
+| **`tags`** | 标签**名称**（`string[]`） | 批量导入 / 脚本 — 缺失名称会自动创建 |
+| **`tag_ids`** | 已有标签 **ID**（`string[]`） | TagPicker UI — 标签须已存在（`POST /api/tags`） |
+
+两者都省略或传 `[]` 表示该词条无标签。**同一条**词条同时传 **`tags` 与 `tag_ids`** → **400** `provide either tags or tag_ids, not both`。
+
+##### `tags`（名称）
 
 | 行为 | 说明 |
 |------|------|
@@ -970,15 +979,29 @@
 | **复用** | 名称经规范化后若已存在于当前用户，则复用该标签。 |
 | **创建** | 不存在的名称会为当前用户自动创建并关联到新词条；计入**每用户 100 个标签**上限。 |
 | **去重** | **同一条**词条内重复名称（如 `"Noun"` 与 `" noun "`）合并为一条关联。 |
+
+##### `tag_ids`（已有 ID）
+
+| 行为 | 说明 |
+|------|------|
+| **校验** | 每个 id 须非空；未知 id → **404** `tag not found`。 |
+| **归属** | 标签须属于当前用户。 |
+| **创建** | 不会自动创建标签。 |
+| **去重** | **同一条**词条内重复 id 合并为一条关联。 |
+
+##### 两种形式共通
+
+| 行为 | 说明 |
+|------|------|
 | **存储** | 标签**不**写入 Redis 中 `fact:{id}` 的 JSON；关联单独存储，仅在 GET 时返回。 |
 | **添加响应** | `POST …/facts/{operation}` 仅返回 `fact_length`，**不**返回标签对象。创建成功后请用 [`GET /api/decks/{id}/facts`](#获取所有词条) 或 [获取单个词条](#获取单个词条) 查看 `tags`。 |
-| **更新** | [`PATCH /api/decks/{id}/facts/{factId}`](#更新词条) **不接受** `tags`；请用 [词条标签 `PUT`/`DELETE`](#将标签关联到词条) 或在添加时传入 `tags`。 |
+| **更新** | [`PATCH /api/decks/{id}/facts/{factId}`](#更新词条) **不接受** `tags` 或 `tag_ids`；请用 [词条标签 `PUT`/`DELETE`](#将标签关联到词条) 或在添加时传入标签。 |
 
 ```json
 {
   "facts": [
     { "entries": [{ "text": "Apple" }, { "text": "りんご" }], "tags": ["food", "noun"] },
-    { "entries": [{ "text": "Book" }, { "text": "本" }] },
+    { "entries": [{ "text": "Book" }, { "text": "本" }], "tag_ids": ["Kt8QmNz2"] },
     { "entries": [{ "text": "Water" }, { "text": "水" }], "tags": ["noun"] },
     { "entries": [{ "text": "School" }, { "text": "学校" }] }
   ]
@@ -1045,7 +1068,7 @@
 > **理解请求体：**
 >
 > - **`entries`**：entry 对象数组。每个 entry 含可选 `text`、`audio`、`image`、`video`、`json`（整条词条至少有一项有内容）。第 `i` 个 entry 与卡组 **`fields[i]`** 对应（见 **获取下一张最紧急卡片**）。在同一 entry 中同时写文本与音频（如 `{ "text": "I go to school.", "audio": "ex1id" }`）可明确该音频对应该句。
-> - **`tags`**（可选，按词条）：标签**名称**字符串数组。无标签时可省略。详见上文 [可选标签（按词条）](#可选标签按词条)。
+> - **`tags`** / **`tag_ids`**（可选，按词条）：`tags` 为标签**名称**数组；`tag_ids` 为已有标签 ID 数组；同一条词条上二选一。无标签时可省略。详见上文 [可选标签（按词条）](#可选标签按词条)。
 > - **`template`**（可选）：省略或为空时，每个词条生成**一张卡**，默认布局 `[[0], [1, 2, ...]]`。若提供，须为**三维**数组：二维模板的列表。**每个**词条会按该列表中的每个二维模板各生成一张卡（兄弟卡）。每个二维模板须对当前所有词条有效（条目数一致）；索引须在范围内、互不重复且覆盖全部条目。
 
 **响应:**
@@ -1187,12 +1210,12 @@ Authorization: Bearer <token>
 
 ## 4. 标签
 
-标签按**用户**隔离：先用 `POST /api/tags` 创建，再通过 **`PUT`**（无 JSON 请求体）挂到**卡组**和/或**词条**上。也可在同一请求中传入可选 **`tags`**（名称字符串）：
+标签按**用户**隔离：先用 `POST /api/tags` 创建，再通过 **`PUT`**（无 JSON 请求体）挂到**卡组**和/或**词条**上。也可在同一请求中传入可选 **`tags`**（名称）或 **`tag_ids`**（已有 ID）：
 
 - **[创建卡组](#创建卡组)**（`POST /api/decks`）— 见 [可选标签（创建时）](#可选标签创建时)。
-- **[添加词条](#添加词条)**（`POST /api/decks/{id}/facts/{operation}`）— 每条词条项可带 `tags`；见 [可选标签（按词条）](#可选标签按词条)。
+- **[添加词条](#添加词条)**（`POST /api/decks/{id}/facts/{operation}`）— 每条词条项可带 `tags` 或 `tag_ids`（同条互斥）；见 [可选标签（按词条）](#可选标签按词条)。
 
-服务端会创建缺失的标签并在该请求中完成关联。同一标签可关联多个卡组、多个词条。键空间与命名规则见 **[标签系统设计文档](tagging-system.md)**。
+在创建卡组或添加词条的请求中，仅当客户端传入 **`tags`**（名称模式）时，服务端会创建缺失的标签并在该请求中完成关联；若传入 **`tag_ids`**，则须为已有标签 ID（可先 `POST /api/tags` 创建），服务端不会自动创建。已有标签也可通过上文 **`PUT`**（无 JSON 请求体）挂到卡组或词条。同一标签可关联多个卡组、多个词条。键空间与命名规则见 **[标签系统设计文档](tagging-system.md)**。
 
 **限制：** 每用户最多 **100** 个不同标签；单个卡组最多关联 **20** 个标签。标签**名称**允许 Unicode 字母与数字、空格、连字符 `-`、撇号 `'`；首尾空白会去掉，连续空白合并为一个。唯一性按**规范化**结果校验（去首尾空白 → 合并空白 → 小写）。**`tag_id`** 为 8 位小写字母数字。
 
@@ -1945,7 +1968,7 @@ Authorization: Bearer <token>
 | `/api/decks/{id}`                             | GET         | `{ "data": { 卡组 + 统计 }, "meta": { "msg" } }`                                                                                                     |
 | `/api/decks/{id}`                             | PATCH       | `{ "data": { "deck_id" }, "meta": { "msg", "updated_at" } }`                                                                                         |
 | `/api/decks/{id}`                             | DELETE      | `{ "data": { "deck_id" }, "meta": { "msg" } }`                                                                                                       |
-| `/api/decks/{id}/facts/{op}`                  | POST        | 添加词条：body `facts[]` 每项可选 `tags`（名称）；`{ "data": { "fact_length" }, "meta": { "msg" } }`（响应不含标签）                                 |
+| `/api/decks/{id}/facts/{op}`                  | POST        | 添加词条：body `facts[]` 每项可选 `tags`（名称）或 `tag_ids`（同条互斥）；`{ "data": { "fact_length" }, "meta": { "msg" } }`（响应不含标签）       |
 | `/api/decks/{id}/card`                        | POST        | 为已有词条加卡：`{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                       |
 | `/api/decks/{id}/facts`                       | GET         | `{ "data": { "facts": [ … ] }, "meta": { "msg", "count", "has_more", "limit", "offset", "total" } }` — 默认 `limit` 50、`offset` 0                  |
 | `/api/decks/{id}/facts/{factId}`              | GET         | `{ "data": { "fact": { …, "tags": [ … ] } }, "meta": { "msg" } }`                                                                                    |
