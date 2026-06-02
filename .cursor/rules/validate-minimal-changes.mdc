@@ -1,0 +1,57 @@
+---
+description: Validate first, minimal surgical diffs, simplicity, verifiable goals; do not change tests to pass.
+alwaysApply: true
+---
+
+# Validate and keep changes minimal
+
+**Mandatory on every prompt.** Merge of project validate workflow and [Karpathy behavioral guidelines](https://github.com/multica-ai/andrej-karpathy-skills).
+
+## Think before coding
+
+- Read relevant current code; do not rely on stale findings or assumptions.
+- State assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them — do not pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- For review findings or bug reports: verify each item against current code. Fix only still-valid items; skip others with a brief reason.
+
+## On every prompt
+
+1. **Validate first** — Confirm the problem exists in current code before editing.
+2. **Minimal diff** — Smallest correct change. No drive-by refactors, formatting sweeps, renames, or unrelated edits. Match local conventions in touched files.
+3. **Simplicity** — No features, abstractions, configurability, or error handling beyond what the request needs. No helpers for single-use code.
+4. **Surgical edits** — Every changed line should trace to the user's request. Do not delete unrelated pre-existing dead code (mention it if useful). Remove only orphans your change created (unused imports, vars, functions).
+5. **Do not change tests to pass** — Fix production code when behavior is wrong. Edit tests only when the test is wrong or the user asked for test changes.
+6. **Flutter tests** — Placement and patterns: `.cursor/rules/testing.mdc` and `.cursor/rules/flutter-frontend.mdc`.
+7. **Validate after** — Run relevant checks for the change scope: `dart format`, `flutter analyze`, `flutter test`. If a check fails, fix within the same scope; do not expand to “clean up” nearby code.
+
+**Question-only or review-only:** answer without editing unless the user asked for code changes.
+
+## When tests fail
+
+1. **Investigate the implementation first.** Reproduce the failure, read the code under test, and determine whether the bug is in production logic (wrong behavior, missing edge case, etc.).
+2. **Fix the real issue** in production code when you find one.
+3. **Only then** consider changing the test — wrong expectations, wrong assertion target, or a legitimately changed API/contract.
+
+Do not relax or rewrite a test solely to make it pass without understanding the cause.
+
+## Multi-step tasks
+
+State a brief plan with verifiable success criteria, e.g.:
+
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+```
+
+Bug fix: reproduce (test or steps), then fix. Refactor: tests pass before and after.
+
+## Quick checklist
+
+```
+[ ] Verified against current code (assumptions stated if needed)
+[ ] Only still-valid issues addressed (skips explained)
+[ ] Minimal, surgical diff — no unrelated changes
+[ ] Failures fixed in prod code, not by weakening tests
+[ ] Post-change validation run or N/A explained
+```

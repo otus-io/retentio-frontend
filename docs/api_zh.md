@@ -101,7 +101,8 @@
 | `/api/decks/{id}`                             | PATCH  | 更新卡组。源卡组：首次发布前可改 `visibility`。导入卡组：**仅可改 `rate`**（不可改 `name`、`fields`、`visibility`）。                              |
 | `/api/decks/{id}`                             | DELETE | 删除卡组。源卡组若 `published_version > 0` → **409**。导入卡组删除时撤销媒体授权。                                                                 |
 | `/api/decks/import`                           | POST   | **（共享）** 从已发布的公开源卡组创建导入学习副本。请求体：`source_deck_id`。**201**。                                                               |
-| `/api/decks/catalog`                          | GET    | **（共享）** 列出可导入的公开已发布源卡组（目录）。查询：`limit`、`offset`，可选 `query`（名称、所有者、卡组标签名）。按最新发布时间排序。           |
+| `/api/decks/catalog`                          | GET    | **（共享）** 列出可导入的公开已发布源卡组。**无需登录。** 查询：`limit`、`offset`，可选 `query`（名称、描述、所有者、卡组标签名）。按最新发布时间排序。`POST /api/decks/import` 导入仍需 JWT。 |
+| `/api/decks/catalog/{id}`                     | GET    | **（共享）** 按源卡组 ID 获取一条公开已发布目录记录（字段与列表行相同）。**无需登录。** 不可导入时 **404**。 |
 | `/api/decks/{id}/publish`                     | POST   | **（共享）** 作者：将工作副本快照为下一 `published_version`。首次发布须 `visibility: "public"`。**200**。                                            |
 | `/api/decks/{id}/feedback`                    | POST   | **（共享）** 导入者：向源卡组作者提交词条反馈/修改建议。路径使用**导入**卡组 id。**201**；超过每日上限（每源卡组每天 20 条）→ **429**。              |
 | `/api/decks/{id}/feedback`                    | GET    | **（共享）** 作者：在**源**卡组 id 上查看反馈收件箱。查询：`limit`、`offset`，可选 `status`、`fact_id`。                                             |
@@ -303,10 +304,13 @@
 {
   "fields": ["English", "Japanese"],
   "name": "English Japanese IELTS Deck",
+  "description": "雅思口语核心词汇",
   "rate": 20,
   "tags": ["IELTS", "vocabulary"]
 }
 ```
+
+可选 **`description`** — 卡组简介（发布后出现在目录快照中）。最多 **500** 字符；省略或 `""` 表示无简介。
 
 #### 可选标签（创建时）
 
@@ -624,7 +628,7 @@
 - 导入者通过 `GET …/updates` + `POST …/sync` **主动**接受更新（无自动同步）。
 - 再次发布采用**写时复制**：仅内容变化的词条/媒体获得新版本；未变行复用旧版本（更新差异仅列出真实变更）。
 
-所有共享接口均需 **`Authorization: Bearer <token>`**（与其他 `/api` 路由相同）。
+多数共享接口需 **`Authorization: Bearer <token>`**（与其他 `/api` 路由相同）。**例外：** **`GET /api/decks/catalog`** 与 **`GET /api/decks/catalog/{id}`** 无需登录即可浏览；[导入](#导入已发布卡组) 仍需有效 JWT。
 
 ---
 
@@ -632,7 +636,7 @@
 
 **接口：** `GET /api/decks/catalog`
 
-**调用方：** 任意已认证用户。
+**调用方：** 任何人（无需 `Authorization` 头）。从目录 [导入](#导入已发布卡组) 前须登录。
 
 **用途：** 在调用 [导入已发布卡组](#导入已发布卡组) 之前，浏览可**导入**的源卡组（已发布、公开、非导入行）。结果按**最新发布时间**排序（Redis `catalog:decks` ZSET，每次成功发布后更新）。
 
@@ -642,7 +646,7 @@
 | --------- | ------- | ----------- |
 | `limit` | `50` | 每页条数（最大 **200**）。 |
 | `offset` | `0` | 跳过条数。 |
-| `query` | *（空）* | 可选；对**卡组名**、**所有者用户名**、最新快照中的**卡组标签名**做不区分大小写的子串匹配。 |
+| `query` | *（空）* | 可选；对**卡组名**、**描述**、**所有者用户名**、最新快照中的**卡组标签名**做不区分大小写的子串匹配。 |
 
 示例：`GET /api/decks/catalog?limit=20&offset=0&query=JLPT`
 
@@ -655,6 +659,7 @@
       {
         "id": "a1b2c3d4e5f6",
         "name": "JLPT N5 Core",
+        "description": "JLPT N5 核心词汇",
         "owner": "alice",
         "fields": ["English", "Japanese"],
         "published_version": 3,
@@ -678,7 +683,7 @@
 | 字段 | 含义 |
 | ----- | ------- |
 | `id` | 源卡组 ID — 作为 `source_deck_id` 传给 `POST /api/decks/import`。 |
-| `name`, `fields` | 来自最新已发布快照清单。 |
+| `name`, `description`, `fields` | 来自最新已发布快照清单（`description` 为空时省略）。 |
 | `owner` | 作者用户名。 |
 | `published_version` | 源卡组上的最新发布版本号。 |
 | `fact_count` | 该快照中的词条数。 |
@@ -697,8 +702,51 @@
 
 | 状态码 | 典型原因 |
 | ------ | ------------- |
-| **401** | 缺少或无效 JWT。 |
 | **500** | 列出目录失败（`Error listing catalog decks`）。 |
+
+#### 获取单条目录记录
+
+**接口：** `GET /api/decks/catalog/{id}`
+
+**调用方：** 任何人（无需 `Authorization` 头）。
+
+**用途：** 按**源卡组 ID** 加载**一条**可导入的目录记录 — 字段与列表行相同（`id`、`name`、`description`、`owner`、`fields`、`published_version`、`fact_count`、`deck_tag_names`、`published_at`）。用于目录详情页或直接链接，无需翻页扫描整个列表。
+
+**路径参数：** `{id}` — 源卡组 ID（与 `POST /api/decks/import` 的 `source_deck_id` 相同）。
+
+示例：`GET /api/decks/catalog/a1b2c3d4e5f6`
+
+**成功（200）：**
+
+```json
+{
+  "data": {
+    "id": "a1b2c3d4e5f6",
+    "name": "JLPT N5 Core",
+    "description": "JLPT N5 核心词汇",
+    "owner": "alice",
+    "fields": ["English", "Japanese"],
+    "published_version": 3,
+    "fact_count": 120,
+    "deck_tag_names": ["JLPT N5", "verbs"],
+    "published_at": "2026-05-22T12:00:00Z"
+  },
+  "meta": {
+    "msg": "ok"
+  }
+}
+```
+
+字段含义见上方[列表](#卡组目录)表格。**`description`** 来自最新已发布快照；若快照中为空，服务器回退到源卡组上存储的描述。
+
+**收录条件：** 与列表相同 — 仅公开、已发布的源卡组。私有、未发布或导入行 → **404**。
+
+**错误：**
+
+| 状态码 | 典型原因 |
+| ------ | ------------- |
+| **404** | `Deck not found in catalog` — ID 不存在、非公开、未发布或为导入行。 |
+| **500** | 加载目录记录失败（`Error loading catalog deck`）。 |
 
 ---
 
@@ -788,13 +836,14 @@
 - `published_version > 0`。
 - `visibility` 为 **`public`**（有效可见性）。
 - 源卡组本身不是导入行（`cannot import an imported deck`）。
+- 导入者不是源卡组所有者（`cannot import your own deck`）。
 
 **错误：**
 
 | 状态码 | 典型 `msg` |
 | ------ | ------------- |
 | **404** | `source deck not found` |
-| **403** | `source deck is not importable`、`source deck has not been published`、`cannot import an imported deck` |
+| **403** | `source deck is not importable`、`source deck has not been published`、`cannot import an imported deck`、`cannot import your own deck` |
 | **400** | 其他校验失败 |
 
 ---
@@ -1980,6 +2029,7 @@ Authorization: Bearer <token>
 | `/api/decks/{id}/cards/{cardId}`              | DELETE      | `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                                       |
 | `/api/decks/{id}/reschedule`                  | POST        | `{ "data": { "cards_shifted", "days", "max_days_away" }, "meta": { "msg" } }`                                                                        |
 | `/api/decks/catalog`                          | GET         | `{ "data": { "decks": [ … ] }, "meta": { "msg", "count", "total", "limit", "offset", "has_more" } }` — 默认 `limit` 50、`offset` 0；可选 `query` |
+| `/api/decks/catalog/{id}`                     | GET         | `{ "data": { "id", "name", "description", "owner", "fields", "published_version", "fact_count", "deck_tag_names", "published_at" }, "meta": { "msg" } }` — 单条目录记录；不可导入时 **404** |
 | `/api/decks/import`                           | POST        | **201** — `{ "data": { "id", "source_deck_id", "source_version", "imported_at" }, "meta": { "msg" } }`                                               |
 | `/api/decks/{id}/publish`                     | POST        | `{ "data": { "published_version", "visibility" }, "meta": { "msg": "published" } }`                                                                 |
 | `/api/decks/{id}/updates`                     | GET         | `{ "data": { "source_version", "latest_version", "added_facts", "removed_facts", "edited_facts", "media_changes" }, "meta": { "msg" } }`           |
