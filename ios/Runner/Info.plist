@@ -37,6 +37,8 @@
 	<string>Retentio needs access to the camera so you can take photos and videos to attach to flashcard entries.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Retentio needs access to your photo library so you can attach images and videos to flashcard entries.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Retentio may access your location when attaching photos and videos to flashcard entries that include location metadata.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
