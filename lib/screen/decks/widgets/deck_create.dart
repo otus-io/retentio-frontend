@@ -290,6 +290,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
                   _draggingFieldIndex = index;
                 });
               },
+              // ignore: deprecated_member_use
               onReorder: (oldIndex, newIndex) {
                 setState(() {
                   if (oldIndex < newIndex) {
