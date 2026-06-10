@@ -1,7 +1,9 @@
 import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/models/card.dart';
+import 'package:retentio/models/tag.dart';
 import 'package:retentio/services/apis/card_service.dart';
 import 'package:retentio/services/apis/deck_service.dart';
+import 'package:retentio/services/apis/tag_service.dart';
 import 'package:retentio/utils/log.dart';
 
 /// Adapter repository that bridges DeckStudy domain to existing legacy services.
@@ -13,10 +15,13 @@ class DeckStudyLegacyServiceRepository implements DeckStudyRepository {
   final DeckService _deckService;
 
   @override
-  Future<DeckStudyLoadResult> loadNextDueCard({required String deckId}) async {
+  Future<DeckStudyLoadResult> loadNextDueCard({
+    required String deckId,
+    String? tagId,
+  }) async {
     CardDetail? response;
     try {
-      response = await CardService.getNextDueCard(deckId);
+      response = await CardService.getNextDueCard(deckId, tagId: tagId);
     } catch (e, s) {
       logger.e(
         'loadNextDueCard failed for deck=$deckId, error=$e',
@@ -49,6 +54,16 @@ class DeckStudyLegacyServiceRepository implements DeckStudyRepository {
       cardDetail: null,
       refreshedCardsCount: refreshedCardsCount,
     );
+  }
+
+  @override
+  Future<List<Tag>> loadDeckTags({required String deckId}) async {
+    try {
+      return await TagService.of.getDeckTags(deckId);
+    } catch (e, s) {
+      logger.e('loadDeckTags failed for deck=$deckId', stackTrace: s);
+      return [];
+    }
   }
 
   @override

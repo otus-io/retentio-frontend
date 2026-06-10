@@ -76,5 +76,37 @@ void main() {
         {'text': 'a'},
       ]);
     });
+
+    test('buildFactBody includes tags when tagNames is non-empty', () {
+      final b = AddFactPayload.buildFactBody(
+        entries: [
+          {'text': 'a'},
+        ],
+        tagNames: ['Flutter', 'Dart'],
+      );
+      final first = (b['facts'] as List).first as Map;
+      expect(first['tags'], ['Flutter', 'Dart']);
+    });
+
+    test('buildFactBody omits tags key when tagNames is null', () {
+      final b = AddFactPayload.buildFactBody(
+        entries: [
+          {'text': 'a'},
+        ],
+      );
+      final first = (b['facts'] as List).first as Map;
+      expect(first.containsKey('tags'), isFalse);
+    });
+
+    test('buildFactBody omits tags key when tagNames is empty list', () {
+      final b = AddFactPayload.buildFactBody(
+        entries: [
+          {'text': 'a'},
+        ],
+        tagNames: [],
+      );
+      final first = (b['facts'] as List).first as Map;
+      expect(first.containsKey('tags'), isFalse);
+    });
   });
 }
