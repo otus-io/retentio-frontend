@@ -173,10 +173,12 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
     // Resolve full Tag objects from the manager's list.
     final allTags = context.read<TagManagerCubit>().state.tags;
     final resolved = result
-        .map((id) => allTags.firstWhere(
-              (t) => t.id == id,
-              orElse: () => Tag(id: id, name: id, description: ''),
-            ))
+        .map(
+          (id) => allTags.firstWhere(
+            (t) => t.id == id,
+            orElse: () => Tag(id: id, name: id, description: ''),
+          ),
+        )
         .toList();
 
     setState(() {
@@ -504,10 +506,7 @@ class _TagsSection extends StatelessWidget {
           ],
         ),
         if (selectedTags.isNotEmpty)
-          TagChipRow(
-            tags: selectedTags,
-            onRemove: onRemove,
-          ),
+          TagChipRow(tags: selectedTags, onRemove: onRemove),
       ],
     );
   }

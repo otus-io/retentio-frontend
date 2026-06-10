@@ -13,10 +13,10 @@ class TagService {
     required String name,
     String description = '',
   }) async {
-    return ApiService.post(Api.tags, body: {
-      'name': name,
-      'description': description,
-    });
+    return ApiService.post(
+      Api.tags,
+      body: {'name': name, 'description': description},
+    );
   }
 
   /// 列出当前用户全部标签
@@ -55,10 +55,7 @@ class TagService {
     String? name,
     String? description,
   }) async {
-    final body = <String, dynamic>{
-      'name': ?name,
-      'description': ?description,
-    };
+    final body = <String, dynamic>{'name': ?name, 'description': ?description};
     return ApiService.patch(
       Api.tag,
       pathParams: {'tagId': tagId},
@@ -102,7 +99,10 @@ class TagService {
   /// 列出卡组上的所有标签
   Future<List<Tag>> getDeckTags(String deckId) async {
     try {
-      final res = await ApiService.get(Api.deckTags, pathParams: {'id': deckId});
+      final res = await ApiService.get(
+        Api.deckTags,
+        pathParams: {'id': deckId},
+      );
       return _parseTags(res?.data);
     } catch (e) {
       rethrow;
@@ -112,7 +112,11 @@ class TagService {
   // ── Fact <-> Tag ──────────────────────────────────────────
 
   /// 关联标签到词条（幂等 PUT，无 body）
-  Future<List<Tag>> addTagToFact(String deckId, String factId, String tagId) async {
+  Future<List<Tag>> addTagToFact(
+    String deckId,
+    String factId,
+    String tagId,
+  ) async {
     try {
       final res = await ApiService.put(
         Api.factTag,

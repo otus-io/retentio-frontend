@@ -64,11 +64,7 @@ class _TagFactsScreenState extends State<TagFactsScreen> {
     );
   }
 
-  Widget _buildBody(
-    AppLocalizations loc,
-    ThemeData theme,
-    ColorScheme scheme,
-  ) {
+  Widget _buildBody(AppLocalizations loc, ThemeData theme, ColorScheme scheme) {
     if (_facts == null && _error == null) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -79,8 +75,11 @@ class _TagFactsScreenState extends State<TagFactsScreen> {
           mainAxisSize: MainAxisSize.min,
           spacing: 16,
           children: [
-            Text(_error!, textAlign: TextAlign.center,
-                style: TextStyle(color: scheme.error)),
+            Text(
+              _error!,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: scheme.error),
+            ),
             TextButton(onPressed: _load, child: Text(loc.retry)),
           ],
         ),
@@ -94,8 +93,11 @@ class _TagFactsScreenState extends State<TagFactsScreen> {
           mainAxisSize: MainAxisSize.min,
           spacing: 12,
           children: [
-            Icon(LucideIcons.fileX2, size: 48,
-                color: scheme.onSurface.withValues(alpha: 0.25)),
+            Icon(
+              LucideIcons.fileX2,
+              size: 48,
+              color: scheme.onSurface.withValues(alpha: 0.25),
+            ),
             Text(
               loc.noFactsInTag,
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -166,7 +168,8 @@ class _FactCard extends StatelessWidget {
                 text,
                 style: i == 0
                     ? theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600)
+                        fontWeight: FontWeight.w600,
+                      )
                     : theme.textTheme.bodySmall,
               ),
             ],

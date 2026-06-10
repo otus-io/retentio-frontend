@@ -49,15 +49,11 @@ class DeckTagCubit extends Cubit<DeckTagState> {
     emit(state.copyWith(status: DeckTagStatus.loading));
     try {
       final tags = await TagService.of.getDeckTags(deckId);
-      emit(state.copyWith(
-        status: DeckTagStatus.loaded,
-        tags: _sorted(tags),
-      ));
+      emit(state.copyWith(status: DeckTagStatus.loaded, tags: _sorted(tags)));
     } catch (e) {
-      emit(state.copyWith(
-        status: DeckTagStatus.error,
-        errorMessage: e.toString(),
-      ));
+      emit(
+        state.copyWith(status: DeckTagStatus.error, errorMessage: e.toString()),
+      );
     }
   }
 
@@ -67,10 +63,7 @@ class DeckTagCubit extends Cubit<DeckTagState> {
   Future<String?> addTag(String tagId) async {
     try {
       final tags = await TagService.of.addTagToDeck(deckId, tagId);
-      emit(state.copyWith(
-        status: DeckTagStatus.loaded,
-        tags: _sorted(tags),
-      ));
+      emit(state.copyWith(status: DeckTagStatus.loaded, tags: _sorted(tags)));
       return null;
     } catch (e) {
       return e.toString();
@@ -80,16 +73,11 @@ class DeckTagCubit extends Cubit<DeckTagState> {
   /// Removes [tagId] from this deck optimistically. Returns error string or null.
   Future<String?> removeTag(String tagId) async {
     final previous = state.tags;
-    emit(state.copyWith(
-      tags: previous.where((t) => t.id != tagId).toList(),
-    ));
+    emit(state.copyWith(tags: previous.where((t) => t.id != tagId).toList()));
 
     try {
       final tags = await TagService.of.removeTagFromDeck(deckId, tagId);
-      emit(state.copyWith(
-        status: DeckTagStatus.loaded,
-        tags: _sorted(tags),
-      ));
+      emit(state.copyWith(status: DeckTagStatus.loaded, tags: _sorted(tags)));
       return null;
     } catch (e) {
       emit(state.copyWith(tags: previous));
