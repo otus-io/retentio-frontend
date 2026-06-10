@@ -145,10 +145,12 @@ class _FactAddState extends ConsumerState<FactAdd>
 
     final allTags = context.read<TagManagerCubit>().state.tags;
     final resolved = result
-        .map((id) => allTags.firstWhere(
-              (t) => t.id == id,
-              orElse: () => Tag(id: id, name: id, description: ''),
-            ))
+        .map(
+          (id) => allTags.firstWhere(
+            (t) => t.id == id,
+            orElse: () => Tag(id: id, name: id, description: ''),
+          ),
+        )
         .toList();
 
     setState(() {
@@ -410,10 +412,7 @@ class _FactTagRow extends StatelessWidget {
           )
         else
           Expanded(
-            child: TagChipRow(
-              tags: selectedTags,
-              onRemove: onRemove,
-            ),
+            child: TagChipRow(tags: selectedTags, onRemove: onRemove),
           ),
         TextButton.icon(
           onPressed: onPickTags,

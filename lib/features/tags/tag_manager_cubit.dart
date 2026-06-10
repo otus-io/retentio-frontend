@@ -48,10 +48,12 @@ class TagManagerCubit extends Cubit<TagManagerState> {
       final tags = await TagService.of.getTags();
       emit(state.copyWith(status: TagManagerStatus.loaded, tags: tags));
     } catch (e) {
-      emit(state.copyWith(
-        status: TagManagerStatus.error,
-        errorMessage: e.toString(),
-      ));
+      emit(
+        state.copyWith(
+          status: TagManagerStatus.error,
+          errorMessage: e.toString(),
+        ),
+      );
     }
   }
 
@@ -111,9 +113,7 @@ class TagManagerCubit extends Cubit<TagManagerState> {
   Future<String?> deleteTag(String tagId) async {
     // Optimistic removal for instant feedback.
     final previous = state.tags;
-    emit(state.copyWith(
-      tags: previous.where((t) => t.id != tagId).toList(),
-    ));
+    emit(state.copyWith(tags: previous.where((t) => t.id != tagId).toList()));
 
     try {
       final res = await TagService.of.deleteTag(tagId);

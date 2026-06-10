@@ -40,7 +40,7 @@ class FactTagState {
 /// Scope: fact — provide in the fact-detail / fact-edit context.
 class FactTagCubit extends Cubit<FactTagState> {
   FactTagCubit({required this.deckId, required this.factId})
-      : super(const FactTagState());
+    : super(const FactTagState());
 
   final String deckId;
   final String factId;
@@ -51,15 +51,11 @@ class FactTagCubit extends Cubit<FactTagState> {
     emit(state.copyWith(status: FactTagStatus.loading));
     try {
       final tags = await TagService.of.getFactTags(deckId, factId);
-      emit(state.copyWith(
-        status: FactTagStatus.loaded,
-        tags: _sorted(tags),
-      ));
+      emit(state.copyWith(status: FactTagStatus.loaded, tags: _sorted(tags)));
     } catch (e) {
-      emit(state.copyWith(
-        status: FactTagStatus.error,
-        errorMessage: e.toString(),
-      ));
+      emit(
+        state.copyWith(status: FactTagStatus.error, errorMessage: e.toString()),
+      );
     }
   }
 
@@ -69,10 +65,7 @@ class FactTagCubit extends Cubit<FactTagState> {
   Future<String?> addTag(String tagId) async {
     try {
       final tags = await TagService.of.addTagToFact(deckId, factId, tagId);
-      emit(state.copyWith(
-        status: FactTagStatus.loaded,
-        tags: _sorted(tags),
-      ));
+      emit(state.copyWith(status: FactTagStatus.loaded, tags: _sorted(tags)));
       return null;
     } catch (e) {
       return e.toString();
@@ -82,16 +75,11 @@ class FactTagCubit extends Cubit<FactTagState> {
   /// Removes [tagId] from this fact optimistically. Returns error string or null.
   Future<String?> removeTag(String tagId) async {
     final previous = state.tags;
-    emit(state.copyWith(
-      tags: previous.where((t) => t.id != tagId).toList(),
-    ));
+    emit(state.copyWith(tags: previous.where((t) => t.id != tagId).toList()));
 
     try {
       final tags = await TagService.of.removeTagFromFact(deckId, factId, tagId);
-      emit(state.copyWith(
-        status: FactTagStatus.loaded,
-        tags: _sorted(tags),
-      ));
+      emit(state.copyWith(status: FactTagStatus.loaded, tags: _sorted(tags)));
       return null;
     } catch (e) {
       emit(state.copyWith(tags: previous));

@@ -232,10 +232,12 @@ class _FactEditState extends ConsumerState<FactEdit>
     if (result == null || !mounted) return;
     final allTags = context.read<TagManagerCubit>().state.tags;
     final resolved = result
-        .map((id) => allTags.firstWhere(
-              (t) => t.id == id,
-              orElse: () => Tag(id: id, name: id, description: ''),
-            ))
+        .map(
+          (id) => allTags.firstWhere(
+            (t) => t.id == id,
+            orElse: () => Tag(id: id, name: id, description: ''),
+          ),
+        )
         .toList();
     setState(() {
       _selectedTagIds = result;
@@ -251,11 +253,8 @@ class _FactEditState extends ConsumerState<FactEdit>
         (id) => TagService.of.addTagToFact(widget.deck.id, widget.factId, id),
       ),
       ...toRemove.map(
-        (id) => TagService.of.removeTagFromFact(
-          widget.deck.id,
-          widget.factId,
-          id,
-        ),
+        (id) =>
+            TagService.of.removeTagFromFact(widget.deck.id, widget.factId, id),
       ),
     ]);
   }
