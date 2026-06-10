@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/decks/bloc/deck_create_cubit.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
@@ -93,6 +94,9 @@ class _DeckListScreenState extends State<DeckListScreen> {
                             deckId: '',
                             cardType: DeckCardType.add,
                           ),
+                        ),
+                        BlocProvider<TagManagerCubit>(
+                          create: (_) => TagManagerCubit(),
                         ),
                       ],
                       child: const DeckCreate(),

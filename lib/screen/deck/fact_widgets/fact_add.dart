@@ -2,9 +2,15 @@ import 'dart:async' show unawaited;
 
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/features/tags/tag_manager_cubit.dart';
+import 'package:retentio/features/tags/widgets/tag_chip.dart';
+import 'package:retentio/features/tags/widgets/tag_picker_sheet.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/models/tag.dart';
 import 'package:retentio/screen/deck/fact_add_composer/entry_row.dart';
 import 'package:retentio/screen/deck/fact_add_composer/media_handling_coordinator.dart';
 import 'package:retentio/screen/deck/fact_add_composer/payload.dart';
@@ -49,6 +55,10 @@ class _FactAddState extends ConsumerState<FactAdd>
   bool _recordingVoice = false;
   late final RecorderController _voiceRecorder;
   late final AudioRecorder _iosPackageVoiceRecorder;
+
+  // ── tag state ────────────────────────────────────────────
+  Set<String> _selectedTagIds = {};
+  List<Tag> _selectedTags = [];
 
   List<GlobalKey> get _hostKeys => [for (final r in _rows) r.hostKey];
 
@@ -126,6 +136,27 @@ class _FactAddState extends ConsumerState<FactAdd>
     });
   }
 
+  Future<void> _openTagPicker() async {
+    final result = await showTagPickerSheet(
+      context,
+      selectedIds: _selectedTagIds,
+    );
+    if (result == null || !mounted) return;
+
+    final allTags = context.read<TagManagerCubit>().state.tags;
+    final resolved = result
+        .map((id) => allTags.firstWhere(
+              (t) => t.id == id,
+              orElse: () => Tag(id: id, name: id, description: ''),
+            ))
+        .toList();
+
+    setState(() {
+      _selectedTagIds = result;
+      _selectedTags = resolved;
+    });
+  }
+
   void _resetForm() {
     if (!mounted) return;
     final oldRows = List<AddFactRowModel>.from(_rows);
@@ -133,6 +164,8 @@ class _FactAddState extends ConsumerState<FactAdd>
       _rows
         ..clear()
         ..addAll(AddFactRowModel.listForDeckFields(widget.deck.fields));
+      _selectedTagIds = {};
+      _selectedTags = [];
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       for (final r in oldRows) {
@@ -222,7 +255,11 @@ class _FactAddState extends ConsumerState<FactAdd>
           ),
         );
       }
-      final body = AddFactPayload.buildFactBody(entries: entries);
+      final tagNames = _selectedTags.map((t) => t.name).toList();
+      final body = AddFactPayload.buildFactBody(
+        entries: entries,
+        tagNames: tagNames.isNotEmpty ? tagNames : null,
+      );
       final res = await CardService.addFacts(widget.deck.id, 'append', body);
       if (!mounted) return;
       if (res?.isSuccess == true) {
@@ -312,6 +349,17 @@ class _FactAddState extends ConsumerState<FactAdd>
               ),
               const SizedBox(height: _kToolbarRowsSpacing),
               ..._buildEntryRows(loc, theme, outline),
+              const SizedBox(height: _kToolbarRowsSpacing),
+              _FactTagRow(
+                selectedTags: _selectedTags,
+                onRemove: (tagId) {
+                  setState(() {
+                    _selectedTagIds.remove(tagId);
+                    _selectedTags.removeWhere((t) => t.id == tagId);
+                  });
+                },
+                onPickTags: _openTagPicker,
+              ),
               const SizedBox(height: _kSubmitTopSpacing),
               AppButton(
                 label: loc.addFactSubmit,
@@ -324,6 +372,59 @@ class _FactAddState extends ConsumerState<FactAdd>
           ),
         ),
       ),
+    );
+  }
+}
+
+// ── Tag row widget ────────────────────────────────────────────────────────────
+
+class _FactTagRow extends StatelessWidget {
+  const _FactTagRow({
+    required this.selectedTags,
+    required this.onRemove,
+    required this.onPickTags,
+  });
+
+  final List<Tag> selectedTags;
+  final void Function(String tagId) onRemove;
+  final VoidCallback onPickTags;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Row(
+      children: [
+        Icon(LucideIcons.tag, size: 14, color: scheme.onSurfaceVariant),
+        const SizedBox(width: 6),
+        if (selectedTags.isEmpty)
+          Expanded(
+            child: Text(
+              loc.tagLabel,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          )
+        else
+          Expanded(
+            child: TagChipRow(
+              tags: selectedTags,
+              onRemove: onRemove,
+            ),
+          ),
+        TextButton.icon(
+          onPressed: onPickTags,
+          icon: const Icon(LucideIcons.plus, size: 14),
+          label: Text(loc.addTag),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            visualDensity: VisualDensity.compact,
+          ),
+        ),
+      ],
     );
   }
 }

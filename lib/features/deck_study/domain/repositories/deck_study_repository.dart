@@ -1,4 +1,5 @@
 import 'package:retentio/models/card.dart';
+import 'package:retentio/models/tag.dart';
 
 enum DeckStudySubmitType { review, hide }
 
@@ -63,7 +64,12 @@ class DeckStudyLoadResult {
 }
 
 abstract class DeckStudyRepository {
-  Future<DeckStudyLoadResult> loadNextDueCard({required String deckId});
+  Future<DeckStudyLoadResult> loadNextDueCard({
+    required String deckId,
+    String? tagId,
+  });
+
+  Future<List<Tag>> loadDeckTags({required String deckId});
 
   Future<bool> submitCard(DeckStudySubmitRequest request);
 
