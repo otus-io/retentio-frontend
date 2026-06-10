@@ -1,15 +1,17 @@
 import 'package:equatable/equatable.dart';
 import 'package:retentio/models/card.dart';
+import 'package:retentio/models/tag.dart';
 
 enum DeckStudyLoadingPhase { initial, loading, loaded, error }
 
 class DeckStudyState extends Equatable {
   const DeckStudyState({
     required this.deckId,
+    this.deckTags = const [],
+    this.activeTagId,
     this.cardDetail,
     this.isLoading = false,
     this.cardsStudied = 0,
-    this.showAnswer = true,
     this.loadingPhase = DeckStudyLoadingPhase.initial,
     this.selectedInterval = 0,
     this.isHide = false,
@@ -20,10 +22,11 @@ class DeckStudyState extends Equatable {
   });
 
   final String deckId;
+  final List<Tag> deckTags;
+  final String? activeTagId;
   final CardDetail? cardDetail;
   final bool isLoading;
   final int cardsStudied;
-  final bool showAnswer;
   final DeckStudyLoadingPhase loadingPhase;
   final double selectedInterval;
   final bool isHide;
@@ -35,11 +38,13 @@ class DeckStudyState extends Equatable {
   bool get hasCard => cardDetail != null;
 
   DeckStudyState copyWith({
+    List<Tag>? deckTags,
+    String? activeTagId,
+    bool clearActiveTagId = false,
     CardDetail? cardDetail,
     bool resetCardDetail = false,
     bool? isLoading,
     int? cardsStudied,
-    bool? showAnswer,
     DeckStudyLoadingPhase? loadingPhase,
     double? selectedInterval,
     bool? isHide,
@@ -52,10 +57,11 @@ class DeckStudyState extends Equatable {
   }) {
     return DeckStudyState(
       deckId: deckId,
+      deckTags: deckTags ?? this.deckTags,
+      activeTagId: clearActiveTagId ? null : (activeTagId ?? this.activeTagId),
       cardDetail: resetCardDetail ? null : (cardDetail ?? this.cardDetail),
       isLoading: isLoading ?? this.isLoading,
       cardsStudied: cardsStudied ?? this.cardsStudied,
-      showAnswer: showAnswer ?? this.showAnswer,
       loadingPhase: loadingPhase ?? this.loadingPhase,
       selectedInterval: selectedInterval ?? this.selectedInterval,
       isHide: isHide ?? this.isHide,
@@ -73,10 +79,11 @@ class DeckStudyState extends Equatable {
   @override
   List<Object?> get props => [
     deckId,
+    deckTags,
+    activeTagId,
     cardDetail,
     isLoading,
     cardsStudied,
-    showAnswer,
     loadingPhase,
     selectedInterval,
     isHide,

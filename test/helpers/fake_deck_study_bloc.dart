@@ -1,9 +1,11 @@
 import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/features/deck_study/domain/usecases/delete_study_card_usecase.dart';
 import 'package:retentio/features/deck_study/domain/usecases/get_next_due_card_usecase.dart';
+import 'package:retentio/features/deck_study/domain/usecases/load_deck_tags_usecase.dart';
 import 'package:retentio/features/deck_study/domain/usecases/submit_card_review_usecase.dart';
 import 'package:retentio/features/deck_study/presentation/bloc/deck_study_bloc.dart';
 import 'package:retentio/features/deck_study/presentation/bloc/deck_study_event.dart';
+import 'package:retentio/models/tag.dart';
 
 class FakeDeckStudyRepository implements DeckStudyRepository {
   FakeDeckStudyRepository({
@@ -24,7 +26,13 @@ class FakeDeckStudyRepository implements DeckStudyRepository {
   int deleteCalls = 0;
 
   @override
-  Future<DeckStudyLoadResult> loadNextDueCard({required String deckId}) async {
+  Future<List<Tag>> loadDeckTags({required String deckId}) async => const [];
+
+  @override
+  Future<DeckStudyLoadResult> loadNextDueCard({
+    required String deckId,
+    String? tagId,
+  }) async {
     loadCalls += 1;
     if (_loadResults.isEmpty) return fallbackResult;
     final index = loadCalls - 1;
@@ -82,6 +90,7 @@ class FakeDeckStudyBlocHarness {
       getNextDueCardUseCase: GetNextDueCardUseCase(repository),
       submitCardReviewUseCase: SubmitCardReviewUseCase(repository),
       deleteStudyCardUseCase: DeleteStudyCardUseCase(repository),
+      loadDeckTagsUseCase: LoadDeckTagsUseCase(repository),
     );
 
     if (startImmediately) {

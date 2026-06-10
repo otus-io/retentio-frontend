@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/screen/deck/bloc/deck_study_flip_card_controller_cubit.dart';
 import 'package:retentio/screen/deck/card_widgets/card_video.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
 import 'package:retentio/screen/deck/providers/deck_scope.dart';
@@ -61,8 +62,13 @@ void main() {
           child: MaterialApp(
             home: DefaultTabController(
               length: 1,
-              child: BlocProvider.value(
-                value: harness.bloc,
+              child: MultiBlocProvider(
+                providers: [
+                  BlocProvider.value(value: harness.bloc),
+                  BlocProvider<DeckStudyFlipCardControllerCubit>(
+                    create: (_) => DeckStudyFlipCardControllerCubit(),
+                  ),
+                ],
                 child: Scaffold(
                   body: CardVideo(url: 'https://example.com/dispose-early.mp4'),
                 ),
@@ -102,8 +108,13 @@ void main() {
           child: MaterialApp(
             home: DefaultTabController(
               length: 1,
-              child: BlocProvider.value(
-                value: harness.bloc,
+              child: MultiBlocProvider(
+                providers: [
+                  BlocProvider.value(value: harness.bloc),
+                  BlocProvider<DeckStudyFlipCardControllerCubit>(
+                    create: (_) => DeckStudyFlipCardControllerCubit(),
+                  ),
+                ],
                 child: Scaffold(
                   body: CardVideo(url: 'https://example.com/ok.mp4'),
                 ),
