@@ -41,6 +41,7 @@
 - [4. 标签](#4-标签)
   - [创建标签](#创建标签)
   - [列出你的标签](#列出你的标签)
+  - [按卡组或词条筛选标签（选择器）](#按卡组或词条筛选标签选择器)
   - [获取单个标签](#获取单个标签)
   - [更新标签](#更新标签)
   - [删除标签](#删除标签)
@@ -122,7 +123,7 @@
 | `/api/decks/{id}/cards/{cardId}`              | DELETE | 删除单张卡片（词条及其他卡片不变）                                                                                                                   |
 | `/api/decks/{id}/reschedule`                  | POST   | 假期模式：按天数平移卡片复习计划                                                                                                                     |
 | `/api/tags`                                   | POST   | 创建标签（`name`、可选 `description`）。成功时 **201**。                                                                                             |
-| `/api/tags`                                   | GET    | 列出当前用户全部标签                                                                                                                                 |
+| `/api/tags`                                   | GET    | 列出当前用户全部标签。每条含 `deck_count`、`fact_count`、`used_on`。可选查询：`used_on=deck`（用户范围）或 `used_on=fact&deck_id={id}`（词条选择器，须带卡组）。 |
 | `/api/tags/{tagId}`                           | GET    | 获取单个标签                                                                                                                                         |
 | `/api/tags/{tagId}`                           | PATCH  | 部分更新标签 `name` / `description`                                                                                                                  |
 | `/api/tags/{tagId}`                           | DELETE | 删除标签及其所有卡组/词条关联                                                                                                                        |
@@ -329,7 +330,7 @@
 |------|------|
 | **校验** | 与 [`POST /api/tags`](#创建标签) 名称规则相同。非法名称 → **400**。 |
 | **复用** | 按规范化名称匹配当前用户已有标签并复用。 |
-| **创建** | 不存在的名称自动创建；计入**每用户 100 个标签**上限。 |
+| **创建** | 不存在的名称自动创建；计入**每用户 1000 个标签**上限。 |
 | **去重** | 同一次请求内重复名称（如 `"Noun"` 与 `" noun "`）合并为一条关联。 |
 
 ##### `tag_ids`（已有 ID）
@@ -345,7 +346,7 @@
 
 | 行为 | 说明 |
 |------|------|
-| **上限** | 解析后同一卡组最多 **20** 个不同标签 → **400** `maximum tags per deck reached`。 |
+| **上限** | 解析后同一卡组最多 **100** 个不同卡组级标签 → **400** `maximum tags per deck reached`。 |
 | **存储** | 标签不写入卡组 JSON；创建后用 [`GET /api/decks/{id}/tags`](#列出卡组上的标签) 查看。 |
 | **创建响应** | 仅返回 `deck_id`，不含标签对象。 |
 
@@ -848,6 +849,27 @@
 
 ---
 
+### 导入更新流程（预览 + 应用）
+
+导入后，在同一 **`{importId}`** 上使用两个接口与作者的发布保持同步：
+
+1. **`GET /api/decks/{importId}/updates`** — 预览变更（只读差异：钉住的 `source_version` → 源卡组最新 `published_version`）。
+2. **`POST /api/decks/{importId}/sync`** — 应用变更（将导入卡组变更到目标快照）。
+
+**典型流程：**
+
+| 步骤 | 操作 |
+| ---- | ------ |
+| 1 | `GET …/updates` — 展示 `added_facts`、`removed_facts`、`edited_facts`、`media_changes`。 |
+| 2 | 若 `source_version == latest_version`，则停止（已是最新；差异数组为空）。 |
+| 3 | 若导入者确认接受，则 `POST …/sync`，**请求体为空**或 `{ "target_version": 0 }`。 |
+
+**无需将 GET 响应中的 `latest_version` 传入 sync。** 当 `target_version` 省略或为 `0` 时，服务端会将导入卡组推进到源卡组当前 `published_version`（与 updates 响应中的 `latest_version` 相同）。
+
+**仅在同步到某一中间发布版本**（而非最新版）时才需显式传入 **`target_version`** — 例如钉住版本为 3、作者已发布 5，但只想同步到 4，则发送 `{ "target_version": 4 }`。须满足 `source_version < target_version <= source.published_version`。注意：`GET …/updates` 始终比较钉住版本 → **最新**发布；无法预览仅同步到中间版本的差异。
+
+---
+
 ### 获取导入更新（差异）
 
 **接口：** `GET /api/decks/{importId}/updates`
@@ -919,8 +941,8 @@
 
 | 字段 | 行为 |
 | ----- | -------- |
-| 省略或为 `0` | 推进到源卡组当前 `published_version`。 |
-| `target_version` | 须满足 `source_version < target_version <= source.published_version`。 |
+| 省略或为 `0` | 推进到源卡组当前 `published_version`。**预览 → sync 流程的默认方式** — 无需从 `GET …/updates` 传入 `latest_version`。 |
+| `target_version` | 须满足 `source_version < target_version <= source.published_version`。仅用于落到某一中间发布版本，而非最新版。 |
 
 **成功（200）：**
 
@@ -1026,7 +1048,7 @@
 | **作用范围** | 按**本条词条**生效（同一批中 A 可有标签、B 可无）。 |
 | **校验** | 与 [`POST /api/tags`](#创建标签) 名称规则相同（字母、数字、空格、`-`、`'`；最长 50 字符）。非法名称 → **400**。 |
 | **复用** | 名称经规范化后若已存在于当前用户，则复用该标签。 |
-| **创建** | 不存在的名称会为当前用户自动创建并关联到新词条；计入**每用户 100 个标签**上限。 |
+| **创建** | 不存在的名称会为当前用户自动创建并关联到新词条；计入**每用户 1000 个标签**上限。该卡组内词条标签的去重总数最多 **200** → **400** `maximum fact tags per deck reached`。 |
 | **去重** | **同一条**词条内重复名称（如 `"Noun"` 与 `" noun "`）合并为一条关联。 |
 
 ##### `tag_ids`（已有 ID）
@@ -1266,7 +1288,7 @@ Authorization: Bearer <token>
 
 在创建卡组或添加词条的请求中，仅当客户端传入 **`tags`**（名称模式）时，服务端会创建缺失的标签并在该请求中完成关联；若传入 **`tag_ids`**，则须为已有标签 ID（可先 `POST /api/tags` 创建），服务端不会自动创建。已有标签也可通过上文 **`PUT`**（无 JSON 请求体）挂到卡组或词条。同一标签可关联多个卡组、多个词条。键空间与命名规则见 **[标签系统设计文档](tagging-system.md)**。
 
-**限制：** 每用户最多 **100** 个不同标签；单个卡组最多关联 **20** 个标签。标签**名称**允许 Unicode 字母与数字、空格、连字符 `-`、撇号 `'`；首尾空白会去掉，连续空白合并为一个。唯一性按**规范化**结果校验（去首尾空白 → 合并空白 → 小写）。**`tag_id`** 为 8 位小写字母数字。
+**限制：** 每用户最多 **1000** 个不同标签；单个卡组最多 **100** 个卡组级标签；该卡组内词条标签去重总数最多 **200**。标签**名称**允许 Unicode 字母与数字、空格、连字符 `-`、撇号 `'`；首尾空白会去掉，连续空白合并为一个。唯一性按**规范化**结果校验（去首尾空白 → 合并空白 → 小写）。**`tag_id`** 为 8 位小写字母数字。
 
 错误响应为 `{ "msg": "..." }`（例如 **409** `tag name already exists`，**400** 校验失败或超出限制）。
 
@@ -1300,7 +1322,17 @@ Authorization: Bearer <token>
 
 **接口：** `GET /api/tags`
 
-**说明：** `data.tags` 为你拥有的全部标签（最多 100 个）。顺序为 **tag id 字典序**，不是按 `name` 排序——若需按名称展示请在客户端排序。
+**说明：** `data.tags` 为你拥有的全部标签（最多 200 个）。顺序为 **tag id 字典序**，不是按 `name` 排序——若需按名称展示请在客户端排序。
+
+列表项在原有 `id`、`name`、`description` 基础上**新增**以下字段（向后兼容，旧客户端可忽略）：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `deck_count` | int | 关联的卡组数量 |
+| `fact_count` | int | 关联的词条数量（跨全部卡组） |
+| `used_on` | string[] | `deck_count > 0` 时含 `"deck"`；`fact_count > 0` 时含 `"fact"`；无关联时为 `[]` |
+
+`POST /api/tags`、`GET /api/tags/{tagId}` 及卡组/词条关联接口的响应仍为 `{ id, name, description }`。
 
 ```json
 {
@@ -1308,22 +1340,91 @@ Authorization: Bearer <token>
     "tags": [
       {
         "id": "Kt8QmNz2",
-        "name": "Food Recipes",
-        "description": "Cooking vocabulary"
+        "name": "GRE",
+        "description": "",
+        "deck_count": 2,
+        "fact_count": 0,
+        "used_on": ["deck"]
       },
-      { "id": "p4q5r6s7", "name": "GRE Verbal", "description": "" },
-      { "id": "z9y8x7w6", "name": "Japanese", "description": "JLPT prep" }
+      {
+        "id": "p4q5r6s7",
+        "name": "verb",
+        "description": "词性",
+        "deck_count": 0,
+        "fact_count": 48,
+        "used_on": ["fact"]
+      },
+      {
+        "id": "z9y8x7w6",
+        "name": "Japanese",
+        "description": "JLPT prep",
+        "deck_count": 1,
+        "fact_count": 12,
+        "used_on": ["deck", "fact"]
+      },
+      {
+        "id": "a1b2c3d4",
+        "name": "new-tag",
+        "description": "",
+        "deck_count": 0,
+        "fact_count": 0,
+        "used_on": []
+      }
     ]
   },
   "meta": { "msg": "Tags retrieved successfully" }
 }
 ```
 
+### 按卡组或词条筛选标签（选择器）
+
+可选查询参数 **`used_on`**，用于卡组/词条表单的标签搜索，不改变标签实体模型。
+
+| 请求 | 用途 |
+|------|------|
+| `GET /api/tags` | 标签管理页 — 全部标签 |
+| `GET /api/tags?used_on=deck` | 卡组选择器（用户范围：任意卡组 + 未使用） |
+| `GET /api/tags?used_on=deck&deck_id={id}` | 卡组选择器（限定单个卡组，可选） |
+| `GET /api/tags?used_on=fact&deck_id={id}` | 词条选择器（**必须带 deck_id**）— 该卡组内词条的标签 + 未使用 |
+
+`used_on=fact` 时 **`deck_id` 必填**；省略则返回 **400**。`used_on=deck` 不带 `deck_id` 仍为用户范围（向后兼容）。
+
+**筛选规则：**
+
+| `used_on` | 包含条件 |
+|-----------|----------|
+| *（省略）* | 全部 |
+| `deck` | `deck_count > 0`，或尚未关联（`deck_count` 与 `fact_count` 均为 0） |
+| `fact` | 标签在该卡组（`deck_id` 必填）的词条上，或尚未关联 |
+
+- 仅卡组使用的标签：出现在 `?used_on=deck`，不出现在 `?used_on=fact`。
+- 仅词条使用的标签：出现在对应卡组的 `?used_on=fact&deck_id={id}`，不出现在 `?used_on=deck`。
+- 新建但未关联的标签：在两种筛选中都会出现，直到首次关联。
+
+无效值（如 `?used_on=invalid`）→ **400**：`{ "msg": "invalid used_on filter" }`
+
+**示例（卡组选择器）：**
+
+```http
+GET /api/tags?used_on=deck HTTP/1.1
+Authorization: Bearer <token>
+Accept: application/json
+```
+
+**列出某一卡组或词条上的标签**仍用专用接口：
+
+| 目的 | 接口 |
+|------|------|
+| 某卡组上的标签 | `GET /api/decks/{id}/tags` |
+| 某词条上的标签 | `GET /api/decks/{id}/facts/{factId}/tags` |
+| 跨卡组：带某标签的全部词条 | `GET /api/tags/{tagId}/facts` |
+| 批量词条（含嵌套 `tags`） | `GET /api/decks/{id}/facts` |
+
 ### 获取单个标签
 
 **接口：** `GET /api/tags/{tagId}`
 
-**响应：** 与 `data.tags` 中单条结构相同，但放在 `data.tag` 下，并带 `meta.msg`。
+**响应：** `data.tag` 下为 `{ id, name, description }`，并带 `meta.msg`。`deck_count`、`fact_count`、`used_on` 仅在 `GET /api/tags` 列表项中返回。
 
 ### 更新标签
 
@@ -2035,7 +2136,7 @@ Authorization: Bearer <token>
 | `/api/decks/{id}/updates`                     | GET         | `{ "data": { "source_version", "latest_version", "added_facts", "removed_facts", "edited_facts", "media_changes" }, "meta": { "msg" } }`           |
 | `/api/decks/{id}/sync`                        | POST        | `{ "data": { "source_version" }, "meta": { "msg": "synced" } }`                                                                                    |
 | `/api/tags`                                   | POST        | `{ "data": { "tag": { id, name, description } }, "meta": { "msg" } }` — **201**                                                                    |
-| `/api/tags`                                   | GET         | `{ "data": { "tags": [ … ] }, "meta": { "msg" } }`                                                                                                   |
+| `/api/tags`                                   | GET         | `{ "data": { "tags": [ { id, name, description, deck_count, fact_count, used_on } ] }, "meta": { "msg" } }` — 可选 `used_on=deck` 或 `used_on=fact&deck_id={id}` |
 | `/api/tags/{tagId}`                           | GET         | `{ "data": { "tag": { … } }, "meta": { "msg" } }`                                                                                                    |
 | `/api/tags/{tagId}`                           | PATCH       | `{ "data": { "tag": { … } }, "meta": { "msg" } }`                                                                                                    |
 | `/api/tags/{tagId}`                           | DELETE      | `{ "data": { "decks_untagged" }, "meta": { "msg" } }`                                                                                                |
