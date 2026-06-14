@@ -1314,7 +1314,7 @@ Errors use `{ "msg": "..." }` (e.g. **409** `tag name already exists`, **400** v
 
 **Endpoint:** `GET /api/tags`
 
-Returns every tag you own (up to 200). Order follows **sorted tag id** (not alphabetical by name)—sort client-side by `name` if you need that.
+Returns every tag you own (up to 1000). Order follows **sorted tag id** (not alphabetical by name)—sort client-side by `name` if you need that.
 
 Each list item includes **usage metadata** (additive; older clients can ignore these fields):
 
