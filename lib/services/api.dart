@@ -22,4 +22,17 @@ class Api {
 
   static const String media = '/api/media';
   static const String mediaById = '/api/media/{id}';
+
+  // Tags
+  static const String tags = '/api/tags';
+  static const String tag = '/api/tags/{tagId}';
+  static const String tagFacts = '/api/tags/{tagId}/facts';
+
+  // Deck <-> Tag
+  static const String deckTags = '/api/decks/{id}/tags';
+  static const String deckTag = '/api/decks/{id}/tags/{tagId}';
+
+  // Fact <-> Tag
+  static const String factTags = '/api/decks/{id}/facts/{factId}/tags';
+  static const String factTag = '/api/decks/{id}/facts/{factId}/tags/{tagId}';
 }

@@ -11,14 +11,6 @@ class DeckStudyStarted extends DeckStudyEvent {
   const DeckStudyStarted();
 }
 
-class DeckStudyShowAnswerToggled extends DeckStudyEvent {
-  const DeckStudyShowAnswerToggled();
-}
-
-class DeckStudyShowAnswerRequested extends DeckStudyEvent {
-  const DeckStudyShowAnswerRequested();
-}
-
 class DeckStudyIntervalSelected extends DeckStudyEvent {
   const DeckStudyIntervalSelected(this.intervalSeconds);
 
@@ -47,4 +39,14 @@ class DeckStudyReloadRequested extends DeckStudyEvent {
 
 class DeckStudyDeleteCurrentCardRequested extends DeckStudyEvent {
   const DeckStudyDeleteCurrentCardRequested();
+}
+
+class DeckStudyTagFilterChanged extends DeckStudyEvent {
+  const DeckStudyTagFilterChanged(this.tagId);
+
+  /// `null` means "show all" (no filter).
+  final String? tagId;
+
+  @override
+  List<Object?> get props => [tagId];
 }

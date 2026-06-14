@@ -17,11 +17,16 @@ class AddFactPayload {
 
   static Map<String, dynamic> buildFactBody({
     required List<Map<String, dynamic>> entries,
-  }) => {
-    'facts': [
-      {'entries': entries},
-    ],
-  };
+    List<String>? tagNames,
+  }) {
+    final fact = <String, dynamic>{'entries': entries};
+    if (tagNames != null && tagNames.isNotEmpty) {
+      fact['tags'] = tagNames;
+    }
+    return {
+      'facts': [fact],
+    };
+  }
 
   static Map<String, dynamic> buildEntryJson({
     required String text,

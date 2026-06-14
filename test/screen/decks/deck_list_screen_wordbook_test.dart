@@ -80,7 +80,11 @@ void main() {
       await tester.enterText(find.byType(TextField).first, 'My new deck');
       await tester.pump();
 
-      await tester.tap(find.text('Save'));
+      final saveButton = find.widgetWithText(FilledButton, 'Save');
+      await tester.ensureVisible(saveButton);
+      await tester.pumpAndSettle();
+
+      await tester.tap(saveButton);
       await tester.pump();
       await tester.pumpAndSettle();
 

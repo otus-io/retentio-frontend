@@ -3,10 +3,15 @@ import 'dart:io';
 
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/features/tags/tag_manager_cubit.dart';
+import 'package:retentio/features/tags/widgets/tag_chip.dart';
+import 'package:retentio/features/tags/widgets/tag_picker_sheet.dart';
 import 'package:retentio/l10n/app_localizations.dart';
+import 'package:retentio/models/tag.dart';
 import 'package:retentio/screen/deck/fact_add_composer/entry_row.dart';
 import 'package:retentio/screen/deck/fact_add_composer/fact_edit_logic.dart';
 import 'package:retentio/screen/deck/fact_add_composer/media_handling_coordinator.dart';
@@ -14,6 +19,7 @@ import 'package:retentio/screen/deck/providers/card_audio_mic_handoff.dart';
 import 'package:retentio/screen/deck/fact_add_composer/toolbars.dart';
 import 'package:record/record.dart';
 import 'package:retentio/services/apis/media_service.dart';
+import 'package:retentio/services/apis/tag_service.dart';
 import 'package:retentio/widgets/app_button.dart';
 
 import '../../../models/deck.dart';
@@ -56,6 +62,11 @@ class _FactEditState extends ConsumerState<FactEdit>
   Fact? _loaded;
   Deck? _deckForFields;
   List<FactEditRowModel>? _rows;
+
+  // ── tag state ────────────────────────────────────────────
+  Set<String> _originalTagIds = {};
+  Set<String> _selectedTagIds = {};
+  List<Tag> _selectedTags = [];
 
   bool _recordingVoice = false;
   late final RecorderController _voiceRecorder;
@@ -101,6 +112,10 @@ class _FactEditState extends ConsumerState<FactEdit>
         .getDeckDetail(widget.deck.id)
         .catchError((_) => widget.deck);
 
+    final tagsFuture = TagService.of
+        .getFactTags(widget.deck.id, widget.factId)
+        .catchError((_) => <Tag>[]);
+
     Fact? fact;
     try {
       fact = await CardService.getFact(widget.deck.id, widget.factId);
@@ -114,6 +129,8 @@ class _FactEditState extends ConsumerState<FactEdit>
     }
 
     final deckForFields = await deckFuture;
+    final existingTags = await tagsFuture;
+    final existingIds = existingTags.map((t) => t.id).toSet();
 
     if (!mounted) return;
     if (fact == null) {
@@ -142,6 +159,9 @@ class _FactEditState extends ConsumerState<FactEdit>
       _rows = rows;
       _loading = false;
       _error = null;
+      _selectedTags = existingTags;
+      _selectedTagIds = existingIds;
+      _originalTagIds = Set.of(existingIds);
     });
   }
 
@@ -202,6 +222,41 @@ class _FactEditState extends ConsumerState<FactEdit>
     }
     // Not a local file path (existing id/url seeded in row path) -> keep as-is.
     return path;
+  }
+
+  Future<void> _openTagPicker() async {
+    final result = await showTagPickerSheet(
+      context,
+      selectedIds: _selectedTagIds,
+    );
+    if (result == null || !mounted) return;
+    final allTags = context.read<TagManagerCubit>().state.tags;
+    final resolved = result
+        .map(
+          (id) => allTags.firstWhere(
+            (t) => t.id == id,
+            orElse: () => Tag(id: id, name: id, description: ''),
+          ),
+        )
+        .toList();
+    setState(() {
+      _selectedTagIds = result;
+      _selectedTags = resolved;
+    });
+  }
+
+  Future<void> _syncTags() async {
+    final toAdd = _selectedTagIds.difference(_originalTagIds);
+    final toRemove = _originalTagIds.difference(_selectedTagIds);
+    await Future.wait([
+      ...toAdd.map(
+        (id) => TagService.of.addTagToFact(widget.deck.id, widget.factId, id),
+      ),
+      ...toRemove.map(
+        (id) =>
+            TagService.of.removeTagFromFact(widget.deck.id, widget.factId, id),
+      ),
+    ]);
   }
 
   String _fieldFallbackLabel(int index) {
@@ -284,6 +339,8 @@ class _FactEditState extends ConsumerState<FactEdit>
         _snack(res?.msg ?? loc.addFactFailed);
         return;
       }
+      // Sync tags (fire-and-forget, non-blocking on UI).
+      unawaited(_syncTags());
       await widget.onSaved();
       if (mounted) context.pop();
     } finally {
@@ -390,6 +447,16 @@ class _FactEditState extends ConsumerState<FactEdit>
               ),
               const SizedBox(height: _kEditRowsTopSpacing),
               ..._buildEntryRows(loc, theme, outline),
+              _FactEditTagRow(
+                selectedTags: _selectedTags,
+                onRemove: (tagId) {
+                  setState(() {
+                    _selectedTagIds.remove(tagId);
+                    _selectedTags.removeWhere((t) => t.id == tagId);
+                  });
+                },
+                onPickTags: _openTagPicker,
+              ),
               const SizedBox(height: _kEditSubmitTopSpacing),
               AppButton(
                 label: loc.addFactSubmit,
@@ -403,6 +470,55 @@ class _FactEditState extends ConsumerState<FactEdit>
           ),
         ),
       ),
+    );
+  }
+}
+
+// ── Tag row widget ────────────────────────────────────────────────────────────
+
+class _FactEditTagRow extends StatelessWidget {
+  const _FactEditTagRow({
+    required this.selectedTags,
+    required this.onRemove,
+    required this.onPickTags,
+  });
+
+  final List<Tag> selectedTags;
+  final void Function(String tagId) onRemove;
+  final VoidCallback onPickTags;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Row(
+      children: [
+        Icon(LucideIcons.tag, size: 14, color: scheme.onSurfaceVariant),
+        const SizedBox(width: 6),
+        if (selectedTags.isEmpty)
+          Expanded(
+            child: Text(
+              loc.tagLabel,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          )
+        else
+          Expanded(
+            child: TagChipRow(tags: selectedTags, onRemove: onRemove),
+          ),
+        TextButton.icon(
+          onPressed: onPickTags,
+          icon: const Icon(LucideIcons.plus, size: 14),
+          label: Text(loc.addTag),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            visualDensity: VisualDensity.compact,
+          ),
+        ),
+      ],
     );
   }
 }

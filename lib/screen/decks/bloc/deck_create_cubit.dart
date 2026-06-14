@@ -60,11 +60,15 @@ class DeckCreateResult {
     required this.success,
     this.message,
     this.updatedDeckName,
+    this.newDeckId,
   });
 
   final bool success;
   final String? message;
   final String? updatedDeckName;
+
+  /// Populated after a successful CREATE; null in edit mode.
+  final String? newDeckId;
 }
 
 class DeckCreateCubit extends Cubit<DeckCreateState> {
@@ -147,7 +151,15 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
       final res = await DeckService.of.createDeck(params);
       if (res?.isSuccess == true) {
         emit(state.copyWith(loadingState: DeckCreateLoadingState.loaded));
-        return const DeckCreateResult(success: true);
+        String? newDeckId;
+        final data = res!.data;
+        if (data is Map) {
+          final deck = data['deck'];
+          if (deck is Map) {
+            newDeckId = deck['id']?.toString();
+          }
+        }
+        return DeckCreateResult(success: true, newDeckId: newDeckId);
       }
 
       emit(state.copyWith(loadingState: DeckCreateLoadingState.error));

@@ -41,6 +41,7 @@ class DeckViewScreen extends StatelessWidget {
               getNextDueCardUseCase: GetNextDueCardUseCase(repository),
               submitCardReviewUseCase: SubmitCardReviewUseCase(repository),
               deleteStudyCardUseCase: DeleteStudyCardUseCase(repository),
+              loadDeckTagsUseCase: LoadDeckTagsUseCase(repository),
             )..add(const DeckStudyStarted()),
             lazy: false,
           ),

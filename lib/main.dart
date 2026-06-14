@@ -14,8 +14,8 @@ import 'package:retentio/theme/app_theme.dart';
 import 'providers/locale_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screen/decks/deck_list_screen.dart';
-import 'screen/home/home_screen.dart';
 import 'screen/profile/profile_screen.dart';
+import 'screen/tags/tags_screen.dart';
 import 'widgets/app_navigation_bar.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -78,7 +78,7 @@ class MainTabScreen extends StatefulWidget {
 class _MainTabScreenState extends State<MainTabScreen> {
   static const List<Widget> _pages = <Widget>[
     DeckListScreen(),
-    HomeScreen(),
+    TagsScreen(),
     ProfileScreen(),
   ];
 

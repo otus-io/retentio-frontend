@@ -3,12 +3,17 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/constants.dart';
 import 'package:retentio/extensions/context_extension.dart';
+import 'package:retentio/features/tags/tag_manager_cubit.dart';
+import 'package:retentio/features/tags/widgets/tag_chip.dart';
+import 'package:retentio/features/tags/widgets/tag_picker_sheet.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/mixins/delayed_init_mixin.dart';
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/models/tag.dart';
 import 'package:retentio/screen/decks/bloc/deck_create_cubit.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/decks/deck_text_styles.dart';
+import 'package:retentio/services/apis/tag_service.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_icon_button.dart';
 import 'package:retentio/widgets/app_input.dart';
@@ -41,6 +46,16 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
   late List<TextEditingController> _fieldControllers;
   late List<FocusNode> _fieldFocusNodes;
   late final FocusNode _deckNameFocusNode;
+
+  // ── tag state ────────────────────────────────────────────
+  /// Tag IDs already on the deck when the edit sheet opened (edit mode only).
+  Set<String> _originalTagIds = {};
+
+  /// Tag IDs currently selected by the user.
+  Set<String> _selectedTagIds = {};
+
+  /// Full Tag objects for the selected IDs (for display).
+  List<Tag> _selectedTags = [];
 
   @override
   void initState() {
@@ -113,6 +128,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
         deckId: widget.deck!.id,
       );
       _resetFieldControllers(widget.deck!.fields);
+      _loadExistingTags(widget.deck!.id);
     } else {
       createCubit.setMode(
         name: '',
@@ -122,7 +138,63 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
       );
       _resetFieldControllers(_defaultNewDeckFields);
     }
+    // Load the user's full tag list so the picker has data.
+    final tagManager = context.read<TagManagerCubit>();
+    if (tagManager.state.status == TagManagerStatus.initial) {
+      tagManager.loadTags();
+    }
     setState(() {});
+  }
+
+  /// For edit mode: load the deck's current tags so we can show + diff them.
+  Future<void> _loadExistingTags(String deckId) async {
+    try {
+      final existing = await TagService.of.getDeckTags(deckId);
+      if (!mounted) return;
+      final ids = existing.map((t) => t.id).toSet();
+      setState(() {
+        _selectedTags = existing;
+        _selectedTagIds = ids;
+        _originalTagIds = Set.of(ids); // snapshot for diff on save
+      });
+    } catch (_) {
+      // Non-fatal: tag section will just start empty.
+    }
+  }
+
+  /// Opens the tag picker and applies the returned selection.
+  Future<void> _openTagPicker() async {
+    final result = await showTagPickerSheet(
+      context,
+      selectedIds: _selectedTagIds,
+    );
+    if (result == null || !mounted) return;
+
+    // Resolve full Tag objects from the manager's list.
+    final allTags = context.read<TagManagerCubit>().state.tags;
+    final resolved = result
+        .map(
+          (id) => allTags.firstWhere(
+            (t) => t.id == id,
+            orElse: () => Tag(id: id, name: id, description: ''),
+          ),
+        )
+        .toList();
+
+    setState(() {
+      _selectedTagIds = result;
+      _selectedTags = resolved;
+    });
+  }
+
+  /// After a successful save, syncs selected tags with the deck (diff-based).
+  Future<void> _syncTags(String deckId) async {
+    final toAdd = _selectedTagIds.difference(_originalTagIds);
+    final toRemove = _originalTagIds.difference(_selectedTagIds);
+    await Future.wait([
+      ...toAdd.map((id) => TagService.of.addTagToDeck(deckId, id)),
+      ...toRemove.map((id) => TagService.of.removeTagFromDeck(deckId, id)),
+    ]);
   }
 
   @override
@@ -192,6 +264,18 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
           label: context.loc.createInputDeckName,
         ),
 
+        // ── Tags section ──────────────────────────────────
+        _TagsSection(
+          selectedTags: _selectedTags,
+          onRemove: (tagId) {
+            setState(() {
+              _selectedTagIds.remove(tagId);
+              _selectedTags.removeWhere((t) => t.id == tagId);
+            });
+          },
+          onPickTags: _openTagPicker,
+        ),
+
         // TextFields for deck fields with reordering.
         Column(
           spacing: 12,
@@ -206,8 +290,12 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
                   _draggingFieldIndex = index;
                 });
               },
-              onReorderItem: (oldIndex, newIndex) {
+              // ignore: deprecated_member_use
+              onReorder: (oldIndex, newIndex) {
                 setState(() {
+                  if (oldIndex < newIndex) {
+                    newIndex -= 1;
+                  }
                   final controller = _fieldControllers.removeAt(oldIndex);
                   final focusNode = _fieldFocusNodes.removeAt(oldIndex);
                   _fieldControllers.insert(newIndex, controller);
@@ -355,6 +443,12 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
               return;
             }
 
+            // Sync tags after successful save (fire-and-forget, non-blocking).
+            final deckId = result.newDeckId ?? createCubit.state.deckId;
+            if (deckId.isNotEmpty && _selectedTagIds.isNotEmpty) {
+              _syncTags(deckId);
+            }
+
             await deckListCubit.onRefresh();
             if (!mounted) {
               return;
@@ -362,6 +456,58 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
             navigator.pop(result.updatedDeckName);
           },
         ),
+      ],
+    );
+  }
+}
+
+// ── Tags section widget ───────────────────────────────────────────────────────
+
+class _TagsSection extends StatelessWidget {
+  const _TagsSection({
+    required this.selectedTags,
+    required this.onRemove,
+    required this.onPickTags,
+  });
+
+  final List<Tag> selectedTags;
+  final void Function(String tagId) onRemove;
+  final VoidCallback onPickTags;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 6,
+      children: [
+        Row(
+          children: [
+            Icon(LucideIcons.tag, size: 14, color: scheme.onSurfaceVariant),
+            const SizedBox(width: 6),
+            Text(
+              loc.tagLabel,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            const Spacer(),
+            TextButton.icon(
+              onPressed: onPickTags,
+              icon: const Icon(LucideIcons.plus, size: 14),
+              label: Text(loc.addTag),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+          ],
+        ),
+        if (selectedTags.isNotEmpty)
+          TagChipRow(tags: selectedTags, onRemove: onRemove),
       ],
     );
   }
