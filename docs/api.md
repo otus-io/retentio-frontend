@@ -40,6 +40,7 @@ This guide walks you through using the Retentio API via Swagger UI.
 - [4. Tags](#4-tags)
   - [Create a tag](#create-a-tag)
   - [List your tags](#list-your-tags)
+  - [List tags for deck or fact pickers](#list-tags-for-deck-or-fact-pickers)
   - [Get one tag](#get-one-tag)
   - [Update a tag](#update-a-tag)
   - [Delete a tag](#delete-a-tag)
@@ -122,7 +123,7 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/api/decks/{id}/cards/{cardId}`              | DELETE | Delete a single card (fact and other cards unchanged)                                                                                                                                           |
 | `/api/decks/{id}/reschedule`                  | POST   | Reschedule deck cards (shift due dates by N days)                                                                                                                                               |
 | `/api/tags`                                   | POST   | Create a tag (`name`, optional `description`). **201** on success.                                                                                                                              |
-| `/api/tags`                                   | GET    | List all tags for the current user                                                                                                                                                              |
+| `/api/tags`                                   | GET    | List all tags for the current user. Each tag includes `deck_count`, `fact_count`, `used_on`. Optional query: `used_on=deck` (user-wide) or `used_on=fact&deck_id={id}` (deck-scoped fact picker).             |
 | `/api/tags/{tagId}`                           | GET    | Get one tag                                                                                                                                                                                     |
 | `/api/tags/{tagId}`                           | PATCH  | Update tag `name` and/or `description` (partial)                                                                                                                                                |
 | `/api/tags/{tagId}`                           | DELETE | Delete tag and all deck/fact associations                                                                                                                                                       |
@@ -321,7 +322,7 @@ Omit both fields or use `[]` for an untagged deck. Sending **`tags` and `tag_ids
 |----------|--------|
 | **Validation** | Same name rules as [`POST /api/tags`](#create-a-tag). Invalid names → **400**. |
 | **Reuse** | Existing user tags (by normalized name) are reused. |
-| **Create** | Missing names are auto-created; counts toward **100 tags per user**. |
+| **Create** | Missing names are auto-created; counts toward **1000 tags per user**. |
 | **Dedup** | Duplicate names in the same request (e.g. `"Noun"` and `" noun "`) collapse to one association. |
 
 ##### `tag_ids` (existing IDs)
@@ -337,7 +338,7 @@ Omit both fields or use `[]` for an untagged deck. Sending **`tags` and `tag_ids
 
 | Behavior | Detail |
 |----------|--------|
-| **Limit** | At most **20** distinct tags on the deck after resolution → **400** `maximum tags per deck reached`. |
+| **Limit** | At most **100** distinct tags on the deck after resolution → **400** `maximum tags per deck reached`. |
 | **Storage** | Tags are not stored in deck JSON; use [`GET /api/decks/{id}/tags`](#list-tags-on-a-deck) after create. |
 | **Create response** | Returns only `deck_id` — not tag objects. |
 
@@ -844,6 +845,27 @@ Use **`data.id`** as the import deck ID for study and for `GET/POST …/updates`
 
 ---
 
+### Import update workflow (preview + apply)
+
+After import, keep the deck aligned with the author's publishes using two endpoints on the same **`{importId}`**:
+
+1. **`GET /api/decks/{importId}/updates`** — preview what changed (read-only diff from pinned `source_version` to the source's latest `published_version`).
+2. **`POST /api/decks/{importId}/sync`** — apply those changes (mutates the import deck to the target snapshot).
+
+**Typical flow:**
+
+| Step | Action |
+| ---- | ------ |
+| 1 | `GET …/updates` — show `added_facts`, `removed_facts`, `edited_facts`, `media_changes`. |
+| 2 | If `source_version == latest_version`, stop (already up to date; diff arrays are empty). |
+| 3 | If the importer accepts, `POST …/sync` with an **empty body** or `{ "target_version": 0 }`. |
+
+**You do not need to copy `latest_version` from the GET response into sync.** When `target_version` is omitted or `0`, the server advances the import deck to the source's current `published_version` (same value as `latest_version` in the updates response).
+
+Pass **`target_version` explicitly** only when syncing to a **specific intermediate publish**, not the newest one — e.g. pinned at 3, author published 5, but you want version 4 only. Then send `{ "target_version": 4 }`. The value must satisfy `source_version < target_version <= source.published_version`. Note: `GET …/updates` always diffs pinned → **latest**; it does not preview a partial sync to an intermediate version.
+
+---
+
 ### Get import updates (diff)
 
 **Endpoint:** `GET /api/decks/{importId}/updates`
@@ -915,8 +937,8 @@ When already up to date: `source_version == latest_version` and diff arrays are 
 
 | Field | Behavior |
 | ----- | -------- |
-| Omitted or `0` | Advance to the source’s current `published_version`. |
-| `target_version` | Must satisfy `source_version < target_version <= source.published_version`. |
+| Omitted or `0` | Advance to the source’s current `published_version`. **Default for the preview → sync workflow** — no need to pass `latest_version` from `GET …/updates`. |
+| `target_version` | Must satisfy `source_version < target_version <= source.published_version`. Use only to land on a specific intermediate publish, not the newest. |
 
 **Success (200):**
 
@@ -1022,7 +1044,7 @@ Omit both fields or use `[]` for facts that should have no tags. Sending **`tags
 | **Scope** | Tags apply **per fact** in the batch (fact A can have tags while fact B has none). |
 | **Validation** | Same name rules as [`POST /api/tags`](#create-a-tag) (letters, numbers, spaces, `-`, `'`; max 50 characters). Invalid names → **400**. |
 | **Reuse** | If a name already exists for your user (after normalization), that tag is reused. |
-| **Create** | Missing names are auto-created for your user, then linked to the new fact. Counts toward the **100 tags per user** limit. |
+| **Create** | Missing names are auto-created for your user, then linked to the new fact. Counts toward the **1000 tags per user** limit. Distinct fact tags across the deck (union of all facts) capped at **200** → **400** `maximum fact tags per deck reached`. |
 | **Dedup** | Duplicate names on the **same** fact (e.g. `"Noun"` and `" noun "`) are collapsed to one association. |
 
 ##### `tag_ids` (existing IDs)
@@ -1258,7 +1280,7 @@ Tags are **per user**: you create them with `POST /api/tags`, then attach them t
 
 The server creates missing tags and links them in that request. Same tag can label many decks and many facts. For key layout and naming rules, see **[Tagging system design doc](tagging-system.md)**.
 
-**Limits:** up to **100** distinct tags per user; up to **20** tags associated with a single deck. Tag **names** allow Unicode letters and numbers, spaces, hyphen (`-`), and apostrophe (`'`); leading/trailing space is trimmed and internal runs of spaces collapse to one. Uniqueness is enforced on a **normalized** form (trim → collapse spaces → lowercase). **`tag_id`** is 8 lowercase alphanumeric characters.
+**Limits:** up to **1000** distinct tags per user; up to **100** deck-level tags per deck; up to **200** distinct fact tags per deck (union across all facts in that deck). Tag **names** allow Unicode letters and numbers, spaces, hyphen (`-`), and apostrophe (`'`); leading/trailing space is trimmed and internal runs of spaces collapse to one. Uniqueness is enforced on a **normalized** form (trim → collapse spaces → lowercase). **`tag_id`** is 8 lowercase alphanumeric characters.
 
 Errors use `{ "msg": "..." }` (e.g. **409** `tag name already exists`, **400** validation or limits).
 
@@ -1292,7 +1314,19 @@ Errors use `{ "msg": "..." }` (e.g. **409** `tag name already exists`, **400** v
 
 **Endpoint:** `GET /api/tags`
 
-**Response:** `data.tags` is an array of every tag you own (up to 100). Order follows **sorted tag id** (not alphabetical by name)—sort client-side by `name` if you need that.
+Returns every tag you own (up to 1000). Order follows **sorted tag id** (not alphabetical by name)—sort client-side by `name` if you need that.
+
+Each list item includes **usage metadata** (additive; older clients can ignore these fields):
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `deck_count` | int | Number of decks this tag is associated with |
+| `fact_count` | int | Number of facts (across all your decks) with this tag |
+| `used_on` | string[] | `"deck"` if `deck_count > 0`; `"fact"` if `fact_count > 0`; `[]` if the tag has no associations yet |
+
+`POST /api/tags`, `GET /api/tags/{tagId}`, and deck/fact association responses still return only `{ id, name, description }`.
+
+**Response:**
 
 ```json
 {
@@ -1300,22 +1334,95 @@ Errors use `{ "msg": "..." }` (e.g. **409** `tag name already exists`, **400** v
     "tags": [
       {
         "id": "Kt8QmNz2",
-        "name": "Food Recipes",
-        "description": "Cooking vocabulary"
+        "name": "GRE",
+        "description": "",
+        "deck_count": 2,
+        "fact_count": 0,
+        "used_on": ["deck"]
       },
-      { "id": "p4q5r6s7", "name": "GRE Verbal", "description": "" },
-      { "id": "z9y8x7w6", "name": "Japanese", "description": "JLPT prep" }
+      {
+        "id": "p4q5r6s7",
+        "name": "verb",
+        "description": "Part of speech",
+        "deck_count": 0,
+        "fact_count": 48,
+        "used_on": ["fact"]
+      },
+      {
+        "id": "z9y8x7w6",
+        "name": "Japanese",
+        "description": "JLPT prep",
+        "deck_count": 1,
+        "fact_count": 12,
+        "used_on": ["deck", "fact"]
+      },
+      {
+        "id": "a1b2c3d4",
+        "name": "new-tag",
+        "description": "",
+        "deck_count": 0,
+        "fact_count": 0,
+        "used_on": []
+      }
     ]
   },
   "meta": { "msg": "Tags retrieved successfully" }
 }
 ```
 
+### List tags for deck or fact pickers
+
+Use the optional **`used_on`** query parameter when building a tag search/autocomplete for **decks** or **facts**. Tags are still one shared library per user; this filter only narrows the list for UI.
+
+| Request | Purpose |
+|---------|---------|
+| `GET /api/tags` | Tag management — show all tags |
+| `GET /api/tags?used_on=deck` | Deck picker (user-wide: any deck + unused) |
+| `GET /api/tags?used_on=deck&deck_id={id}` | Deck picker scoped to one deck (optional) |
+| `GET /api/tags?used_on=fact&deck_id={id}` | Fact picker (**deck_id required**) — tags on facts in that deck + unused |
+
+`deck_id` is **required** when `used_on=fact`. Omitting `deck_id` with `used_on=fact` returns **400**. `used_on=deck` without `deck_id` remains user-wide (backward compatible).
+
+**Filter rules:**
+
+| `used_on` | Tag is included when… |
+|-----------|------------------------|
+| *(omitted)* | Always (no filter) |
+| `deck` | `deck_count > 0`, **or** the tag is unused (`deck_count === 0` and `fact_count === 0`) |
+| `fact` | Tag is on a fact in the given deck (`deck_id` required), **or** the tag is unused |
+
+- **Deck-only** tags appear in `?used_on=deck` but not `?used_on=fact`.
+- **Fact-only** tags appear in `?used_on=fact&deck_id={id}` for the deck where those facts live, not in user-wide lists (`used_on=fact` without `deck_id` is rejected).
+- **Unused** tags (created via `POST /api/tags` but not yet linked) appear in **both** filters until first association.
+
+**Invalid filter** — e.g. `GET /api/tags?used_on=invalid` → **400**:
+
+```json
+{ "msg": "invalid used_on filter" }
+```
+
+**Example (deck picker):**
+
+```http
+GET /api/tags?used_on=deck HTTP/1.1
+Authorization: Bearer <token>
+Accept: application/json
+```
+
+**Listing tags on a specific deck or fact** still uses scoped routes (no `used_on` query):
+
+| Goal | Endpoint |
+|------|----------|
+| Tags on one deck | `GET /api/decks/{id}/tags` |
+| Tags on one fact | `GET /api/decks/{id}/facts/{factId}/tags` |
+| All facts with a tag (cross-deck) | `GET /api/tags/{tagId}/facts` |
+| Facts with nested `tags` (bulk) | `GET /api/decks/{id}/facts` |
+
 ### Get one tag
 
 **Endpoint:** `GET /api/tags/{tagId}`
 
-**Response:** same shape as one element of `data.tags` but under `data.tag`, with `meta.msg`.
+**Response:** `{ id, name, description }` under `data.tag`, with `meta.msg`. Usage fields (`deck_count`, `fact_count`, `used_on`) are only on `GET /api/tags` list items.
 
 ### Update a tag
 
@@ -2028,7 +2135,7 @@ For full design (upload, delete, display, sync), see **[Media Upload design doc]
 | `/api/decks/{id}/updates`                     | GET         | `{ "data": { "source_version", "latest_version", "added_facts", "removed_facts", "edited_facts", "media_changes" }, "meta": { "msg" } }`                   |
 | `/api/decks/{id}/sync`                        | POST        | `{ "data": { "source_version" }, "meta": { "msg": "synced" } }`                                                                                            |
 | `/api/tags`                                   | POST        | `{ "data": { "tag": { id, name, description } }, "meta": { "msg" } }` — **201**                                                                            |
-| `/api/tags`                                   | GET         | `{ "data": { "tags": [ … ] }, "meta": { "msg" } }`                                                                                                         |
+| `/api/tags`                                   | GET         | `{ "data": { "tags": [ { id, name, description, deck_count, fact_count, used_on } ] }, "meta": { "msg" } }` — optional `used_on=deck` or `used_on=fact&deck_id={id}` |
 | `/api/tags/{tagId}`                           | GET         | `{ "data": { "tag": { … } }, "meta": { "msg" } }`                                                                                                          |
 | `/api/tags/{tagId}`                           | PATCH       | `{ "data": { "tag": { … } }, "meta": { "msg" } }`                                                                                                          |
 | `/api/tags/{tagId}`                           | DELETE      | `{ "data": { "decks_untagged" }, "meta": { "msg" } }`                                                                                                      |
