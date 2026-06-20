@@ -123,41 +123,40 @@ void main() {
       },
     );
 
-    testWidgets(
-      'shows a fractional percent for very small progress',
-      (tester) async {
-        await setupTestEnvironment();
-        final deck = sampleDeck(cardsCount: 2387);
-        final harness = FakeDeckStudyBlocHarness(
-          deckId: deck.id,
-          loadResults: [DeckStudyLoadResult(cardDetail: sampleCardDetail())],
-        );
-        addTearDown(() async {
-          await harness.dispose();
-          tearDownTestEnvironment();
-        });
+    testWidgets('shows a fractional percent for very small progress', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      final deck = sampleDeck(cardsCount: 2387);
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: deck.id,
+        loadResults: [DeckStudyLoadResult(cardDetail: sampleCardDetail())],
+      );
+      addTearDown(() async {
+        await harness.dispose();
+        tearDownTestEnvironment();
+      });
 
-        await tester.pumpWidget(
-          buildTestableWidgetWithOverrides(
-            DeckViewScreen(deck: deck),
-            overrides: [
-              currentDeckProvider.overrideWithValue(deck),
-              deckStudyBlocProvider.overrideWithValue(harness.bloc),
-            ],
-          ),
-        );
-        await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          DeckViewScreen(deck: deck),
+          overrides: [
+            currentDeckProvider.overrideWithValue(deck),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
 
-        expect(find.text('1 / 2387'), findsOneWidget);
-        expect(find.text('0.0%'), findsNothing);
-        expect(find.text('0.04%'), findsOneWidget);
+      expect(find.text('1 / 2387'), findsOneWidget);
+      expect(find.text('0.0%'), findsNothing);
+      expect(find.text('0.04%'), findsOneWidget);
 
-        final indicator = tester.widget<LinearProgressIndicator>(
-          find.byType(LinearProgressIndicator),
-        );
-        expect(indicator.value, closeTo(1 / 2387, 0.000001));
-      },
-    );
+      final indicator = tester.widget<LinearProgressIndicator>(
+        find.byType(LinearProgressIndicator),
+      );
+      expect(indicator.value, closeTo(1 / 2387, 0.000001));
+    });
 
     testWidgets(
       'bottom action follows card side between show answer and next',

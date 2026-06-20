@@ -104,10 +104,9 @@ class DeckMenu extends StatelessWidget {
                     minChildSize: 0.45,
                     maxChildSize: 0.95,
                     child: BlocProvider<TagManagerCubit>(
-                      create: (_) => TagManagerCubit(
-                        usedOn: 'fact',
-                        deckId: deck.id,
-                      )..loadTags(),
+                      create: (_) =>
+                          TagManagerCubit(usedOn: 'fact', deckId: deck.id)
+                            ..loadTags(),
                       child: FactAdd(
                         deck: deck,
                         onStudyQueueRefresh: () async =>

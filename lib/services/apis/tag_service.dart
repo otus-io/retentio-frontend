@@ -31,10 +31,7 @@ class TagService {
       );
     }
     try {
-      final query = <String, dynamic>{
-        'used_on': ?usedOn,
-        'deck_id': ?deckId,
-      };
+      final query = <String, dynamic>{'used_on': ?usedOn, 'deck_id': ?deckId};
       final res = await ApiService.get(
         Api.tags,
         queryParams: query.isEmpty ? null : query,

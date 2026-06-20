@@ -138,8 +138,7 @@ class DeckViewBody extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (state.deckTags.isNotEmpty)
-                buildTagFilterBar(),
+              if (state.deckTags.isNotEmpty) buildTagFilterBar(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
                 child: Column(

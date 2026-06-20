@@ -143,10 +143,7 @@ void main() {
         const tagA = Tag(id: 'a', name: 'A', description: '');
         const tagB = Tag(id: 'b', name: 'B', description: '');
         cubit.emit(
-          TagManagerState(
-            status: TagManagerStatus.loaded,
-            tags: [tagA, tagB],
-          ),
+          TagManagerState(status: TagManagerStatus.loaded, tags: [tagA, tagB]),
         );
 
         final emitted = <TagManagerState>[];

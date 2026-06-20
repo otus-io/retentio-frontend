@@ -12,9 +12,7 @@ import '../../helpers/test_wrapper.dart';
 class _FakeTagManagerCubit extends TagManagerCubit {
   @override
   Future<void> loadTags() async {
-    emit(
-      state.copyWith(status: TagManagerStatus.loaded, tags: const []),
-    );
+    emit(state.copyWith(status: TagManagerStatus.loaded, tags: const []));
   }
 }
 
