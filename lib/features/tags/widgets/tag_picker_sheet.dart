@@ -52,174 +52,153 @@ class _TagPickerSheet extends HookWidget {
     final selected = useState<Set<String>>({...initialSelectedIds});
     final filterText = useState('');
     final filterController = useTextEditingController();
-    final isCreateDialogOpen = useState(false);
     final cubit = context.read<TagManagerCubit>();
 
     // Client-side filter
     final query = filterText.value.trim().toLowerCase();
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: isCreateDialogOpen.value
-            ? 0
-            : MediaQuery.viewInsetsOf(context).bottom,
-      ),
-      child: DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.55,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
-        builder: (_, scrollController) => Column(
-          children: [
-            // ── handle ──────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.only(top: 12, bottom: 4),
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: scheme.onSurfaceVariant.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.55,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      builder: (_, scrollController) => Column(
+        children: [
+          // ── handle ──────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.only(top: 12, bottom: 4),
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: scheme.onSurfaceVariant.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          // ── title ───────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Text(loc.tagPickerTitle, style: theme.textTheme.titleMedium),
+                const Spacer(),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(selected.value),
+                  child: Text(loc.tagPickerDone),
                 ),
-              ),
+              ],
             ),
-            // ── title ───────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Text(loc.tagPickerTitle, style: theme.textTheme.titleMedium),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(selected.value),
-                    child: Text(loc.tagPickerDone),
-                  ),
-                ],
-              ),
+          ),
+          // ── search ──────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: AppInput(
+              controller: filterController,
+              hint: loc.tagPickerSearchHint,
+              prefix: const Icon(LucideIcons.search, size: 18),
+              onChanged: (v) => filterText.value = v,
             ),
-            // ── search ──────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: AppInput(
-                controller: filterController,
-                hint: loc.tagPickerSearchHint,
-                prefix: const Icon(LucideIcons.search, size: 18),
-                onChanged: (v) => filterText.value = v,
-              ),
-            ),
-            const Divider(height: 1),
-            // ── list ────────────────────────────────────────
-            Expanded(
-              child: BlocBuilder<TagManagerCubit, TagManagerState>(
-                builder: (context, state) {
-                  final filtered = query.isEmpty
-                      ? state.tags
-                      : state.tags
-                            .where(
-                              (tag) => tag.name.toLowerCase().contains(query),
-                            )
-                            .toList();
-
-                  if (state.isLoading && state.tags.isEmpty) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (filtered.isEmpty) {
-                    return _EmptyState(
-                      hasQuery: query.isNotEmpty,
-                      query: query,
-                    );
-                  }
-
-                  return Stack(
-                    children: [
-                      ListView.builder(
-                        controller: scrollController,
-                        itemCount: filtered.length,
-                        itemBuilder: (_, i) {
-                          final tag = filtered[i];
-                          final isSelected = selected.value.contains(tag.id);
-                          return _TagTile(
-                            tag: tag,
-                            selected: isSelected,
-                            onToggle: () {
-                              final next = {...selected.value};
-                              if (isSelected) {
-                                next.remove(tag.id);
-                              } else {
-                                next.add(tag.id);
-                              }
-                              selected.value = next;
-                            },
-                          );
-                        },
-                      ),
-                      if (state.isLoading)
-                        const Positioned(
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          child: LinearProgressIndicator(minHeight: 2),
-                        ),
-                    ],
-                  );
-                },
-              ),
-            ),
-            const Divider(height: 1),
-            // ── create new tag ───────────────────────────────
-            BlocBuilder<TagManagerCubit, TagManagerState>(
+          ),
+          const Divider(height: 1),
+          // ── list ────────────────────────────────────────
+          Expanded(
+            child: BlocBuilder<TagManagerCubit, TagManagerState>(
               builder: (context, state) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: state.tags.length >= 100
-                      ? Text(
-                          loc.tagLimitReached,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        )
-                      : TextButton.icon(
-                          onPressed: () async {
-                            isCreateDialogOpen.value = true;
-                            try {
-                              await showTagEditDialog(
-                                context,
-                                title: loc.createTag,
-                                confirmLabel: loc.save,
-                                onConfirm: (name, description) async {
-                                  final err = await cubit.createTag(
-                                    name: name,
-                                    description: description,
-                                  );
-                                  if (err != null) return err;
-                                  final newest = cubit.state.tags.lastOrNull;
-                                  if (newest != null) {
-                                    selected.value = {
-                                      ...selected.value,
-                                      newest.id,
-                                    };
-                                  }
-                                  return null;
-                                },
-                              );
-                            } finally {
-                              if (context.mounted) {
-                                isCreateDialogOpen.value = false;
-                              }
+                final filtered = query.isEmpty
+                    ? state.tags
+                    : state.tags
+                          .where(
+                            (tag) => tag.name.toLowerCase().contains(query),
+                          )
+                          .toList();
+
+                if (state.isLoading && state.tags.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (filtered.isEmpty) {
+                  return _EmptyState(hasQuery: query.isNotEmpty, query: query);
+                }
+
+                return Stack(
+                  children: [
+                    ListView.builder(
+                      controller: scrollController,
+                      itemCount: filtered.length,
+                      itemBuilder: (_, i) {
+                        final tag = filtered[i];
+                        final isSelected = selected.value.contains(tag.id);
+                        return _TagTile(
+                          tag: tag,
+                          selected: isSelected,
+                          onToggle: () {
+                            final next = {...selected.value};
+                            if (isSelected) {
+                              next.remove(tag.id);
+                            } else {
+                              next.add(tag.id);
                             }
+                            selected.value = next;
                           },
-                          icon: const Icon(LucideIcons.plus, size: 16),
-                          label: Text(loc.createTag),
-                        ),
+                        );
+                      },
+                    ),
+                    if (state.isLoading)
+                      const Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: LinearProgressIndicator(minHeight: 2),
+                      ),
+                  ],
                 );
               },
             ),
-          ],
-        ),
+          ),
+          const Divider(height: 1),
+          // ── create new tag ───────────────────────────────
+          BlocBuilder<TagManagerCubit, TagManagerState>(
+            builder: (context, state) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: state.tags.length >= 100
+                    ? Text(
+                        loc.tagLimitReached,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      )
+                    : TextButton.icon(
+                        onPressed: () async {
+                          await showTagEditDialog(
+                            context,
+                            title: loc.createTag,
+                            confirmLabel: loc.save,
+                            onConfirm: (name, description) async {
+                              final err = await cubit.createTag(
+                                name: name,
+                                description: description,
+                              );
+                              if (err != null) return err;
+                              final newest = cubit.state.tags.lastOrNull;
+                              if (newest != null) {
+                                selected.value = {...selected.value, newest.id};
+                              }
+                              return null;
+                            },
+                          );
+                        },
+                        icon: const Icon(LucideIcons.plus, size: 16),
+                        label: Text(loc.createTag),
+                      ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

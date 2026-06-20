@@ -41,6 +41,34 @@ class DeckViewBody extends StatelessWidget {
       },
       child: BlocBuilder<DeckStudyBloc, DeckStudyState>(
         builder: (context, state) {
+          Widget buildTagFilterBar() {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: SizedBox(
+                height: 34,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: state.deckTags.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final tag = state.deckTags[index];
+                    final selected = state.activeTagId == tag.id;
+                    return ChoiceChip(
+                      label: Text(tag.name),
+                      selected: selected,
+                      onSelected: (_) {
+                        requestDeckStudyTagFilterChanged(
+                          context,
+                          selected ? null : tag.id,
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            );
+          }
+
           if (state.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -51,38 +79,45 @@ class DeckViewBody extends StatelessWidget {
           final cardDetail = state.cardDetail;
 
           if (cardDetail == null) {
-            if (totalCardsInSession == 0) {
-              return _DeckStudyMessageColumn(
-                icon: LucideIcons.circleQuestionMark,
-                title: loc.noCardsInThisDeck,
-                theme: theme,
-              );
-            }
-            return _CaughtUpColumn(
-              loc: loc,
-              theme: theme,
-              onReviewAgain: () {
-                requestDeckStudyReviewAgain(context);
-              },
-            );
-          }
+            final messageBody = totalCardsInSession == 0
+                ? _DeckStudyMessageColumn(
+                    icon: LucideIcons.circleQuestionMark,
+                    title: loc.noCardsInThisDeck,
+                    theme: theme,
+                  )
+                : _CaughtUpColumn(
+                    loc: loc,
+                    theme: theme,
+                    onReviewAgain: () {
+                      requestDeckStudyReviewAgain(context);
+                    },
+                  );
 
-          if (totalCardsInSession == 0) {
-            return _DeckStudyMessageColumn(
-              icon: LucideIcons.circleQuestionMark,
-              title: loc.noCardsInThisDeck,
-              theme: theme,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (state.deckTags.isNotEmpty) buildTagFilterBar(),
+                Expanded(child: messageBody),
+              ],
             );
           }
 
           final isCompleted = totalCardsInSession == cardsStudied;
           if (isCompleted) {
-            return _CaughtUpColumn(
-              loc: loc,
-              theme: theme,
-              onReviewAgain: () {
-                requestDeckStudyReviewAgain(context);
-              },
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (state.deckTags.isNotEmpty) buildTagFilterBar(),
+                Expanded(
+                  child: _CaughtUpColumn(
+                    loc: loc,
+                    theme: theme,
+                    onReviewAgain: () {
+                      requestDeckStudyReviewAgain(context);
+                    },
+                  ),
+                ),
+              ],
             );
           }
 
@@ -103,6 +138,8 @@ class DeckViewBody extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (state.deckTags.isNotEmpty)
+                buildTagFilterBar(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
                 child: Column(

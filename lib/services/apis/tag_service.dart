@@ -19,10 +19,26 @@ class TagService {
     );
   }
 
-  /// 列出当前用户全部标签
-  Future<List<Tag>> getTags() async {
+  /// 列出标签，可按场景过滤
+  /// [usedOn]: 'fact' | 'deck' | null（全量）
+  /// [deckId]: used_on=fact 时必传
+  Future<List<Tag>> getTags({String? usedOn, String? deckId}) async {
+    if (usedOn == 'fact' && (deckId == null || deckId.trim().isEmpty)) {
+      throw ArgumentError.value(
+        deckId,
+        'deckId',
+        'deckId is required when usedOn is fact',
+      );
+    }
     try {
-      final res = await ApiService.get(Api.tags);
+      final query = <String, dynamic>{
+        'used_on': ?usedOn,
+        'deck_id': ?deckId,
+      };
+      final res = await ApiService.get(
+        Api.tags,
+        queryParams: query.isEmpty ? null : query,
+      );
       final data = res?.data;
       if (data is Map && data['tags'] is List) {
         return (data['tags'] as List)

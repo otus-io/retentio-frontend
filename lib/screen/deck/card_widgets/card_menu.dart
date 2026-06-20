@@ -77,7 +77,10 @@ class CardMenu extends StatelessWidget {
                   fullScreen: true,
                   title: loc.editFact,
                   child: BlocProvider<TagManagerCubit>(
-                    create: (_) => TagManagerCubit()..loadTags(),
+                    create: (_) => TagManagerCubit(
+                      usedOn: 'fact',
+                      deckId: deck.id,
+                    )..loadTags(),
                     child: FactEdit(
                       deck: deck,
                       factId: card.factId,

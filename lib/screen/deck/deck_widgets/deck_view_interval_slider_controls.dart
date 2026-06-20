@@ -62,6 +62,10 @@ void requestDeckStudyReviewAgain(BuildContext context) {
   _readDeckStudyBloc(context).add(const DeckStudyReviewAgainRequested());
 }
 
+void requestDeckStudyTagFilterChanged(BuildContext context, String? tagId) {
+  _readDeckStudyBloc(context).add(DeckStudyTagFilterChanged(tagId));
+}
+
 class DeckViewIntervalSliderControls extends StatelessWidget {
   const DeckViewIntervalSliderControls({super.key});
 

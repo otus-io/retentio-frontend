@@ -38,14 +38,18 @@ class TagManagerState {
 /// Scope: global — typically provided above the main navigation shell so
 /// both the deck-create sheet and fact-composer can share the same list.
 class TagManagerCubit extends Cubit<TagManagerState> {
-  TagManagerCubit() : super(const TagManagerState());
+  TagManagerCubit({this.usedOn, this.deckId}) : super(const TagManagerState());
+
+  /// 'fact' | 'deck' | null (全量，管理页使用)
+  final String? usedOn;
+  final String? deckId;
 
   // ── read ──────────────────────────────────────────────────
 
   Future<void> loadTags() async {
     emit(state.copyWith(status: TagManagerStatus.loading));
     try {
-      final tags = await TagService.of.getTags();
+      final tags = await TagService.of.getTags(usedOn: usedOn, deckId: deckId);
       emit(state.copyWith(status: TagManagerStatus.loaded, tags: tags));
     } catch (e) {
       emit(

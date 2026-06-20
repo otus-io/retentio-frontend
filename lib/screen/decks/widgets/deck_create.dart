@@ -56,6 +56,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
 
   /// Full Tag objects for the selected IDs (for display).
   List<Tag> _selectedTags = [];
+  String? _submitError;
 
   @override
   void initState() {
@@ -262,6 +263,11 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
           controller: createCubit.nameController,
           focusNode: _deckNameFocusNode,
           label: context.loc.createInputDeckName,
+          onChanged: (_) {
+            if (_submitError != null) {
+              setState(() => _submitError = null);
+            }
+          },
         ),
 
         // ── Tags section ──────────────────────────────────
@@ -416,7 +422,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
           onPressed: () async {
             final deckListCubit = context.read<DeckListCubit>();
             final navigator = Navigator.of(context);
-            final messenger = ScaffoldMessenger.of(context);
+            setState(() => _submitError = null);
             final result = await createCubit.submit(
               fieldNames: _fieldControllers.map((c) => c.text).toList(),
             );
@@ -428,25 +434,22 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
               final msg = result.message?.isNotEmpty == true
                   ? result.message!
                   : (loc.deckEditorNameRequired);
-              messenger.showSnackBar(
-                SnackBar(
-                  content: Text(
-                    msg,
-                    style: DeckTextStyles.feedbackMessage(
-                      theme,
-                      scheme.onError,
-                    ),
-                  ),
-                  backgroundColor: scheme.error,
-                ),
-              );
+              setState(() => _submitError = msg);
               return;
             }
 
-            // Sync tags after successful save (fire-and-forget, non-blocking).
+            // Sync tags after successful save (diff-based).
             final deckId = result.newDeckId ?? createCubit.state.deckId;
-            if (deckId.isNotEmpty && _selectedTagIds.isNotEmpty) {
-              _syncTags(deckId);
+            if (deckId.isNotEmpty) {
+              try {
+                await _syncTags(deckId);
+              } catch (e) {
+                if (!mounted) {
+                  return;
+                }
+                setState(() => _submitError = e.toString());
+                return;
+              }
             }
 
             await deckListCubit.onRefresh();
@@ -456,6 +459,14 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
             navigator.pop(result.updatedDeckName);
           },
         ),
+        if (_submitError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              _submitError!,
+              style: DeckTextStyles.feedbackMessage(theme, scheme.error),
+            ),
+          ),
       ],
     );
   }

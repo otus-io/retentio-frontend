@@ -96,7 +96,7 @@ class _DeckListScreenState extends State<DeckListScreen> {
                           ),
                         ),
                         BlocProvider<TagManagerCubit>(
-                          create: (_) => TagManagerCubit(),
+                          create: (_) => TagManagerCubit(usedOn: 'deck'),
                         ),
                       ],
                       child: const DeckCreate(),
