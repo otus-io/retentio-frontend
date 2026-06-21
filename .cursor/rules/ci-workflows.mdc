@@ -11,7 +11,7 @@ alwaysApply: false
 | File | Trigger | Purpose |
 |------|---------|---------|
 | `frontend.yml` | Push/PR to main, app paths (`lib/**`, `test/**`, platforms, `pubspec.*`) | Flutter format, analyze, test |
-| `pr-review.yml` | PR opened/sync | Claude Code auto-review (claude-code-action) |
+| `pr-review.yml` | PR opened/sync | PR description auto-fill, Claude Code review |
 
 ## Frontend CI Requirements
 
