@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/models/tag.dart';
 import 'package:retentio/screen/deck/deck_view_screen.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
 import 'package:retentio/screen/deck/providers/deck_scope.dart';
@@ -86,5 +88,270 @@ void main() {
 
       expect(harness.repository.loadCalls, before + 1);
     });
+
+    testWidgets('shows empty tag filter message instead of all caught up', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      final deck = sampleDeck(cardsCount: 5);
+      const grammarTag = Tag(id: 'tag1', name: 'Grammar', description: '');
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: deck.id,
+        deckTags: const [grammarTag],
+        loadResults: [
+          DeckStudyLoadResult(cardDetail: sampleCardDetail()),
+          const DeckStudyLoadResult(cardDetail: null),
+        ],
+      );
+      addTearDown(() async {
+        await harness.dispose();
+        tearDownTestEnvironment();
+      });
+
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          DeckViewScreen(deck: deck),
+          overrides: [
+            currentDeckProvider.overrideWithValue(deck),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Grammar'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No cards with tag "Grammar"'), findsOneWidget);
+      expect(find.text('All Caught Up!'), findsNothing);
+      expect(find.text('Clear filter'), findsOneWidget);
+    });
+
+    testWidgets('dismissing tag filter sheet keeps current selection', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      final deck = sampleDeck(cardsCount: 5);
+      const grammarTag = Tag(id: 'tag1', name: 'Grammar', description: '');
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: deck.id,
+        deckTags: const [grammarTag],
+        loadResults: [
+          DeckStudyLoadResult(cardDetail: sampleCardDetail()),
+          const DeckStudyLoadResult(cardDetail: null),
+          const DeckStudyLoadResult(cardDetail: null),
+        ],
+      );
+      addTearDown(() async {
+        await harness.dispose();
+        tearDownTestEnvironment();
+      });
+
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          DeckViewScreen(deck: deck),
+          overrides: [
+            currentDeckProvider.overrideWithValue(deck),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Grammar'));
+      await tester.pumpAndSettle();
+      final loadsAfterSelect = harness.repository.loadCalls;
+
+      await tester.tap(find.byKey(const Key('deck_study_tag_filter')));
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(20, 20));
+      await tester.pumpAndSettle();
+
+      expect(harness.repository.loadCalls, loadsAfterSelect);
+      expect(find.text('No cards with tag "Grammar"'), findsOneWidget);
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Grammar'))
+            .selected,
+        isTrue,
+      );
+    });
+
+    testWidgets('selecting All in tag filter sheet clears active filter', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      final deck = sampleDeck(cardsCount: 5);
+      const grammarTag = Tag(id: 'tag1', name: 'Grammar', description: '');
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: deck.id,
+        deckTags: const [grammarTag],
+        loadResults: [
+          DeckStudyLoadResult(cardDetail: sampleCardDetail()),
+          const DeckStudyLoadResult(cardDetail: null),
+          DeckStudyLoadResult(cardDetail: sampleCardDetail()),
+        ],
+      );
+      addTearDown(() async {
+        await harness.dispose();
+        tearDownTestEnvironment();
+      });
+
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          DeckViewScreen(deck: deck),
+          overrides: [
+            currentDeckProvider.overrideWithValue(deck),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Grammar'));
+      await tester.pumpAndSettle();
+      expect(find.text('No cards with tag "Grammar"'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('deck_study_tag_filter')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text('All'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(harness.repository.loadTagIds, [null, 'tag1', null]);
+      expect(find.text('No cards with tag "Grammar"'), findsNothing);
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'All'))
+            .selected,
+        isTrue,
+      );
+      expect(find.text('1 / 5'), findsOneWidget);
+    });
+
+    testWidgets(
+      'shows current card progress instead of zero progress on first card',
+      (tester) async {
+        await setupTestEnvironment();
+        final deck = sampleDeck(cardsCount: 5);
+        final harness = FakeDeckStudyBlocHarness(
+          deckId: deck.id,
+          loadResults: [DeckStudyLoadResult(cardDetail: sampleCardDetail())],
+        );
+        addTearDown(() async {
+          await harness.dispose();
+          tearDownTestEnvironment();
+        });
+
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            DeckViewScreen(deck: deck),
+            overrides: [
+              currentDeckProvider.overrideWithValue(deck),
+              deckStudyBlocProvider.overrideWithValue(harness.bloc),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('1 / 5'), findsOneWidget);
+        expect(find.text('20%'), findsOneWidget);
+
+        final indicator = tester.widget<LinearProgressIndicator>(
+          find.byType(LinearProgressIndicator),
+        );
+        expect(indicator.value, 0.2);
+      },
+    );
+
+    testWidgets('shows a fractional percent for very small progress', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      final deck = sampleDeck(cardsCount: 2387);
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: deck.id,
+        loadResults: [DeckStudyLoadResult(cardDetail: sampleCardDetail())],
+      );
+      addTearDown(() async {
+        await harness.dispose();
+        tearDownTestEnvironment();
+      });
+
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          DeckViewScreen(deck: deck),
+          overrides: [
+            currentDeckProvider.overrideWithValue(deck),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 / 2387'), findsOneWidget);
+      expect(find.text('0.0%'), findsNothing);
+      expect(find.text('0.04%'), findsOneWidget);
+
+      final indicator = tester.widget<LinearProgressIndicator>(
+        find.byType(LinearProgressIndicator),
+      );
+      expect(indicator.value, closeTo(1 / 2387, 0.000001));
+    });
+
+    testWidgets(
+      'bottom action follows card side between show answer and next',
+      (tester) async {
+        await setupTestEnvironment();
+        final deck = sampleDeck(cardsCount: 2);
+        final harness = FakeDeckStudyBlocHarness(
+          deckId: deck.id,
+          loadResults: [
+            DeckStudyLoadResult(cardDetail: sampleCardDetail()),
+            DeckStudyLoadResult(cardDetail: sampleCardDetail()),
+          ],
+        );
+        addTearDown(() async {
+          await harness.dispose();
+          tearDownTestEnvironment();
+        });
+
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            DeckViewScreen(deck: deck),
+            overrides: [
+              currentDeckProvider.overrideWithValue(deck),
+              deckStudyBlocProvider.overrideWithValue(harness.bloc),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Show Answer'), findsOneWidget);
+        expect(find.text('Next'), findsNothing);
+        expect(find.text('Hard'), findsNothing);
+        expect(find.text('Easy'), findsNothing);
+
+        await tester.tap(find.text('Show Answer'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Show Answer'), findsNothing);
+        expect(find.text('Next'), findsOneWidget);
+        expect(find.text('Hard'), findsOneWidget);
+        expect(find.text('Easy'), findsOneWidget);
+
+        await tester.tap(find.text('Next'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Show Answer'), findsOneWidget);
+        expect(find.text('Next'), findsNothing);
+        expect(find.text('Hard'), findsNothing);
+        expect(find.text('Easy'), findsNothing);
+      },
+    );
   });
 }

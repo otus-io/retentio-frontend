@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:pull_down_button/pull_down_button.dart';
+import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/deck/bloc/deck_study_context_cubit.dart';
@@ -102,10 +103,15 @@ class DeckMenu extends StatelessWidget {
                     initialChildSize: 0.88,
                     minChildSize: 0.45,
                     maxChildSize: 0.95,
-                    child: FactAdd(
-                      deck: deck,
-                      onStudyQueueRefresh: () async =>
-                          requestDeckStudyReloadCurrentCard(context),
+                    child: BlocProvider<TagManagerCubit>(
+                      create: (_) =>
+                          TagManagerCubit(usedOn: 'fact', deckId: deck.id)
+                            ..loadTags(),
+                      child: FactAdd(
+                        deck: deck,
+                        onStudyQueueRefresh: () async =>
+                            requestDeckStudyReloadCurrentCard(context),
+                      ),
                     ),
                   );
                 },
@@ -139,7 +145,11 @@ class DeckMenu extends StatelessWidget {
                             rate: deck.rate,
                             deckId: deck.id,
                             cardType: DeckCardType.edit,
+                            isImported: deck.isImported,
                           ),
+                        ),
+                        BlocProvider<TagManagerCubit>(
+                          create: (_) => TagManagerCubit(usedOn: 'deck'),
                         ),
                       ],
                       child: DeckCreate(deck: deck),

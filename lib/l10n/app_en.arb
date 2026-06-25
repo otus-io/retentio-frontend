@@ -182,6 +182,24 @@
   "@allCaughtUp": {
     "description": "Message when no cards to study"
   },
+  "noCardsForTagFilter": "No cards with this tag",
+  "@noCardsForTagFilter": {
+    "description": "Message when an active tag filter returns no due cards"
+  },
+  "noCardsForTagFilterNamed": "No cards with tag \"{tagName}\"",
+  "@noCardsForTagFilterNamed": {
+    "description": "Message when a named tag filter returns no due cards",
+    "placeholders": {
+      "tagName": {
+        "type": "String",
+        "example": "Grammar"
+      }
+    }
+  },
+  "clearTagFilter": "Clear filter",
+  "@clearTagFilter": {
+    "description": "Button to clear the active study tag filter"
+  },
   "startLearningDeck": "Start learning: {deckName}",
   "@startLearningDeck": {
     "description": "Message when starting to learn a deck",
@@ -517,5 +535,126 @@
   "deckFontTabBack": "Back",
   "@deckFontTabBack": {
     "description": "Font sheet tab for card back typography"
+  },
+  "tags": "Tags",
+  "@tags": {
+    "description": "Tags section label"
+  },
+  "tagLabel": "Tag",
+  "@tagLabel": {
+    "description": "Single tag label"
+  },
+  "addTag": "Add tag",
+  "@addTag": {
+    "description": "Button/tooltip to add a tag"
+  },
+  "createTag": "Create tag",
+  "@createTag": {
+    "description": "Button to create a new tag"
+  },
+  "editTag": "Edit tag",
+  "@editTag": {
+    "description": "Menu item to edit a tag"
+  },
+  "deleteTag": "Delete tag",
+  "@deleteTag": {
+    "description": "Menu item to delete a tag"
+  },
+  "tagName": "Tag name",
+  "@tagName": {
+    "description": "Input label for tag name"
+  },
+  "tagDescription": "Description (optional)",
+  "@tagDescription": {
+    "description": "Input label for tag description"
+  },
+  "tagNameHint": "e.g. Grammar, Verbs…",
+  "@tagNameHint": {
+    "description": "Hint text for tag name input"
+  },
+  "tagNameRequired": "Please enter a tag name",
+  "@tagNameRequired": {
+    "description": "Validation error when tag name is empty"
+  },
+  "tagCreated": "Tag created",
+  "@tagCreated": {
+    "description": "Snackbar after a tag is created"
+  },
+  "tagUpdated": "Tag updated",
+  "@tagUpdated": {
+    "description": "Snackbar after a tag is updated"
+  },
+  "tagDeleted": "Tag deleted",
+  "@tagDeleted": {
+    "description": "Snackbar after a tag is deleted"
+  },
+  "tagCreateFailed": "Could not create tag",
+  "@tagCreateFailed": {
+    "description": "Snackbar when create tag API fails"
+  },
+  "tagUpdateFailed": "Could not update tag",
+  "@tagUpdateFailed": {
+    "description": "Snackbar when update tag API fails"
+  },
+  "tagDeleteFailed": "Could not delete tag",
+  "@tagDeleteFailed": {
+    "description": "Snackbar when delete tag API fails"
+  },
+  "tagAlreadyExists": "A tag with this name already exists",
+  "@tagAlreadyExists": {
+    "description": "Error when tag name conflicts with existing tag (409)"
+  },
+  "tagLimitReached": "You have reached the maximum of 100 tags",
+  "@tagLimitReached": {
+    "description": "Error when user hits 100-tag limit"
+  },
+  "noTags": "No tags yet",
+  "@noTags": {
+    "description": "Empty state for tag list"
+  },
+  "manageTags": "Manage tags",
+  "@manageTags": {
+    "description": "Menu item or page title to manage all tags"
+  },
+  "tagPickerTitle": "Select tags",
+  "@tagPickerTitle": {
+    "description": "Title of the tag picker bottom sheet"
+  },
+  "tagPickerSearchHint": "Search tags…",
+  "@tagPickerSearchHint": {
+    "description": "Hint in tag picker filter field"
+  },
+  "tagPickerDone": "Done",
+  "@tagPickerDone": {
+    "description": "Done button in tag picker sheet"
+  },
+  "tagPickerNoMatch": "No tags matching \"{query}\"",
+  "@tagPickerNoMatch": {
+    "description": "Empty state when search has no results",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "tagPickerEmptyHint": "No tags yet. Tap below to create the first one.",
+  "@tagPickerEmptyHint": {
+    "description": "Empty state when user has no tags at all"
+  },
+  "filterAll": "All",
+  "@filterAll": {
+    "description": "Filter chip label meaning no filter / show everything"
+  },
+  "studyTagFilterTitle": "Study by tag",
+  "@studyTagFilterTitle": {
+    "description": "Title for the deck study tag filter bottom sheet"
+  },
+  "tagFacts": "Facts",
+  "@tagFacts": {
+    "description": "Screen title showing all facts belonging to a tag"
+  },
+  "noFactsInTag": "No facts in this tag yet",
+  "@noFactsInTag": {
+    "description": "Empty state for tag facts screen"
   }
 }

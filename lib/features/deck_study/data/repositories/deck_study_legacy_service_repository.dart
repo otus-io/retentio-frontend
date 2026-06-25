@@ -1,22 +1,46 @@
 import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/models/card.dart';
+import 'package:retentio/models/deck.dart';
+import 'package:retentio/models/tag.dart';
 import 'package:retentio/services/apis/card_service.dart';
 import 'package:retentio/services/apis/deck_service.dart';
+import 'package:retentio/services/apis/tag_service.dart';
 import 'package:retentio/utils/log.dart';
+
+typedef LoadNextDueCardFn =
+    Future<CardDetail?> Function(String deckId, {String? tagId});
+typedef LoadDeckTagsFn = Future<List<Tag>> Function({required String deckId});
+typedef GetDeckDetailFn = Future<Deck> Function(String deckId);
+
+Future<List<Tag>> _defaultLoadDeckTags({required String deckId}) =>
+    TagService.of.getTags(usedOn: 'fact', deckId: deckId);
 
 /// Adapter repository that bridges DeckStudy domain to existing legacy services.
 /// Keeps old provider stack untouched while enabling feature-level BLoC wiring.
 class DeckStudyLegacyServiceRepository implements DeckStudyRepository {
-  DeckStudyLegacyServiceRepository({DeckService? deckService})
-    : _deckService = deckService ?? DeckService.of;
+  DeckStudyLegacyServiceRepository({
+    DeckService? deckService,
+    LoadNextDueCardFn? loadNextDueCardFn,
+    LoadDeckTagsFn? loadDeckTagsFn,
+    GetDeckDetailFn? getDeckDetailFn,
+  }) : _deckService = deckService ?? DeckService.of,
+       _loadNextDueCardFn = loadNextDueCardFn ?? CardService.getNextDueCard,
+       _loadDeckTagsFn = loadDeckTagsFn ?? _defaultLoadDeckTags,
+       _getDeckDetailFn = getDeckDetailFn;
 
   final DeckService _deckService;
+  final LoadNextDueCardFn _loadNextDueCardFn;
+  final LoadDeckTagsFn _loadDeckTagsFn;
+  final GetDeckDetailFn? _getDeckDetailFn;
 
   @override
-  Future<DeckStudyLoadResult> loadNextDueCard({required String deckId}) async {
+  Future<DeckStudyLoadResult> loadNextDueCard({
+    required String deckId,
+    String? tagId,
+  }) async {
     CardDetail? response;
     try {
-      response = await CardService.getNextDueCard(deckId);
+      response = await _loadNextDueCardFn(deckId, tagId: tagId);
     } catch (e, s) {
       logger.e(
         'loadNextDueCard failed for deck=$deckId, error=$e',
@@ -34,9 +58,15 @@ class DeckStudyLegacyServiceRepository implements DeckStudyRepository {
       return DeckStudyLoadResult(cardDetail: response);
     }
 
+    if (tagId != null) {
+      return const DeckStudyLoadResult(cardDetail: null);
+    }
+
     int? refreshedCardsCount;
     try {
-      final deck = await _deckService.getDeckDetail(deckId);
+      final deck = await (_getDeckDetailFn ?? _deckService.getDeckDetail)(
+        deckId,
+      );
       refreshedCardsCount = deck.stats.cardsCount;
     } catch (e, s) {
       logger.w(
@@ -49,6 +79,16 @@ class DeckStudyLegacyServiceRepository implements DeckStudyRepository {
       cardDetail: null,
       refreshedCardsCount: refreshedCardsCount,
     );
+  }
+
+  @override
+  Future<List<Tag>> loadDeckTags({required String deckId}) async {
+    try {
+      return await _loadDeckTagsFn(deckId: deckId);
+    } catch (e, s) {
+      logger.e('loadDeckTags failed for deck=$deckId', stackTrace: s);
+      return [];
+    }
   }
 
   @override

@@ -362,6 +362,24 @@ abstract class AppLocalizations {
   /// **'All Caught Up!'**
   String get allCaughtUp;
 
+  /// Message when an active tag filter returns no due cards
+  ///
+  /// In en, this message translates to:
+  /// **'No cards with this tag'**
+  String get noCardsForTagFilter;
+
+  /// Message when a named tag filter returns no due cards
+  ///
+  /// In en, this message translates to:
+  /// **'No cards with tag \"{tagName}\"'**
+  String noCardsForTagFilterNamed(String tagName);
+
+  /// Button to clear the active study tag filter
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filter'**
+  String get clearTagFilter;
+
   /// Message when starting to learn a deck
   ///
   /// In en, this message translates to:
@@ -811,6 +829,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back'**
   String get deckFontTabBack;
+
+  /// Tags section label
+  ///
+  /// In en, this message translates to:
+  /// **'Tags'**
+  String get tags;
+
+  /// Single tag label
+  ///
+  /// In en, this message translates to:
+  /// **'Tag'**
+  String get tagLabel;
+
+  /// Button/tooltip to add a tag
+  ///
+  /// In en, this message translates to:
+  /// **'Add tag'**
+  String get addTag;
+
+  /// Button to create a new tag
+  ///
+  /// In en, this message translates to:
+  /// **'Create tag'**
+  String get createTag;
+
+  /// Menu item to edit a tag
+  ///
+  /// In en, this message translates to:
+  /// **'Edit tag'**
+  String get editTag;
+
+  /// Menu item to delete a tag
+  ///
+  /// In en, this message translates to:
+  /// **'Delete tag'**
+  String get deleteTag;
+
+  /// Input label for tag name
+  ///
+  /// In en, this message translates to:
+  /// **'Tag name'**
+  String get tagName;
+
+  /// Input label for tag description
+  ///
+  /// In en, this message translates to:
+  /// **'Description (optional)'**
+  String get tagDescription;
+
+  /// Hint text for tag name input
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Grammar, Verbs…'**
+  String get tagNameHint;
+
+  /// Validation error when tag name is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a tag name'**
+  String get tagNameRequired;
+
+  /// Snackbar after a tag is created
+  ///
+  /// In en, this message translates to:
+  /// **'Tag created'**
+  String get tagCreated;
+
+  /// Snackbar after a tag is updated
+  ///
+  /// In en, this message translates to:
+  /// **'Tag updated'**
+  String get tagUpdated;
+
+  /// Snackbar after a tag is deleted
+  ///
+  /// In en, this message translates to:
+  /// **'Tag deleted'**
+  String get tagDeleted;
+
+  /// Snackbar when create tag API fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create tag'**
+  String get tagCreateFailed;
+
+  /// Snackbar when update tag API fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update tag'**
+  String get tagUpdateFailed;
+
+  /// Snackbar when delete tag API fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete tag'**
+  String get tagDeleteFailed;
+
+  /// Error when tag name conflicts with existing tag (409)
+  ///
+  /// In en, this message translates to:
+  /// **'A tag with this name already exists'**
+  String get tagAlreadyExists;
+
+  /// Error when user hits 100-tag limit
+  ///
+  /// In en, this message translates to:
+  /// **'You have reached the maximum of 100 tags'**
+  String get tagLimitReached;
+
+  /// Empty state for tag list
+  ///
+  /// In en, this message translates to:
+  /// **'No tags yet'**
+  String get noTags;
+
+  /// Menu item or page title to manage all tags
+  ///
+  /// In en, this message translates to:
+  /// **'Manage tags'**
+  String get manageTags;
+
+  /// Title of the tag picker bottom sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Select tags'**
+  String get tagPickerTitle;
+
+  /// Hint in tag picker filter field
+  ///
+  /// In en, this message translates to:
+  /// **'Search tags…'**
+  String get tagPickerSearchHint;
+
+  /// Done button in tag picker sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get tagPickerDone;
+
+  /// Empty state when search has no results
+  ///
+  /// In en, this message translates to:
+  /// **'No tags matching \"{query}\"'**
+  String tagPickerNoMatch(String query);
+
+  /// Empty state when user has no tags at all
+  ///
+  /// In en, this message translates to:
+  /// **'No tags yet. Tap below to create the first one.'**
+  String get tagPickerEmptyHint;
+
+  /// Filter chip label meaning no filter / show everything
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
+  /// Title for the deck study tag filter bottom sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Study by tag'**
+  String get studyTagFilterTitle;
+
+  /// Screen title showing all facts belonging to a tag
+  ///
+  /// In en, this message translates to:
+  /// **'Facts'**
+  String get tagFacts;
+
+  /// Empty state for tag facts screen
+  ///
+  /// In en, this message translates to:
+  /// **'No facts in this tag yet'**
+  String get noFactsInTag;
 }
 
 class _AppLocalizationsDelegate

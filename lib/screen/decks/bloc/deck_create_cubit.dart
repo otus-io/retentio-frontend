@@ -10,6 +10,20 @@ const int kDeckEditorRateDefault = 30;
 int clampDeckEditorRate(int rate) =>
     rate.clamp(kDeckEditorRateMin, kDeckEditorRateMax);
 
+Map<String, dynamic> buildDeckEditorSubmitParams({
+  required DeckCardType cardType,
+  required bool isImported,
+  required int rate,
+  required String name,
+  required List<String> fields,
+}) {
+  final clampedRate = clampDeckEditorRate(rate);
+  if (cardType == DeckCardType.edit && isImported) {
+    return {'rate': clampedRate};
+  }
+  return {'name': name, 'fields': fields, 'rate': clampedRate};
+}
+
 enum DeckCardType { add, edit }
 
 enum DeckCreateLoadingState { initial, loading, loaded, error }
@@ -20,6 +34,7 @@ class DeckCreateState {
     required this.rate,
     required this.deckId,
     required this.cardType,
+    this.isImported = false,
     this.loadingState = DeckCreateLoadingState.initial,
   });
 
@@ -27,6 +42,7 @@ class DeckCreateState {
   final int rate;
   final String deckId;
   final DeckCardType cardType;
+  final bool isImported;
   final DeckCreateLoadingState loadingState;
 
   DeckCreateState copyWith({
@@ -34,6 +50,7 @@ class DeckCreateState {
     int? rate,
     String? deckId,
     DeckCardType? cardType,
+    bool? isImported,
     DeckCreateLoadingState? loadingState,
   }) {
     return DeckCreateState(
@@ -41,6 +58,7 @@ class DeckCreateState {
       rate: rate ?? this.rate,
       deckId: deckId ?? this.deckId,
       cardType: cardType ?? this.cardType,
+      isImported: isImported ?? this.isImported,
       loadingState: loadingState ?? this.loadingState,
     );
   }
@@ -60,11 +78,15 @@ class DeckCreateResult {
     required this.success,
     this.message,
     this.updatedDeckName,
+    this.newDeckId,
   });
 
   final bool success;
   final String? message;
   final String? updatedDeckName;
+
+  /// Populated after a successful CREATE; null in edit mode.
+  final String? newDeckId;
 }
 
 class DeckCreateCubit extends Cubit<DeckCreateState> {
@@ -73,12 +95,14 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
     required int rate,
     required String deckId,
     required DeckCardType cardType,
+    bool isImported = false,
   }) : super(
          DeckCreateState(
            name: name,
            rate: clampDeckEditorRate(rate),
            deckId: deckId,
            cardType: cardType,
+           isImported: isImported,
          ),
        ) {
     nameController.text = name;
@@ -97,6 +121,7 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
     required int rate,
     required DeckCardType cardType,
     required String deckId,
+    bool isImported = false,
   }) {
     if (nameController.text != name) {
       nameController.text = name;
@@ -107,6 +132,7 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
         rate: clampDeckEditorRate(rate),
         deckId: deckId,
         cardType: cardType,
+        isImported: isImported,
         loadingState: DeckCreateLoadingState.initial,
       ),
     );
@@ -135,11 +161,13 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
         .where((s) => s.isNotEmpty)
         .toList();
 
-    final params = {
-      'name': name,
-      'fields': fields,
-      'rate': clampDeckEditorRate(state.rate),
-    };
+    final params = buildDeckEditorSubmitParams(
+      cardType: state.cardType,
+      isImported: state.isImported,
+      rate: state.rate,
+      name: name,
+      fields: fields,
+    );
 
     emit(state.copyWith(loadingState: DeckCreateLoadingState.loading));
 
@@ -147,7 +175,15 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
       final res = await DeckService.of.createDeck(params);
       if (res?.isSuccess == true) {
         emit(state.copyWith(loadingState: DeckCreateLoadingState.loaded));
-        return const DeckCreateResult(success: true);
+        String? newDeckId;
+        final data = res!.data;
+        if (data is Map) {
+          final deck = data['deck'];
+          if (deck is Map) {
+            newDeckId = deck['id']?.toString();
+          }
+        }
+        return DeckCreateResult(success: true, newDeckId: newDeckId);
       }
 
       emit(state.copyWith(loadingState: DeckCreateLoadingState.error));

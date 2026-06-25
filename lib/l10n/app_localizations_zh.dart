@@ -143,6 +143,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get allCaughtUp => '全部完成！';
 
   @override
+  String get noCardsForTagFilter => '该标签下暂无卡片';
+
+  @override
+  String noCardsForTagFilterNamed(String tagName) {
+    return '标签「$tagName」下暂无卡片';
+  }
+
+  @override
+  String get clearTagFilter => '清除筛选';
+
+  @override
   String startLearningDeck(String deckName) {
     return '开始学习：$deckName';
   }
@@ -374,4 +385,93 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get deckFontTabBack => '背面';
+
+  @override
+  String get tags => '标签';
+
+  @override
+  String get tagLabel => '标签';
+
+  @override
+  String get addTag => '添加标签';
+
+  @override
+  String get createTag => '创建标签';
+
+  @override
+  String get editTag => '编辑标签';
+
+  @override
+  String get deleteTag => '删除标签';
+
+  @override
+  String get tagName => '标签名称';
+
+  @override
+  String get tagDescription => '描述（可选）';
+
+  @override
+  String get tagNameHint => '例如：语法、动词…';
+
+  @override
+  String get tagNameRequired => '请输入标签名称';
+
+  @override
+  String get tagCreated => '标签已创建';
+
+  @override
+  String get tagUpdated => '标签已更新';
+
+  @override
+  String get tagDeleted => '标签已删除';
+
+  @override
+  String get tagCreateFailed => '无法创建标签';
+
+  @override
+  String get tagUpdateFailed => '无法更新标签';
+
+  @override
+  String get tagDeleteFailed => '无法删除标签';
+
+  @override
+  String get tagAlreadyExists => '已存在同名标签';
+
+  @override
+  String get tagLimitReached => '最多只能创建 100 个标签';
+
+  @override
+  String get noTags => '暂无标签';
+
+  @override
+  String get manageTags => '管理标签';
+
+  @override
+  String get tagPickerTitle => '选择标签';
+
+  @override
+  String get tagPickerSearchHint => '搜索标签…';
+
+  @override
+  String get tagPickerDone => '完成';
+
+  @override
+  String tagPickerNoMatch(String query) {
+    return '没有匹配\"$query\"的标签';
+  }
+
+  @override
+  String get tagPickerEmptyHint => '暂无标签，点击下方创建第一个';
+
+  @override
+  String get filterAll => '全部';
+
+  @override
+  String get studyTagFilterTitle => '按标签复习';
+
+  @override
+  String get tagFacts => '词条';
+
+  @override
+  String get noFactsInTag => '该标签下还没有词条';
 }

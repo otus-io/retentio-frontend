@@ -143,6 +143,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allCaughtUp => 'All Caught Up!';
 
   @override
+  String get noCardsForTagFilter => 'No cards with this tag';
+
+  @override
+  String noCardsForTagFilterNamed(String tagName) {
+    return 'No cards with tag \"$tagName\"';
+  }
+
+  @override
+  String get clearTagFilter => 'Clear filter';
+
+  @override
   String startLearningDeck(String deckName) {
     return 'Start learning: $deckName';
   }
@@ -384,4 +395,94 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deckFontTabBack => 'Back';
+
+  @override
+  String get tags => 'Tags';
+
+  @override
+  String get tagLabel => 'Tag';
+
+  @override
+  String get addTag => 'Add tag';
+
+  @override
+  String get createTag => 'Create tag';
+
+  @override
+  String get editTag => 'Edit tag';
+
+  @override
+  String get deleteTag => 'Delete tag';
+
+  @override
+  String get tagName => 'Tag name';
+
+  @override
+  String get tagDescription => 'Description (optional)';
+
+  @override
+  String get tagNameHint => 'e.g. Grammar, Verbs…';
+
+  @override
+  String get tagNameRequired => 'Please enter a tag name';
+
+  @override
+  String get tagCreated => 'Tag created';
+
+  @override
+  String get tagUpdated => 'Tag updated';
+
+  @override
+  String get tagDeleted => 'Tag deleted';
+
+  @override
+  String get tagCreateFailed => 'Could not create tag';
+
+  @override
+  String get tagUpdateFailed => 'Could not update tag';
+
+  @override
+  String get tagDeleteFailed => 'Could not delete tag';
+
+  @override
+  String get tagAlreadyExists => 'A tag with this name already exists';
+
+  @override
+  String get tagLimitReached => 'You have reached the maximum of 100 tags';
+
+  @override
+  String get noTags => 'No tags yet';
+
+  @override
+  String get manageTags => 'Manage tags';
+
+  @override
+  String get tagPickerTitle => 'Select tags';
+
+  @override
+  String get tagPickerSearchHint => 'Search tags…';
+
+  @override
+  String get tagPickerDone => 'Done';
+
+  @override
+  String tagPickerNoMatch(String query) {
+    return 'No tags matching \"$query\"';
+  }
+
+  @override
+  String get tagPickerEmptyHint =>
+      'No tags yet. Tap below to create the first one.';
+
+  @override
+  String get filterAll => 'All';
+
+  @override
+  String get studyTagFilterTitle => 'Study by tag';
+
+  @override
+  String get tagFacts => 'Facts';
+
+  @override
+  String get noFactsInTag => 'No facts in this tag yet';
 }
