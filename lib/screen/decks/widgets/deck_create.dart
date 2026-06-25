@@ -118,6 +118,14 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
 
   int? _draggingFieldIndex;
 
+  TagManagerCubit? _maybeTagManager() {
+    try {
+      return context.read<TagManagerCubit>();
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   void afterFirstLayout() {
     final createCubit = context.read<DeckCreateCubit>();
@@ -141,7 +149,11 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
       _resetFieldControllers(_defaultNewDeckFields);
     }
     // Load the user's full tag list so the picker has data.
-    final tagManager = context.read<TagManagerCubit>();
+    final tagManager = _maybeTagManager();
+    if (tagManager == null) {
+      setState(() {});
+      return;
+    }
     if (tagManager.state.status == TagManagerStatus.initial) {
       tagManager.loadTags();
     }
@@ -166,6 +178,9 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
 
   /// Opens the tag picker and applies the returned selection.
   Future<void> _openTagPicker() async {
+    final tagManager = _maybeTagManager();
+    if (tagManager == null) return;
+
     final result = await showTagPickerSheet(
       context,
       selectedIds: _selectedTagIds,
@@ -173,7 +188,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
     if (result == null || !mounted) return;
 
     // Resolve full Tag objects from the manager's list.
-    final allTags = context.read<TagManagerCubit>().state.tags;
+    final allTags = tagManager.state.tags;
     final resolved = result
         .map(
           (id) => allTags.firstWhere(
