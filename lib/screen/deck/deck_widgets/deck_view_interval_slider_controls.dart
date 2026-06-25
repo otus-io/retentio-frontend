@@ -34,14 +34,6 @@ DeckStudyBloc _readDeckStudyBloc(BuildContext context) {
   }
 }
 
-void requestDeckStudyShowAnswerToggle(BuildContext context) {
-  _readDeckStudyBloc(context).add(const DeckStudyShowAnswerToggled());
-}
-
-void requestDeckStudyShowAnswer(BuildContext context) {
-  _readDeckStudyBloc(context).add(const DeckStudyShowAnswerRequested());
-}
-
 void requestDeckStudyIntervalSelected(
   BuildContext context,
   double intervalSeconds,
@@ -70,6 +62,10 @@ void requestDeckStudyReviewAgain(BuildContext context) {
   _readDeckStudyBloc(context).add(const DeckStudyReviewAgainRequested());
 }
 
+void requestDeckStudyTagFilterChanged(BuildContext context, String? tagId) {
+  _readDeckStudyBloc(context).add(DeckStudyTagFilterChanged(tagId));
+}
+
 class DeckViewIntervalSliderControls extends StatelessWidget {
   const DeckViewIntervalSliderControls({super.key});
 
@@ -78,92 +74,102 @@ class DeckViewIntervalSliderControls extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final loc = AppLocalizations.of(context)!;
+    final flipController = context
+        .read<DeckStudyFlipCardControllerCubit>()
+        .state;
 
     return BlocBuilder<DeckStudyBloc, DeckStudyState>(
       builder: (context, state) {
-        final showAnswer = state.showAnswer;
+        return AnimatedBuilder(
+          animation: flipController,
+          builder: (context, _) {
+            final isFront = flipController.isFront;
 
-        return Container(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            border: Border(
-              top: BorderSide(color: scheme.outline.withValues(alpha: 0.28)),
-            ),
-          ),
-          child: SafeArea(
-            top: false,
-            child: Column(
-              spacing: 8,
-              children: [
-                if (!showAnswer)
-                  Row(
-                    children: [
-                      Text(
-                        loc.hard,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: scheme.onSurface.withValues(alpha: 0.35),
-                        ),
-                      ),
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          trackHeight: 3,
-                          thumbShape: const RoundSliderThumbShape(
-                            enabledThumbRadius: 7,
-                          ),
-                          overlayShape: const RoundSliderOverlayShape(
-                            overlayRadius: 14,
-                          ),
-                          activeTrackColor: scheme.primary,
-                          inactiveTrackColor: scheme.outline.withValues(
-                            alpha: 0.25,
-                          ),
-                          thumbColor: scheme.primary,
-                          overlayColor: scheme.primary.withValues(alpha: 0.1),
-                        ),
-                        child: Slider(
-                          value: state.selectedInterval.ceilToDouble(),
-                          min: state.minInterval,
-                          max: state.maxInterval,
-                          divisions: 100,
-                          label: formatReviewIntervalLabel(
-                            state.selectedInterval,
-                          ),
-                          onChanged: (double value) {
-                            requestDeckStudyIntervalSelected(context, value);
-                          },
-                        ),
-                      ).expanded(),
-                      Text(
-                        loc.easy,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: scheme.onSurface.withValues(alpha: 0.35),
-                        ),
-                      ),
-                    ],
+            return Container(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+              decoration: BoxDecoration(
+                color: scheme.surface,
+                border: Border(
+                  top: BorderSide(
+                    color: scheme.outline.withValues(alpha: 0.28),
                   ),
-                AppButton(
-                  label: showAnswer ? loc.showAnswer : loc.review,
-                  onPressed: () {
-                    final flipController = context
-                        .read<DeckStudyFlipCardControllerCubit>()
-                        .state;
-                    if (flipController.isFront) {
-                      flipController.flip();
-                      requestDeckStudyShowAnswerToggle(context);
-                    } else {
-                      requestDeckStudyNextCard(context);
-                      flipController.showFront();
-                      requestDeckStudyShowAnswer(context);
-                    }
-                  },
-                  variant: AppButtonVariant.primary,
-                  size: AppButtonSize.md,
-                  fullWidth: true,
                 ),
-              ],
-            ),
-          ),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  spacing: 8,
+                  children: [
+                    if (!isFront)
+                      Row(
+                        children: [
+                          Text(
+                            loc.hard,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: scheme.onSurface.withValues(alpha: 0.35),
+                            ),
+                          ),
+                          SliderTheme(
+                            data: SliderTheme.of(context).copyWith(
+                              trackHeight: 3,
+                              thumbShape: const RoundSliderThumbShape(
+                                enabledThumbRadius: 7,
+                              ),
+                              overlayShape: const RoundSliderOverlayShape(
+                                overlayRadius: 14,
+                              ),
+                              activeTrackColor: scheme.primary,
+                              inactiveTrackColor: scheme.outline.withValues(
+                                alpha: 0.25,
+                              ),
+                              thumbColor: scheme.primary,
+                              overlayColor: scheme.primary.withValues(
+                                alpha: 0.1,
+                              ),
+                            ),
+                            child: Slider(
+                              value: state.selectedInterval.ceilToDouble(),
+                              min: state.minInterval,
+                              max: state.maxInterval,
+                              divisions: 100,
+                              label: formatReviewIntervalLabel(
+                                state.selectedInterval,
+                              ),
+                              onChanged: (double value) {
+                                requestDeckStudyIntervalSelected(
+                                  context,
+                                  value,
+                                );
+                              },
+                            ),
+                          ).expanded(),
+                          Text(
+                            loc.easy,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: scheme.onSurface.withValues(alpha: 0.35),
+                            ),
+                          ),
+                        ],
+                      ),
+                    AppButton(
+                      label: isFront ? loc.showAnswer : loc.next,
+                      onPressed: () {
+                        if (isFront) {
+                          flipController.showBack();
+                        } else {
+                          requestDeckStudyNextCard(context);
+                          flipController.showFront();
+                        }
+                      },
+                      variant: AppButtonVariant.primary,
+                      size: AppButtonSize.md,
+                      fullWidth: true,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );

@@ -74,12 +74,25 @@ class ApiService {
   static Future<ApiResponse?> get(
     String endpoint, {
     Map<String, String>? pathParams,
+    Map<String, dynamic>? queryParams,
   }) async {
     final response = await networkDioClient.get(
       endpoint,
       pathParams: pathParams,
+      params: queryParams,
     );
     return response;
+  }
+
+  /// 通用 PUT 请求（无 body，用于幂等关联操作）
+  static Future<ApiResponse?> put(
+    String endpoint, {
+    Map<String, String>? pathParams,
+  }) {
+    return networkDioClient.put(
+      endpoint,
+      pathParams: pathParams?.map((k, v) => MapEntry(k, v as dynamic)),
+    );
   }
 
   /// 通用 Patch 请求
