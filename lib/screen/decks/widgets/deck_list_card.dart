@@ -19,6 +19,12 @@ class DeckListCard extends StatelessWidget {
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final progressPercent = deck.progress;
+    final progressPercentLabel = progressPercent >= 1
+        ? '${progressPercent.toStringAsFixed(0)}%'
+        : progressPercent > 0
+        ? '${progressPercent.toStringAsFixed(2)}%'
+        : '${progressPercent.toStringAsFixed(0)}%';
 
     return InkWell(
       onTap: () {
@@ -115,7 +121,7 @@ class DeckListCard extends StatelessWidget {
               children: [
                 Text(loc.progress, style: DeckTextStyles.progressLabel(theme)),
                 Text(
-                  '${deck.learnedCards}/${deck.totalCards} (${deck.progress.toStringAsFixed(0)}%)',
+                  '${deck.learnedCards}/${deck.totalCards} ($progressPercentLabel)',
                   style: DeckTextStyles.progressValue(theme),
                 ),
               ],

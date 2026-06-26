@@ -5,7 +5,7 @@ class GetNextDueCardUseCase {
 
   final DeckStudyRepository _repository;
 
-  Future<DeckStudyLoadResult> call({required String deckId}) {
-    return _repository.loadNextDueCard(deckId: deckId);
+  Future<DeckStudyLoadResult> call({required String deckId, String? tagId}) {
+    return _repository.loadNextDueCard(deckId: deckId, tagId: tagId);
   }
 }

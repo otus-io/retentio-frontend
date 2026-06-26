@@ -7,7 +7,6 @@ void main() {
       const s = DeckStudyState(deckId: 'deck-1');
       expect(s.isLoading, false);
       expect(s.cardsStudied, 0);
-      expect(s.showAnswer, true);
       expect(s.loadingPhase, DeckStudyLoadingPhase.initial);
       expect(s.selectedInterval, 0);
       expect(s.isHide, false);
@@ -15,14 +14,9 @@ void main() {
       expect(s.refreshedCardsCount, isNull);
     });
 
-    test('copyWith updates selected interval and showAnswer', () {
-      const s = DeckStudyState(
-        deckId: 'deck-1',
-        showAnswer: true,
-        selectedInterval: 100,
-      );
-      final next = s.copyWith(showAnswer: false, selectedInterval: 200.0);
-      expect(next.showAnswer, false);
+    test('copyWith updates selected interval', () {
+      const s = DeckStudyState(deckId: 'deck-1', selectedInterval: 100);
+      final next = s.copyWith(selectedInterval: 200.0);
       expect(next.selectedInterval, 200.0);
       expect(next.cardsStudied, 0);
     });

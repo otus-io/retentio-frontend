@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:retentio/features/deck_study/deck_study.dart';
+import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 import 'package:retentio/l10n/app_localizations.dart';
@@ -55,7 +56,6 @@ class CardMenu extends StatelessWidget {
               onTap: () async {
                 requestDeckStudyNextCard(context, hideCurrentCard: true);
                 _tryShowFrontOnFlipController(context);
-                requestDeckStudyShowAnswer(context);
               },
               icon: LucideIcons.eyeOff,
               itemTheme: PullDownMenuItemTheme(
@@ -76,11 +76,16 @@ class CardMenu extends StatelessWidget {
                   context: context,
                   fullScreen: true,
                   title: loc.editFact,
-                  child: FactEdit(
-                    deck: deck,
-                    factId: card.factId,
-                    onSaved: () async =>
-                        requestDeckStudyReloadCurrentCard(context),
+                  child: BlocProvider<TagManagerCubit>(
+                    create: (_) =>
+                        TagManagerCubit(usedOn: 'fact', deckId: deck.id)
+                          ..loadTags(),
+                    child: FactEdit(
+                      deck: deck,
+                      factId: card.factId,
+                      onSaved: () async =>
+                          requestDeckStudyReloadCurrentCard(context),
+                    ),
                   ),
                 );
               },

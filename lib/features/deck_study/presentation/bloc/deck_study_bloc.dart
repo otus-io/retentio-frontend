@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:retentio/features/deck_study/domain/usecases/delete_study_card_usecase.dart';
 import 'package:retentio/features/deck_study/domain/usecases/get_next_due_card_usecase.dart';
+import 'package:retentio/features/deck_study/domain/usecases/load_deck_tags_usecase.dart';
 import 'package:retentio/features/deck_study/domain/usecases/submit_card_review_usecase.dart';
 import 'package:retentio/features/deck_study/domain/value_objects/review_interval_range.dart';
 import 'package:retentio/features/deck_study/presentation/bloc/deck_study_event.dart';
@@ -14,9 +15,11 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
     required GetNextDueCardUseCase getNextDueCardUseCase,
     required SubmitCardReviewUseCase submitCardReviewUseCase,
     required DeleteStudyCardUseCase deleteStudyCardUseCase,
+    required LoadDeckTagsUseCase loadDeckTagsUseCase,
   }) : _getNextDueCardUseCase = getNextDueCardUseCase,
        _submitCardReviewUseCase = submitCardReviewUseCase,
        _deleteStudyCardUseCase = deleteStudyCardUseCase,
+       _loadDeckTagsUseCase = loadDeckTagsUseCase,
        super(DeckStudyState(deckId: deckId)) {
     _eventSubscription = _eventController.stream
         .asyncMap(_onEvent)
@@ -26,6 +29,7 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
   final GetNextDueCardUseCase _getNextDueCardUseCase;
   final SubmitCardReviewUseCase _submitCardReviewUseCase;
   final DeleteStudyCardUseCase _deleteStudyCardUseCase;
+  final LoadDeckTagsUseCase _loadDeckTagsUseCase;
 
   final StreamController<DeckStudyEvent> _eventController =
       StreamController<DeckStudyEvent>();
@@ -42,25 +46,21 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
 
   Future<void> _onEvent(DeckStudyEvent event) async {
     if (event is DeckStudyStarted) {
+      unawaited(_loadDeckTagsInBackground());
       await _loadCard(resetProgress: false);
       return;
     }
-    if (event is DeckStudyShowAnswerRequested) {
+    if (event is DeckStudyTagFilterChanged) {
       _emit(
         state.copyWith(
-          showAnswer: true,
-          loadingPhase: DeckStudyLoadingPhase.loaded,
+          activeTagId: event.tagId,
+          clearActiveTagId: event.tagId == null,
+          cardsStudied: 0,
+          resetCardDetail: true,
+          clearRefreshedCardsCount: true,
         ),
       );
-      return;
-    }
-    if (event is DeckStudyShowAnswerToggled) {
-      _emit(
-        state.copyWith(
-          showAnswer: !state.showAnswer,
-          loadingPhase: DeckStudyLoadingPhase.loaded,
-        ),
-      );
+      await _loadCard(resetProgress: false);
       return;
     }
     if (event is DeckStudyIntervalSelected) {
@@ -72,7 +72,6 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
         state.copyWith(
           loadingPhase: DeckStudyLoadingPhase.initial,
           isHide: false,
-          showAnswer: true,
           cardsStudied: 0,
           isLoading: true,
           resetCardDetail: true,
@@ -157,7 +156,6 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
     }
 
     await _loadCard(resetProgress: false);
-    _emit(state.copyWith(showAnswer: true));
   }
 
   Future<void> _loadCard({
@@ -174,7 +172,10 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
       ),
     );
 
-    final result = await _getNextDueCardUseCase(deckId: state.deckId);
+    final result = await _getNextDueCardUseCase(
+      deckId: state.deckId,
+      tagId: state.activeTagId,
+    );
     final detail = result.cardDetail;
 
     if (detail != null) {
@@ -211,6 +212,13 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
         selectedInterval: 0,
       ),
     );
+  }
+
+  Future<void> _loadDeckTagsInBackground() async {
+    final tags = await _loadDeckTagsUseCase(deckId: state.deckId);
+    if (tags.isNotEmpty) {
+      _emit(state.copyWith(deckTags: tags));
+    }
   }
 
   void _emit(DeckStudyState nextState) {

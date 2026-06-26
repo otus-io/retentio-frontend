@@ -23,141 +23,201 @@ class DeckViewBody extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final loc = AppLocalizations.of(context)!;
+    final flipController = context
+        .read<DeckStudyFlipCardControllerCubit>()
+        .state;
     final deck = context.select(
       (DeckStudyContextCubit cubit) => cubit.state.deck,
     );
 
-    return BlocBuilder<DeckStudyBloc, DeckStudyState>(
-      builder: (context, state) {
-        if (state.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+    return BlocListener<DeckStudyBloc, DeckStudyState>(
+      listenWhen: (previous, current) =>
+          previous.isLoading != current.isLoading ||
+          previous.cardDetail?.card.id != current.cardDetail?.card.id,
+      listener: (context, state) {
+        if (state.isLoading || state.cardDetail == null) {
+          flipController.showFront();
         }
-
-        final totalCardsInSession =
-            state.refreshedCardsCount ?? deck.stats.cardsCount;
-        final cardsStudied = state.cardsStudied;
-        final cardDetail = state.cardDetail;
-
-        if (cardDetail == null) {
-          if (totalCardsInSession == 0) {
-            return _DeckStudyMessageColumn(
-              icon: LucideIcons.circleQuestionMark,
-              title: loc.noCardsInThisDeck,
-              theme: theme,
+      },
+      child: BlocBuilder<DeckStudyBloc, DeckStudyState>(
+        builder: (context, state) {
+          Widget buildTagFilterBar() {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: SizedBox(
+                height: 34,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: state.deckTags.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final tag = state.deckTags[index];
+                    final selected = state.activeTagId == tag.id;
+                    return ChoiceChip(
+                      label: Text(tag.name),
+                      selected: selected,
+                      onSelected: (_) {
+                        requestDeckStudyTagFilterChanged(
+                          context,
+                          selected ? null : tag.id,
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
             );
           }
-          return _CaughtUpColumn(
-            loc: loc,
-            theme: theme,
-            onReviewAgain: () {
-              requestDeckStudyReviewAgain(context);
-            },
-          );
-        }
 
-        if (totalCardsInSession == 0) {
-          return _DeckStudyMessageColumn(
-            icon: LucideIcons.circleQuestionMark,
-            title: loc.noCardsInThisDeck,
-            theme: theme,
-          );
-        }
+          if (state.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-        final isCompleted = totalCardsInSession == cardsStudied;
-        if (isCompleted) {
-          return _CaughtUpColumn(
-            loc: loc,
-            theme: theme,
-            onReviewAgain: () {
-              requestDeckStudyReviewAgain(context);
-            },
-          );
-        }
+          final totalCardsInSession =
+              state.refreshedCardsCount ?? deck.stats.cardsCount;
+          final cardsStudied = state.cardsStudied;
+          final cardDetail = state.cardDetail;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
-              child: Column(
-                spacing: 6,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        '${cardsStudied + 1} / $totalCardsInSession',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: scheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '${totalCardsInSession > 0 ? (cardsStudied / totalCardsInSession * 100).toStringAsFixed(0) : 0}%',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: scheme.onSurface.withValues(alpha: 0.45),
-                        ),
-                      ),
-                    ],
-                  ),
-                  LinearProgressIndicator(
-                    value: totalCardsInSession > 0
-                        ? cardsStudied / totalCardsInSession
-                        : 0.0,
-                    minHeight: 4,
-                    borderRadius: AppThemeTokens.borderRadiusPill,
-                    valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
-                    backgroundColor: scheme.outline.withValues(alpha: 0.18),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final screenWidth = MediaQuery.sizeOf(context).width;
-                  final idealCardHeight = screenWidth - 48 - 46;
-                  final maxCardHeight = (constraints.maxHeight - 150).clamp(
-                    180.0,
-                    idealCardHeight,
+          if (cardDetail == null) {
+            final messageBody = totalCardsInSession == 0
+                ? _DeckStudyMessageColumn(
+                    icon: LucideIcons.circleQuestionMark,
+                    title: loc.noCardsInThisDeck,
+                    theme: theme,
+                  )
+                : _CaughtUpColumn(
+                    loc: loc,
+                    theme: theme,
+                    onReviewAgain: () {
+                      requestDeckStudyReviewAgain(context);
+                    },
                   );
-                  final cardHeight = maxCardHeight.toDouble();
-                  return Stack(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CardFlip(
-                              height: cardHeight,
-                              width: double.infinity,
-                              flipCardController: context
-                                  .read<DeckStudyFlipCardControllerCubit>()
-                                  .state,
-                              frontWidget: const CardSideContent(isFront: true),
-                              backWidget: const CardSideContent(isFront: false),
-                              onFlip: (_) {
-                                requestDeckStudyShowAnswerToggle(context);
-                              },
-                            ),
-                            const SizedBox(height: 100),
-                          ],
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (state.deckTags.isNotEmpty) buildTagFilterBar(),
+                Expanded(child: messageBody),
+              ],
+            );
+          }
+
+          final isCompleted = totalCardsInSession == cardsStudied;
+          if (isCompleted) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (state.deckTags.isNotEmpty) buildTagFilterBar(),
+                Expanded(
+                  child: _CaughtUpColumn(
+                    loc: loc,
+                    theme: theme,
+                    onReviewAgain: () {
+                      requestDeckStudyReviewAgain(context);
+                    },
+                  ),
+                ),
+              ],
+            );
+          }
+
+          final currentCardNumber = (cardsStudied + 1).clamp(
+            1,
+            totalCardsInSession,
+          );
+          final currentProgress = totalCardsInSession > 0
+              ? currentCardNumber / totalCardsInSession
+              : 0.0;
+          final progressPercent = currentProgress * 100;
+          final progressPercentLabel = progressPercent >= 1
+              ? '${progressPercent.toStringAsFixed(0)}%'
+              : progressPercent > 0
+              ? '${progressPercent.toStringAsFixed(2)}%'
+              : '${progressPercent.toStringAsFixed(0)}%';
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (state.deckTags.isNotEmpty) buildTagFilterBar(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
+                child: Column(
+                  spacing: 6,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          '$currentCardNumber / $totalCardsInSession',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: scheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        width: screenWidth,
-                        child: const DeckViewIntervalSliderControls(),
-                      ),
-                    ],
-                  );
-                },
+                        const Spacer(),
+                        Text(
+                          progressPercentLabel,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: scheme.onSurface.withValues(alpha: 0.45),
+                          ),
+                        ),
+                      ],
+                    ),
+                    LinearProgressIndicator(
+                      value: currentProgress,
+                      minHeight: 4,
+                      borderRadius: AppThemeTokens.borderRadiusPill,
+                      valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
+                      backgroundColor: scheme.outline.withValues(alpha: 0.18),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        );
-      },
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final screenWidth = MediaQuery.sizeOf(context).width;
+                    final idealCardHeight = screenWidth - 48 - 46;
+                    final maxCardHeight = (constraints.maxHeight - 150).clamp(
+                      180.0,
+                      idealCardHeight,
+                    );
+                    final cardHeight = maxCardHeight.toDouble();
+                    return Stack(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CardFlip(
+                                height: cardHeight,
+                                width: double.infinity,
+                                flipCardController: flipController,
+                                frontWidget: const CardSideContent(
+                                  isFront: true,
+                                ),
+                                backWidget: const CardSideContent(
+                                  isFront: false,
+                                ),
+                              ),
+                              const SizedBox(height: 100),
+                            ],
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          width: screenWidth,
+                          child: const DeckViewIntervalSliderControls(),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

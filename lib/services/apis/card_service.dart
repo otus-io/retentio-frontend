@@ -6,10 +6,17 @@ import 'package:retentio/services/index.dart';
 import 'package:retentio/utils/log.dart';
 
 class CardService {
-  /// 获取下一张需要学习的卡片
-  static Future<CardDetail?> getNextDueCard(String deckId) async {
+  /// 获取下一张需要学习的卡片，可选 tagId 筛选
+  static Future<CardDetail?> getNextDueCard(
+    String deckId, {
+    String? tagId,
+  }) async {
     try {
-      final res = await ApiService.get(Api.card, pathParams: {'id': deckId});
+      final res = await ApiService.get(
+        Api.card,
+        pathParams: {'id': deckId},
+        queryParams: tagId != null ? {'tag_id': tagId} : null,
+      );
 
       if (res?.data == null) {
         return null;

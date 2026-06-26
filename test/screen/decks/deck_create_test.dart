@@ -2,17 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/screen/decks/bloc/deck_create_cubit.dart';
 import 'package:retentio/screen/decks/widgets/deck_create.dart';
 import 'package:retentio/widgets/number_picker.dart';
 
 import '../../helpers/test_wrapper.dart';
 
+class _FakeTagManagerCubit extends TagManagerCubit {
+  @override
+  Future<void> loadTags() async {
+    emit(state.copyWith(status: TagManagerStatus.loaded, tags: const []));
+  }
+}
+
 void main() {
   Widget buildDeckCreateHarness(Widget child) {
     return buildTestableWidget(
       MultiBlocProvider(
         providers: [
+          BlocProvider<TagManagerCubit>(create: (_) => _FakeTagManagerCubit()),
           BlocProvider(
             create: (_) => DeckCreateCubit(
               name: '',
@@ -146,6 +155,9 @@ void main() {
         buildTestableWidget(
           MultiBlocProvider(
             providers: [
+              BlocProvider<TagManagerCubit>(
+                create: (_) => _FakeTagManagerCubit(),
+              ),
               BlocProvider(
                 create: (_) => DeckCreateCubit(
                   name: '',
