@@ -215,9 +215,13 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
   }
 
   Future<void> _loadDeckTagsInBackground() async {
-    final tags = await _loadDeckTagsUseCase(deckId: state.deckId);
-    if (tags.isNotEmpty) {
-      _emit(state.copyWith(deckTags: tags));
+    try {
+      final tags = await _loadDeckTagsUseCase(deckId: state.deckId);
+      if (tags.isNotEmpty) {
+        _emit(state.copyWith(deckTags: tags));
+      }
+    } catch (_) {
+      // Keep tag preload best-effort so it never bubbles as an uncaught future.
     }
   }
 

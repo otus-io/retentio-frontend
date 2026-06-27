@@ -121,10 +121,9 @@ class DeckViewBody extends StatelessWidget {
             );
           }
 
-          final currentCardNumber = (cardsStudied + 1).clamp(
-            1,
-            totalCardsInSession,
-          );
+          final currentCardNumber = totalCardsInSession > 0
+              ? (cardsStudied + 1).clamp(1, totalCardsInSession)
+              : cardsStudied + 1;
           final currentProgress = totalCardsInSession > 0
               ? currentCardNumber / totalCardsInSession
               : 0.0;
