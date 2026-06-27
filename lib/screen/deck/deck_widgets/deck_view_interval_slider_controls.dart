@@ -122,7 +122,10 @@ class DeckViewIntervalSliderControls extends StatelessWidget {
                           overlayColor: scheme.primary.withValues(alpha: 0.1),
                         ),
                         child: Slider(
-                          value: state.selectedInterval.ceilToDouble(),
+                          value: state.selectedInterval.clamp(
+                            state.minInterval,
+                            state.maxInterval,
+                          ),
                           min: state.minInterval,
                           max: state.maxInterval,
                           divisions: 100,
