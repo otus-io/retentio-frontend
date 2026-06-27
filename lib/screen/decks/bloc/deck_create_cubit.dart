@@ -154,10 +154,7 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
         String? newDeckId;
         final data = res!.data;
         if (data is Map) {
-          final deck = data['deck'];
-          if (deck is Map) {
-            newDeckId = deck['id']?.toString();
-          }
+          newDeckId = data['deck_id']?.toString();
         }
         return DeckCreateResult(success: true, newDeckId: newDeckId);
       }
