@@ -226,22 +226,20 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
     final createCubit = context.read<DeckCreateCubit>();
 
     return Column(
-      spacing: 14,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(
           width: double.infinity,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
-            spacing: 6,
             children: [
               Row(
-                spacing: 16,
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Icon(LucideIcons.activity, size: 24, color: scheme.primary),
+                  const SizedBox(width: 16),
                   NumberPicker(
                     minValue: kDeckEditorRateMin,
                     maxValue: kDeckEditorRateMax,
@@ -265,9 +263,11 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
                       createCubit.changeRate(value);
                     },
                   ),
+                  const SizedBox(width: 16),
                   Text(loc.cardsPerDay, style: DeckTextStyles.rateLabel(theme)),
                 ],
               ),
+              const SizedBox(height: 6),
               Text(
                 loc.newCardEveryMinutes(((86400 / rate) / 60).toInt()),
                 textAlign: TextAlign.center,
@@ -276,6 +276,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
             ],
           ),
         ),
+        const SizedBox(height: 14),
 
         // AppInput for deck name.
         AppInput(
@@ -289,6 +290,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
             }
           },
         ),
+        const SizedBox(height: 14),
 
         // ── Tags section ──────────────────────────────────
         _TagsSection(
@@ -301,17 +303,16 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
           },
           onPickTags: _openTagPicker,
         ),
+        const SizedBox(height: 14),
 
         // TextFields for deck fields with reordering.
         Column(
-          spacing: 12,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (isImported)
               ...List.generate(_fieldControllers.length, (i) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 4,
                   children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(
@@ -325,6 +326,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
                         style: DeckTextStyles.fieldLabel(theme),
                       ),
                     ),
+                    const SizedBox(height: 4),
                     AppInput(
                       controller: _fieldControllers[i],
                       style: DeckTextStyles.fieldInput(theme),
@@ -377,14 +379,13 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
                   final isDimmed =
                       _draggingFieldIndex != null && _draggingFieldIndex != i;
                   return AnimatedOpacity(
-                    key: ValueKey('deck_field_$i'),
+                    key: ObjectKey(_fieldControllers[i]),
                     duration: const Duration(milliseconds: 150),
                     opacity: isDimmed ? 0.25 : 1,
                     child: Stack(
                       children: [
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: 4,
                           children: [
                             Padding(
                               padding: const EdgeInsets.fromLTRB(
@@ -398,6 +399,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
                                 style: DeckTextStyles.fieldLabel(theme),
                               ),
                             ),
+                            const SizedBox(height: 4),
                             ReorderableDelayedDragStartListener(
                               index: i,
                               child: AppInput(
@@ -465,6 +467,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
             ],
           ],
         ),
+        const SizedBox(height: 14),
 
         AppButton(
           label: loc.save,
@@ -545,7 +548,6 @@ class _TagsSection extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 6,
       children: [
         Row(
           children: [
@@ -569,6 +571,7 @@ class _TagsSection extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: 6),
         if (selectedTags.isNotEmpty)
           TagChipRow(tags: selectedTags, onRemove: onRemove),
       ],

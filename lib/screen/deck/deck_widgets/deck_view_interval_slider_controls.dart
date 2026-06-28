@@ -167,7 +167,9 @@ class DeckViewIntervalSliderControls extends StatelessWidget {
         }
 
         if (flipController == null) {
-          return buildPanel(true);
+          // Fallback when flip controller is unavailable: keep study flow usable
+          // by showing the "back" controls directly (interval slider + next).
+          return buildPanel(false);
         }
 
         return AnimatedBuilder(

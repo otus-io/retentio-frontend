@@ -39,11 +39,19 @@ class FactTagState {
 /// Manages the tags attached to a single fact.
 /// Scope: fact — provide in the fact-detail / fact-edit context.
 class FactTagCubit extends Cubit<FactTagState> {
-  FactTagCubit({required this.deckId, required this.factId})
-    : super(const FactTagState());
+  FactTagCubit({
+    required this.deckId,
+    required this.factId,
+    Future<List<Tag>> Function(String deckId, String factId, String tagId)?
+    removeTagFromFact,
+  }) : _removeTagFromFact =
+           removeTagFromFact ?? TagService.of.removeTagFromFact,
+       super(const FactTagState());
 
   final String deckId;
   final String factId;
+  final Future<List<Tag>> Function(String deckId, String factId, String tagId)
+  _removeTagFromFact;
 
   // ── read ──────────────────────────────────────────────────
 
@@ -78,7 +86,7 @@ class FactTagCubit extends Cubit<FactTagState> {
     emit(state.copyWith(tags: previous.where((t) => t.id != tagId).toList()));
 
     try {
-      final tags = await TagService.of.removeTagFromFact(deckId, factId, tagId);
+      final tags = await _removeTagFromFact(deckId, factId, tagId);
       emit(state.copyWith(status: FactTagStatus.loaded, tags: _sorted(tags)));
       return null;
     } catch (e) {

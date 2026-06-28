@@ -103,6 +103,15 @@ void main() {
     test(
       'removeTag removes tag optimistically then rolls back on network error',
       () async {
+        await cubit.close();
+        cubit = FactTagCubit(
+          deckId: 'deck-1',
+          factId: 'fact-1',
+          removeTagFromFact: (deckIdArg, factIdArg, tagIdArg) async {
+            throw Exception('network failed');
+          },
+        );
+
         const tagA = Tag(id: 'a', name: 'A', description: '');
         const tagB = Tag(id: 'b', name: 'B', description: '');
         cubit.emit(
