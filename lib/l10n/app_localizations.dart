@@ -362,6 +362,24 @@ abstract class AppLocalizations {
   /// **'All Caught Up!'**
   String get allCaughtUp;
 
+  /// Message when an active tag filter returns no due cards
+  ///
+  /// In en, this message translates to:
+  /// **'No cards with this tag'**
+  String get noCardsForTagFilter;
+
+  /// Message when a named tag filter returns no due cards
+  ///
+  /// In en, this message translates to:
+  /// **'No cards with tag \"{tagName}\"'**
+  String noCardsForTagFilterNamed(String tagName);
+
+  /// Button to clear the active study tag filter
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filter'**
+  String get clearTagFilter;
+
   /// Message when starting to learn a deck
   ///
   /// In en, this message translates to:
@@ -967,6 +985,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All'**
   String get filterAll;
+
+  /// Title for the deck study tag filter bottom sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Study by tag'**
+  String get studyTagFilterTitle;
 
   /// Screen title showing all facts belonging to a tag
   ///

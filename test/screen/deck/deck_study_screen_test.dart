@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/models/tag.dart';
 import 'package:retentio/screen/deck/deck_view_screen.dart';
+import 'package:retentio/screen/deck/deck_widgets/deck_study_tag_filter_bar.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
 import 'package:retentio/screen/deck/providers/deck_scope.dart';
 
@@ -10,7 +12,39 @@ import '../../helpers/card_test_samples.dart';
 import '../../helpers/fake_deck_study_bloc.dart';
 import '../../helpers/test_wrapper.dart';
 
+Future<void> _selectStudyTagFilter(WidgetTester tester, String tagName) async {
+  await tester.tap(find.byKey(const Key('deck_study_tag_filter')));
+  await tester.pumpAndSettle();
+  await tester.tap(
+    find.descendant(of: find.byType(BottomSheet), matching: find.text(tagName)),
+  );
+  await tester.pumpAndSettle();
+}
+
 void main() {
+  testWidgets(
+    'all chip is not selected when activeTagId is missing in tags list',
+    (tester) async {
+      await tester.pumpWidget(
+        buildTestableWidget(
+          Scaffold(
+            body: DeckStudyTagFilterBar(
+              tags: const [Tag(id: 'tag-1', name: 'Grammar', description: '')],
+              activeTagId: 'tag-missing',
+              onTagSelected: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final chip = tester.widget<ChoiceChip>(
+        find.widgetWithText(ChoiceChip, 'All'),
+      );
+      expect(chip.selected, isFalse);
+    },
+  );
+
   final emptySessionDeck = Deck.fromJson({
     'id': 'deck-study-1',
     'name': 'Empty session',
@@ -87,6 +121,256 @@ void main() {
 
       expect(harness.repository.loadCalls, before + 1);
     });
+
+    testWidgets('shows empty tag filter message instead of all caught up', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      final deck = sampleDeck(cardsCount: 5);
+      const grammarTag = Tag(id: 'tag1', name: 'Grammar', description: '');
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: deck.id,
+        deckTags: const [grammarTag],
+        loadResults: [
+          DeckStudyLoadResult(cardDetail: sampleCardDetail()),
+          const DeckStudyLoadResult(cardDetail: null),
+        ],
+      );
+      addTearDown(() async {
+        await harness.dispose();
+        tearDownTestEnvironment();
+      });
+
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          DeckViewScreen(deck: deck),
+          overrides: [
+            currentDeckProvider.overrideWithValue(deck),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await _selectStudyTagFilter(tester, 'Grammar');
+      await tester.pumpAndSettle();
+
+      expect(find.text('No cards with tag "Grammar"'), findsOneWidget);
+      expect(find.text('All Caught Up!'), findsNothing);
+      expect(find.text('Clear filter'), findsOneWidget);
+    });
+
+    testWidgets('dismissing tag filter sheet keeps current selection', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      final deck = sampleDeck(cardsCount: 5);
+      const grammarTag = Tag(id: 'tag1', name: 'Grammar', description: '');
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: deck.id,
+        deckTags: const [grammarTag],
+        loadResults: [
+          DeckStudyLoadResult(cardDetail: sampleCardDetail()),
+          const DeckStudyLoadResult(cardDetail: null),
+          const DeckStudyLoadResult(cardDetail: null),
+        ],
+      );
+      addTearDown(() async {
+        await harness.dispose();
+        tearDownTestEnvironment();
+      });
+
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          DeckViewScreen(deck: deck),
+          overrides: [
+            currentDeckProvider.overrideWithValue(deck),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await _selectStudyTagFilter(tester, 'Grammar');
+      await tester.pumpAndSettle();
+      final loadsAfterSelect = harness.repository.loadCalls;
+
+      await tester.tap(find.byKey(const Key('deck_study_tag_filter')));
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(20, 20));
+      await tester.pumpAndSettle();
+
+      expect(harness.repository.loadCalls, loadsAfterSelect);
+      expect(find.text('No cards with tag "Grammar"'), findsOneWidget);
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Grammar'))
+            .selected,
+        isTrue,
+      );
+    });
+
+    testWidgets('selecting All in tag filter sheet clears active filter', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      final deck = sampleDeck(cardsCount: 5);
+      const grammarTag = Tag(id: 'tag1', name: 'Grammar', description: '');
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: deck.id,
+        deckTags: const [grammarTag],
+        loadResults: [
+          DeckStudyLoadResult(cardDetail: sampleCardDetail()),
+          const DeckStudyLoadResult(cardDetail: null),
+          DeckStudyLoadResult(cardDetail: sampleCardDetail()),
+        ],
+      );
+      addTearDown(() async {
+        await harness.dispose();
+        tearDownTestEnvironment();
+      });
+
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          DeckViewScreen(deck: deck),
+          overrides: [
+            currentDeckProvider.overrideWithValue(deck),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await _selectStudyTagFilter(tester, 'Grammar');
+      await tester.pumpAndSettle();
+      expect(find.text('No cards with tag "Grammar"'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('deck_study_tag_filter')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text('All'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(harness.repository.loadTagIds, [null, 'tag1', null]);
+      expect(find.text('No cards with tag "Grammar"'), findsNothing);
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'All'))
+            .selected,
+        isTrue,
+      );
+      expect(find.text('1 / 5'), findsOneWidget);
+    });
+
+    testWidgets('selecting All still works when search has no matches', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      final deck = sampleDeck(cardsCount: 5);
+      const grammarTag = Tag(id: 'tag1', name: 'Grammar', description: '');
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: deck.id,
+        deckTags: const [grammarTag],
+        loadResults: [
+          DeckStudyLoadResult(cardDetail: sampleCardDetail()),
+          const DeckStudyLoadResult(cardDetail: null),
+          DeckStudyLoadResult(cardDetail: sampleCardDetail()),
+        ],
+      );
+      addTearDown(() async {
+        await harness.dispose();
+        tearDownTestEnvironment();
+      });
+
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          DeckViewScreen(deck: deck),
+          overrides: [
+            currentDeckProvider.overrideWithValue(deck),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await _selectStudyTagFilter(tester, 'Grammar');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('deck_study_tag_filter')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.byType(TextField),
+        ),
+        'zzz-no-match',
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text('All'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(harness.repository.loadTagIds, [null, 'tag1', null]);
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'All'))
+            .selected,
+        isTrue,
+      );
+    });
+
+    testWidgets(
+      'uses tag-scoped card count for progress when filter is active',
+      (tester) async {
+        await setupTestEnvironment();
+        final deck = sampleDeck(cardsCount: 2387);
+        const grammarTag = Tag(id: 'tag1', name: 'Grammar', description: '');
+        final harness = FakeDeckStudyBlocHarness(
+          deckId: deck.id,
+          deckTags: const [grammarTag],
+          loadResults: [
+            const DeckStudyLoadResult(
+              cardDetail: null,
+              refreshedCardsCount: 12,
+            ),
+            DeckStudyLoadResult(
+              cardDetail: sampleCardDetail(),
+              refreshedCardsCount: 12,
+            ),
+          ],
+        );
+        addTearDown(() async {
+          await harness.dispose();
+          tearDownTestEnvironment();
+        });
+
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            DeckViewScreen(deck: deck),
+            overrides: [
+              currentDeckProvider.overrideWithValue(deck),
+              deckStudyBlocProvider.overrideWithValue(harness.bloc),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await _selectStudyTagFilter(tester, 'Grammar');
+        await tester.pumpAndSettle();
+
+        expect(find.text('1 / 12'), findsOneWidget);
+        expect(find.text('1 / 2387'), findsNothing);
+      },
+    );
 
     testWidgets(
       'shows current card progress instead of zero progress on first card',

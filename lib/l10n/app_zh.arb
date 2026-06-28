@@ -44,6 +44,9 @@
     "noCardsInDeck": "卡组中没有卡片",
     "startLearning": "开始学习",
     "allCaughtUp": "全部完成！",
+    "noCardsForTagFilter": "该标签下暂无卡片",
+    "noCardsForTagFilterNamed": "标签「{tagName}」下暂无卡片",
+    "clearTagFilter": "清除筛选",
     "startLearningDeck": "开始学习：{deckName}",
     "showAnswer": "显示答案",
     "hard": "困难",
@@ -148,6 +151,7 @@
     "tagPickerNoMatch": "没有匹配\"{query}\"的标签",
     "tagPickerEmptyHint": "暂无标签，点击下方创建第一个",
     "filterAll": "全部",
+    "studyTagFilterTitle": "按标签复习",
     "tagFacts": "词条",
     "noFactsInTag": "该标签下还没有词条"
 }

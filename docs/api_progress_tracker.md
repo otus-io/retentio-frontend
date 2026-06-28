@@ -53,7 +53,7 @@
 | --- | --- | --- | --- |
 | `GET /api/decks/{id}/card` | 获取最紧急卡片；无卡片时 `data.card` 可能为 `[]`（非对象），客户端解析为无卡片 / Next due card; empty deck may return `data.card` as `[]` (parsed as no card) | ❌ | ✅ |
 | `PATCH /api/decks/{id}/card` | 更新卡片间隔或可见性（按 card_id 查找，支持 last_review 离线同步） | ❌ | ✅ |
-| `GET /api/decks/{id}/cards` | 获取卡片统计（总数、隐藏数量、隐藏事实） | ❌ | ✅ |
+| `GET /api/decks/{id}/cards` | 获取卡片统计（总数、隐藏数量、隐藏事实）；学习页标签筛选时传 `tag_id` 获取标签维度进度 | ✅ | ✅ |
 | `POST /api/decks/{id}/reschedule` | 假期模式：按天数平移卡片复习计划 | ❌ | ✅ |
 
 ### 排行榜 / 游戏化

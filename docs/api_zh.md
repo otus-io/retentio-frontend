@@ -119,7 +119,7 @@
 | `/api/decks/{id}/card`                        | GET    | 获取最紧急卡片。可选查询：`tag_id`，仅在当前卡组中从带该标签的词条对应卡片里选取下一张。                                                           |
 | `/api/decks/{id}/card`                        | POST   | 为已有词条添加一张卡（如反向卡）。请求体：fact_id、template，可选 operation。                                                                        |
 | `/api/decks/{id}/card`                        | PATCH  | 更新卡片间隔或可见性（按 card_id）                                                                                                                   |
-| `/api/decks/{id}/cards`                       | GET    | 返回 `stats` + `cards`。可选 `tag_id` 同时过滤二者；无 `tag_id` 时 `stats` 与 `GET /api/decks/{id}` 一致。                                                                             |
+| `/api/decks/{id}/cards`                       | GET    | 获取卡片统计。可选查询：`tag_id`，按当前卡组中该标签对应词条过滤卡片。                                                                             |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE | 删除单张卡片（词条及其他卡片不变）                                                                                                                   |
 | `/api/decks/{id}/reschedule`                  | POST   | 假期模式：按天数平移卡片复习计划                                                                                                                     |
 | `/api/tags`                                   | POST   | 创建标签（`name`、可选 `description`）。成功时 **201**。                                                                                             |
@@ -494,7 +494,6 @@
 > | `hidden_cards`（已隐藏卡片）       | 被用户隐藏的卡片数量                           |
 > | `new_cards_today`（今日新增卡片）  | 今天添加的卡片数量（从午夜开始计算）           |
 > | `last_reviewed_at`（上次复习时间） | 最近一次复习的 Unix 时间戳（未复习过则为 `0`） |
-> | `orphaned_hidden_cards` | `fact_id` 已不在卡组中的隐藏卡片数（为 `0` 时省略） |
 >
 > 统计信息是实时计算的。对于刚创建的空卡组，所有值都为 `0`。
 > 添加词条后，`cards_count` 和 `unseen_cards` 会增加。
@@ -1964,28 +1963,30 @@ Accept: application/json
 
 | 参数     | 说明 |
 |----------|------|
-| `tag_id` | 标签 ID。提供后，`stats`、计数与列表仅包含当前卡组中、其 `fact_id` 对应该标签词条的卡片。`stats.facts_count` 为该卡组内带此标签的词条数（非卡组词条总数）。 |
+| `tag_id` | 标签 ID。提供后，仅统计当前卡组中、其 `fact_id` 对应到该标签词条的卡片。 |
 
 示例：`GET /api/decks/{id}/cards?tag_id=Kt8QmNz2`
 
-**响应说明：**
-
-`data.stats` 与 `GET /api/decks/{id}` 相同。无 `tag_id` 时与 `GET /api/decks/{id}` 的 `stats` 一致；有 `tag_id` 时仅为该标签下词条对应卡片的统计。响应另含 `cards`（完整卡片数组）。
+**响应示例：**
 
 ```json
 {
   "data": {
-    "stats": {
-      "cards_count": 20,
-      "facts_count": 15,
-      "unseen_cards": 5,
-      "reviewed_cards": 15,
-      "due_cards": 7,
-      "hidden_cards": 3,
-      "new_cards_today": 2,
-      "last_reviewed_at": 1710000000,
-      "orphaned_hidden_cards": 1
-    },
+    "total_cards": 20,
+    "hidden_cards_count": 3,
+    "due_cards": 7,
+    "unseen_cards": 5,
+    "hidden_cards_list": [
+      {
+        "id": "cd1ef2gh",
+        "fact_id": "h1d2e3n4",
+        "template": [[0], [1]],
+        "last_review": 1710000000,
+        "due_date": 1710500000,
+        "hidden": true,
+        "created_at": 1709000000
+      }
+    ],
     "cards": [
       {
         "id": "cd1ef2gh",
@@ -1996,7 +1997,8 @@ Accept: application/json
         "hidden": true,
         "created_at": 1709000000
       }
-    ]
+    ],
+    "orphaned_hidden_cards": 0
   },
   "meta": { "msg": "Card stats retrieved successfully" }
 }
@@ -2124,7 +2126,7 @@ Accept: application/json
 | `/api/decks/{id}/facts/{factId}`              | DELETE      | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                       |
 | `/api/decks/{id}/card`                        | GET         | 可选查询 `tag_id`。形状不变：`{ "data": { "card": { id, fact_id, template, …, front[], back[] }, "urgency" }, "meta": { "msg", … } }`                |
 | `/api/decks/{id}/card`                        | PATCH       | 间隔：`{ "data": { "last_review", "due_date", "new_interval" }, "meta": { "msg" } }`；可见性：`{ "data": { "hidden_status" }, "meta": { "msg" } }` |
-| `/api/decks/{id}/cards`                       | GET         | 可选查询 `tag_id`。`{ "data": { "stats": { … }, "cards": [ … ] }, "meta": { "msg" } }`              |
+| `/api/decks/{id}/cards`                       | GET         | 可选查询 `tag_id`。形状不变：`{ "data": { "total_cards", "hidden_count", "hidden_facts", "orphaned_hidden_cards" }, "meta": { "msg" } }`              |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE      | `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                                       |
 | `/api/decks/{id}/reschedule`                  | POST        | `{ "data": { "cards_shifted", "days", "max_days_away" }, "meta": { "msg" } }`                                                                        |
 | `/api/decks/catalog`                          | GET         | `{ "data": { "decks": [ … ] }, "meta": { "msg", "count", "total", "limit", "offset", "has_more" } }` — 默认 `limit` 50、`offset` 0；可选 `query` |
