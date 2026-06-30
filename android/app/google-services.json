@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "617965212599",
+    "project_id": "rete-241bc",
+    "storage_bucket": "rete-241bc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:617965212599:android:c17d08f60e43320d220e32",
+        "android_client_info": {
+          "package_name": "com.example.retentio"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrB2WF5JHg_Ns6hmDW-0_iNfTC0Az_DRE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

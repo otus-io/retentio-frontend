@@ -19,6 +19,9 @@ ApiResponse mapDioExceptionToApiResponse(DioException e) {
     case DioExceptionType.receiveTimeout:
       msg = 'Receive timeout';
       break;
+    case DioExceptionType.transformTimeout:
+      msg = 'Transform timeout';
+      break;
     case DioExceptionType.badResponse:
       msg = 'Bad response';
       break;

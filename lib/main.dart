@@ -1,3 +1,7 @@
+import 'dart:ui';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -11,6 +15,7 @@ import 'package:retentio/providers/auth_provider.dart';
 import 'package:retentio/routers/app_pages.dart';
 import 'package:retentio/theme/app_theme.dart';
 
+import 'firebase_options.dart';
 import 'providers/locale_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screen/decks/deck_list_screen.dart';
@@ -24,6 +29,12 @@ final ThemeData _darkTheme = AppTheme.dark();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
   await PreConfig.init();
   await registerCoreDependencies();
   final authBloc = sl<AuthBloc>();
