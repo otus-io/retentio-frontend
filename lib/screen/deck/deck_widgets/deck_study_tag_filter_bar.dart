@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/tag.dart';
@@ -11,7 +12,7 @@ class _TagFilterPick {
   final String? tagId;
 }
 
-class DeckStudyTagFilterBar extends StatelessWidget {
+class DeckStudyTagFilterBar extends HookWidget {
   const DeckStudyTagFilterBar({
     super.key,
     required this.tags,
@@ -22,6 +23,7 @@ class DeckStudyTagFilterBar extends StatelessWidget {
   final List<Tag> tags;
   final String? activeTagId;
   final void Function(String? tagId) onTagSelected;
+  static const _allTagContextKey = '__all__';
 
   void _selectTag(String? tagId) {
     if (tagId == activeTagId) {
@@ -65,6 +67,41 @@ class DeckStudyTagFilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final tagIdsSignature = tags.map((tag) => tag.id).join('|');
+    final chipContexts = useRef<Map<String, BuildContext>>({});
+
+    useEffect(() {
+      final currentIds = tags.map((tag) => tag.id).toSet();
+      chipContexts.value.removeWhere(
+        (id, _) => id != _allTagContextKey && !currentIds.contains(id),
+      );
+      return null;
+    }, [tagIdsSignature]);
+
+    useEffect(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) {
+          return;
+        }
+
+        final chipContext = activeTagId == null
+            ? chipContexts.value[_allTagContextKey]
+            : chipContexts.value[activeTagId];
+
+        if (chipContext == null || !chipContext.mounted) {
+          return;
+        }
+
+        Scrollable.ensureVisible(
+          chipContext,
+          alignment: 0.5,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      });
+      return null;
+    }, [activeTagId, tagIdsSignature, viewportWidth]);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 8, 0),
@@ -73,25 +110,37 @@ class DeckStudyTagFilterBar extends StatelessWidget {
           Expanded(
             child: SizedBox(
               height: 34,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: tags.length + 1,
-                separatorBuilder: (_, _) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return _buildChip(
-                      label: loc.filterAll,
-                      selected: activeTagId == null,
-                      onTap: () => _selectTag(null),
-                    );
-                  }
-
-                  final tag = tags[index - 1];
-                  final selected = activeTagId == tag.id;
-                  return _buildChip(
-                    label: tag.name,
-                    selected: selected,
-                    onTap: () => _selectTag(tag.id),
+              child: LayoutBuilder(
+                builder: (viewportContext, _) {
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        LayoutBuilder(
+                          builder: (chipContext, _) {
+                            chipContexts.value[_allTagContextKey] = chipContext;
+                            return _buildChip(
+                              label: loc.filterAll,
+                              selected: activeTagId == null,
+                              onTap: () => _selectTag(null),
+                            );
+                          },
+                        ),
+                        for (final tag in tags) ...[
+                          const SizedBox(width: 8),
+                          LayoutBuilder(
+                            builder: (chipContext, _) {
+                              chipContexts.value[tag.id] = chipContext;
+                              return _buildChip(
+                                label: tag.name,
+                                selected: activeTagId == tag.id,
+                                onTap: () => _selectTag(tag.id),
+                              );
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
                   );
                 },
               ),
@@ -122,7 +171,7 @@ class DeckStudyTagFilterBar extends StatelessWidget {
   }
 }
 
-class _DeckStudyTagFilterSheet extends StatefulWidget {
+class _DeckStudyTagFilterSheet extends HookWidget {
   const _DeckStudyTagFilterSheet({
     required this.tags,
     required this.activeTagId,
@@ -132,41 +181,20 @@ class _DeckStudyTagFilterSheet extends StatefulWidget {
   final String? activeTagId;
 
   @override
-  State<_DeckStudyTagFilterSheet> createState() =>
-      _DeckStudyTagFilterSheetState();
-}
-
-class _DeckStudyTagFilterSheetState extends State<_DeckStudyTagFilterSheet> {
-  late final TextEditingController _searchController;
-  String _query = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _searchController = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  List<Tag> get _filteredTags {
-    final q = _query.trim().toLowerCase();
-    if (q.isEmpty) return widget.tags;
-    return widget.tags
-        .where((tag) => tag.name.toLowerCase().contains(q))
-        .toList();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final maxHeight = MediaQuery.sizeOf(context).height * 0.55;
-    final filtered = _filteredTags;
+    final searchController = useTextEditingController();
+    final query = useState('');
+    final filtered = useMemoized(() {
+      final q = query.value.trim().toLowerCase();
+      if (q.isEmpty) {
+        return tags;
+      }
+      return tags.where((tag) => tag.name.toLowerCase().contains(q)).toList();
+    }, [query.value, tags]);
 
     return SafeArea(
       child: ConstrainedBox(
@@ -198,10 +226,10 @@ class _DeckStudyTagFilterSheetState extends State<_DeckStudyTagFilterSheet> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
               child: AppInput(
-                controller: _searchController,
+                controller: searchController,
                 hint: loc.tagPickerSearchHint,
                 prefix: const Icon(LucideIcons.search, size: 18),
-                onChanged: (value) => setState(() => _query = value),
+                onChanged: (value) => query.value = value,
               ),
             ),
             Flexible(
@@ -211,7 +239,7 @@ class _DeckStudyTagFilterSheetState extends State<_DeckStudyTagFilterSheet> {
                 children: [
                   _DeckStudyTagFilterTile(
                     label: loc.filterAll,
-                    selected: widget.activeTagId == null,
+                    selected: activeTagId == null,
                     onTap: () =>
                         Navigator.of(context).pop(_TagFilterPick(null)),
                   ),
@@ -229,7 +257,7 @@ class _DeckStudyTagFilterSheetState extends State<_DeckStudyTagFilterSheet> {
                     for (final tag in filtered)
                       _DeckStudyTagFilterTile(
                         label: tag.name,
-                        selected: widget.activeTagId == tag.id,
+                        selected: activeTagId == tag.id,
                         onTap: () =>
                             Navigator.of(context).pop(_TagFilterPick(tag.id)),
                       ),
