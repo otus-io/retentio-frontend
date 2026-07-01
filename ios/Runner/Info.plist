@@ -31,14 +31,14 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Rete uses a smart spaced repetition algorithm to help you learn more efficiently; the microphone is used to record the pronunciation of your own word list.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Rete needs access to the camera so you can take photos and videos to attach to flashcard entries.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Rete needs access to your photo library so you can attach images and videos to flashcard entries.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Rete may access your location when attaching photos and videos to flashcard entries that include location metadata.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Rete uses a smart spaced repetition algorithm to help you learn more efficiently; the microphone is used to record the pronunciation of your own word list.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Rete needs access to your photo library so you can attach images and videos to flashcard entries.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
