@@ -1,4 +1,3 @@
-import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,7 +30,6 @@ void main() {
 
     AddFactMediaToolbar toolbar(
       BuildContext context, {
-      required RecorderController voiceRecorder,
       bool hasMediaOnTargetRow = false,
       VoidCallback? onPickFiles,
       VoidCallback? onPickGallery,
@@ -49,7 +47,6 @@ void main() {
         onPickFiles: onPickFiles ?? () {},
         onPickGallery: onPickGallery ?? () {},
         onClearTargetAttachment: onClearTargetAttachment ?? () {},
-        voiceRecorder: voiceRecorder,
         mediaPicksLocked: mediaPicksLocked,
         showVoiceRecord: showVoiceRecord,
         isRecordingVoice: isRecordingVoice,
@@ -61,15 +58,10 @@ void main() {
     testWidgets('shows two icon buttons when voice record is off', (
       tester,
     ) async {
-      final rc = RecorderController();
-      addTearDown(rc.dispose);
-
       await pumpToolbar(
         tester,
         body: (context) {
-          return Scaffold(
-            body: toolbar(context, voiceRecorder: rc, showVoiceRecord: false),
-          );
+          return Scaffold(body: toolbar(context, showVoiceRecord: false));
         },
       );
 
@@ -79,16 +71,12 @@ void main() {
     testWidgets('hides mic when showVoiceRecord but no onVoiceRecordTap', (
       tester,
     ) async {
-      final rc = RecorderController();
-      addTearDown(rc.dispose);
-
       await pumpToolbar(
         tester,
         body: (context) {
           return Scaffold(
             body: toolbar(
               context,
-              voiceRecorder: rc,
               showVoiceRecord: true,
               onVoiceRecordTap: null,
             ),
@@ -102,16 +90,12 @@ void main() {
     testWidgets('shows mic when showVoiceRecord and onVoiceRecordTap set', (
       tester,
     ) async {
-      final rc = RecorderController();
-      addTearDown(rc.dispose);
-
       await pumpToolbar(
         tester,
         body: (context) {
           return Scaffold(
             body: toolbar(
               context,
-              voiceRecorder: rc,
               showVoiceRecord: true,
               onVoiceRecordTap: () {},
             ),
@@ -125,8 +109,6 @@ void main() {
     testWidgets('does not invoke file or gallery when mediaPicksLocked', (
       tester,
     ) async {
-      final rc = RecorderController();
-      addTearDown(rc.dispose);
       var files = 0;
       var gallery = 0;
       var voice = 0;
@@ -137,7 +119,6 @@ void main() {
           return Scaffold(
             body: toolbar(
               context,
-              voiceRecorder: rc,
               mediaPicksLocked: true,
               showVoiceRecord: true,
               onPickFiles: () => files++,
@@ -160,8 +141,6 @@ void main() {
     });
 
     testWidgets('invokes file and gallery when not locked', (tester) async {
-      final rc = RecorderController();
-      addTearDown(rc.dispose);
       var files = 0;
       var gallery = 0;
 
@@ -171,7 +150,6 @@ void main() {
           return Scaffold(
             body: toolbar(
               context,
-              voiceRecorder: rc,
               mediaPicksLocked: false,
               showVoiceRecord: false,
               onPickFiles: () => files++,

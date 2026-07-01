@@ -1,4 +1,3 @@
-import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -111,22 +110,39 @@ class _CardAudioState extends State<CardAudio>
                 icon: Icon(isPlaying ? LucideIcons.pause : LucideIcons.play),
               ),
               Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return AudioFileWaveforms(
-                      size: Size(constraints.maxWidth, 50),
-                      playerController: ref
-                          .watch(audioPlayerProvider.notifier)
-                          .waveformController,
-                      waveformData: ref.watch(
-                        audioPlayerProvider.select((value) => value.waveform),
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final position = ref.watch(
+                      audioPlayerProvider.select((value) => value.positionMs),
+                    );
+                    final max = ref.watch(
+                      audioPlayerProvider.select(
+                        (value) => value.maxDurationMs,
                       ),
-                      waveformType: WaveformType.fitWidth,
-                      playerWaveStyle: PlayerWaveStyle(
-                        fixedWaveColor: Colors.grey,
-                        liveWaveColor: accent,
-                        spacing: 6,
-                        waveThickness: 3,
+                    );
+                    final progress = max > 0 ? position.clamp(0, max) : 0;
+                    return SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 3,
+                        thumbShape: const RoundSliderThumbShape(
+                          enabledThumbRadius: 6,
+                        ),
+                        overlayShape: const RoundSliderOverlayShape(
+                          overlayRadius: 12,
+                        ),
+                        activeTrackColor: accent,
+                        inactiveTrackColor: Colors.grey.withValues(alpha: 0.35),
+                        thumbColor: accent,
+                      ),
+                      child: Slider(
+                        value: progress.toDouble(),
+                        min: 0,
+                        max: (max <= 0 ? 1 : max).toDouble(),
+                        onChanged: max <= 0
+                            ? null
+                            : (value) => ref
+                                  .read(audioPlayerProvider.notifier)
+                                  .seekToMs(value.round()),
                       ),
                     );
                   },

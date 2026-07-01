@@ -11,7 +11,6 @@ void main() {
         loadFailed: false,
         positionMs: 1500,
         maxDurationMs: 90_000,
-        waveform: [0.1, 0.2],
       );
       final u = s.copyWith(positionMs: 2000);
       expect(u.positionMs, 2000);
@@ -19,14 +18,12 @@ void main() {
       expect(u.isPlaying, true);
       expect(u.isReady, true);
       expect(u.maxDurationMs, 90_000);
-      expect(u.waveform, s.waveform);
     });
 
     test('defaults position and maxDuration to zero', () {
       final s = AudioPlayerState();
       expect(s.positionMs, 0);
       expect(s.maxDurationMs, 0);
-      expect(s.waveform, isEmpty);
     });
   });
 }

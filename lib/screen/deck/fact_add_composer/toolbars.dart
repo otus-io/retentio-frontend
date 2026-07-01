@@ -1,11 +1,9 @@
 import 'dart:math' as math;
 
-import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/l10n/app_localizations.dart';
-import 'package:retentio/screen/deck/fact_add_composer/recorder_level_smooth.dart';
 import 'package:retentio/widgets/app_icon_button.dart';
 
 const _kToolbarPadding = EdgeInsets.symmetric(horizontal: 8, vertical: 6);
@@ -24,7 +22,6 @@ class AddFactMediaToolbar extends HookWidget {
     required this.onPickFiles,
     required this.onPickGallery,
     required this.onClearTargetAttachment,
-    required this.voiceRecorder,
     this.mediaPicksLocked = false,
     this.showVoiceRecord = false,
     this.isRecordingVoice = false,
@@ -38,7 +35,6 @@ class AddFactMediaToolbar extends HookWidget {
   final VoidCallback onPickFiles;
   final VoidCallback onPickGallery;
   final VoidCallback onClearTargetAttachment;
-  final RecorderController voiceRecorder;
   final bool mediaPicksLocked;
   final bool showVoiceRecord;
   final bool isRecordingVoice;
@@ -105,10 +101,7 @@ class AddFactMediaToolbar extends HookWidget {
                 icon: LucideIcons.mic,
                 color: accent,
                 iconWidget: isRecordingVoice
-                    ? _InputReactiveMic(
-                        controller: voiceRecorder,
-                        color: theme.colorScheme.error,
-                      )
+                    ? _RecordingMic(color: theme.colorScheme.error)
                     : null,
               ),
             ),
@@ -118,19 +111,16 @@ class AddFactMediaToolbar extends HookWidget {
   }
 }
 
-/// Mic icon with continuous outward ripples; animation stays gentle when quiet
-/// and becomes much stronger when input level is high.
-class _InputReactiveMic extends HookWidget {
-  const _InputReactiveMic({required this.controller, required this.color});
+/// Mic icon with continuous outward ripples while recording.
+class _RecordingMic extends HookWidget {
+  const _RecordingMic({required this.color});
 
-  final RecorderController controller;
   final Color color;
 
   static const _iconSize = 24.0;
 
   @override
   Widget build(BuildContext context) {
-    final level = useState(0.0);
     final wave = useAnimationController(
       duration: const Duration(milliseconds: 1600),
     );
@@ -140,34 +130,12 @@ class _InputReactiveMic extends HookWidget {
       return () => wave.stop();
     }, [wave]);
 
-    useEffect(() {
-      void onRecorder() {
-        double raw = 0.0;
-        try {
-          final data = controller.waveData;
-          if (data.isNotEmpty) {
-            raw = data[data.length - 1];
-          }
-        } catch (_) {
-          raw = 0.0;
-        }
-        final next = smoothRecorderVisualizationLevel(level.value, raw);
-        level.value = next;
-      }
-
-      controller.addListener(onRecorder);
-      return () => controller.removeListener(onRecorder);
-    }, [controller, level]);
-
     return AnimatedBuilder(
       animation: wave,
       builder: (context, _) {
         final t = wave.value;
-        final w = level.value.clamp(0.0, 1.0);
-        // Ripples: linear blend — soft when quiet, full when loud.
-        final ripple = 0.10 + 0.90 * w;
-        // Icon pulse: ramps up faster at high levels so speech feels obvious.
-        final iconHot = 0.07 + 0.93 * (w * w);
+        const ripple = 0.8;
+        const iconHot = 0.75;
 
         return SizedBox(
           width: _iconSize,
