@@ -3,8 +3,8 @@ import 'package:retentio/constants.dart';
 
 void main() {
   group('constants', () {
-    test('kAppName is Retentio', () {
-      expect(kAppName, 'Retentio');
+    test('kAppName is Rete', () {
+      expect(kAppName, 'Rete');
     });
   });
 }

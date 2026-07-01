@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-const String kAppName = 'Retentio';
+const String kAppName = 'Rete';
 
 const double kTextFieldHeight = 46;
 const double kButtonHeight = 46;

@@ -31,7 +31,7 @@ void main() {
       await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
       await tester.pumpAndSettle();
 
-      expect(find.text('Retentio'), findsOneWidget);
+      expect(find.text('Rete'), findsOneWidget);
     });
 
     testWidgets('displays username and password fields', (tester) async {
