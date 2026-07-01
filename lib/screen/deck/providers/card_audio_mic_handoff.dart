@@ -4,7 +4,7 @@ import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Lets [FactAdd]/[FactEdit] stop every active card [PlayerController] and
+/// Lets [FactAdd]/[FactEdit] stop every active card [AudioPlayer] and
 /// briefly deactivate the iOS audio session before mic capture so other
 /// engines can release the route.
 final cardAudioMicHandoffProvider =

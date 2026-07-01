@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// Application title
   ///
   /// In en, this message translates to:
-  /// **'Retentio'**
+  /// **'Rete'**
   String get appTitle;
 
   /// Login button text

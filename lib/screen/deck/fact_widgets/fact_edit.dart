@@ -1,7 +1,6 @@
 import 'dart:async' show unawaited;
 import 'dart:io';
 
-import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -69,16 +68,12 @@ class _FactEditState extends ConsumerState<FactEdit>
   List<Tag> _selectedTags = [];
 
   bool _recordingVoice = false;
-  late final RecorderController _voiceRecorder;
-  late final AudioRecorder _iosPackageVoiceRecorder;
+  late final AudioRecorder _voiceRecorder;
 
   List<GlobalKey> get _hostKeys => [for (final r in _rows ?? []) r.row.hostKey];
 
   @override
-  RecorderController get voiceRecorder => _voiceRecorder;
-
-  @override
-  AudioRecorder? get iosPackageVoiceRecorder => _iosPackageVoiceRecorder;
+  AudioRecorder get voiceRecorder => _voiceRecorder;
 
   @override
   bool get isRecordingVoice => _recordingVoice;
@@ -97,8 +92,7 @@ class _FactEditState extends ConsumerState<FactEdit>
   @override
   void initState() {
     super.initState();
-    _voiceRecorder = RecorderController();
-    _iosPackageVoiceRecorder = AudioRecorder();
+    _voiceRecorder = AudioRecorder();
     FocusManager.instance.addListener(_onFocusChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadFact());
   }
@@ -378,8 +372,7 @@ class _FactEditState extends ConsumerState<FactEdit>
   @override
   void dispose() {
     FocusManager.instance.removeListener(_onFocusChanged);
-    unawaited(_iosPackageVoiceRecorder.dispose());
-    _voiceRecorder.dispose();
+    unawaited(_voiceRecorder.dispose());
     for (final model in _rows ?? <FactEditRowModel>[]) {
       model.row.dispose();
     }
@@ -434,7 +427,6 @@ class _FactEditState extends ConsumerState<FactEdit>
                 onPickFiles: pickMediaForTargetRow,
                 onPickGallery: pickGalleryMediaForTargetRow,
                 onClearTargetAttachment: clearTargetRowAttachment,
-                voiceRecorder: _voiceRecorder,
                 mediaPicksLocked: _recordingVoice,
                 showVoiceRecord: voiceRecordingAvailable,
                 isRecordingVoice: _recordingVoice,

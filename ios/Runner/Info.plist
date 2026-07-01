@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Retentio</string>
+	<string>Rete</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>retentio</string>
+	<string>Rete</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -31,14 +31,14 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Retentio uses a smart spaced repetition algorithm to help you learn more efficiently; the microphone is used to record the pronunciation of your own word list.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Retentio needs access to the camera so you can take photos and videos to attach to flashcard entries.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Retentio needs access to your photo library so you can attach images and videos to flashcard entries.</string>
+	<string>Rete needs access to the camera so you can take photos and videos to attach to flashcard entries.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Retentio may access your location when attaching photos and videos to flashcard entries that include location metadata.</string>
+	<string>Rete may access your location when attaching photos and videos to flashcard entries that include location metadata.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Rete uses a smart spaced repetition algorithm to help you learn more efficiently; the microphone is used to record the pronunciation of your own word list.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Rete needs access to your photo library so you can attach images and videos to flashcard entries.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

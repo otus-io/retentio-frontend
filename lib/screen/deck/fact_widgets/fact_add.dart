@@ -1,6 +1,5 @@
 import 'dart:async' show unawaited;
 
-import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -53,8 +52,7 @@ class _FactAddState extends ConsumerState<FactAdd>
 
   bool _submitting = false;
   bool _recordingVoice = false;
-  late final RecorderController _voiceRecorder;
-  late final AudioRecorder _iosPackageVoiceRecorder;
+  late final AudioRecorder _voiceRecorder;
 
   // ── tag state ────────────────────────────────────────────
   Set<String> _selectedTagIds = {};
@@ -63,10 +61,7 @@ class _FactAddState extends ConsumerState<FactAdd>
   List<GlobalKey> get _hostKeys => [for (final r in _rows) r.hostKey];
 
   @override
-  RecorderController get voiceRecorder => _voiceRecorder;
-
-  @override
-  AudioRecorder? get iosPackageVoiceRecorder => _iosPackageVoiceRecorder;
+  AudioRecorder get voiceRecorder => _voiceRecorder;
 
   @override
   bool get isRecordingVoice => _recordingVoice;
@@ -86,8 +81,7 @@ class _FactAddState extends ConsumerState<FactAdd>
   void initState() {
     super.initState();
     _rows = AddFactRowModel.listForDeckFields(widget.deck.fields);
-    _voiceRecorder = RecorderController();
-    _iosPackageVoiceRecorder = AudioRecorder();
+    _voiceRecorder = AudioRecorder();
     FocusManager.instance.addListener(_onFocusChanged);
   }
 
@@ -98,8 +92,7 @@ class _FactAddState extends ConsumerState<FactAdd>
   @override
   void dispose() {
     FocusManager.instance.removeListener(_onFocusChanged);
-    unawaited(_iosPackageVoiceRecorder.dispose());
-    _voiceRecorder.dispose();
+    unawaited(_voiceRecorder.dispose());
     for (final r in _rows) {
       r.dispose();
     }
@@ -338,7 +331,6 @@ class _FactAddState extends ConsumerState<FactAdd>
                 onPickFiles: pickMediaForTargetRow,
                 onPickGallery: pickGalleryMediaForTargetRow,
                 onClearTargetAttachment: clearTargetRowAttachment,
-                voiceRecorder: _voiceRecorder,
                 mediaPicksLocked: _recordingVoice,
                 showVoiceRecord: voiceRecordingAvailable,
                 isRecordingVoice: _recordingVoice,
