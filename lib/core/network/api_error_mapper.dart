@@ -2,36 +2,17 @@ import 'package:dio/dio.dart';
 import 'package:retentio/models/api_response.dart';
 
 ApiResponse mapDioExceptionToApiResponse(DioException e) {
-  var msg = 'Unknown error';
-  switch (e.type) {
-    case DioExceptionType.connectionTimeout:
-      msg = 'Connect timeout';
-      break;
-    case DioExceptionType.connectionError:
-      msg = 'Connect error';
-      break;
-    case DioExceptionType.badCertificate:
-      msg = 'Bad certificate';
-      break;
-    case DioExceptionType.sendTimeout:
-      msg = 'Send timeout';
-      break;
-    case DioExceptionType.receiveTimeout:
-      msg = 'Receive timeout';
-      break;
-    case DioExceptionType.transformTimeout:
-      msg = 'Transform timeout';
-      break;
-    case DioExceptionType.badResponse:
-      msg = 'Bad response';
-      break;
-    case DioExceptionType.cancel:
-      msg = 'Request cancel';
-      break;
-    case DioExceptionType.unknown:
-      msg = e.message ?? 'Unknown error';
-      break;
-  }
+  const typeMessageMap = <DioExceptionType, String>{
+    DioExceptionType.connectionTimeout: 'Connect timeout',
+    DioExceptionType.connectionError: 'Connect error',
+    DioExceptionType.badCertificate: 'Bad certificate',
+    DioExceptionType.sendTimeout: 'Send timeout',
+    DioExceptionType.receiveTimeout: 'Receive timeout',
+    DioExceptionType.transformTimeout: 'Transform timeout',
+    DioExceptionType.badResponse: 'Bad response',
+    DioExceptionType.cancel: 'Request cancel',
+  };
+  var msg = typeMessageMap[e.type] ?? e.message ?? 'Unknown error';
 
   final body = e.response?.data;
   if (body is Map) {

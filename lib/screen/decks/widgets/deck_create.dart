@@ -118,6 +118,14 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
 
   int? _draggingFieldIndex;
 
+  TagManagerCubit? _maybeTagManager() {
+    try {
+      return context.read<TagManagerCubit>();
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   void afterFirstLayout() {
     final createCubit = context.read<DeckCreateCubit>();
@@ -127,6 +135,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
         rate: widget.deck!.rate,
         cardType: DeckCardType.edit,
         deckId: widget.deck!.id,
+        isImported: widget.deck!.isImported,
       );
       _resetFieldControllers(widget.deck!.fields);
       _loadExistingTags(widget.deck!.id);
@@ -140,7 +149,11 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
       _resetFieldControllers(_defaultNewDeckFields);
     }
     // Load the user's full tag list so the picker has data.
-    final tagManager = context.read<TagManagerCubit>();
+    final tagManager = _maybeTagManager();
+    if (tagManager == null) {
+      setState(() {});
+      return;
+    }
     if (tagManager.state.status == TagManagerStatus.initial) {
       tagManager.loadTags();
     }
@@ -165,6 +178,9 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
 
   /// Opens the tag picker and applies the returned selection.
   Future<void> _openTagPicker() async {
+    final tagManager = _maybeTagManager();
+    if (tagManager == null) return;
+
     final result = await showTagPickerSheet(
       context,
       selectedIds: _selectedTagIds,
@@ -172,7 +188,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
     if (result == null || !mounted) return;
 
     // Resolve full Tag objects from the manager's list.
-    final allTags = context.read<TagManagerCubit>().state.tags;
+    final allTags = tagManager.state.tags;
     final resolved = result
         .map(
           (id) => allTags.firstWhere(
@@ -204,25 +220,26 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final rate = context.select((DeckCreateCubit cubit) => cubit.state.rate);
+    final isImported = context.select(
+      (DeckCreateCubit cubit) => cubit.state.isImported,
+    );
     final createCubit = context.read<DeckCreateCubit>();
 
     return Column(
-      spacing: 14,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(
           width: double.infinity,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
-            spacing: 6,
             children: [
               Row(
-                spacing: 16,
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Icon(LucideIcons.activity, size: 24, color: scheme.primary),
+                  const SizedBox(width: 16),
                   NumberPicker(
                     minValue: kDeckEditorRateMin,
                     maxValue: kDeckEditorRateMax,
@@ -246,9 +263,11 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
                       createCubit.changeRate(value);
                     },
                   ),
+                  const SizedBox(width: 16),
                   Text(loc.cardsPerDay, style: DeckTextStyles.rateLabel(theme)),
                 ],
               ),
+              const SizedBox(height: 6),
               Text(
                 loc.newCardEveryMinutes(((86400 / rate) / 60).toInt()),
                 textAlign: TextAlign.center,
@@ -257,18 +276,21 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
             ],
           ),
         ),
+        const SizedBox(height: 14),
 
         // AppInput for deck name.
         AppInput(
           controller: createCubit.nameController,
           focusNode: _deckNameFocusNode,
           label: context.loc.createInputDeckName,
+          enabled: !isImported,
           onChanged: (_) {
             if (_submitError != null) {
               setState(() => _submitError = null);
             }
           },
         ),
+        const SizedBox(height: 14),
 
         // ── Tags section ──────────────────────────────────
         _TagsSection(
@@ -281,138 +303,171 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
           },
           onPickTags: _openTagPicker,
         ),
+        const SizedBox(height: 14),
 
         // TextFields for deck fields with reordering.
         Column(
-          spacing: 12,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ReorderableListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              buildDefaultDragHandles: false,
-              onReorderStart: (index) {
-                setState(() {
-                  _draggingFieldIndex = index;
-                });
-              },
-              // ignore: deprecated_member_use
-              onReorder: (oldIndex, newIndex) {
-                setState(() {
-                  if (oldIndex < newIndex) {
-                    newIndex -= 1;
-                  }
-                  final controller = _fieldControllers.removeAt(oldIndex);
-                  final focusNode = _fieldFocusNodes.removeAt(oldIndex);
-                  _fieldControllers.insert(newIndex, controller);
-                  _fieldFocusNodes.insert(newIndex, focusNode);
-                  _draggingFieldIndex = null;
-                });
-              },
-              proxyDecorator: (child, index, animation) {
-                return AnimatedBuilder(
-                  animation: animation,
-                  child: child,
-                  builder: (context, child) {
-                    final scale = 1.0 + 0.05 * animation.value;
-                    return Transform.scale(
-                      scale: scale,
-                      child: Material(
-                        type: MaterialType.transparency,
-                        child: child,
+            if (isImported)
+              ...List.generate(_fieldControllers.length, (i) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        4,
+                        _kDeckCreateFieldLabelTopPadding,
+                        4,
+                        _kDeckCreateFieldLabelBottomPadding,
                       ),
-                    );
-                  },
+                      child: Text(
+                        '${context.loc.addFactFieldShortLabel} ${i + 1}',
+                        style: DeckTextStyles.fieldLabel(theme),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    AppInput(
+                      controller: _fieldControllers[i],
+                      style: DeckTextStyles.fieldInput(theme),
+                      enabled: false,
+                    ),
+                  ],
                 );
-              },
-              itemCount: _fieldControllers.length,
-              itemBuilder: (context, i) {
-                final isDimmed =
-                    _draggingFieldIndex != null && _draggingFieldIndex != i;
-                return AnimatedOpacity(
-                  key: ValueKey('deck_field_$i'),
-                  duration: const Duration(milliseconds: 150),
-                  opacity: isDimmed ? 0.25 : 1,
-                  child: Stack(
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 4,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              4,
-                              _kDeckCreateFieldLabelTopPadding,
-                              4,
-                              _kDeckCreateFieldLabelBottomPadding,
+              })
+            else ...[
+              ReorderableListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                buildDefaultDragHandles: false,
+                onReorderStart: (index) {
+                  setState(() {
+                    _draggingFieldIndex = index;
+                  });
+                },
+                // ignore: deprecated_member_use
+                onReorder: (oldIndex, newIndex) {
+                  setState(() {
+                    if (oldIndex < newIndex) {
+                      newIndex -= 1;
+                    }
+                    final controller = _fieldControllers.removeAt(oldIndex);
+                    final focusNode = _fieldFocusNodes.removeAt(oldIndex);
+                    _fieldControllers.insert(newIndex, controller);
+                    _fieldFocusNodes.insert(newIndex, focusNode);
+                    _draggingFieldIndex = null;
+                  });
+                },
+                proxyDecorator: (child, index, animation) {
+                  return AnimatedBuilder(
+                    animation: animation,
+                    child: child,
+                    builder: (context, child) {
+                      final scale = 1.0 + 0.05 * animation.value;
+                      return Transform.scale(
+                        scale: scale,
+                        child: Material(
+                          type: MaterialType.transparency,
+                          child: child,
+                        ),
+                      );
+                    },
+                  );
+                },
+                itemCount: _fieldControllers.length,
+                itemBuilder: (context, i) {
+                  final isDimmed =
+                      _draggingFieldIndex != null && _draggingFieldIndex != i;
+                  return AnimatedOpacity(
+                    key: ObjectKey(_fieldControllers[i]),
+                    duration: const Duration(milliseconds: 150),
+                    opacity: isDimmed ? 0.25 : 1,
+                    child: Stack(
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                4,
+                                _kDeckCreateFieldLabelTopPadding,
+                                4,
+                                _kDeckCreateFieldLabelBottomPadding,
+                              ),
+                              child: Text(
+                                '${context.loc.addFactFieldShortLabel} ${i + 1}',
+                                style: DeckTextStyles.fieldLabel(theme),
+                              ),
                             ),
-                            child: Text(
-                              '${context.loc.addFactFieldShortLabel} ${i + 1}',
-                              style: DeckTextStyles.fieldLabel(theme),
-                            ),
-                          ),
-                          ReorderableDelayedDragStartListener(
-                            index: i,
-                            child: AppInput(
-                              controller: _fieldControllers[i],
-                              focusNode: _fieldFocusNodes[i],
-                              style: DeckTextStyles.fieldInput(theme),
-                              suffixConstraints: _kDeckCreateSuffixConstraints,
-                              suffixIcon: Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: IgnorePointer(
-                                  ignoring: !_fieldFocusNodes[i].hasFocus,
-                                  child: AnimatedOpacity(
-                                    duration: const Duration(milliseconds: 140),
-                                    opacity: _fieldFocusNodes[i].hasFocus
-                                        ? 1
-                                        : 0,
-                                    child: AppIconButton(
-                                      icon: LucideIcons.trash2,
-                                      tooltip: loc.deckEditorRemoveFieldTooltip,
-                                      variant: _fieldControllers.length == 2
-                                          ? AppIconButtonVariant.subtle
-                                          : AppIconButtonVariant.danger,
-                                      size: 17,
-                                      iconSize: 17,
-                                      constraints: kIconBtnConstraints,
-                                      onPressed: _fieldControllers.length == 2
-                                          ? null
-                                          : () {
-                                              setState(() {
-                                                _fieldControllers
-                                                    .removeAt(i)
-                                                    .dispose();
-                                                _fieldFocusNodes
-                                                    .removeAt(i)
-                                                    .dispose();
-                                              });
-                                            },
+                            const SizedBox(height: 4),
+                            ReorderableDelayedDragStartListener(
+                              index: i,
+                              child: AppInput(
+                                controller: _fieldControllers[i],
+                                focusNode: _fieldFocusNodes[i],
+                                style: DeckTextStyles.fieldInput(theme),
+                                suffixConstraints:
+                                    _kDeckCreateSuffixConstraints,
+                                suffixIcon: Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: IgnorePointer(
+                                    ignoring: !_fieldFocusNodes[i].hasFocus,
+                                    child: AnimatedOpacity(
+                                      duration: const Duration(
+                                        milliseconds: 140,
+                                      ),
+                                      opacity: _fieldFocusNodes[i].hasFocus
+                                          ? 1
+                                          : 0,
+                                      child: AppIconButton(
+                                        icon: LucideIcons.trash2,
+                                        tooltip:
+                                            loc.deckEditorRemoveFieldTooltip,
+                                        variant: _fieldControllers.length == 2
+                                            ? AppIconButtonVariant.subtle
+                                            : AppIconButtonVariant.danger,
+                                        size: 17,
+                                        iconSize: 17,
+                                        constraints: kIconBtnConstraints,
+                                        onPressed: _fieldControllers.length == 2
+                                            ? null
+                                            : () {
+                                                setState(() {
+                                                  _fieldControllers
+                                                      .removeAt(i)
+                                                      .dispose();
+                                                  _fieldFocusNodes
+                                                      .removeAt(i)
+                                                      .dispose();
+                                                });
+                                              },
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            // Add field button.
-            Align(
-              alignment: Alignment.center,
-              child: AppButton(
-                label: loc.deckCreateAddField,
-                variant: AppButtonVariant.ghost,
-                size: AppButtonSize.sm,
-                onPressed: _addField,
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
-            ),
+              // Add field button.
+              Align(
+                alignment: Alignment.center,
+                child: AppButton(
+                  label: loc.deckCreateAddField,
+                  variant: AppButtonVariant.ghost,
+                  size: AppButtonSize.sm,
+                  onPressed: _addField,
+                ),
+              ),
+            ],
           ],
         ),
+        const SizedBox(height: 14),
 
         AppButton(
           label: loc.save,
@@ -493,7 +548,6 @@ class _TagsSection extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 6,
       children: [
         Row(
           children: [
@@ -517,6 +571,7 @@ class _TagsSection extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: 6),
         if (selectedTags.isNotEmpty)
           TagChipRow(tags: selectedTags, onRemove: onRemove),
       ],

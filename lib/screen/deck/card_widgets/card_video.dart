@@ -50,9 +50,13 @@ class _CardVideoState extends State<CardVideo>
     _tabController = DefaultTabController.maybeOf(context);
     _currentIndex = _tabController?.index ?? 0;
     _tabController?.addListener(_handleController);
-    _flipController = context.read<DeckStudyFlipCardControllerCubit>().state;
-    _currentIsFront = _flipController.isFront;
-    _flipController.addListener(_handleCardSideChange);
+    try {
+      _flipController = context.read<DeckStudyFlipCardControllerCubit>().state;
+    } catch (_) {
+      _flipController = null;
+    }
+    _currentIsFront = _flipController?.isFront ?? true;
+    _flipController?.addListener(_handleCardSideChange);
   }
 
   @override

@@ -145,6 +145,7 @@ class DeckMenu extends StatelessWidget {
                             rate: deck.rate,
                             deckId: deck.id,
                             cardType: DeckCardType.edit,
+                            isImported: deck.isImported,
                           ),
                         ),
                         BlocProvider<TagManagerCubit>(

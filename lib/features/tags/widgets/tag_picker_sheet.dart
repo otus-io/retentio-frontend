@@ -165,7 +165,7 @@ class _TagPickerSheet extends HookWidget {
                   horizontal: 16,
                   vertical: 8,
                 ),
-                child: state.tags.length >= 100
+                child: cubit.isAtLimit
                     ? Text(
                         loc.tagLimitReached,
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -179,14 +179,26 @@ class _TagPickerSheet extends HookWidget {
                             title: loc.createTag,
                             confirmLabel: loc.save,
                             onConfirm: (name, description) async {
+                              final beforeIds = state.tags
+                                  .map((tag) => tag.id)
+                                  .toSet();
                               final err = await cubit.createTag(
                                 name: name,
                                 description: description,
                               );
                               if (err != null) return err;
-                              final newest = cubit.state.tags.lastOrNull;
-                              if (newest != null) {
-                                selected.value = {...selected.value, newest.id};
+                              String? createdTagId;
+                              for (final tag in cubit.state.tags) {
+                                if (!beforeIds.contains(tag.id)) {
+                                  createdTagId = tag.id;
+                                  break;
+                                }
+                              }
+                              if (createdTagId != null) {
+                                selected.value = {
+                                  ...selected.value,
+                                  createdTagId,
+                                };
                               }
                               return null;
                             },

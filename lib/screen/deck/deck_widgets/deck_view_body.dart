@@ -7,6 +7,7 @@ import 'package:retentio/screen/deck/bloc/deck_study_context_cubit.dart';
 import 'package:retentio/screen/deck/bloc/deck_study_flip_card_controller_cubit.dart';
 import 'package:retentio/screen/deck/card_widgets/card_flip.dart';
 import 'package:retentio/screen/deck/card_widgets/card_side_content.dart';
+import 'package:retentio/screen/deck/deck_widgets/deck_study_tag_filter_bar.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
 import 'package:retentio/theme/theme_tokens.dart';
 import 'package:retentio/widgets/app_button.dart';
@@ -14,6 +15,19 @@ import 'package:retentio/widgets/app_button.dart';
 const _kMessageIconSize = 84.0;
 const _kMessageTitleTopSpacing = 24.0;
 const _kMessageButtonTopSpacing = 16.0;
+
+String? _tagNameFor(DeckStudyState state) {
+  final activeTagId = state.activeTagId;
+  if (activeTagId == null) {
+    return null;
+  }
+  for (final tag in state.deckTags) {
+    if (tag.id == activeTagId) {
+      return tag.name;
+    }
+  }
+  return null;
+}
 
 class DeckViewBody extends StatelessWidget {
   const DeckViewBody({super.key});
@@ -42,30 +56,12 @@ class DeckViewBody extends StatelessWidget {
       child: BlocBuilder<DeckStudyBloc, DeckStudyState>(
         builder: (context, state) {
           Widget buildTagFilterBar() {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-              child: SizedBox(
-                height: 34,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: state.deckTags.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    final tag = state.deckTags[index];
-                    final selected = state.activeTagId == tag.id;
-                    return ChoiceChip(
-                      label: Text(tag.name),
-                      selected: selected,
-                      onSelected: (_) {
-                        requestDeckStudyTagFilterChanged(
-                          context,
-                          selected ? null : tag.id,
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
+            return DeckStudyTagFilterBar(
+              tags: state.deckTags,
+              activeTagId: state.activeTagId,
+              onTagSelected: (tagId) {
+                requestDeckStudyTagFilterChanged(context, tagId);
+              },
             );
           }
 
@@ -79,7 +75,16 @@ class DeckViewBody extends StatelessWidget {
           final cardDetail = state.cardDetail;
 
           if (cardDetail == null) {
-            final messageBody = totalCardsInSession == 0
+            final messageBody = state.activeTagId != null
+                ? _TagFilterEmptyColumn(
+                    loc: loc,
+                    theme: theme,
+                    tagName: _tagNameFor(state),
+                    onClearFilter: () {
+                      requestDeckStudyTagFilterChanged(context, null);
+                    },
+                  )
+                : totalCardsInSession == 0
                 ? _DeckStudyMessageColumn(
                     icon: LucideIcons.circleQuestionMark,
                     title: loc.noCardsInThisDeck,
@@ -102,7 +107,8 @@ class DeckViewBody extends StatelessWidget {
             );
           }
 
-          final isCompleted = totalCardsInSession == cardsStudied;
+          final isCompleted =
+              state.activeTagId == null && totalCardsInSession == cardsStudied;
           if (isCompleted) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -121,10 +127,9 @@ class DeckViewBody extends StatelessWidget {
             );
           }
 
-          final currentCardNumber = (cardsStudied + 1).clamp(
-            1,
-            totalCardsInSession,
-          );
+          final currentCardNumber = totalCardsInSession > 0
+              ? (cardsStudied + 1).clamp(1, totalCardsInSession)
+              : cardsStudied + 1;
           final currentProgress = totalCardsInSession > 0
               ? currentCardNumber / totalCardsInSession
               : 0.0;
@@ -217,6 +222,54 @@ class DeckViewBody extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _TagFilterEmptyColumn extends StatelessWidget {
+  const _TagFilterEmptyColumn({
+    required this.loc,
+    required this.theme,
+    required this.tagName,
+    required this.onClearFilter,
+  });
+
+  final AppLocalizations loc;
+  final ThemeData theme;
+  final String? tagName;
+  final VoidCallback onClearFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = tagName == null
+        ? loc.noCardsForTagFilter
+        : loc.noCardsForTagFilterNamed(tagName!);
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            LucideIcons.tags,
+            size: _kMessageIconSize,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(height: _kMessageTitleTopSpacing),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: _kMessageButtonTopSpacing),
+          AppButton(
+            label: loc.clearTagFilter,
+            onPressed: onClearFilter,
+            variant: AppButtonVariant.primary,
+          ),
+        ],
       ),
     );
   }
