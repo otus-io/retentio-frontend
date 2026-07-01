@@ -2,7 +2,7 @@
 
 # =============================================================================
 # Pre-commit hook — Retentio Flutter repo (pubspec.yaml at git root)
-# Runs dart format . first, then YAML/Markdown (if applicable), flutter analyze, and tests.
+# Runs dart format lib test first, then YAML/Markdown (if applicable), flutter analyze, and tests.
 # =============================================================================
 
 set -e
@@ -63,8 +63,8 @@ echo -e "${YELLOW}━━━ Dart format ━━━${NC}"
 _flutter_rel="${FLUTTER_ROOT#"$REPO_ROOT"}"
 _flutter_rel="${_flutter_rel#/}"
 [ -z "$_flutter_rel" ] && _flutter_rel="."
-echo "🔧 Running dart format . (cwd: $_flutter_rel)..."
-if (cd "$FLUTTER_ROOT" && dart format .); then
+echo "🔧 Running dart format lib test (cwd: $_flutter_rel)..."
+if (cd "$FLUTTER_ROOT" && dart format lib test); then
     echo -e "${GREEN}  ✓ dart format completed${NC}"
     # Refresh index so the commit includes formatter output (not only the working tree).
     while IFS= read -r -d '' f; do

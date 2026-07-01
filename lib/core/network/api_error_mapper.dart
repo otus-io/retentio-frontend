@@ -8,6 +8,7 @@ ApiResponse mapDioExceptionToApiResponse(DioException e) {
     DioExceptionType.badCertificate: 'Bad certificate',
     DioExceptionType.sendTimeout: 'Send timeout',
     DioExceptionType.receiveTimeout: 'Receive timeout',
+    DioExceptionType.transformTimeout: 'Transform timeout',
     DioExceptionType.badResponse: 'Bad response',
     DioExceptionType.cancel: 'Request cancel',
   };

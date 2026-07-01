@@ -30,8 +30,8 @@ FAILED=0
 # Dart format (run first so analyze/tests see formatted code)
 # -----------------------------------------------------------------------------
 echo -e "${YELLOW}━━━ Dart format ━━━${NC}"
-echo "🔧 Running dart format . ..."
-if (cd "$REPO_ROOT" && dart format .); then
+echo "🔧 Running dart format lib test ..."
+if (cd "$REPO_ROOT" && dart format lib test); then
     echo -e "${GREEN}  ✓ dart format completed${NC}"
 else
     echo -e "${RED}  ✗ dart format failed${NC}"
