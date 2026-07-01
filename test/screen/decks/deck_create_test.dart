@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:retentio/models/deck.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
+import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/decks/bloc/deck_create_cubit.dart';
 import 'package:retentio/screen/decks/widgets/deck_create.dart';
 import 'package:retentio/widgets/number_picker.dart';

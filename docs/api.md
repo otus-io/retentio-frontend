@@ -119,7 +119,7 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/api/decks/{id}/card`                        | GET    | Get most urgent card. Optional query: `tag_id` to restrict selection to cards whose facts have this tag in this deck.                                                                        |
 | `/api/decks/{id}/card`                        | POST   | Add one card from an existing fact (e.g. reversed). Body: `fact_id`, `template`, optional `operation`.                                                                                          |
 | `/api/decks/{id}/card`                        | PATCH  | Update card interval or visibility (by card_id)                                                                                                                                                 |
-| `/api/decks/{id}/cards`                       | GET    | Get `stats` + `cards`. Optional `tag_id` filters both; without `tag_id`, `stats` match `GET /api/decks/{id}`.                                                                                   |
+| `/api/decks/{id}/cards`                       | GET    | Get card stats (total, hidden count, hidden facts). Optional query: `tag_id` to filter cards by fact tag in this deck.                                                                        |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE | Delete a single card (fact and other cards unchanged)                                                                                                                                           |
 | `/api/decks/{id}/reschedule`                  | POST   | Reschedule deck cards (shift due dates by N days)                                                                                                                                               |
 | `/api/tags`                                   | POST   | Create a tag (`name`, optional `description`). **201** on success.                                                                                                                              |
@@ -488,7 +488,6 @@ Omit both fields or use `[]` for an untagged deck. Sending **`tags` and `tag_ids
 > | `hidden_cards`     | Cards hidden from review by the user                             |
 > | `new_cards_today`  | Cards that were added today (since midnight)                     |
 > | `last_reviewed_at` | Unix timestamp of the most recent review (`0` if never reviewed) |
-> | `orphaned_hidden_cards` | Hidden cards whose `fact_id` is missing from the deck (omitted when `0`) |
 >
 > Stats are computed on-the-fly. For a freshly created empty deck,
 > all values are `0`. After adding facts, `cards_count` and
@@ -1963,28 +1962,30 @@ Permanently remove a single card from a deck. The fact and any other cards for t
 
 | Query    | Description |
 |----------|-------------|
-| `tag_id` | Tag ID. When provided, only cards whose `fact_id` belongs to facts tagged with this tag **in the same deck** are included in `stats`, counts, and lists. `stats.facts_count` is the number of tagged facts in this deck (not the full deck fact count). |
+| `tag_id` | Tag ID. When provided, only cards whose `fact_id` belongs to facts tagged with this tag **in the same deck** are included in all counts/lists. |
 
 Example: `GET /api/decks/{id}/cards?tag_id=Kt8QmNz2`
 
 **Response:**
 
-`data.stats` uses the same shape as `GET /api/decks/{id}` (`cards_count`, `facts_count`, `unseen_cards`, `reviewed_cards`, `due_cards`, `hidden_cards`, `new_cards_today`, `last_reviewed_at`, optional `orphaned_hidden_cards`). Without `tag_id`, `stats` match `GET /api/decks/{id}` for the same deck; with `tag_id`, stats cover only cards for facts tagged in that deck. Response also includes `cards` (full card array).
-
 ```json
 {
   "data": {
-    "stats": {
-      "cards_count": 20,
-      "facts_count": 15,
-      "unseen_cards": 5,
-      "reviewed_cards": 15,
-      "due_cards": 7,
-      "hidden_cards": 3,
-      "new_cards_today": 2,
-      "last_reviewed_at": 1710000000,
-      "orphaned_hidden_cards": 1
-    },
+    "total_cards": 20,
+    "hidden_cards_count": 3,
+    "due_cards": 7,
+    "unseen_cards": 5,
+    "hidden_cards_list": [
+      {
+        "id": "cd1ef2gh",
+        "fact_id": "h1d2e3n4",
+        "template": [[0], [1]],
+        "last_review": 1710000000,
+        "due_date": 1710500000,
+        "hidden": true,
+        "created_at": 1709000000
+      }
+    ],
     "cards": [
       {
         "id": "cd1ef2gh",
@@ -1995,7 +1996,8 @@ Example: `GET /api/decks/{id}/cards?tag_id=Kt8QmNz2`
         "hidden": true,
         "created_at": 1709000000
       }
-    ]
+    ],
+    "orphaned_hidden_cards": 0
   },
   "meta": { "msg": "Card stats retrieved successfully" }
 }
@@ -2123,7 +2125,7 @@ For full design (upload, delete, display, sync), see **[Media Upload design doc]
 | `/api/decks/{id}/facts/{factId}`              | DELETE      | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks/{id}/card`                        | GET         | Optional query `tag_id`. Response shape unchanged: `{ "data": { "card": { id, fact_id, template, …, front[], back[] }, "urgency" }, "meta": { "msg", … } }` |
 | `/api/decks/{id}/card`                        | PATCH       | Interval: `{ "data": { "last_review", "due_date", "new_interval" }, "meta": { "msg" } }`; visibility: `{ "data": { "hidden_status" }, "meta": { "msg" } }` |
-| `/api/decks/{id}/cards`                       | GET         | Optional query `tag_id`. `{ "data": { "stats": { … }, "cards": [ … ] }, "meta": { "msg" } }` |
+| `/api/decks/{id}/cards`                       | GET         | Optional query `tag_id`. Response shape unchanged: `{ "data": { "total_cards", "hidden_count", "hidden_facts", "orphaned_hidden_cards" }, "meta": { "msg" } }` |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE      | `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks/{id}/reschedule`                  | POST        | `{ "data": { "cards_shifted", "days", "max_days_away" }, "meta": { "msg" } }`                                                                              |
 | `/api/decks/catalog`                          | GET         | `{ "data": { "decks": [ … ] }, "meta": { "msg", "count", "total", "limit", "offset", "has_more" } }` — defaults `limit` 50, `offset` 0; optional `query` |

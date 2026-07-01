@@ -10,12 +10,14 @@ import 'package:retentio/models/tag.dart';
 class FakeDeckStudyRepository implements DeckStudyRepository {
   FakeDeckStudyRepository({
     List<DeckStudyLoadResult>? loadResults,
+    this.deckTags = const [],
     this.submitShouldSucceed = true,
     this.deleteShouldSucceed = true,
     this.fallbackResult = const DeckStudyLoadResult(cardDetail: null),
   }) : _loadResults = List<DeckStudyLoadResult>.from(loadResults ?? const []);
 
   final List<DeckStudyLoadResult> _loadResults;
+  final List<Tag> deckTags;
   final bool submitShouldSucceed;
   final bool deleteShouldSucceed;
   final DeckStudyLoadResult fallbackResult;
@@ -24,9 +26,10 @@ class FakeDeckStudyRepository implements DeckStudyRepository {
   int reviewSubmitCalls = 0;
   int hideSubmitCalls = 0;
   int deleteCalls = 0;
+  final List<String?> loadTagIds = [];
 
   @override
-  Future<List<Tag>> loadDeckTags({required String deckId}) async => const [];
+  Future<List<Tag>> loadDeckTags({required String deckId}) async => deckTags;
 
   @override
   Future<DeckStudyLoadResult> loadNextDueCard({
@@ -34,6 +37,7 @@ class FakeDeckStudyRepository implements DeckStudyRepository {
     String? tagId,
   }) async {
     loadCalls += 1;
+    loadTagIds.add(tagId);
     if (_loadResults.isEmpty) return fallbackResult;
     final index = loadCalls - 1;
     if (index >= 0 && index < _loadResults.length) {
@@ -71,6 +75,7 @@ class FakeDeckStudyBlocHarness {
   factory FakeDeckStudyBlocHarness({
     required String deckId,
     List<DeckStudyLoadResult>? loadResults,
+    List<Tag> deckTags = const [],
     bool submitShouldSucceed = true,
     bool deleteShouldSucceed = true,
     DeckStudyLoadResult fallbackResult = const DeckStudyLoadResult(
@@ -80,6 +85,7 @@ class FakeDeckStudyBlocHarness {
   }) {
     final repository = FakeDeckStudyRepository(
       loadResults: loadResults,
+      deckTags: deckTags,
       submitShouldSucceed: submitShouldSucceed,
       deleteShouldSucceed: deleteShouldSucceed,
       fallbackResult: fallbackResult,

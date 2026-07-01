@@ -143,6 +143,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allCaughtUp => 'All Caught Up!';
 
   @override
+  String get noCardsForTagFilter => 'No cards with this tag';
+
+  @override
+  String noCardsForTagFilterNamed(String tagName) {
+    return 'No cards with tag \"$tagName\"';
+  }
+
+  @override
+  String get clearTagFilter => 'Clear filter';
+
+  @override
   String startLearningDeck(String deckName) {
     return 'Start learning: $deckName';
   }
@@ -465,6 +476,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get filterAll => 'All';
+
+  @override
+  String get studyTagFilterTitle => 'Study by tag';
 
   @override
   String get tagFacts => 'Facts';

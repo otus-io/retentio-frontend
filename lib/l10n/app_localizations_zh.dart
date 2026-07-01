@@ -143,6 +143,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get allCaughtUp => '全部完成！';
 
   @override
+  String get noCardsForTagFilter => '该标签下暂无卡片';
+
+  @override
+  String noCardsForTagFilterNamed(String tagName) {
+    return '标签「$tagName」下暂无卡片';
+  }
+
+  @override
+  String get clearTagFilter => '清除筛选';
+
+  @override
   String startLearningDeck(String deckName) {
     return '开始学习：$deckName';
   }
@@ -454,6 +465,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get filterAll => '全部';
+
+  @override
+  String get studyTagFilterTitle => '按标签复习';
 
   @override
   String get tagFacts => '词条';

@@ -191,7 +191,11 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
           isLoading: false,
           isHide: false,
           loadingPhase: DeckStudyLoadingPhase.loaded,
-          clearRefreshedCardsCount: true,
+          clearRefreshedCardsCount:
+              state.activeTagId == null && result.refreshedCardsCount == null,
+          refreshedCardsCount: state.activeTagId != null
+              ? (result.refreshedCardsCount ?? state.refreshedCardsCount)
+              : result.refreshedCardsCount,
           minInterval: interval.minInterval,
           maxInterval: interval.maxInterval,
           selectedInterval: interval.midInterval,
@@ -206,7 +210,11 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
         isLoading: false,
         isHide: false,
         loadingPhase: DeckStudyLoadingPhase.loaded,
-        refreshedCardsCount: result.refreshedCardsCount,
+        clearRefreshedCardsCount:
+            state.activeTagId == null && result.refreshedCardsCount == null,
+        refreshedCardsCount: state.activeTagId != null
+            ? (result.refreshedCardsCount ?? state.refreshedCardsCount)
+            : result.refreshedCardsCount,
         minInterval: 0,
         maxInterval: 0,
         selectedInterval: 0,
@@ -215,9 +223,13 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
   }
 
   Future<void> _loadDeckTagsInBackground() async {
-    final tags = await _loadDeckTagsUseCase(deckId: state.deckId);
-    if (tags.isNotEmpty) {
-      _emit(state.copyWith(deckTags: tags));
+    try {
+      final tags = await _loadDeckTagsUseCase(deckId: state.deckId);
+      if (tags.isNotEmpty) {
+        _emit(state.copyWith(deckTags: tags));
+      }
+    } catch (_) {
+      // Keep tag preload best-effort so it never bubbles as an uncaught future.
     }
   }
 

@@ -38,31 +38,32 @@ class CardSideContent extends StatelessWidget {
         final accentColor = scheme.primary;
         final contentColor = scheme.onSurface;
         final cardId = state.cardDetail?.card.id;
+        final content = CardContentContainer(
+          cards: sideCards,
+          color: accentColor,
+          accentColor: accentColor,
+          textColor: contentColor,
+          trailing: sideCards.isNotEmpty
+              ? CardMenu(
+                  color: scheme.onSurface.withValues(alpha: _kMenuColorAlpha),
+                )
+              : null,
+          typographyDeckId: deckId,
+          typographyIsFront: isFront,
+        );
 
         return Container(
           decoration: BoxDecoration(
             color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(_kContainerRadius),
           ),
-          child: DefaultTabController(
-            key: ValueKey(cardId),
-            length: sideCards.length,
-            child: CardContentContainer(
-              cards: sideCards,
-              color: accentColor,
-              accentColor: accentColor,
-              textColor: contentColor,
-              trailing: sideCards.isNotEmpty
-                  ? CardMenu(
-                      color: scheme.onSurface.withValues(
-                        alpha: _kMenuColorAlpha,
-                      ),
-                    )
-                  : null,
-              typographyDeckId: deckId,
-              typographyIsFront: isFront,
-            ),
-          ),
+          child: sideCards.isEmpty
+              ? content
+              : DefaultTabController(
+                  key: ValueKey(cardId),
+                  length: sideCards.length,
+                  child: content,
+                ),
         );
       },
     );

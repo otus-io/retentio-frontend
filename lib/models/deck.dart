@@ -70,6 +70,7 @@ class Deck {
     @JsonKey(defaultValue: 0) required this.minInterval,
     @JsonKey(defaultValue: 0) required this.defInterval,
     @JsonKey(defaultValue: 0) required this.maxInterval,
+    this.sourceDeckId = '',
     this.createdAt,
     this.updatedAt,
   });
@@ -84,8 +85,13 @@ class Deck {
   final int minInterval;
   final int defInterval;
   final int maxInterval;
+
+  /// Set when this deck is an import copy of a published source deck.
+  final String sourceDeckId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  bool get isImported => sourceDeckId.isNotEmpty;
 
   Deck copyWith({required String name}) => Deck(
     id: id,
@@ -97,6 +103,7 @@ class Deck {
     minInterval: minInterval,
     defInterval: defInterval,
     maxInterval: maxInterval,
+    sourceDeckId: sourceDeckId,
     createdAt: createdAt,
     updatedAt: updatedAt,
   );

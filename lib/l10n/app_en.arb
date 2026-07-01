@@ -182,6 +182,24 @@
   "@allCaughtUp": {
     "description": "Message when no cards to study"
   },
+  "noCardsForTagFilter": "No cards with this tag",
+  "@noCardsForTagFilter": {
+    "description": "Message when an active tag filter returns no due cards"
+  },
+  "noCardsForTagFilterNamed": "No cards with tag \"{tagName}\"",
+  "@noCardsForTagFilterNamed": {
+    "description": "Message when a named tag filter returns no due cards",
+    "placeholders": {
+      "tagName": {
+        "type": "String",
+        "example": "Grammar"
+      }
+    }
+  },
+  "clearTagFilter": "Clear filter",
+  "@clearTagFilter": {
+    "description": "Button to clear the active study tag filter"
+  },
   "startLearningDeck": "Start learning: {deckName}",
   "@startLearningDeck": {
     "description": "Message when starting to learn a deck",
@@ -626,6 +644,10 @@
   "filterAll": "All",
   "@filterAll": {
     "description": "Filter chip label meaning no filter / show everything"
+  },
+  "studyTagFilterTitle": "Study by tag",
+  "@studyTagFilterTitle": {
+    "description": "Title for the deck study tag filter bottom sheet"
   },
   "tagFacts": "Facts",
   "@tagFacts": {

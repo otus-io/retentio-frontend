@@ -6,6 +6,32 @@ import 'package:retentio/services/index.dart';
 import 'package:retentio/utils/log.dart';
 
 class CardService {
+  /// 获取卡组卡片统计，可选 [tagId] 限定到带该标签的词条对应卡片。
+  static Future<int?> getCardsCount(String deckId, {String? tagId}) async {
+    try {
+      final res = await ApiService.get(
+        Api.cards,
+        pathParams: {'id': deckId},
+        queryParams: tagId != null ? {'tag_id': tagId} : null,
+      );
+      final data = res?.data;
+      if (data is! Map) return null;
+
+      final totalCards = data['total_cards'];
+      if (totalCards is num) return totalCards.toInt();
+
+      final stats = data['stats'];
+      if (stats is Map) {
+        final cardsCount = stats['cards_count'];
+        if (cardsCount is num) return cardsCount.toInt();
+      }
+      return null;
+    } catch (e) {
+      logger.e(e);
+      return null;
+    }
+  }
+
   /// 获取下一张需要学习的卡片，可选 tagId 筛选
   static Future<CardDetail?> getNextDueCard(
     String deckId, {
