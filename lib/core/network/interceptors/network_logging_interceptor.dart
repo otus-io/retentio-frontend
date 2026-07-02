@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:retentio/core/network/dio_error_log.dart';
 import 'package:retentio/utils/log.dart';
 
 Object _loggableResponseData(dynamic data) {
@@ -58,13 +59,7 @@ class NetworkLoggingInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    logger.e({
-      'onError': {
-        'err_url': err.requestOptions.uri,
-        'err_type': err.type,
-        'err_message': err,
-      },
-    });
+    logDioError('NetworkLoggingInterceptor.onError', err);
     handler.next(err);
   }
 }
