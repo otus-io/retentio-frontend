@@ -82,7 +82,13 @@ class CardService {
         params: params,
       );
 
-      if (res?.data.isEmpty) {
+      final data = res?.data;
+      final isEmptyData =
+          data == null ||
+          (data is Map && data.isEmpty) ||
+          (data is List && data.isEmpty) ||
+          (data is String && data.isEmpty);
+      if (isEmptyData) {
         return null; // 没有需要学习的卡片
       }
 

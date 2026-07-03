@@ -1,18 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:retentio/core/network/dio_error_log.dart';
 import 'package:retentio/utils/log.dart';
-
-Object _loggableResponseData(dynamic data) {
-  if (data == null) return 'null';
-  if (data is Map || data is List) return data;
-  if (data is String) {
-    final n = data.length;
-    return n > 256 ? 'String(length=$n)' : data;
-  }
-  if (data is ResponseBody) {
-    return 'ResponseBody (binary, omitted)';
-  }
-  return '${data.runtimeType}';
-}
 
 Map<String, Object?> _headersForLog(Map<String, dynamic>? headers) {
   if (headers == null || headers.isEmpty) {
@@ -51,20 +39,14 @@ class NetworkLoggingInterceptor extends Interceptor {
   ) async {
     logger.d({
       'Request': response.requestOptions.uri.toString(),
-      'Response': _loggableResponseData(response.data),
+      'Response': loggableResponseData(response.data),
     });
     handler.next(response);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    logger.e({
-      'onError': {
-        'err_url': err.requestOptions.uri,
-        'err_type': err.type,
-        'err_message': err,
-      },
-    });
+    logDioError('NetworkLoggingInterceptor.onError', err);
     handler.next(err);
   }
 }

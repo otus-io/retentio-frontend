@@ -4,9 +4,9 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
 import 'package:retentio/core/network/api_error_mapper.dart';
+import 'package:retentio/core/network/dio_error_log.dart';
 import 'package:retentio/models/api_response.dart';
 import 'package:retentio/services/index.dart';
-import 'package:retentio/utils/log.dart';
 
 final NetworkDioClient networkDioClient = NetworkDioClient.instance;
 
@@ -294,8 +294,7 @@ class NetworkDioClient {
   }
 
   ApiResponse _handleError(DioException e) {
-    logger.e('network error: $e ${e.requestOptions.uri}');
-    logger.e('response: ${e.response}');
+    logDioError('NetworkDioClient._handleError', e);
     return mapDioExceptionToApiResponse(e);
   }
 
