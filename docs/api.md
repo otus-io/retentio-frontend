@@ -122,7 +122,7 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/api/decks/{id}/card`                        | PATCH  | Update card interval or visibility (by card_id)                                                                                                                                                 |
 | `/api/decks/{id}/cards`                       | GET    | Get card stats (total, hidden count, hidden facts). Optional query: `tag_id` to filter cards by fact tag in this deck.                                                                        |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE | Delete a single card (fact and other cards unchanged)                                                                                                                                           |
-| `/api/decks/{id}/reschedule`                  | POST   | Reschedule deck cards (shift due dates by N days)                                                                                                                                               |
+| `/api/decks/{id}/reschedule`                  | POST   | **Not wired** — route not registered on the current server; **404** (typically no JSON `{ "msg" }` body). See [Reschedule deck](#reschedule-deck). |
 | `/api/tags`                                   | POST   | Create a tag (`name`, optional `description`). **201** on success.                                                                                                                              |
 | `/api/tags`                                   | GET    | List all tags for the current user. Each tag includes `deck_count`, `fact_count`, `used_on`. Optional query: `used_on=deck` (user-wide) or `used_on=fact&deck_id={id}` (deck-scoped fact picker).             |
 | `/api/tags/{tagId}`                           | GET    | Get one tag                                                                                                                                                                                     |
@@ -579,26 +579,11 @@ See [rate-change-update.md](rate-change-update.md) for the full design.
 
 **Endpoint:** `POST /api/decks/{id}/reschedule`
 
-Shifts due dates and last_review of all cards in the deck by N days (1–365). Only allowed when the deck has overdue cards.
+> **Current server:** This route is **not registered** in `retentio-backend/api/main.go`. Requests return **404** from the router, typically **without** a JSON `{ "msg" }` body.
 
-**Request:**
+When implemented, this endpoint will shift `due_date` and `last_review` of all cards in the deck by N days (1–365), only when the deck has overdue cards. Planned request body: `{ "days": 5 }`. See `retentio-backend/docs/WIP-card-rescheduling.md`.
 
-```json
-{ "days": 5 }
-```
-
-**Response:**
-
-```json
-{
-  "data": {
-    "cards_shifted": 42,
-    "days": 5,
-    "max_days_away": 10
-  },
-  "meta": { "msg": "Successfully rescheduled 42 cards by 5 days" }
-}
-```
+**Related (available today):** `GET /api/decks/{id}/card` may include `meta.reschedule_suggested` and `meta.suggested_reschedule_days` when overdue backlog is large enough — that is read-only metadata, not this POST route.
 
 ---
 
@@ -2434,7 +2419,7 @@ Tag **name** validation (`POST /api/tags`, `PATCH /api/tags/{tagId}`, tag names 
 | `/api/decks/{id}/card`                        | PATCH       | Interval: `{ "data": { "last_review", "due_date", "new_interval" }, "meta": { "msg" } }`; visibility: `{ "data": { "hidden_status" }, "meta": { "msg" } }` |
 | `/api/decks/{id}/cards`                       | GET         | Optional query `tag_id`. Response shape unchanged: `{ "data": { "total_cards", "hidden_count", "hidden_facts", "orphaned_hidden_cards" }, "meta": { "msg" } }` |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE      | `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                                             |
-| `/api/decks/{id}/reschedule`                  | POST        | `{ "data": { "cards_shifted", "days", "max_days_away" }, "meta": { "msg" } }`                                                                              |
+| `/api/decks/{id}/reschedule`                  | POST        | **Not wired** — **404** (typically no JSON `{ "msg" }` body). See [Reschedule deck](#reschedule-deck). |
 | `/api/decks/catalog`                          | GET         | `{ "data": { "decks": [ … ] }, "meta": { "msg", "count", "total", "limit", "offset", "has_more" } }` — defaults `limit` 50, `offset` 0; optional `query` |
 | `/api/decks/catalog/{id}`                     | GET         | `{ "data": { "id", "name", "description", "owner", "fields", "published_version", "fact_count", "deck_tag_names", "published_at" }, "meta": { "msg" } }` — one catalog row; **404** if not importable |
 | `/api/decks/import`                           | POST        | **201** — `{ "data": { "id", "source_deck_id", "source_version", "imported_at" }, "meta": { "msg" } }`                                                    |

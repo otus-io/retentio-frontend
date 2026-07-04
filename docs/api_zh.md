@@ -122,7 +122,7 @@
 | `/api/decks/{id}/card`                        | PATCH  | 更新卡片间隔或可见性（按 card_id）                                                                                                                   |
 | `/api/decks/{id}/cards`                       | GET    | 获取卡片统计。可选查询：`tag_id`，按当前卡组中该标签对应词条过滤卡片。                                                                             |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE | 删除单张卡片（词条及其他卡片不变）                                                                                                                   |
-| `/api/decks/{id}/reschedule`                  | POST   | 假期模式：按天数平移卡片复习计划                                                                                                                     |
+| `/api/decks/{id}/reschedule`                  | POST   | **未挂载** — 当前服务端未注册该路由；**404**（通常无 JSON `{ "msg" }` body）。见 [假期模式（平移复习计划）](#假期模式平移复习计划)。 |
 | `/api/tags`                                   | POST   | 创建标签（`name`、可选 `description`）。成功时 **201**。                                                                                             |
 | `/api/tags`                                   | GET    | 列出当前用户全部标签。每条含 `deck_count`、`fact_count`、`used_on`。可选查询：`used_on=deck`（用户范围）或 `used_on=fact&deck_id={id}`（词条选择器，须带卡组）。 |
 | `/api/tags/{tagId}`                           | GET    | 获取单个标签                                                                                                                                         |
@@ -583,26 +583,11 @@
 
 **接口：** `POST /api/decks/{id}/reschedule`
 
-将卡组内所有卡片的 due_date 与 last_review 按 N 天（1–365）平移。仅当卡组存在逾期卡片时允许调用。
+> **当前服务端：** 该路由**未在** `retentio-backend/api/main.go` 中注册。请求由路由器返回 **404**，通常**没有** JSON `{ "msg" }` body。
 
-**请求体：**
+实现后将把卡组内所有卡片的 `due_date` 与 `last_review` 按 N 天（1–365）平移，且仅当卡组存在逾期卡片时允许调用。计划请求体：`{ "days": 5 }`。见 `retentio-backend/docs/WIP-card-rescheduling.md`。
 
-```json
-{ "days": 5 }
-```
-
-**响应示例：**
-
-```json
-{
-  "data": {
-    "cards_shifted": 42,
-    "days": 5,
-    "max_days_away": 10
-  },
-  "meta": { "msg": "Successfully rescheduled 42 cards by 5 days" }
-}
-```
+**相关（当前可用）：** `GET /api/decks/{id}/card` 在逾期积压较大时可能在 `meta` 中返回 `reschedule_suggested` 与 `suggested_reschedule_days` — 仅为只读提示，不是本 POST 接口。
 
 ---
 
@@ -2436,7 +2421,7 @@ Accept: application/json
 | `/api/decks/{id}/card`                        | PATCH       | 间隔：`{ "data": { "last_review", "due_date", "new_interval" }, "meta": { "msg" } }`；可见性：`{ "data": { "hidden_status" }, "meta": { "msg" } }` |
 | `/api/decks/{id}/cards`                       | GET         | 可选查询 `tag_id`。形状不变：`{ "data": { "total_cards", "hidden_count", "hidden_facts", "orphaned_hidden_cards" }, "meta": { "msg" } }`              |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE      | `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                                       |
-| `/api/decks/{id}/reschedule`                  | POST        | `{ "data": { "cards_shifted", "days", "max_days_away" }, "meta": { "msg" } }`                                                                        |
+| `/api/decks/{id}/reschedule`                  | POST        | **未挂载** — **404**（通常无 JSON `{ "msg" }` body）。见 [假期模式（平移复习计划）](#假期模式平移复习计划)。 |
 | `/api/decks/catalog`                          | GET         | `{ "data": { "decks": [ … ] }, "meta": { "msg", "count", "total", "limit", "offset", "has_more" } }` — 默认 `limit` 50、`offset` 0；可选 `query` |
 | `/api/decks/catalog/{id}`                     | GET         | `{ "data": { "id", "name", "description", "owner", "fields", "published_version", "fact_count", "deck_tag_names", "published_at" }, "meta": { "msg" } }` — 单条目录记录；不可导入时 **404** |
 | `/api/decks/import`                           | POST        | **201** — `{ "data": { "id", "source_deck_id", "source_version", "imported_at" }, "meta": { "msg" } }`                                               |
