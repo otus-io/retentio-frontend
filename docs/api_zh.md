@@ -66,6 +66,7 @@
   - [下载媒体](#下载媒体)
   - [删除媒体](#删除媒体)
   - [在词条中使用媒体](#在词条中使用媒体)
+- [错误响应参考](#错误响应参考)
 - [响应示例速查](#响应示例速查)
 - [后续步骤](#后续步骤)
 
@@ -121,7 +122,7 @@
 | `/api/decks/{id}/card`                        | PATCH  | 更新卡片间隔或可见性（按 card_id）                                                                                                                   |
 | `/api/decks/{id}/cards`                       | GET    | 获取卡片统计。可选查询：`tag_id`，按当前卡组中该标签对应词条过滤卡片。                                                                             |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE | 删除单张卡片（词条及其他卡片不变）                                                                                                                   |
-| `/api/decks/{id}/reschedule`                  | POST   | 假期模式：按天数平移卡片复习计划                                                                                                                     |
+| `/api/decks/{id}/reschedule`                  | POST   | **未挂载** — 当前服务端未注册该路由；**404**（通常无 JSON `{ "msg" }` body）。见 [假期模式（平移复习计划）](#假期模式平移复习计划)。 |
 | `/api/tags`                                   | POST   | 创建标签（`name`、可选 `description`）。成功时 **201**。                                                                                             |
 | `/api/tags`                                   | GET    | 列出当前用户全部标签。每条含 `deck_count`、`fact_count`、`used_on`。可选查询：`used_on=deck`（用户范围）或 `used_on=fact&deck_id={id}`（词条选择器，须带卡组）。 |
 | `/api/tags/{tagId}`                           | GET    | 获取单个标签                                                                                                                                         |
@@ -582,26 +583,11 @@
 
 **接口：** `POST /api/decks/{id}/reschedule`
 
-将卡组内所有卡片的 due_date 与 last_review 按 N 天（1–365）平移。仅当卡组存在逾期卡片时允许调用。
+> **当前服务端：** 该路由**未在** `retentio-backend/api/main.go` 中注册。请求由路由器返回 **404**，通常**没有** JSON `{ "msg" }` body。
 
-**请求体：**
+实现后将把卡组内所有卡片的 `due_date` 与 `last_review` 按 N 天（1–365）平移，且仅当卡组存在逾期卡片时允许调用。计划请求体：`{ "days": 5 }`。见 `retentio-backend/docs/WIP-card-rescheduling.md`。
 
-```json
-{ "days": 5 }
-```
-
-**响应示例：**
-
-```json
-{
-  "data": {
-    "cards_shifted": 42,
-    "days": 5,
-    "max_days_away": 10
-  },
-  "meta": { "msg": "Successfully rescheduled 42 cards by 5 days" }
-}
-```
+**相关（当前可用）：** `GET /api/decks/{id}/card` 在逾期积压较大时可能在 `meta` 中返回 `reschedule_suggested` 与 `suggested_reschedule_days` — 仅为只读提示，不是本 POST 接口。
 
 ---
 
@@ -2103,6 +2089,313 @@ Accept: application/json
 
 ---
 
+## 错误响应参考
+
+所有 JSON API 错误使用同一结构——**没有数字型应用错误码**，只有 HTTP 状态码和字符串 `msg`：
+
+```json
+{ "msg": "Deck not found" }
+```
+
+成功响应则为 `{ "data": …, "meta": … }`（见 [响应示例速查](#响应示例速查)）。
+
+> **权威来源：** `retentio-backend/api/`（`auth/`、`deck/`）中的 handler。本节反映当前后端；服务端变更时请对照 `helpers.Msg("…")` 与 `RespondWithException` 调用更新文档。
+> **`msg` 为英文：** 后端返回的 `msg` 字符串均为英文（如下表所示）。客户端可直接展示或自行映射为中文 UI 文案。
+
+### HTTP 状态码
+
+| 代码 | 含义 | 客户端建议处理 |
+| ---- | ---- | -------------- |
+| **400** | 错误请求 — 校验失败、JSON 格式错误、业务规则不满足 | 向用户展示 `msg`；修正请求 |
+| **401** | 未授权 — JWT 缺失/无效/已撤销 | 跳转登录；清除本地 token |
+| **403** | 禁止访问 — 已登录但无权限 | 展示 `msg`；勿在无权限变更时重试 |
+| **404** | 未找到 — 卡组、词条、卡片、标签、媒体、用户、目录项 | 视为已删除或 ID 无效 |
+| **409** | 冲突 — 资源重复或状态不允许 | 如用户名已占用、已发布卡组不可删、模板重复 |
+| **413** | 请求体过大 — 媒体上传超限 | 压缩或拆分文件 |
+| **415** | 不支持的媒体类型 | 使用支持的图片/音频/视频/JSON 格式 |
+| **429** | 请求过多 — 反馈每日上限 | 下一 UTC 日再试 |
+| **500** | 服务器内部错误 | 稍后重试；记录 `msg` 便于排查 |
+| **304** | 未修改 — 媒体下载（`If-None-Match`） | 使用本地缓存（无 JSON body） |
+| **206** | 部分内容 — 媒体 Range 下载 | 使用返回的字节范围（无 JSON body） |
+
+未注册的路由（例如 **`POST /api/decks/{id}/reschedule`** — 文档中有描述但**当前服务端未挂载**）由路由器返回 **404**，通常**没有** JSON `{ "msg" }` body。
+
+### 通用错误
+
+以下错误常见于多个需认证的接口。
+
+| 状态 | `msg` | 触发条件 |
+| ---- | ----- | -------- |
+| **401** | `Authorization token required` | 受保护接口缺少 `Authorization` 头 |
+| **401** | `Invalid or expired token` | JWT 解析/校验失败 |
+| **401** | `Token has been revoked` | token 已登出（黑名单） |
+| **401** | `User not found` | JWT 中的用户名在 Redis 中不存在 |
+| **400** | `Invalid request payload` | 请求体非合法 JSON 或结构错误 |
+| **404** | `Deck not found` | 未知卡组 ID 或非当前用户所有 |
+| **403** | `Not authorized to access this deck` | GET 他人卡组 |
+| **403** | `Not authorized to modify this deck` | POST/PATCH/DELETE 他人卡组 |
+| **403** | `Not authorized to delete this deck` | DELETE 他人卡组 |
+| **403** | `Not authorized` | 共享相关接口，调用者非所有者 |
+| **500** | `Error retrieving deck` | 读取卡组时 Redis/IO 失败 |
+| **500** | `Error parsing deck data` | 存储中卡组 JSON 损坏 |
+
+---
+
+### 身份验证（`/auth/*`）
+
+| 接口 | 状态 | `msg` |
+| ---- | ---- | ----- |
+| `POST /auth/register` | **400** | `Invalid request payload` |
+| | **400** | `Username, password, and email are required` |
+| | **409** | `Username already exists` |
+| | **409** | `Email already in use` |
+| | **500** | `Error checking username`、`Error checking email`、`Could not hash password`、`Error serializing user data`、`Error creating user` |
+| `POST /auth/login` | **400** | `Invalid request payload` |
+| | **400** | `Username and password are required` |
+| | **401** | `Invalid credentials` |
+| | **500** | `Error retrieving user data`、`Error parsing user data`、`Could not generate token` |
+| `POST /auth/logout` | **401** | `Authorization token required`、`Invalid or expired token` |
+| | **500** | `Error logging out` |
+| `POST /auth/forgot-password` | **400** | `Invalid request payload`、`Email is required` |
+| | **500** | `Error generating reset token`、`Error storing reset token` |
+| `POST /auth/reset-password` | **400** | `Invalid request payload`、`Token and new password are required`、`Invalid or expired reset token`、`User not found for reset token` |
+| | **500** | `Error validating reset token`、`Error retrieving user data`、`Error parsing user data`、`Could not hash password`、`Error serializing user data`、`Error resetting password` |
+
+> **`POST /auth/forgot-password`** 在邮箱不存在时仍返回 **200**（防枚举）。该情况下无错误 body。
+
+---
+
+### 用户资料
+
+| 接口 | 状态 | `msg` |
+| ---- | ---- | ----- |
+| `GET /api/profile` | **404** | `User not found` |
+| | **500** | `Error retrieving user profile`、`Error parsing user data` |
+
+另受 [JWT 中间件错误](#通用错误) 约束。
+
+---
+
+### 卡组
+
+| 接口 | 状态 | `msg` |
+| ---- | ---- | ----- |
+| `POST /api/decks` | **400** | `Deck name is required` |
+| | **400** | `fields must contain at least one column name` |
+| | **400** | `each column name must be non-empty` |
+| | **400** | `Rate is required and must be between 1 and 1000` |
+| | **400** | `provide either tags or tag_ids, not both` |
+| | **400** | `deck description contains invalid characters` |
+| | **400** | `deck description must be at most 500 characters` |
+| | **400** | `tag id is required` |
+| | **400** | `maximum tags per deck reached` |
+| | **400** | 标签名校验（`tag name is required`、`tag name contains invalid characters`、`tag name is too long`） |
+| | **404** | `tag not found` |
+| | **500** | `Error resolving deck tags`、`Error generating deck ID`、`Failed to marshal deck`、`Error creating deck`、`Error preparing deck media storage` |
+| `PATCH /api/decks/{id}` | **400** | `Deck name is required` |
+| | **400** | `Rate value must be between 1 and 1000` |
+| | **400** | `invalid visibility` |
+| | **400** | `cannot change visibility after publishing` |
+| | **400** | `cannot change visibility on an imported deck` |
+| | **400** | `cannot change fields on an imported deck` |
+| | **400** | `cannot change name on an imported deck` |
+| | **400** | `cannot change description on an imported deck` |
+| | **400** | `Rate is required for imported deck updates` |
+| | **400** | `deck description contains invalid characters` / `deck description must be at most 500 characters` |
+| | **500** | `Error serializing deck data`、`Error loading cards for deck`、`Error rescheduling unseen cards`、`Error updating deck and cards`、`Error updating deck` |
+| `DELETE /api/decks/{id}` | **409** | `published decks cannot be deleted` |
+| | **500** | `Error loading facts for deck deletion`、`Error cleaning up tags`、`Error deleting deck`、`Error revoking import media grants` |
+| `GET /api/decks`、`GET /api/decks/{id}` | **500** | `Error retrieving decks`、`Error retrieving deck data` |
+
+---
+
+### 卡组共享
+
+| 接口 | 状态 | `msg` |
+| ---- | ---- | ----- |
+| `GET /api/decks/catalog` | **500** | `Error listing catalog decks` |
+| `GET /api/decks/catalog/{id}` | **404** | `Deck not found in catalog` |
+| | **500** | `Error loading catalog deck` |
+| `POST /api/decks/{id}/publish` | **400** | `first publish requires visibility public` |
+| | **400** | `invalid visibility` |
+| | **400** | `cannot change visibility after publishing` |
+| | **400** | `cannot publish an imported deck` |
+| | **403** | `Not authorized` |
+| | **404** | `Deck not found` |
+| | **409** | `no changes to publish` |
+| | **500** | 其他发布失败（`msg` 为原始 `err.Error()`） |
+| `POST /api/decks/import` | **400** | `source_deck_id is required` |
+| | **400** | `maximum number of tags reached`、`maximum tags per deck reached`、`maximum fact tags per deck reached` |
+| | **403** | `source deck is not importable`、`source deck has not been published`、`cannot import an imported deck`、`cannot import your own deck` |
+| | **404** | `source deck not found` |
+| | **500** | 其他导入失败 |
+| `GET /api/decks/{id}/updates` | **400** | `updates are only available for imported decks` |
+| | **400** | `not an imported deck`、`source deck missing`、…（原始 `err.Error()`） |
+| `POST /api/decks/{id}/sync` | **400** | `not an imported deck`、`invalid target version`、…（原始 `err.Error()`） |
+
+---
+
+### 词条
+
+| 接口 | 状态 | `msg` |
+| ---- | ---- | ----- |
+| `POST /api/decks/{id}/facts/{operation}` | **403** | `cannot modify facts on an imported deck` |
+| | **400** | `Facts array is required` |
+| | **400** | `Invalid operation. Supported: append, prepend, shuffle, spread.` |
+| | **400** | `Deck rate must be at least 1 to add facts` |
+| | **400** | `provide either tags or tag_ids, not both` |
+| | **400** | `tag id is required` |
+| | **400** | `maximum fact tags per deck reached` |
+| | **400** | `maximum number of tags reached`、`maximum tags per deck reached` |
+| | **400** | `at least one fact is required` |
+| | **400** | `fact {i}: at least one entry is required` |
+| | **400** | `fact {i}: at least one entry must have text, audio, image, video, or json` |
+| | **400** | `template invalid` |
+| | **400** | 标签名校验错误（规则同 `POST /api/tags`） |
+| | **404** | `tag not found` |
+| | **500** | `Error adding facts and cards`、`Error merging facts into deck` |
+| `PATCH /api/decks/{id}/facts/{factId}` | **403** | `cannot modify facts on an imported deck` |
+| | **400** | `at least one entry must have text, audio, image, video, or json` |
+| | **404** | `Fact not found` |
+| | **500** | `Error serializing fact data`、`Error rebuilding card template`、`Error retrieving cards`、`Error serializing card data`、`Error serializing deck data`、`Error updating fact` |
+| `DELETE /api/decks/{id}/facts/{factId}` | **403** | `cannot modify facts on an imported deck` |
+| | **404** | `Fact not found` |
+| | **500** | `Error removing fact tags`、`Error removing fact from deck`、`Error retrieving cards`、`Error serializing deck data`、`Error deleting fact` |
+| `GET /api/decks/{id}/facts`、`GET …/facts/{factId}` | **500** | `Error retrieving facts`、`Error retrieving fact tags`、`Error checking fact existence` |
+
+---
+
+标签 **名称** 校验（`POST /api/tags`、`PATCH /api/tags/{tagId}`，以及创建卡组/词条时的标签名）：
+
+| 状态 | `msg` |
+| ---- | ----- |
+| **400** | `tag name is required` |
+| **400** | `tag name contains invalid characters` |
+| **400** | `tag name is too long`（最长 **50** 字符） |
+
+### 标签接口
+
+| 接口 | 状态 | `msg` |
+| ---- | ---- | ----- |
+| `POST /api/tags` | **400** | `maximum number of tags reached`（每用户 1000 个） |
+| | **409** | `tag name already exists` |
+| | **500** | `Error checking tags`、`Error checking tag name`、`Error generating tag id`、`Error creating tag`、`Error serializing tag`、`Error saving tag` |
+| `GET /api/tags` | **400** | `invalid used_on filter` |
+| | **400** | `used_on is required when deck_id is set` |
+| | **400** | `deck_id is required when used_on is fact` |
+| | **500** | `Error retrieving tags` |
+| `GET/PATCH/DELETE /api/tags/{tagId}` | **404** | `tag not found` |
+| | **409** | `tag name already exists`（PATCH 重命名） |
+| | **500** | 各类 `Error retrieving/updating/deleting tag` |
+| 卡组/词条标签 `PUT`/`DELETE` | **400** | `maximum tags per deck reached`（卡组 PUT） |
+| | **400** | `maximum fact tags per deck reached`（词条 PUT） |
+| | **404** | `Deck not found`、`Fact not found`、`tag not found` |
+| | **500** | `Error associating tag`、`Error removing tag`、`Error loading tags`、… |
+
+---
+
+### 卡片
+
+| 接口 | 状态 | `msg` |
+| ---- | ---- | ----- |
+| `POST /api/decks/{id}/card` | **400** | `fact_id is required` |
+| | **400** | `template is required (e.g. [[0],[1]] or [[1],[0]])` |
+| | **400** | `invalid template: must be [[front indices], [back indices]] with disjoint indices in 0..{n-1} for this fact ({n} entries)` |
+| | **400** | `template already exists for this fact` |
+| | **400** | `Invalid operation. Supported: append, prepend, shuffle, spread.` |
+| | **400** | `Deck rate must be at least 1 to add facts` |
+| | **404** | `Fact not found` |
+| | **500** | `Error parsing fact data`、`Error retrieving cards`、`Error generating card ID`、`Error merging card into deck`、`Error serializing card data`、`Error serializing deck data`、`Error adding card` |
+| `GET /api/decks/{id}/card` | **400** | `something went wrong, interval is 0 or negative, try delete fact id: {factId}` |
+| | **404** | `Fact not found` |
+| | **404** | `tag not found`（设置了 `tag_id` 查询参数时） |
+| | **500** | `Card template invalid for fact`、`Error serializing card data`、`Error updating card in Redis`、`Error retrieving cards`、`Error retrieving facts`、`Error retrieving tag` |
+| `PATCH /api/decks/{id}/card` | **400** | `card_id is required` |
+| | **400** | `card_id must be a non-empty string` |
+| | **400** | `Must include either "interval" or "hidden" field` |
+| | **400** | `Cannot send both interval and hidden in the same request` |
+| | **400** | `last_review is required with interval updates` |
+| | **400** | `last_review is only valid with interval updates` |
+| | **400** | `last_review must be a numeric unix timestamp` |
+| | **400** | `last_review must be a whole number (unix timestamp)` |
+| | **400** | `last_review must be a positive unix timestamp` |
+| | **400** | `interval must be a number` |
+| | **400** | `interval must be a positive number` |
+| | **400** | `hidden must be a boolean` |
+| | **400** | `Unsupported operation, supported operations: interval, visibility` |
+| | **404** | `Card not found` |
+| | **500** | `Error checking card membership`、`Error parsing card data`、`Error serializing card data`、`Error updating card` |
+| `DELETE /api/decks/{id}/cards/{cardId}` | **404** | `Card not found` |
+| | **500** | `Error checking card`、`Error deleting card` |
+| `GET /api/decks/{id}/cards` | **404** | `tag not found`（设置了 `tag_id` 查询参数时） |
+| | **500** | `Error retrieving cards`、`Error retrieving facts`、`Error retrieving tag` |
+
+> **成功（200）但无待复习卡：** `GET …/card` 可能返回 `"card": []`，`meta.msg` 为 `No cards in this deck` 或 `No cards found, please add some facts to your deck` — **不是**错误。
+
+---
+
+### 媒体
+
+| 接口 | 状态 | `msg` |
+| ---- | ---- | ----- |
+| `POST /api/media` | **400** | `Invalid multipart form`、`Missing or invalid file field`、`deck_id is required` |
+| | **403** | `Not authorized to access this deck` |
+| | **404** | `Deck not found` |
+| | **409** | `client_id already in use` |
+| | **413** | `File too large` |
+| | **415** | `Unsupported media type`、`Invalid JSON document` 或 `unsupported media type: {mime}` |
+| | **500** | `Media storage not configured`、`Failed to check client_id`、`Failed to verify deck`、`Failed to read file`、`Failed to generate ID`、`Failed to prepare media storage`、`Failed to store file`、`Failed to save metadata` |
+| `GET /api/media`、`GET …/meta`、`GET …/{id}`、`DELETE …/{id}` | **400** | `version query parameter v is required when multiple import grants exist for this media` |
+| | **403** | `Access denied` |
+| | **404** | `Media not found`、`Media file not found` |
+| | **500** | `Media storage not configured`、`Failed to list media`、`Failed to load media` |
+
+---
+
+### 反馈（卡组共享）
+
+| 接口 | 状态 | `msg` |
+| ---- | ---- | ----- |
+| `POST /api/decks/{importId}/feedback` | **400** | `fact_id is required` |
+| | **400** | `feedback is only available on imported decks` |
+| | **400** | `source deck is not published` |
+| | **400** | `invalid category` |
+| | **400** | `message is required when proposed_entries is omitted` |
+| | **400** | `message must be between 1 and 2000 characters` |
+| | **400** | `entry_index out of range` |
+| | **400** | `proposed_entries must have content` |
+| | **400** | `proposed_entries length must match snapshot fact` |
+| | **400** | `proposed_entries must differ from snapshot` |
+| | **400** | `fact not in pinned snapshot` |
+| | **403** | `Not authorized` |
+| | **404** | `deck not found`、`source deck not found`、`fact not found` |
+| | **429** | `daily feedback limit exceeded`（每来源卡组每 UTC 日 20 条） |
+| | **500** | `Error submitting feedback` |
+| `GET /api/decks/{sourceId}/feedback` | **400** | `feedback inbox is only available on source decks` |
+| | **403** | `Not authorized` |
+| | **404** | `Deck not found` |
+| | **500** | `Error listing feedback` |
+| `PATCH …/feedback/{feedbackId}` | **400** | `invalid status` |
+| | **403** | `Not authorized` |
+| | **404** | `feedback not found`、`Deck not found` |
+| | **500** | `Error updating feedback` |
+| `POST …/feedback/{feedbackId}/accept` | **400** | `proposed_entries required to accept` |
+| | **404** | `feedback not found`、`fact not found on source deck`、`Deck not found` |
+| | **403** | `Not authorized` |
+| | **500** | `Error accepting feedback` |
+
+---
+
+### 客户端处理说明
+
+1. **解析错误：** 将 `response.body` 解析为 JSON，用 `msg` 作为用户可见文案；若 body 非 JSON，回退到 HTTP 状态文本。
+2. **401：** 清除本地 JWT 并返回登录。前端 `response_normalize_interceptor` 对 **401** 有特殊处理。
+3. **重试：** 仅 **500** 与 transient 网络错误适合重试；**400**/**403**/**404**/**409** 需用户或数据侧修正。
+4. **字符串匹配：** 优先匹配稳定子串（如 `cannot modify facts on an imported deck`），勿依赖每条 **500** 的完整文案（可能含内部细节）。
+5. **动态 `msg`：** 部分错误嵌入 ID 或索引（如 `fact 2: …`、`try delete fact id: abc123`）。按前缀模式识别错误类型即可。
+
+---
+
 ## 响应示例速查
 
 | 接口                                          | 方法        | 响应结构                                                                                                                                             |
@@ -2128,7 +2421,7 @@ Accept: application/json
 | `/api/decks/{id}/card`                        | PATCH       | 间隔：`{ "data": { "last_review", "due_date", "new_interval" }, "meta": { "msg" } }`；可见性：`{ "data": { "hidden_status" }, "meta": { "msg" } }` |
 | `/api/decks/{id}/cards`                       | GET         | 可选查询 `tag_id`。形状不变：`{ "data": { "total_cards", "hidden_count", "hidden_facts", "orphaned_hidden_cards" }, "meta": { "msg" } }`              |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE      | `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                                       |
-| `/api/decks/{id}/reschedule`                  | POST        | `{ "data": { "cards_shifted", "days", "max_days_away" }, "meta": { "msg" } }`                                                                        |
+| `/api/decks/{id}/reschedule`                  | POST        | **未挂载** — **404**（通常无 JSON `{ "msg" }` body）。见 [假期模式（平移复习计划）](#假期模式平移复习计划)。 |
 | `/api/decks/catalog`                          | GET         | `{ "data": { "decks": [ … ] }, "meta": { "msg", "count", "total", "limit", "offset", "has_more" } }` — 默认 `limit` 50、`offset` 0；可选 `query` |
 | `/api/decks/catalog/{id}`                     | GET         | `{ "data": { "id", "name", "description", "owner", "fields", "published_version", "fact_count", "deck_tag_names", "published_at" }, "meta": { "msg" } }` — 单条目录记录；不可导入时 **404** |
 | `/api/decks/import`                           | POST        | **201** — `{ "data": { "id", "source_deck_id", "source_version", "imported_at" }, "meta": { "msg" } }`                                               |

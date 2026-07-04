@@ -4,6 +4,78 @@
 
 Flutter client for Retentio. Entrypoint: `lib/main.dart`. Dependencies and SDK versions: `pubspec.yaml`.
 
+## Catalog
+
+### Flutter commands
+
+Run from the repository root (`retentio-frontend/`).
+
+#### Devices
+
+```bash
+flutter devices
+```
+
+| Command | Purpose |
+| ------- | ------- |
+| `flutter doctor` | Check toolchain and platform setup |
+| `flutter emulators` | List available emulators |
+| `flutter emulators --launch <emulator_id>` | Start an emulator |
+
+#### Run
+
+```bash
+flutter pub get
+flutter run
+flutter run -d <device_id>              # device ID or name from flutter devices
+flutter run -d <device_id> --dart-define=API_ENV=release
+flutter run -d <device_id> --release --dart-define=API_ENV=release
+```
+
+| Flag | Meaning |
+| ---- | ------- |
+| `-d <device_id>` | Target a specific device |
+| `--release` | Flutter release build mode (optimized, no debug tooling) |
+| `--dart-define=API_ENV=<env>` | API host mapping: `debug`, `dev`, or `release` (see table below) |
+| `--dart-define=API_HOST=<url>` | Override API base URL (takes precedence over `API_ENV`) |
+
+#### Build
+
+```bash
+flutter build apk --release --dart-define=API_ENV=release
+flutter build appbundle --release --dart-define=API_ENV=release
+flutter build ipa --release --dart-define=API_ENV=release
+```
+
+#### API environment (`lib/services/env.dart`)
+
+| `API_ENV` | Host | Default when omitted |
+| --------- | ---- | -------------------- |
+| `debug` | `http://localhost:8080` | — |
+| `dev` | `https://10.0.0.145:8443` | `flutter run` and other non-release builds |
+| `release` | `https://api.retentio.app:8443` | `--release` / product builds (`flutter build ipa`, Xcode Archive) |
+
+Extended reference: [docs/flutter_commands.md](docs/flutter_commands.md) ([中文](docs/flutter_commands_zh.md)).
+
+### Documentation
+
+| Document | Description |
+| -------- | ----------- |
+| [docs/flutter_commands.md](docs/flutter_commands.md) | Flutter CLI commands (devices, run, build, `API_ENV`) |
+| [docs/api.md](docs/api.md) | Frontend API usage ([中文](docs/api_zh.md)) |
+| [docs/frontend_tests.md](docs/frontend_tests.md) | Test commands and layout ([中文](docs/frontend_tests_zh.md)) |
+| [docs/contributing.md](docs/contributing.md) | Code conduct and PR guidelines ([中文](docs/contributing_zh.md)) |
+| [docs/pre_commit_hook.md](docs/pre_commit_hook.md) | Pre-commit hook setup ([中文](docs/pre_commit_hook_zh.md)) |
+| [docs/cursor_rules.md](docs/cursor_rules.md) | Cursor AI project rules ([中文](docs/cursor_rules_zh.md)) |
+| [docs/ui_component_standardization.md](docs/ui_component_standardization.md) | Shared UI component standards ([中文](docs/ui_component_standardization_zh.md)) |
+| [docs/card-text-markup.md](docs/card-text-markup.md) | Wiki-style ruby markup on cards |
+| [docs/deck-font-ruby-typography.md](docs/deck-font-ruby-typography.md) | Deck font sheet and ruby typography |
+| [docs/plan_add_facts.md](docs/plan_add_facts.md) | Add-facts feature plan |
+| [docs/api_progress_tracker.md](docs/api_progress_tracker.md) | API integration progress tracker |
+| [docs/bug_tracker.md](docs/bug_tracker.md) | Known bugs and fixes |
+| [docs/card_tests.md](docs/card_tests.md) | Card integration test notes |
+| [docs/typography_global_audit_and_migration.md](docs/typography_global_audit_and_migration.md) | Typography audit and migration |
+
 ## Getting started
 
 From the repository root:
@@ -13,38 +85,11 @@ flutter pub get
 flutter run
 ```
 
+See [Catalog](#catalog) for device selection, release builds, and `API_ENV`.
+
 `ios/Flutter/Generated.xcconfig` is **generated** by Flutter and listed in `.gitignore`. If Xcode reports it missing (for example from `Release.xcconfig`), run **`flutter pub get`** again from the repo root before opening or archiving **`ios/Runner.xcworkspace`**.
 
 If plugins fail with **`Flutter/Flutter.h` file not found**, run **`flutter pub get`** then **`cd ios && pod install`** on **this Mac** so CocoaPods picks up your local Flutter engine paths (they are not portable across machines).
-
-### Backend environment / host override
-
-API host is compile-time configured via `--dart-define`:
-
-- `API_ENV=debug|dev|release`. If omitted: **`release`** in release/product builds (e.g. `flutter build ipa`, Xcode Archive); **`dev`** for normal `flutter run` and other non-release builds.
-- `API_HOST=<full-base-url>` (overrides `API_ENV` mapping when provided)
-
-Examples:
-
-```bash
-# Use env mapping
-flutter run --dart-define=API_ENV=debug
-flutter run --dart-define=API_ENV=dev
-flutter run --dart-define=API_ENV=release
-
-# Point a release/IPA build at staging (optional)
-flutter build ipa --dart-define=API_ENV=dev
-
-# Direct host override (takes precedence over API_ENV)
-flutter run --dart-define=API_HOST=http://10.0.2.2:8080
-flutter run --dart-define=API_HOST=https://api-staging.example.com
-```
-
-Current host mapping in `lib/services/env.dart`:
-
-- `debug` -> `http://localhost:8080`
-- `dev` -> `https://10.0.0.145:8443`
-- `release` -> `https://api.retentio.app:8443`
 
 ## Git hooks
 
@@ -63,10 +108,6 @@ Full guide: [docs/pre_commit_hook_zh.md](docs/pre_commit_hook_zh.md) · [English
 | `lib/core/di/` | Dependency injection setup and composition roots for feature wiring. |
 | `lib/features/auth/` | Auth feature module (BLoC/use cases/repositories/data sources). |
 | `lib/features/deck_study/` | Deck study feature module under Clean boundaries. |
-
-## Documentation
-
-- **API:** [docs/api.md](docs/api.md) ([中文](docs/api_zh.md))
 
 ## `lib/` — application code
 
