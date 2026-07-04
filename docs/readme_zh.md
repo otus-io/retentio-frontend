@@ -4,6 +4,78 @@
 
 Retentio 的 Flutter 客户端。入口：`lib/main.dart`。依赖与 SDK 版本见 `pubspec.yaml`。
 
+## 目录
+
+### Flutter 命令
+
+在仓库根目录（`retentio-frontend/`）执行。
+
+#### 设备
+
+```bash
+flutter devices
+```
+
+| 命令 | 用途 |
+| ---- | ---- |
+| `flutter doctor` | 检查工具链与平台环境 |
+| `flutter emulators` | 列出可用模拟器 |
+| `flutter emulators --launch <emulator_id>` | 启动模拟器 |
+
+#### 运行
+
+```bash
+flutter pub get
+flutter run
+flutter run -d <device_id>              # 设备 ID 或 flutter devices 中的名称
+flutter run -d <device_id> --dart-define=API_ENV=release
+flutter run -d <device_id> --release --dart-define=API_ENV=release
+```
+
+| 参数 | 含义 |
+| ---- | ---- |
+| `-d <device_id>` | 指定设备 |
+| `--release` | Flutter 正式构建模式（优化、无调试工具） |
+| `--dart-define=API_ENV=<env>` | API 主机映射：`debug`、`dev` 或 `release`（见下表） |
+| `--dart-define=API_HOST=<url>` | 覆盖 API 根地址（优先于 `API_ENV`） |
+
+#### 构建
+
+```bash
+flutter build apk --release --dart-define=API_ENV=release
+flutter build appbundle --release --dart-define=API_ENV=release
+flutter build ipa --release --dart-define=API_ENV=release
+```
+
+#### API 环境（`lib/services/env.dart`）
+
+| `API_ENV` | 主机 | 未指定时的默认 |
+| --------- | ---- | -------------- |
+| `debug` | `http://localhost:8080` | — |
+| `dev` | `https://10.0.0.145:8443` | `flutter run` 等非 release 构建 |
+| `release` | `https://api.retentio.app:8443` | `--release` / 正式构建（`flutter build ipa`、Xcode Archive） |
+
+完整说明：[flutter_commands_zh.md](flutter_commands_zh.md)（[English](flutter_commands.md)）。
+
+### 文档
+
+| 文档 | 说明 |
+| ---- | ---- |
+| [flutter_commands_zh.md](flutter_commands_zh.md) | Flutter CLI 命令（设备、运行、构建、`API_ENV`） |
+| [api_zh.md](api_zh.md) | 前端 API 用法（[English](api.md)） |
+| [frontend_tests_zh.md](frontend_tests_zh.md) | 测试命令与结构（[English](frontend_tests.md)） |
+| [contributing_zh.md](contributing_zh.md) | 代码规范与 PR 流程（[English](contributing.md)） |
+| [pre_commit_hook_zh.md](pre_commit_hook_zh.md) | Pre-commit 钩子（[English](pre_commit_hook.md)） |
+| [cursor_rules_zh.md](cursor_rules_zh.md) | Cursor AI 项目规则（[English](cursor_rules.md)） |
+| [ui_component_standardization_zh.md](ui_component_standardization_zh.md) | 共享 UI 组件规范（[English](ui_component_standardization.md)） |
+| [card-text-markup.md](card-text-markup.md) | 卡片 wiki 式 ruby 标记 |
+| [deck-font-ruby-typography.md](deck-font-ruby-typography.md) | 卡组字体面板与 ruby 排版 |
+| [plan_add_facts.md](plan_add_facts.md) | 添加知识点功能计划 |
+| [api_progress_tracker.md](api_progress_tracker.md) | API 对接进度追踪 |
+| [bug_tracker.md](bug_tracker.md) | 已知问题与修复 |
+| [card_tests.md](card_tests.md) | 卡片集成测试说明 |
+| [typography_global_audit_and_migration.md](typography_global_audit_and_migration.md) | 全局字体审计与迁移 |
+
 ## 快速开始
 
 在仓库根目录执行：
@@ -13,22 +85,9 @@ flutter pub get
 flutter run
 ```
 
+设备选择、正式构建与 `API_ENV` 见 [目录](#目录)。
+
 `ios/Flutter/Generated.xcconfig` 由 Flutter **生成**且已在 `.gitignore` 中。若 Xcode 提示找不到该文件，请在仓库根目录再次执行 **`flutter pub get`**，并打开 **`ios/Runner.xcworkspace`** 进行构建或归档。
-
-### 后端环境与 API 地址
-
-通过 `--dart-define` 在编译期配置（实现见 `lib/services/env.dart`）：
-
-- `API_ENV=debug|dev|release`。未指定时：**release / 正式构建**（如 `flutter build ipa`、Xcode Archive）默认连 **生产**；日常 `flutter run` 等非 release 构建默认 **dev**。
-- `API_HOST=<完整 base URL>` 若非空，则覆盖 `API_ENV` 对应的主机。
-
-主机映射：
-
-- `debug` → `http://localhost:8080`
-- `dev` → `https://10.0.0.145:8443`
-- `release` → `https://api.retentio.app:8443`
-
-示例：`flutter build ipa --dart-define=API_ENV=dev` 可在正式包中指向开发环境。
 
 ## Git 钩子
 
@@ -47,10 +106,6 @@ flutter run
 | `lib/core/di/` | 依赖注入配置与组合根（composition root），负责功能模块装配。 |
 | `lib/features/auth/` | 认证功能模块（BLoC/use case/repository/data source）。 |
 | `lib/features/deck_study/` | 卡组学习功能模块，按 Clean 边界组织。 |
-
-## 文档
-
-- **API 文档：** [api_zh.md](api_zh.md)（[English](api.md)）
 
 ## `lib/` — 应用代码
 
