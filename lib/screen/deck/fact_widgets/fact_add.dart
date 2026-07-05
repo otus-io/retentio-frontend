@@ -213,6 +213,7 @@ class _FactAddState extends ConsumerState<FactAdd>
         ) async {
           if (path == null) return true;
           final id = await MediaService.upload(
+            deckId: widget.deck.id,
             filePath: path,
             slotKind: kind,
             clientId: newMediaClientId(),

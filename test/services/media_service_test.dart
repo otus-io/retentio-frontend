@@ -1,9 +1,59 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retentio/core/network/network.dart';
 import 'package:retentio/services/apis/media_service.dart';
 
+class _FakeMediaUploadAdapter implements HttpClientAdapter {
+  String? capturedDeckId;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    final isMediaUpload =
+        options.method == 'POST' && options.path.endsWith('/api/media');
+    if (!isMediaUpload) {
+      return _jsonResponse({'code': -1, 'msg': 'not found', 'data': null}, 404);
+    }
+
+    final form = options.data;
+    if (form is FormData) {
+      for (final field in form.fields) {
+        if (field.key == 'deck_id') {
+          capturedDeckId = field.value;
+        }
+      }
+    }
+
+    return _jsonResponse({
+      'code': 0,
+      'msg': 'media uploaded',
+      'data': {'id': 'media123'},
+    }, 201);
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+ResponseBody _jsonResponse(Map<String, dynamic> body, int statusCode) {
+  return ResponseBody.fromString(
+    jsonEncode(body),
+    statusCode,
+    headers: {
+      Headers.contentTypeHeader: [Headers.jsonContentType],
+    },
+  );
+}
+
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   group('MediaService.classifyFile', () {
     test('recognizes voice-related extensions', () {
       expect(MediaService.classifyFile('/tmp/x.m4a'), MediaSlotKind.audio);
@@ -94,6 +144,41 @@ void main() {
         await MediaService.precheckSlot(MediaSlotKind.image, f.path),
         MediaPrecheck.fileTooLarge,
       );
+    });
+  });
+
+  group('MediaService.upload', () {
+    late Directory dir;
+    late _FakeMediaUploadAdapter adapter;
+
+    setUp(() {
+      dir = Directory.systemTemp.createTempSync('retentio_media_upload_test_');
+      adapter = _FakeMediaUploadAdapter();
+      networkDioClient.configure(
+        baseUrl: 'http://localhost',
+        options: BaseOptions(),
+      );
+      networkDioClient.dio.httpClientAdapter = adapter;
+    });
+
+    tearDown(() {
+      if (dir.existsSync()) {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
+    test('includes deck_id in multipart form', () async {
+      final f = File('${dir.path}/clip.m4a');
+      await f.writeAsBytes([0, 1, 2]);
+
+      final id = await MediaService.upload(
+        deckId: 'deck-abc',
+        filePath: f.path,
+        slotKind: MediaSlotKind.audio,
+      );
+
+      expect(id, 'media123');
+      expect(adapter.capturedDeckId, 'deck-abc');
     });
   });
 }
