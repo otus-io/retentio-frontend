@@ -58,3 +58,60 @@ CardDetail sampleCardDetail({bool hidden = false}) {
     },
   });
 }
+
+/// Three back fields for stacked layout widget tests.
+CardDetail sampleMultiFieldCardDetail() {
+  return CardDetail.fromJson({
+    'urgency': 0.5,
+    'card': {
+      'id': 'card-multi-1',
+      'fact_id': 'fact-multi-1',
+      'hidden': false,
+      'created_at': 1,
+      'due_date': 9999999999,
+      'last_review': 1,
+      'template': [
+        [0],
+        [1, 2, 3],
+      ],
+      'front': [
+        {
+          'field': 'Word',
+          'items': [
+            {'type': 'text', 'value': 'benefit'},
+          ],
+        },
+        {
+          'field': 'Reading',
+          'items': [
+            {'type': 'text', 'value': 'ˈbenɪfɪt'},
+          ],
+        },
+      ],
+      'back': [
+        {
+          'field': 'Chinese',
+          'items': [
+            {'type': 'text', 'value': '利益, 好处 ; 优势'},
+          ],
+        },
+        {
+          'field': 'English Example',
+          'items': [
+            {
+              'type': 'text',
+              'value':
+                  'The discovery of oil brought many benefits to the town.',
+            },
+          ],
+        },
+        {
+          'field': 'Chinese Example',
+          'items': [
+            {'type': 'text', 'value': '石油的发现给该镇带来很多利益。'},
+          ],
+        },
+      ],
+    },
+  });
+}
