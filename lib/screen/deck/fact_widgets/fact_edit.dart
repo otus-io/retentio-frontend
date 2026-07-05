@@ -209,6 +209,7 @@ class _FactEditState extends ConsumerState<FactEdit>
     final file = File(path);
     if (await file.exists()) {
       return MediaService.upload(
+        deckId: widget.deck.id,
         filePath: path,
         slotKind: kind,
         clientId: newMediaClientId(),

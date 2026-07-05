@@ -155,6 +155,7 @@ class NetworkDioClient {
   Future<ApiResponse?> uploadFile(
     String url, {
     required String filePath,
+    required String deckId,
     String? fileName,
     String? contentType,
     String? clientId,
@@ -169,6 +170,7 @@ class NetworkDioClient {
             ? null
             : DioMediaType.parse(contentType),
       ),
+      'deck_id': deckId,
       if (clientId != null && clientId.isNotEmpty) 'client_id': clientId,
     });
 

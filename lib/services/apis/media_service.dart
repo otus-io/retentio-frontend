@@ -82,6 +82,7 @@ class MediaService {
 
   /// Returns media id, or `null` if upload failed.
   static Future<String?> upload({
+    required String deckId,
     required String filePath,
     required MediaSlotKind slotKind,
     String? clientId,
@@ -94,6 +95,7 @@ class MediaService {
     final res = await networkDioClient.uploadFile(
       Api.media,
       filePath: filePath,
+      deckId: deckId,
       fileName: name,
       contentType: _contentTypeForPath(filePath),
       clientId: clientId,
