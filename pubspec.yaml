@@ -2,7 +2,7 @@
 name: retentio
 description: "A Retentio project."
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+3
 
 environment:
   sdk: '>=3.10.0 <4.0.0'
@@ -41,9 +41,9 @@ dependencies:
   connectivity_plus: ^7.0.0
   file_picker: ^11.0.2
   image_picker: ^1.1.2
-  record: ^6.2.0
+  record: ^7.1.1
   flutter_bloc: ^9.1.1
-  get_it: ^8.0.3
+  get_it: ^9.2.1
   json_annotation: ^4.11.0
   freezed_annotation: ^3.1.0
   firebase_core: ^4.11.0

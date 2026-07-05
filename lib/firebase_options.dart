@@ -55,12 +55,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCrB2WF5JHg_Ns6hmDW-0_iNfTC0Az_DRE',
-    appId: '1:617965212599:android:c17d08f60e43320d220e32',
+    appId: '1:617965212599:android:26b9aea7f8d59a02220e32',
     messagingSenderId: '617965212599',
     projectId: 'rete-241bc',
     storageBucket: 'rete-241bc.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyC8nJooke5teEuGh11nABTi7XCbe60BrR4',
     appId: '1:617965212599:ios:2d8f60c0d2f585f2220e32',
@@ -69,7 +68,6 @@ class DefaultFirebaseOptions {
     storageBucket: 'rete-241bc.firebasestorage.app',
     iosBundleId: 'com.example.retentio',
   );
-
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyD140mSlLdtHshgG98uToLEBF3kUrpKH9M',
     appId: '1:617965212599:web:0846ecd3d9e2aecc220e32',
