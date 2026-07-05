@@ -23,6 +23,7 @@ class CardText extends HookConsumerWidget {
     this.scrollable = true,
     this.typographyDeckId,
     this.typographyIsFront = true,
+    this.textAlign = TextAlign.center,
   });
 
   final String text;
@@ -37,6 +38,7 @@ class CardText extends HookConsumerWidget {
   /// When false, only the text is rendered (no internal scroll) for embedding in
   /// a parent [SingleChildScrollView], e.g. text + audio on one tab.
   final bool scrollable;
+  final TextAlign textAlign;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -67,18 +69,22 @@ class CardText extends HookConsumerWidget {
             text: text,
             baseStyle: style,
             rubyStyle: rubyStyle,
+            textAlign: textAlign,
           )
-        : Text(text, textAlign: TextAlign.center, style: style);
+        : Text(text, textAlign: textAlign, style: style);
     if (!scrollable) {
       return Padding(padding: _kInlinePadding, child: textWidget);
     }
     return LayoutBuilder(
       builder: (context, constraints) {
+        final alignedChild = textAlign == TextAlign.center
+            ? Center(child: textWidget)
+            : Align(alignment: Alignment.centerLeft, child: textWidget);
         return SingleChildScrollView(
           padding: _kScrollPadding,
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Center(child: textWidget),
+            child: alignedChild,
           ),
         );
       },

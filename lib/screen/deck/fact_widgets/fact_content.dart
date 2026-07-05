@@ -18,12 +18,17 @@ class FactContent extends ConsumerWidget {
     required this.color,
     this.typographyDeckId,
     this.typographyIsFront = true,
+    this.inline = false,
   });
 
   final List<Item> items;
   final Color color;
   final String? typographyDeckId;
   final bool typographyIsFront;
+
+  /// When true, renders text/media in a vertical stack for multi-field cards
+  /// instead of an expanded tab bar (avoids unbounded height in [ListView]).
+  final bool inline;
 
   static IconData _tabIconForMedia(Item e) => switch (e.type) {
     'video' => LucideIcons.video,
@@ -52,6 +57,15 @@ class FactContent extends ConsumerWidget {
     }
 
     final singleAudioScope = audioItems.length == 1;
+
+    if (inline) {
+      return _buildInlineContent(
+        textLikeItems: textLikeItems,
+        audioItems: audioItems,
+        mediaTabs: mediaTabs,
+        singleAudioScope: singleAudioScope,
+      );
+    }
 
     final showCombinedTab = textLikeItems.isNotEmpty || audioItems.isNotEmpty;
 
@@ -153,6 +167,78 @@ class FactContent extends ConsumerWidget {
 
     return tree;
   }
+
+  Widget _buildInlineContent({
+    required List<Item> textLikeItems,
+    required List<Item> audioItems,
+    required List<Item> mediaTabs,
+    required bool singleAudioScope,
+  }) {
+    final children = <Widget>[];
+
+    if (textLikeItems.isNotEmpty) {
+      children.add(
+        _InlineTextPane(
+          textItems: textLikeItems,
+          color: color,
+          typographyDeckId: typographyDeckId,
+          typographyIsFront: typographyIsFront,
+        ),
+      );
+    }
+
+    if (audioItems.isNotEmpty) {
+      children.add(
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: _CombinedAudioTrailing(
+            audioItems: audioItems,
+            color: color,
+            singleAudioScope: singleAudioScope,
+          ),
+        ),
+      );
+    }
+
+    for (final e in mediaTabs) {
+      children.add(
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: switch (e.type) {
+            'video' => CardVideo(url: e.value),
+            'image' => Center(child: CardImage(url: e.value)),
+            String() => const SizedBox.shrink(),
+          },
+        ),
+      );
+    }
+
+    if (children.isEmpty) {
+      children.add(
+        CardText(
+          text: '',
+          color: color,
+          typographyDeckId: typographyDeckId,
+          typographyIsFront: typographyIsFront,
+        ),
+      );
+    }
+
+    Widget tree = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
+    );
+
+    if (singleAudioScope) {
+      tree = ProviderScope(
+        overrides: [audioUrlProvider.overrideWithValue(audioItems.first.value)],
+        child: tree,
+      );
+    }
+
+    return tree;
+  }
 }
 
 class _CombinedAudioTrailing extends StatelessWidget {
@@ -178,6 +264,43 @@ class _CombinedAudioTrailing extends StatelessWidget {
             compact: true,
             useExternalScope: singleAudioScope,
           ),
+      ],
+    );
+  }
+}
+
+class _InlineTextPane extends StatelessWidget {
+  const _InlineTextPane({
+    required this.textItems,
+    required this.color,
+    this.typographyDeckId,
+    this.typographyIsFront = true,
+  });
+
+  final List<Item> textItems;
+  final Color color;
+  final String? typographyDeckId;
+  final bool typographyIsFront;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final t in textItems)
+          if (t.value.trim().isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: CardText(
+                text: t.value,
+                color: color,
+                scrollable: false,
+                typographyDeckId: typographyDeckId,
+                typographyIsFront: typographyIsFront,
+                textAlign: TextAlign.start,
+              ),
+            ),
       ],
     );
   }

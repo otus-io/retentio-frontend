@@ -126,27 +126,39 @@ class CardFlip extends HookWidget {
       }
     }
 
-    return Stack(
-      children: [
-        GestureDetector(
-          onTap: toggleSide,
-          child: _FlipCardFace(
-            animation: backAnimation,
-            height: height,
-            width: width,
-            child: frontWidget,
-          ),
-        ),
-        GestureDetector(
-          onTap: toggleSide,
-          child: _FlipCardFace(
-            animation: frontAnimation,
-            height: height,
-            width: width,
-            child: backWidget,
-          ),
-        ),
-      ],
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        final showFront = controller.value < 0.5;
+        return Stack(
+          children: [
+            IgnorePointer(
+              ignoring: !showFront,
+              child: GestureDetector(
+                onTap: showFront ? toggleSide : null,
+                child: _FlipCardFace(
+                  animation: backAnimation,
+                  height: height,
+                  width: width,
+                  child: frontWidget,
+                ),
+              ),
+            ),
+            IgnorePointer(
+              ignoring: showFront,
+              child: GestureDetector(
+                onTap: showFront ? null : toggleSide,
+                child: _FlipCardFace(
+                  animation: frontAnimation,
+                  height: height,
+                  width: width,
+                  child: backWidget,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

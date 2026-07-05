@@ -11,7 +11,7 @@ import 'card_content_container.dart';
 import 'card_menu.dart';
 
 /// One side (front or back) of the current review card on the deck study screen:
-/// field tabs, field content, and card actions (hide / edit fact / delete).
+/// field tabs (front) or stacked sections (back), field content, and card actions.
 class CardSideContent extends StatelessWidget {
   static const _kContainerRadius = 16.0;
   static const _kMenuColorAlpha = 0.75;
@@ -59,11 +59,13 @@ class CardSideContent extends StatelessWidget {
           ),
           child: sideCards.isEmpty
               ? content
-              : DefaultTabController(
+              : isFront
+              ? DefaultTabController(
                   key: ValueKey(cardId),
                   length: sideCards.length,
                   child: content,
-                ),
+                )
+              : content,
         );
       },
     );

@@ -60,6 +60,7 @@ Widget wikiRubyWrappedText({
   required String text,
   required TextStyle baseStyle,
   TextStyle? rubyStyle,
+  TextAlign textAlign = TextAlign.center,
 }) {
   final parsed = WikiRubyMarkup.parse(text);
   final resolvedRuby = rubyStyle ?? wikiRubyReadingStyle(baseStyle);
@@ -71,10 +72,15 @@ Widget wikiRubyWrappedText({
     resolvedRuby,
   );
   if (parts == null) {
-    return Text(text, textAlign: TextAlign.center, style: baseStyle);
+    return Text(text, textAlign: textAlign, style: baseStyle);
   }
+  final wrapAlignment = switch (textAlign) {
+    TextAlign.start || TextAlign.left => WrapAlignment.start,
+    TextAlign.end || TextAlign.right => WrapAlignment.end,
+    _ => WrapAlignment.center,
+  };
   return Wrap(
-    alignment: WrapAlignment.center,
+    alignment: wrapAlignment,
     crossAxisAlignment: WrapCrossAlignment.end,
     spacing: 0,
     runSpacing: 6,

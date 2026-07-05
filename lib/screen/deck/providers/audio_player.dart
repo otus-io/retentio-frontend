@@ -103,15 +103,21 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
     if (state.loadFailed || !state.isReady) return;
     final player = _player;
     if (player == null) return;
-    if (state.isPlaying == true) {
+    if (state.isPlaying) {
       await player.pause();
-    } else {
-      final max = state.maxDurationMs;
-      if (max > 0 && state.positionMs >= max) {
-        await player.seek(Duration.zero);
-      }
-      await player.play();
+      return;
     }
+    final atEnd =
+        player.processingState == ProcessingState.completed ||
+        (state.maxDurationMs > 0 &&
+            state.positionMs >= state.maxDurationMs - 200);
+    if (atEnd) {
+      await player.seek(Duration.zero);
+      if (ref.mounted) {
+        state = state.copyWith(positionMs: 0);
+      }
+    }
+    await player.play();
   }
 
   Future<void> seekToMs(int ms) async {
