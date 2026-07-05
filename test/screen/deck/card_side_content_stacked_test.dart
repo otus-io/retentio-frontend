@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
+import 'package:retentio/models/card.dart';
 import 'package:retentio/screen/deck/card_widgets/card_side_content.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
 import 'package:retentio/screen/deck/providers/deck_scope.dart';
@@ -15,12 +16,15 @@ void main() {
     Future<FakeDeckStudyBlocHarness> pumpCardSide(
       WidgetTester tester, {
       required bool isFront,
+      CardDetail? cardDetail,
     }) async {
       await setupTestEnvironment();
       final harness = FakeDeckStudyBlocHarness(
         deckId: sampleDeck().id,
         loadResults: [
-          DeckStudyLoadResult(cardDetail: sampleMultiFieldCardDetail()),
+          DeckStudyLoadResult(
+            cardDetail: cardDetail ?? sampleMultiFieldCardDetail(),
+          ),
         ],
       );
       addTearDown(() async {
@@ -83,5 +87,25 @@ void main() {
       final definition = tester.widget<Text>(find.text('利益, 好处 ; 优势'));
       expect(definition.textAlign, TextAlign.start);
     });
+
+    testWidgets(
+      'back uses tabbed FactContent without field labels for single-field cards',
+      (tester) async {
+        await pumpCardSide(
+          tester,
+          isFront: false,
+          cardDetail: sampleCardDetail(),
+        );
+
+        expect(find.text('World'), findsOneWidget);
+        expect(find.text('BACK'), findsNothing);
+
+        final backText = tester.widget<Text>(find.text('World'));
+        expect(backText.textAlign, TextAlign.center);
+
+        // Media tab bar from FactContent, not field tabs (multi-field back has none).
+        expect(find.byType(ButtonsTabBar), findsOneWidget);
+      },
+    );
   });
 }
