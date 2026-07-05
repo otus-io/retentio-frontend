@@ -245,6 +245,7 @@ class _FieldSectionLabel extends StatelessWidget {
     return Semantics(
       header: true,
       label: label,
+      excludeSemantics: true,
       child: Row(
         children: [
           Container(

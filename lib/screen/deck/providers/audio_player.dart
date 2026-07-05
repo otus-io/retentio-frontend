@@ -44,6 +44,8 @@ Future<void> _logInvalidAudioFile(String path) async {
 }
 
 class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
+  static const _kEndOfTrackToleranceMs = 200;
+
   AudioPlayer? _player;
   StreamSubscription<PlayerState>? _playerStateSubscription;
   StreamSubscription<Duration>? _positionSubscription;
@@ -107,10 +109,15 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
       await player.pause();
       return;
     }
+    final liveDurationMs =
+        player.duration?.inMilliseconds ?? state.maxDurationMs;
+    final livePositionMs = player.position.inMilliseconds;
+    final endThresholdMs = liveDurationMs > _kEndOfTrackToleranceMs
+        ? liveDurationMs - _kEndOfTrackToleranceMs
+        : 0;
     final atEnd =
         player.processingState == ProcessingState.completed ||
-        (state.maxDurationMs > 0 &&
-            state.positionMs >= state.maxDurationMs - 200);
+        (liveDurationMs > 0 && livePositionMs >= endThresholdMs);
     if (atEnd) {
       await player.seek(Duration.zero);
       if (ref.mounted) {

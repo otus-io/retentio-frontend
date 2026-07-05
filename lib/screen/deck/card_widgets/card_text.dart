@@ -77,9 +77,12 @@ class CardText extends HookConsumerWidget {
     }
     return LayoutBuilder(
       builder: (context, constraints) {
-        final alignedChild = textAlign == TextAlign.center
-            ? Center(child: textWidget)
-            : Align(alignment: Alignment.centerLeft, child: textWidget);
+        final alignment = switch (textAlign) {
+          TextAlign.center || TextAlign.justify => Alignment.center,
+          TextAlign.end || TextAlign.right => Alignment.centerRight,
+          _ => Alignment.centerLeft,
+        };
+        final alignedChild = Align(alignment: alignment, child: textWidget);
         return SingleChildScrollView(
           padding: _kScrollPadding,
           child: ConstrainedBox(
