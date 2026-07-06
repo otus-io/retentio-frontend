@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import 'app_fonts.dart';
 import 'theme_typography_tokens.dart';
 
 class AppThemeTypography {
@@ -8,9 +8,13 @@ class AppThemeTypography {
 
   static TextTheme build(Brightness brightness) {
     final source = ThemeData(brightness: brightness).textTheme;
-    final body = GoogleFonts.atkinsonHyperlegibleTextTheme(source);
+    final body = source.apply(fontFamily: AppFontFamilies.atkinsonHyperlegible);
+
     TextStyle headingStyle(TextStyle? base, FontWeight weight) {
-      return GoogleFonts.crimsonPro(textStyle: base, fontWeight: weight);
+      return (base ?? const TextStyle()).copyWith(
+        fontFamily: AppFontFamilies.crimsonPro,
+        fontWeight: weight,
+      );
     }
 
     return body.copyWith(

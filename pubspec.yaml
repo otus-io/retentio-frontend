@@ -32,7 +32,6 @@ dependencies:
   flutter_expandable_fab: ^2.5.2
   pull_to_refresh: ^2.0.0
   pull_down_button: ^0.10.2
-  google_fonts: ^8.0.2
   equatable: ^2.0.8
   extended_image: ^10.0.1
   path: ^1.9.1
@@ -68,3 +67,22 @@ dependency_overrides:
 flutter:
   uses-material-design: true
   generate: true
+  fonts:
+    - family: AtkinsonHyperlegible
+      fonts:
+        - asset: assets/fonts/atkinson_hyperlegible/AtkinsonHyperlegible-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/atkinson_hyperlegible/AtkinsonHyperlegible-Regular.ttf
+          weight: 500
+        - asset: assets/fonts/atkinson_hyperlegible/AtkinsonHyperlegible-Bold.ttf
+          weight: 700
+    - family: CrimsonPro
+      fonts:
+        - asset: assets/fonts/crimson_pro/CrimsonPro-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/crimson_pro/CrimsonPro-SemiBold.ttf
+          weight: 600
+    - family: NotoSansJp
+      fonts:
+        - asset: assets/fonts/noto_sans_jp/NotoSansJP-SemiBold.ttf
+          weight: 600
