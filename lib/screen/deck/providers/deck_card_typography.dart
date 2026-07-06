@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:retentio/screen/deck/card_widgets/card_wiki_ruby_layout.dart';
+import 'package:retentio/theme/app_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// When true, [DeckCardTypography.baseTextStyle] skips Google Fonts (no HTTP) so
-/// widget tests can assert font sizes without loading Noto Sans JP.
+/// When true, [DeckCardTypography.baseTextStyle] skips custom font families so
+/// widget tests can assert font sizes without depending on bundled font metrics.
 @visibleForTesting
 bool deckCardTypographyUsePlainTextStyleInTests = false;
 
@@ -49,7 +49,8 @@ class DeckCardTypography {
         color: color,
       );
     }
-    return GoogleFonts.notoSansJp(
+    return TextStyle(
+      fontFamily: AppFontFamilies.notoSansJp,
       fontSize: baseFontSize,
       fontWeight: FontWeight.w600,
       letterSpacing: 1.2,

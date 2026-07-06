@@ -68,3 +68,20 @@ dependency_overrides:
 flutter:
   uses-material-design: true
   generate: true
+  fonts:
+    - family: AtkinsonHyperlegible
+      fonts:
+        - asset: assets/fonts/atkinson_hyperlegible/AtkinsonHyperlegible-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/atkinson_hyperlegible/AtkinsonHyperlegible-Bold.ttf
+          weight: 700
+    - family: CrimsonPro
+      fonts:
+        - asset: assets/fonts/crimson_pro/CrimsonPro-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/crimson_pro/CrimsonPro-SemiBold.ttf
+          weight: 600
+    - family: NotoSansJp
+      fonts:
+        - asset: assets/fonts/noto_sans_jp/NotoSansJP-SemiBold.ttf
+          weight: 600

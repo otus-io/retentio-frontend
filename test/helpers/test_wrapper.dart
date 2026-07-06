@@ -32,8 +32,8 @@ Future<void> setupTestEnvironment() async {
   // Initialize pre-config (this will now work with mocked plugins)
   networkDioClient.configure(baseUrl: Env.host);
 
-  // Deck study UI uses [GoogleFonts.notoSansJp] for per-deck typography; widget tests
-  // must not hit the network (HttpClient returns 400 under TestWidgetsFlutterBinding).
+  // Deck study UI uses a bundled Japanese font for per-deck typography; widget
+  // tests stick to the default test font to keep layout assertions stable.
   deckCardTypographyUsePlainTextStyleInTests = true;
 }
 
