@@ -90,7 +90,7 @@ Run: `go test ./tests/integration/... -v`
 | Persist MinInterval/MaxInterval to Redis | Values saved after GetNext |
 | Correct intervals (not-yet-due, urgency < 1) | Scaled by strength factor |
 | All cards hidden returns message | 200 with explanation |
-| Minimum interval of 60s enforced | Clamps interval < 60 to 60 |
+| Minimum basis interval of 300s enforced | Floors interval < 300 to 300 before ruler math |
 | Suggest rescheduling (overdue > 1 day) | `reschedule_suggested: true` in meta |
 | No reschedule suggestion (overdue < 1 day) | Field absent from meta |
 | No reschedule fields (no overdue cards) | Field absent from meta |

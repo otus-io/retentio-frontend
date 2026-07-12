@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:617965212599:android:c17d08f60e43320d220e32",
+        "mobilesdk_app_id": "1:617965212599:android:26b9aea7f8d59a02220e32",
         "android_client_info": {
-          "package_name": "com.example.retentio"
+          "package_name": "srs.app.retentio"
         }
       },
       "oauth_client": [],

@@ -1830,24 +1830,28 @@ After viewing a card, you need to update its interval based on how well you reme
 > **Step 1 — Derive the current interval:**
 >
 > ```text
-> current_interval = due_date - last_review    (minimum 60 seconds)
+> current_interval = due_date - last_review
+> if current_interval < 300:
+>     current_interval = 300
 > ```
 >
-> For a brand-new card (`last_review = 0`), treat `current_interval` as 60 seconds.
+> Short intervals (including the 1-second unseen-card marker) are floored to
+> 300 seconds before computing urgency and the ruler range.
 >
 > **Step 2 — Compute urgency:**
 >
 > ```text
-> urgency = (now - last_review) / (due_date - last_review)
+> urgency = (now - last_review) / current_interval
 > ```
 >
-> **Step 3 — Compute min and max interval:**
+> **Step 3 — Compute min, max, and default interval:**
 >
 > When the card is overdue (`urgency >= 1`):
 >
 > ```text
 > min_interval = current_interval × 0.5
 > max_interval = current_interval × 4.0
+> def_interval = current_interval × 2.0
 > ```
 >
 > When the card is not yet due (`urgency < 1`):
@@ -1855,7 +1859,14 @@ After viewing a card, you need to update its interval based on how well you reme
 > ```text
 > min_interval = current_interval × ((0.5 - 1) × urgency + 1)
 > max_interval = current_interval × ((4.0 - 1) × urgency + 1)
+> def_interval = current_interval × ((2.0 - 1) × urgency + 1)
 > ```
+>
+> The slider default is `def_interval` (not the midpoint of min and max).
+>
+> Round each bound to whole seconds. If rounding collapses the range so
+> `max_interval <= min_interval`, widen `max_interval` to `min_interval × 4.0`.
+> Clamp `def_interval` into `[min_interval, max_interval]`.
 >
 > **Step 4 — Validate before sending:**
 >

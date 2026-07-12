@@ -1831,24 +1831,27 @@ Accept: application/json
 > **第 1 步 — 推算当前间隔：**
 >
 > ```text
-> current_interval = due_date - last_review    （最小 60 秒）
+> current_interval = due_date - last_review
+> if current_interval < 300:
+>     current_interval = 300
 > ```
 >
-> 对于全新卡片（`last_review = 0`），将 `current_interval` 视为 60 秒。
+> 短间隔（包括未见过卡片的 1 秒标记）在计算紧迫度和标尺范围前下限为 300 秒。
 >
 > **第 2 步 — 计算紧迫度：**
 >
 > ```text
-> urgency = (now - last_review) / (due_date - last_review)
+> urgency = (now - last_review) / current_interval
 > ```
 >
-> **第 3 步 — 计算最小和最大间隔：**
+> **第 3 步 — 计算最小、最大和默认间隔：**
 >
 > 当卡片已逾期（`urgency >= 1`）：
 >
 > ```text
 > min_interval = current_interval × 0.5
 > max_interval = current_interval × 4.0
+> def_interval = current_interval × 2.0
 > ```
 >
 > 当卡片尚未到期（`urgency < 1`）：
@@ -1856,7 +1859,15 @@ Accept: application/json
 > ```text
 > min_interval = current_interval × ((0.5 - 1) × urgency + 1)
 > max_interval = current_interval × ((4.0 - 1) × urgency + 1)
+> def_interval = current_interval × ((2.0 - 1) × urgency + 1)
 > ```
+>
+> 滑块默认值是 `def_interval`（不是最小值与最大值的中点）。
+>
+> 将各边界四舍五入为整秒。若舍入后范围塌缩导致
+> `max_interval <= min_interval`，则将 `max_interval` 扩展为
+> `min_interval × 4.0`。将 `def_interval` 夹取到
+> `[min_interval, max_interval]` 内。
 >
 > **第 4 步 — 提交前验证：**
 >
