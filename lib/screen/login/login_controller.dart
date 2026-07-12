@@ -29,7 +29,10 @@ class LoginController {
       if (!isSuccess) {
         final rawMsg = result['message'] as String?;
         showSnack(context, ApiErrorMessages.resolve(rawMsg, loc));
+        return;
       }
+
+      context.go(AppRoutes.main.path);
     } catch (e) {
       if (!context.mounted) return;
       showSnack(context, ApiErrorMessages.resolve(rawApiErrorMessage(e), loc));
