@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/core/error/api_error_messages.dart';
+import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/constants.dart';
 import 'package:retentio/extensions/context_extension.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
@@ -502,7 +504,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
                 if (!mounted) {
                   return;
                 }
-                setState(() => _submitError = e.toString());
+                setState(() => _submitError = rawApiErrorMessage(e));
                 return;
               }
             }
@@ -518,7 +520,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Text(
-              _submitError!,
+              ApiErrorMessages.resolve(_submitError, loc),
               style: DeckTextStyles.feedbackMessage(theme, scheme.error),
             ),
           ),

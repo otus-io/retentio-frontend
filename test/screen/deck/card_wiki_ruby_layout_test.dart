@@ -58,6 +58,67 @@ void main() {
     });
   });
 
+  group('wikiRubyWrappedText textAlign → WrapAlignment', () {
+    test('textAlign.start → WrapAlignment.start', () {
+      final w = wikiRubyWrappedText(
+        text: '[[皆|みな]]さん',
+        baseStyle: base,
+        textAlign: TextAlign.start,
+      );
+      expect(w, isA<Wrap>());
+      expect((w as Wrap).alignment, WrapAlignment.start);
+    });
+
+    test('textAlign.left → WrapAlignment.start', () {
+      final w = wikiRubyWrappedText(
+        text: '[[皆|みな]]さん',
+        baseStyle: base,
+        textAlign: TextAlign.left,
+      );
+      expect(w, isA<Wrap>());
+      expect((w as Wrap).alignment, WrapAlignment.start);
+    });
+
+    test('textAlign.end → WrapAlignment.end', () {
+      final w = wikiRubyWrappedText(
+        text: '[[皆|みな]]さん',
+        baseStyle: base,
+        textAlign: TextAlign.end,
+      );
+      expect(w, isA<Wrap>());
+      expect((w as Wrap).alignment, WrapAlignment.end);
+    });
+
+    test('textAlign.right → WrapAlignment.end', () {
+      final w = wikiRubyWrappedText(
+        text: '[[皆|みな]]さん',
+        baseStyle: base,
+        textAlign: TextAlign.right,
+      );
+      expect(w, isA<Wrap>());
+      expect((w as Wrap).alignment, WrapAlignment.end);
+    });
+
+    test('textAlign.center (default) → WrapAlignment.center', () {
+      final w = wikiRubyWrappedText(
+        text: '[[皆|みな]]さん',
+        baseStyle: base,
+      );
+      expect(w, isA<Wrap>());
+      expect((w as Wrap).alignment, WrapAlignment.center);
+    });
+
+    test('textAlign.justify → WrapAlignment.center', () {
+      final w = wikiRubyWrappedText(
+        text: '[[皆|みな]]さん',
+        baseStyle: base,
+        textAlign: TextAlign.justify,
+      );
+      expect(w, isA<Wrap>());
+      expect((w as Wrap).alignment, WrapAlignment.center);
+    });
+  });
+
   group('wikiRubyReadingStyle', () {
     test('scales font size down', () {
       final r = wikiRubyReadingStyle(const TextStyle(fontSize: 20));

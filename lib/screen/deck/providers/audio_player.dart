@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path/path.dart' as p;
@@ -45,6 +47,19 @@ Future<void> _logInvalidAudioFile(String path) async {
 
 class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
   static const _kEndOfTrackToleranceMs = 200;
+
+  @visibleForTesting
+  static bool computeAtEnd({
+    required ProcessingState processingState,
+    required int liveDurationMs,
+    required int livePositionMs,
+  }) {
+    final endThresholdMs = liveDurationMs > _kEndOfTrackToleranceMs
+        ? liveDurationMs - _kEndOfTrackToleranceMs
+        : liveDurationMs;
+    return processingState == ProcessingState.completed ||
+        (liveDurationMs > 0 && livePositionMs >= endThresholdMs);
+  }
 
   AudioPlayer? _player;
   StreamSubscription<PlayerState>? _playerStateSubscription;
@@ -112,18 +127,18 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
     final liveDurationMs =
         player.duration?.inMilliseconds ?? state.maxDurationMs;
     final livePositionMs = player.position.inMilliseconds;
-    final endThresholdMs = liveDurationMs > _kEndOfTrackToleranceMs
-        ? liveDurationMs - _kEndOfTrackToleranceMs
-        : 0;
-    final atEnd =
-        player.processingState == ProcessingState.completed ||
-        (liveDurationMs > 0 && livePositionMs >= endThresholdMs);
+    final atEnd = AudioPlayerNotifier.computeAtEnd(
+      processingState: player.processingState,
+      liveDurationMs: liveDurationMs,
+      livePositionMs: livePositionMs,
+    );
     if (atEnd) {
       await player.seek(Duration.zero);
       if (ref.mounted) {
         state = state.copyWith(positionMs: 0);
       }
     }
+    if (!ref.mounted) return;
     await player.play();
   }
 

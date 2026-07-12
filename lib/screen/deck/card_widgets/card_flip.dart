@@ -29,6 +29,8 @@ class CardFlip extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final internalIsFront = useRef(true);
+    final onFlipRef = useRef(onFlip);
+    onFlipRef.value = onFlip;
     final controller = useAnimationController(duration: duration);
     final backAnimation = useMemoized(
       () => TweenSequence(<TweenSequenceItem<double>>[
@@ -64,6 +66,8 @@ class CardFlip extends HookWidget {
     );
     final initializedFromExternal = useRef(false);
     final currentControllerRef = useRef<CardFlipController?>(null);
+    final showFrontNotifier = useMemoized(() => ValueNotifier(true), const []);
+    final toggleSideRef = useRef<VoidCallback>(() {});
 
     Future<void> triggerFlip(bool targetIsFront) async {
       if (targetIsFront) {
@@ -71,10 +75,7 @@ class CardFlip extends HookWidget {
       } else {
         await controller.forward();
       }
-
-      if (onFlip != null) {
-        onFlip!(targetIsFront);
-      }
+      onFlipRef.value?.call(targetIsFront);
     }
 
     void handleControllerChange() {
@@ -126,16 +127,26 @@ class CardFlip extends HookWidget {
       }
     }
 
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, _) {
-        final showFront = controller.value < 0.5;
+    toggleSideRef.value = toggleSide;
+
+    useEffect(() {
+      void onTick() {
+        final val = controller.value < 0.5;
+        if (showFrontNotifier.value != val) showFrontNotifier.value = val;
+      }
+      controller.addListener(onTick);
+      return () => controller.removeListener(onTick);
+    }, [controller, showFrontNotifier]);
+
+    return ValueListenableBuilder<bool>(
+      valueListenable: showFrontNotifier,
+      builder: (context, showFront, _) {
         return Stack(
           children: [
             IgnorePointer(
               ignoring: !showFront,
               child: GestureDetector(
-                onTap: showFront ? toggleSide : null,
+                onTap: showFront ? () => toggleSideRef.value() : null,
                 child: _FlipCardFace(
                   animation: backAnimation,
                   height: height,
@@ -147,7 +158,7 @@ class CardFlip extends HookWidget {
             IgnorePointer(
               ignoring: showFront,
               child: GestureDetector(
-                onTap: showFront ? null : toggleSide,
+                onTap: showFront ? null : () => toggleSideRef.value(),
                 child: _FlipCardFace(
                   animation: frontAnimation,
                   height: height,

@@ -106,7 +106,7 @@
   },
   "review": "Review",
   "@review": {
-    "description": "Review cards label"
+    "description": "Learn tab label in bottom navigation"
   },
   "facts": "Facts",
   "@facts": {
@@ -216,7 +216,7 @@
   },
   "hard": "Hard",
   "@hard": {
-    "description": "Difficulty rating: Hard"
+    "description": "Difficulty rating: Hard (in slider context)"
   },
   "good": "Good",
   "@good": {
@@ -224,7 +224,7 @@
   },
   "easy": "Easy",
   "@easy": {
-    "description": "Difficulty rating: Easy"
+    "description": "Difficulty rating: Easy (in slider context)"
   },
   "backToDeck": "Back to Deck",
   "@backToDeck": {
@@ -241,10 +241,6 @@
   "manage": "Manage",
   "@manage": {
     "description": "Button to manage deck"
-  },
-  "review": "Review",
-  "@review": {
-    "description": "Learn tab label in bottom navigation"
   },
   "createDeck": "Create Deck",
   "@createDeck": {
@@ -365,14 +361,6 @@
   "noCardsInThisDeck": "No cards in this deck",
   "@noCardsInThisDeck": {
     "description": "Message when deck has no cards"
-  },
-  "hard": "Hard",
-  "@hard": {
-    "description": "Difficulty rating: Hard (in slider context)"
-  },
-  "easy": "Easy",
-  "@easy": {
-    "description": "Difficulty rating: Easy (in slider context)"
   },
   "save": "Save",
   "@save": {
@@ -604,9 +592,9 @@
   "@tagAlreadyExists": {
     "description": "Error when tag name conflicts with existing tag (409)"
   },
-  "tagLimitReached": "You have reached the maximum of 100 tags",
+  "tagLimitReached": "You have reached the maximum of 1000 tags",
   "@tagLimitReached": {
-    "description": "Error when user hits 100-tag limit"
+    "description": "Error when user hits 1000-tag limit"
   },
   "noTags": "No tags yet",
   "@noTags": {
@@ -656,5 +644,1057 @@
   "noFactsInTag": "No facts in this tag yet",
   "@noFactsInTag": {
     "description": "Empty state for tag facts screen"
+  },
+  "discoveryTab": "Discover",
+  "@discoveryTab": {
+    "description": "Discovery tab label"
+  },
+  "discoverySearchHint": "Search decks, authors, tags",
+  "@discoverySearchHint": {
+    "description": "Search bar placeholder"
+  },
+  "discoveryFilterLatest": "Latest",
+  "@discoveryFilterLatest": {
+    "description": "Latest filter chip"
+  },
+  "discoveryFilterFavorites": "Favorites",
+  "@discoveryFilterFavorites": {
+    "description": "Favorites filter chip"
+  },
+  "discoveryEmpty": "No public decks yet",
+  "@discoveryEmpty": {
+    "description": "Empty state for latest list"
+  },
+  "discoveryFavoritesEmpty": "No favorited decks",
+  "@discoveryFavoritesEmpty": {
+    "description": "Empty state for favorites"
+  },
+  "discoveryImport": "Import",
+  "@discoveryImport": {
+    "description": "Import button label"
+  },
+  "discoveryImporting": "Importing…",
+  "@discoveryImporting": {
+    "description": "Import in-progress label"
+  },
+  "discoveryImported": "Imported",
+  "@discoveryImported": {
+    "description": "Already imported badge"
+  },
+  "discoveryGoStudy": "Go study",
+  "@discoveryGoStudy": {
+    "description": "Navigate to study after import"
+  },
+  "discoveryImportSuccess": "Added to your decks",
+  "@discoveryImportSuccess": {
+    "description": "Import success snackbar"
+  },
+  "discoveryFavorite": "Favorite",
+  "@discoveryFavorite": {
+    "description": "Favorite tooltip"
+  },
+  "discoveryUnfavorite": "Unfavorite",
+  "@discoveryUnfavorite": {
+    "description": "Unfavorite tooltip"
+  },
+  "discoveryNotFound": "Deck not found or no longer available",
+  "@discoveryNotFound": {
+    "description": "404 error for catalog deck"
+  },
+  "discoveryImportSelf": "You can't import your own deck",
+  "@discoveryImportSelf": {
+    "description": "403 error importing own deck"
+  },
+  "discoveryImportDuplicate": "Already imported this deck",
+  "@discoveryImportDuplicate": {
+    "description": "Already imported error"
+  },
+  "discoveryImportFailed": "Import failed. Please try again.",
+  "@discoveryImportFailed": {
+    "description": "Generic import error"
+  },
+  "discoveryLoginToImport": "Sign in to import",
+  "@discoveryLoginToImport": {
+    "description": "Prompt for unauthenticated import"
+  },
+  "discoveryRetry": "Retry",
+  "@discoveryRetry": {
+    "description": "Retry button in discovery error state"
+  },
+  "publishDeck": "Publish Deck",
+  "@publishDeck": {
+    "description": "Publish deck sheet title"
+  },
+  "publishDeckHint": "Once published, others can discover and import your deck in the Discovery tab.",
+  "@publishDeckHint": {
+    "description": "Hint text in publish sheet"
+  },
+  "publishDeckAction": "Publish",
+  "@publishDeckAction": {
+    "description": "Publish action button label"
+  },
+  "publishingDeck": "Publishing…",
+  "@publishingDeck": {
+    "description": "Publishing in-progress label"
+  },
+  "publishDeckSuccess": "Published!",
+  "@publishDeckSuccess": {
+    "description": "Success state in publish sheet"
+  },
+  "publishDeckFailed": "Failed to publish. Please try again.",
+  "@publishDeckFailed": {
+    "description": "Error state in publish sheet"
+  },
+  "publishDeckAlreadyPublished": "Published",
+  "@publishDeckAlreadyPublished": {
+    "description": "Badge for already-published deck"
+  },
+  "publishDeckUpdate": "Update Published Version",
+  "@publishDeckUpdate": {
+    "description": "Re-publish to push a new version"
+  },
+  "errorUnknown": "An unexpected error occurred",
+  "@errorUnknown": {
+    "description": "Generic fallback error message"
+  },
+  "authInvalidCredentials": "Invalid username or password",
+  "@authInvalidCredentials": {
+    "description": "Login failure: wrong credentials"
+  },
+  "authUsernameAlreadyExists": "Username is already taken",
+  "@authUsernameAlreadyExists": {
+    "description": "Register failure: username conflict"
+  },
+  "authEmailAlreadyInUse": "Email is already in use",
+  "@authEmailAlreadyInUse": {
+    "description": "Register failure: email conflict"
+  },
+  "authSessionExpired": "Session expired. Please log in again.",
+  "@authSessionExpired": {
+    "description": "JWT is invalid, expired, or revoked"
+  },
+  "authTokenRequired": "Please log in to continue",
+  "@authTokenRequired": {
+    "description": "Request made without auth token"
+  },
+  "authResetTokenInvalid": "Reset link is invalid or expired",
+  "@authResetTokenInvalid": {
+    "description": "Forgot-password reset token validation failed"
+  },
+  "errorLoginFailed": "Login failed. Please try again.",
+  "@errorLoginFailed": {
+    "description": "Generic login failure fallback"
+  },
+  "errorRegisterFailed": "Registration failed. Please try again.",
+  "@errorRegisterFailed": {
+    "description": "Generic register failure fallback"
+  },
+  "errorPublishedDeckCannotDelete": "Published decks cannot be deleted",
+  "@errorPublishedDeckCannotDelete": {
+    "description": "409 when deleting a published source deck"
+  },
+  "errorNoChangesToPublish": "No changes to publish",
+  "@errorNoChangesToPublish": {
+    "description": "409 when re-publishing with no new changes"
+  },
+  "errorSourceDeckNotImportable": "This deck is not available for import",
+  "@errorSourceDeckNotImportable": {
+    "description": "403 when source deck visibility blocks import"
+  },
+  "errorCannotImportImportedDeck": "Cannot re-import an already imported deck",
+  "@errorCannotImportImportedDeck": {
+    "description": "403 when trying to import an import deck"
+  },
+  "errorSourceDeckNotPublished": "This deck has not been published yet",
+  "@errorSourceDeckNotPublished": {
+    "description": "403 when source deck has no published version"
+  },
+  "errorCannotModifyImportedDeck": "Imported decks cannot be modified",
+  "@errorCannotModifyImportedDeck": {
+    "description": "403 when editing facts on an imported deck"
+  },
+  "discoveryDetailFields": "Fields",
+  "@discoveryDetailFields": {
+    "description": "Section label for deck fields in discovery detail"
+  },
+  "discoveryDetailDescription": "Description",
+  "@discoveryDetailDescription": {
+    "description": "Section label for deck description in discovery detail"
+  },
+  "discoveryDetailFactCount": "{count} cards",
+  "@discoveryDetailFactCount": {
+    "description": "Fact count label in discovery detail",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "42"
+      }
+    }
+  },
+  "imageLoadFailed": "Load failed",
+  "@imageLoadFailed": {
+    "description": "Error text shown when a network image fails to load"
+  },
+  "homeDailyGoal": "Daily Goal",
+  "@homeDailyGoal": {
+    "description": "Home screen daily goal card title"
+  },
+  "homeLearningPath": "Learning Path",
+  "@homeLearningPath": {
+    "description": "Home screen learning path section title"
+  },
+  "homeToday": "Today",
+  "@homeToday": {
+    "description": "Home screen today pill label"
+  },
+  "homeTodayFocus": "Today Focus",
+  "@homeTodayFocus": {
+    "description": "Home screen today focus section title"
+  },
+  "homeTodayFocusText": "Finish one review round first, then add new facts from your study notes.",
+  "@homeTodayFocusText": {
+    "description": "Home screen coaching text in today focus section"
+  },
+  "apiUserNotFound": "User not found",
+  "@apiUserNotFound": {
+    "description": "API error: apiUserNotFound"
+  },
+  "apiInvalidRequestPayload": "Invalid request. Please try again.",
+  "@apiInvalidRequestPayload": {
+    "description": "API error: apiInvalidRequestPayload"
+  },
+  "apiDeckNotFound": "Deck not found",
+  "@apiDeckNotFound": {
+    "description": "API error: apiDeckNotFound"
+  },
+  "apiNotAuthorizedAccessDeck": "You are not allowed to access this deck",
+  "@apiNotAuthorizedAccessDeck": {
+    "description": "API error: apiNotAuthorizedAccessDeck"
+  },
+  "apiNotAuthorizedModifyDeck": "You are not allowed to modify this deck",
+  "@apiNotAuthorizedModifyDeck": {
+    "description": "API error: apiNotAuthorizedModifyDeck"
+  },
+  "apiNotAuthorizedDeleteDeck": "You are not allowed to delete this deck",
+  "@apiNotAuthorizedDeleteDeck": {
+    "description": "API error: apiNotAuthorizedDeleteDeck"
+  },
+  "apiNotAuthorized": "You are not authorized",
+  "@apiNotAuthorized": {
+    "description": "API error: apiNotAuthorized"
+  },
+  "apiServerRetrieveDeck": "Could not load deck. Please try again.",
+  "@apiServerRetrieveDeck": {
+    "description": "API error: apiServerRetrieveDeck"
+  },
+  "apiServerParseDeck": "Deck data is corrupted. Please try again.",
+  "@apiServerParseDeck": {
+    "description": "API error: apiServerParseDeck"
+  },
+  "apiRegisterFieldsRequired": "Username, password, and email are required",
+  "@apiRegisterFieldsRequired": {
+    "description": "API error: apiRegisterFieldsRequired"
+  },
+  "apiLoginFieldsRequired": "Username and password are required",
+  "@apiLoginFieldsRequired": {
+    "description": "API error: apiLoginFieldsRequired"
+  },
+  "apiServerCheckUsername": "Could not verify username. Please try again.",
+  "@apiServerCheckUsername": {
+    "description": "API error: apiServerCheckUsername"
+  },
+  "apiServerCheckEmail": "Could not verify email. Please try again.",
+  "@apiServerCheckEmail": {
+    "description": "API error: apiServerCheckEmail"
+  },
+  "apiServerHashPassword": "Could not process password. Please try again.",
+  "@apiServerHashPassword": {
+    "description": "API error: apiServerHashPassword"
+  },
+  "apiServerSerializeUser": "Could not save user data. Please try again.",
+  "@apiServerSerializeUser": {
+    "description": "API error: apiServerSerializeUser"
+  },
+  "apiServerCreateUser": "Could not create account. Please try again.",
+  "@apiServerCreateUser": {
+    "description": "API error: apiServerCreateUser"
+  },
+  "apiServerRetrieveUser": "Could not load user data. Please try again.",
+  "@apiServerRetrieveUser": {
+    "description": "API error: apiServerRetrieveUser"
+  },
+  "apiServerParseUser": "User data is corrupted. Please try again.",
+  "@apiServerParseUser": {
+    "description": "API error: apiServerParseUser"
+  },
+  "apiServerGenerateToken": "Could not sign in. Please try again.",
+  "@apiServerGenerateToken": {
+    "description": "API error: apiServerGenerateToken"
+  },
+  "apiServerLogout": "Could not log out. Please try again.",
+  "@apiServerLogout": {
+    "description": "API error: apiServerLogout"
+  },
+  "apiEmailRequired": "Email is required",
+  "@apiEmailRequired": {
+    "description": "API error: apiEmailRequired"
+  },
+  "apiServerGenerateResetToken": "Could not send reset email. Please try again.",
+  "@apiServerGenerateResetToken": {
+    "description": "API error: apiServerGenerateResetToken"
+  },
+  "apiServerStoreResetToken": "Could not process reset request. Please try again.",
+  "@apiServerStoreResetToken": {
+    "description": "API error: apiServerStoreResetToken"
+  },
+  "apiResetFieldsRequired": "Reset token and new password are required",
+  "@apiResetFieldsRequired": {
+    "description": "API error: apiResetFieldsRequired"
+  },
+  "apiServerValidateResetToken": "Could not validate reset link. Please try again.",
+  "@apiServerValidateResetToken": {
+    "description": "API error: apiServerValidateResetToken"
+  },
+  "apiServerResetPassword": "Could not reset password. Please try again.",
+  "@apiServerResetPassword": {
+    "description": "API error: apiServerResetPassword"
+  },
+  "apiServerRetrieveProfile": "Could not load profile. Please try again.",
+  "@apiServerRetrieveProfile": {
+    "description": "API error: apiServerRetrieveProfile"
+  },
+  "apiDeckNameRequired": "Deck name is required",
+  "@apiDeckNameRequired": {
+    "description": "API error: apiDeckNameRequired"
+  },
+  "apiDeckFieldsRequired": "At least one column name is required",
+  "@apiDeckFieldsRequired": {
+    "description": "API error: apiDeckFieldsRequired"
+  },
+  "apiDeckFieldNameEmpty": "Each column name must be non-empty",
+  "@apiDeckFieldNameEmpty": {
+    "description": "API error: apiDeckFieldNameEmpty"
+  },
+  "apiDeckRateRequired": "Daily new-card rate must be between 1 and 1000",
+  "@apiDeckRateRequired": {
+    "description": "API error: apiDeckRateRequired"
+  },
+  "apiTagsOrTagIds": "Provide either tags or tag IDs, not both",
+  "@apiTagsOrTagIds": {
+    "description": "API error: apiTagsOrTagIds"
+  },
+  "apiDeckDescriptionInvalidChars": "Deck description contains invalid characters",
+  "@apiDeckDescriptionInvalidChars": {
+    "description": "API error: apiDeckDescriptionInvalidChars"
+  },
+  "apiDeckDescriptionTooLong": "Deck description must be at most 500 characters",
+  "@apiDeckDescriptionTooLong": {
+    "description": "API error: apiDeckDescriptionTooLong"
+  },
+  "apiTagIdRequired": "Tag ID is required",
+  "@apiTagIdRequired": {
+    "description": "API error: apiTagIdRequired"
+  },
+  "apiMaxTagsPerDeck": "Maximum tags per deck reached",
+  "@apiMaxTagsPerDeck": {
+    "description": "API error: apiMaxTagsPerDeck"
+  },
+  "apiTagNameRequired": "Tag name is required",
+  "@apiTagNameRequired": {
+    "description": "API error: apiTagNameRequired"
+  },
+  "apiTagNameInvalidChars": "Tag name contains invalid characters",
+  "@apiTagNameInvalidChars": {
+    "description": "API error: apiTagNameInvalidChars"
+  },
+  "apiTagNameTooLong": "Tag name is too long (max 50 characters)",
+  "@apiTagNameTooLong": {
+    "description": "API error: apiTagNameTooLong"
+  },
+  "apiTagNotFound": "Tag not found",
+  "@apiTagNotFound": {
+    "description": "API error: apiTagNotFound"
+  },
+  "apiServerResolveDeckTags": "Could not resolve deck tags. Please try again.",
+  "@apiServerResolveDeckTags": {
+    "description": "API error: apiServerResolveDeckTags"
+  },
+  "apiServerGenerateDeckId": "Could not create deck. Please try again.",
+  "@apiServerGenerateDeckId": {
+    "description": "API error: apiServerGenerateDeckId"
+  },
+  "apiServerMarshalDeck": "Could not save deck. Please try again.",
+  "@apiServerMarshalDeck": {
+    "description": "API error: apiServerMarshalDeck"
+  },
+  "apiServerCreateDeck": "Could not create deck. Please try again.",
+  "@apiServerCreateDeck": {
+    "description": "API error: apiServerCreateDeck"
+  },
+  "apiServerPrepareDeckMedia": "Could not prepare media storage. Please try again.",
+  "@apiServerPrepareDeckMedia": {
+    "description": "API error: apiServerPrepareDeckMedia"
+  },
+  "apiDeckRateRange": "Daily new-card rate must be between 1 and 1000",
+  "@apiDeckRateRange": {
+    "description": "API error: apiDeckRateRange"
+  },
+  "apiInvalidVisibility": "Invalid visibility setting",
+  "@apiInvalidVisibility": {
+    "description": "API error: apiInvalidVisibility"
+  },
+  "apiCannotChangeVisibilityAfterPublish": "Cannot change visibility after publishing",
+  "@apiCannotChangeVisibilityAfterPublish": {
+    "description": "API error: apiCannotChangeVisibilityAfterPublish"
+  },
+  "apiCannotChangeVisibilityImported": "Cannot change visibility on an imported deck",
+  "@apiCannotChangeVisibilityImported": {
+    "description": "API error: apiCannotChangeVisibilityImported"
+  },
+  "apiCannotChangeFieldsImported": "Cannot change fields on an imported deck",
+  "@apiCannotChangeFieldsImported": {
+    "description": "API error: apiCannotChangeFieldsImported"
+  },
+  "apiCannotChangeNameImported": "Cannot change name on an imported deck",
+  "@apiCannotChangeNameImported": {
+    "description": "API error: apiCannotChangeNameImported"
+  },
+  "apiCannotChangeDescriptionImported": "Cannot change description on an imported deck",
+  "@apiCannotChangeDescriptionImported": {
+    "description": "API error: apiCannotChangeDescriptionImported"
+  },
+  "apiImportedDeckRateRequired": "Daily new-card rate is required for imported deck updates",
+  "@apiImportedDeckRateRequired": {
+    "description": "API error: apiImportedDeckRateRequired"
+  },
+  "apiServerSerializeDeck": "Could not save deck. Please try again.",
+  "@apiServerSerializeDeck": {
+    "description": "API error: apiServerSerializeDeck"
+  },
+  "apiServerLoadCards": "Could not load cards. Please try again.",
+  "@apiServerLoadCards": {
+    "description": "API error: apiServerLoadCards"
+  },
+  "apiServerRescheduleCards": "Could not reschedule cards. Please try again.",
+  "@apiServerRescheduleCards": {
+    "description": "API error: apiServerRescheduleCards"
+  },
+  "apiServerUpdateDeckCards": "Could not update deck. Please try again.",
+  "@apiServerUpdateDeckCards": {
+    "description": "API error: apiServerUpdateDeckCards"
+  },
+  "apiServerUpdateDeck": "Could not update deck. Please try again.",
+  "@apiServerUpdateDeck": {
+    "description": "API error: apiServerUpdateDeck"
+  },
+  "apiServerLoadFactsDelete": "Could not delete deck. Please try again.",
+  "@apiServerLoadFactsDelete": {
+    "description": "API error: apiServerLoadFactsDelete"
+  },
+  "apiServerCleanupTags": "Could not delete deck. Please try again.",
+  "@apiServerCleanupTags": {
+    "description": "API error: apiServerCleanupTags"
+  },
+  "apiServerDeleteDeck": "Could not delete deck. Please try again.",
+  "@apiServerDeleteDeck": {
+    "description": "API error: apiServerDeleteDeck"
+  },
+  "apiServerRevokeMediaGrants": "Could not delete deck. Please try again.",
+  "@apiServerRevokeMediaGrants": {
+    "description": "API error: apiServerRevokeMediaGrants"
+  },
+  "apiServerRetrieveDecks": "Could not load decks. Please try again.",
+  "@apiServerRetrieveDecks": {
+    "description": "API error: apiServerRetrieveDecks"
+  },
+  "apiServerRetrieveDeckData": "Could not load deck. Please try again.",
+  "@apiServerRetrieveDeckData": {
+    "description": "API error: apiServerRetrieveDeckData"
+  },
+  "apiServerListCatalog": "Could not load catalog. Please try again.",
+  "@apiServerListCatalog": {
+    "description": "API error: apiServerListCatalog"
+  },
+  "apiServerLoadCatalogDeck": "Could not load deck details. Please try again.",
+  "@apiServerLoadCatalogDeck": {
+    "description": "API error: apiServerLoadCatalogDeck"
+  },
+  "apiFirstPublishPublic": "First publish requires public visibility",
+  "@apiFirstPublishPublic": {
+    "description": "API error: apiFirstPublishPublic"
+  },
+  "apiCannotPublishImported": "Imported decks cannot be published",
+  "@apiCannotPublishImported": {
+    "description": "API error: apiCannotPublishImported"
+  },
+  "apiSourceDeckIdRequired": "Source deck ID is required",
+  "@apiSourceDeckIdRequired": {
+    "description": "API error: apiSourceDeckIdRequired"
+  },
+  "apiMaxFactTagsPerDeck": "Maximum fact tags per deck reached",
+  "@apiMaxFactTagsPerDeck": {
+    "description": "API error: apiMaxFactTagsPerDeck"
+  },
+  "apiUpdatesImportedOnly": "Updates are only available for imported decks",
+  "@apiUpdatesImportedOnly": {
+    "description": "API error: apiUpdatesImportedOnly"
+  },
+  "apiNotImportedDeck": "This is not an imported deck",
+  "@apiNotImportedDeck": {
+    "description": "API error: apiNotImportedDeck"
+  },
+  "apiSourceDeckMissing": "Source deck is missing",
+  "@apiSourceDeckMissing": {
+    "description": "API error: apiSourceDeckMissing"
+  },
+  "apiFactsArrayRequired": "Facts are required",
+  "@apiFactsArrayRequired": {
+    "description": "API error: apiFactsArrayRequired"
+  },
+  "apiInvalidFactOperation": "Invalid operation. Supported: append, prepend, shuffle, spread.",
+  "@apiInvalidFactOperation": {
+    "description": "API error: apiInvalidFactOperation"
+  },
+  "apiDeckRateMinForFacts": "Set daily new-card rate to at least 1 before adding facts",
+  "@apiDeckRateMinForFacts": {
+    "description": "API error: apiDeckRateMinForFacts"
+  },
+  "apiAtLeastOneFact": "At least one fact is required",
+  "@apiAtLeastOneFact": {
+    "description": "API error: apiAtLeastOneFact"
+  },
+  "apiTemplateInvalid": "Card template is invalid",
+  "@apiTemplateInvalid": {
+    "description": "API error: apiTemplateInvalid"
+  },
+  "apiEntryContentRequired": "Each entry needs text, audio, image, video, or JSON",
+  "@apiEntryContentRequired": {
+    "description": "API error: apiEntryContentRequired"
+  },
+  "apiFactNotFound": "Fact not found",
+  "@apiFactNotFound": {
+    "description": "API error: apiFactNotFound"
+  },
+  "apiServerAddFacts": "Could not add facts. Please try again.",
+  "@apiServerAddFacts": {
+    "description": "API error: apiServerAddFacts"
+  },
+  "apiServerMergeFacts": "Could not add facts. Please try again.",
+  "@apiServerMergeFacts": {
+    "description": "API error: apiServerMergeFacts"
+  },
+  "apiServerSerializeFact": "Could not save fact. Please try again.",
+  "@apiServerSerializeFact": {
+    "description": "API error: apiServerSerializeFact"
+  },
+  "apiServerRebuildTemplate": "Could not update card. Please try again.",
+  "@apiServerRebuildTemplate": {
+    "description": "API error: apiServerRebuildTemplate"
+  },
+  "apiServerRetrieveCards": "Could not load cards. Please try again.",
+  "@apiServerRetrieveCards": {
+    "description": "API error: apiServerRetrieveCards"
+  },
+  "apiServerSerializeCard": "Could not save card. Please try again.",
+  "@apiServerSerializeCard": {
+    "description": "API error: apiServerSerializeCard"
+  },
+  "apiServerUpdateFact": "Could not update fact. Please try again.",
+  "@apiServerUpdateFact": {
+    "description": "API error: apiServerUpdateFact"
+  },
+  "apiServerRemoveFactTags": "Could not update fact. Please try again.",
+  "@apiServerRemoveFactTags": {
+    "description": "API error: apiServerRemoveFactTags"
+  },
+  "apiServerRemoveFact": "Could not remove fact. Please try again.",
+  "@apiServerRemoveFact": {
+    "description": "API error: apiServerRemoveFact"
+  },
+  "apiServerDeleteFact": "Could not delete fact. Please try again.",
+  "@apiServerDeleteFact": {
+    "description": "API error: apiServerDeleteFact"
+  },
+  "apiServerRetrieveFacts": "Could not load facts. Please try again.",
+  "@apiServerRetrieveFacts": {
+    "description": "API error: apiServerRetrieveFacts"
+  },
+  "apiServerRetrieveFactTags": "Could not load fact tags. Please try again.",
+  "@apiServerRetrieveFactTags": {
+    "description": "API error: apiServerRetrieveFactTags"
+  },
+  "apiServerCheckFact": "Could not verify fact. Please try again.",
+  "@apiServerCheckFact": {
+    "description": "API error: apiServerCheckFact"
+  },
+  "apiInvalidUsedOnFilter": "Invalid filter value",
+  "@apiInvalidUsedOnFilter": {
+    "description": "API error: apiInvalidUsedOnFilter"
+  },
+  "apiUsedOnRequired": "Filter type is required when deck ID is set",
+  "@apiUsedOnRequired": {
+    "description": "API error: apiUsedOnRequired"
+  },
+  "apiDeckIdRequiredForFact": "Deck ID is required for fact filter",
+  "@apiDeckIdRequiredForFact": {
+    "description": "API error: apiDeckIdRequiredForFact"
+  },
+  "apiServerRetrieveTags": "Could not load tags. Please try again.",
+  "@apiServerRetrieveTags": {
+    "description": "API error: apiServerRetrieveTags"
+  },
+  "apiServerCheckTags": "Could not verify tags. Please try again.",
+  "@apiServerCheckTags": {
+    "description": "API error: apiServerCheckTags"
+  },
+  "apiServerCheckTagName": "Could not verify tag name. Please try again.",
+  "@apiServerCheckTagName": {
+    "description": "API error: apiServerCheckTagName"
+  },
+  "apiServerGenerateTagId": "Could not create tag. Please try again.",
+  "@apiServerGenerateTagId": {
+    "description": "API error: apiServerGenerateTagId"
+  },
+  "apiServerCreateTag": "Could not create tag. Please try again.",
+  "@apiServerCreateTag": {
+    "description": "API error: apiServerCreateTag"
+  },
+  "apiServerSerializeTag": "Could not save tag. Please try again.",
+  "@apiServerSerializeTag": {
+    "description": "API error: apiServerSerializeTag"
+  },
+  "apiServerSaveTag": "Could not save tag. Please try again.",
+  "@apiServerSaveTag": {
+    "description": "API error: apiServerSaveTag"
+  },
+  "apiServerAssociateTag": "Could not add tag. Please try again.",
+  "@apiServerAssociateTag": {
+    "description": "API error: apiServerAssociateTag"
+  },
+  "apiServerRemoveTag": "Could not remove tag. Please try again.",
+  "@apiServerRemoveTag": {
+    "description": "API error: apiServerRemoveTag"
+  },
+  "apiServerLoadTags": "Could not load tags. Please try again.",
+  "@apiServerLoadTags": {
+    "description": "API error: apiServerLoadTags"
+  },
+  "apiFactIdRequired": "Fact ID is required",
+  "@apiFactIdRequired": {
+    "description": "API error: apiFactIdRequired"
+  },
+  "apiTemplateRequired": "Card template is required",
+  "@apiTemplateRequired": {
+    "description": "API error: apiTemplateRequired"
+  },
+  "apiTemplateExists": "A template already exists for this fact",
+  "@apiTemplateExists": {
+    "description": "API error: apiTemplateExists"
+  },
+  "apiCardNotFound": "Card not found",
+  "@apiCardNotFound": {
+    "description": "API error: apiCardNotFound"
+  },
+  "apiCardIdRequired": "Card ID is required",
+  "@apiCardIdRequired": {
+    "description": "API error: apiCardIdRequired"
+  },
+  "apiCardIdEmpty": "Card ID must not be empty",
+  "@apiCardIdEmpty": {
+    "description": "API error: apiCardIdEmpty"
+  },
+  "apiIntervalOrHiddenRequired": "Include either interval or hidden field",
+  "@apiIntervalOrHiddenRequired": {
+    "description": "API error: apiIntervalOrHiddenRequired"
+  },
+  "apiIntervalAndHiddenConflict": "Cannot send both interval and hidden in one request",
+  "@apiIntervalAndHiddenConflict": {
+    "description": "API error: apiIntervalAndHiddenConflict"
+  },
+  "apiLastReviewRequired": "last_review is required with interval updates",
+  "@apiLastReviewRequired": {
+    "description": "API error: apiLastReviewRequired"
+  },
+  "apiLastReviewIntervalOnly": "last_review is only valid with interval updates",
+  "@apiLastReviewIntervalOnly": {
+    "description": "API error: apiLastReviewIntervalOnly"
+  },
+  "apiLastReviewNumeric": "last_review must be a numeric Unix timestamp",
+  "@apiLastReviewNumeric": {
+    "description": "API error: apiLastReviewNumeric"
+  },
+  "apiLastReviewWhole": "last_review must be a whole-number Unix timestamp",
+  "@apiLastReviewWhole": {
+    "description": "API error: apiLastReviewWhole"
+  },
+  "apiLastReviewPositive": "last_review must be a positive Unix timestamp",
+  "@apiLastReviewPositive": {
+    "description": "API error: apiLastReviewPositive"
+  },
+  "apiIntervalNumeric": "interval must be a number",
+  "@apiIntervalNumeric": {
+    "description": "API error: apiIntervalNumeric"
+  },
+  "apiIntervalPositive": "interval must be a positive number",
+  "@apiIntervalPositive": {
+    "description": "API error: apiIntervalPositive"
+  },
+  "apiHiddenBoolean": "hidden must be true or false",
+  "@apiHiddenBoolean": {
+    "description": "API error: apiHiddenBoolean"
+  },
+  "apiUnsupportedCardOperation": "Supported operations: interval, visibility",
+  "@apiUnsupportedCardOperation": {
+    "description": "API error: apiUnsupportedCardOperation"
+  },
+  "apiCardTemplateInvalidForFact": "Card template is invalid for this fact",
+  "@apiCardTemplateInvalidForFact": {
+    "description": "API error: apiCardTemplateInvalidForFact"
+  },
+  "apiServerUpdateCardRedis": "Could not update card. Please try again.",
+  "@apiServerUpdateCardRedis": {
+    "description": "API error: apiServerUpdateCardRedis"
+  },
+  "apiServerCheckCardMembership": "Could not verify card. Please try again.",
+  "@apiServerCheckCardMembership": {
+    "description": "API error: apiServerCheckCardMembership"
+  },
+  "apiServerParseCard": "Card data is corrupted. Please try again.",
+  "@apiServerParseCard": {
+    "description": "API error: apiServerParseCard"
+  },
+  "apiServerUpdateCard": "Could not update card. Please try again.",
+  "@apiServerUpdateCard": {
+    "description": "API error: apiServerUpdateCard"
+  },
+  "apiServerCheckCard": "Could not verify card. Please try again.",
+  "@apiServerCheckCard": {
+    "description": "API error: apiServerCheckCard"
+  },
+  "apiServerDeleteCard": "Could not delete card. Please try again.",
+  "@apiServerDeleteCard": {
+    "description": "API error: apiServerDeleteCard"
+  },
+  "apiServerGenerateCardId": "Could not create card. Please try again.",
+  "@apiServerGenerateCardId": {
+    "description": "API error: apiServerGenerateCardId"
+  },
+  "apiServerMergeCard": "Could not add card. Please try again.",
+  "@apiServerMergeCard": {
+    "description": "API error: apiServerMergeCard"
+  },
+  "apiServerAddCard": "Could not add card. Please try again.",
+  "@apiServerAddCard": {
+    "description": "API error: apiServerAddCard"
+  },
+  "apiServerParseFact": "Fact data is corrupted. Please try again.",
+  "@apiServerParseFact": {
+    "description": "API error: apiServerParseFact"
+  },
+  "apiInvalidMultipart": "Invalid file upload",
+  "@apiInvalidMultipart": {
+    "description": "API error: apiInvalidMultipart"
+  },
+  "apiMissingFileField": "No file selected or file field is invalid",
+  "@apiMissingFileField": {
+    "description": "API error: apiMissingFileField"
+  },
+  "apiMediaDeckIdRequired": "Deck ID is required for media upload",
+  "@apiMediaDeckIdRequired": {
+    "description": "API error: apiMediaDeckIdRequired"
+  },
+  "apiClientIdInUse": "Upload ID already in use. Please retry.",
+  "@apiClientIdInUse": {
+    "description": "API error: apiClientIdInUse"
+  },
+  "apiFileTooLarge": "File is too large",
+  "@apiFileTooLarge": {
+    "description": "API error: apiFileTooLarge"
+  },
+  "apiUnsupportedMediaType": "Unsupported file type",
+  "@apiUnsupportedMediaType": {
+    "description": "API error: apiUnsupportedMediaType"
+  },
+  "apiInvalidJsonDocument": "Invalid JSON file",
+  "@apiInvalidJsonDocument": {
+    "description": "API error: apiInvalidJsonDocument"
+  },
+  "apiMediaStorageNotConfigured": "Media storage is not available",
+  "@apiMediaStorageNotConfigured": {
+    "description": "API error: apiMediaStorageNotConfigured"
+  },
+  "apiFailedCheckClientId": "Upload failed. Please try again.",
+  "@apiFailedCheckClientId": {
+    "description": "API error: apiFailedCheckClientId"
+  },
+  "apiFailedVerifyDeck": "Could not verify deck. Please try again.",
+  "@apiFailedVerifyDeck": {
+    "description": "API error: apiFailedVerifyDeck"
+  },
+  "apiFailedReadFile": "Could not read file. Please try again.",
+  "@apiFailedReadFile": {
+    "description": "API error: apiFailedReadFile"
+  },
+  "apiFailedGenerateId": "Upload failed. Please try again.",
+  "@apiFailedGenerateId": {
+    "description": "API error: apiFailedGenerateId"
+  },
+  "apiFailedPrepareMedia": "Upload failed. Please try again.",
+  "@apiFailedPrepareMedia": {
+    "description": "API error: apiFailedPrepareMedia"
+  },
+  "apiFailedStoreFile": "Could not save file. Please try again.",
+  "@apiFailedStoreFile": {
+    "description": "API error: apiFailedStoreFile"
+  },
+  "apiFailedSaveMetadata": "Could not save file info. Please try again.",
+  "@apiFailedSaveMetadata": {
+    "description": "API error: apiFailedSaveMetadata"
+  },
+  "apiMediaVersionRequired": "Version parameter is required for this media",
+  "@apiMediaVersionRequired": {
+    "description": "API error: apiMediaVersionRequired"
+  },
+  "apiAccessDenied": "Access denied",
+  "@apiAccessDenied": {
+    "description": "API error: apiAccessDenied"
+  },
+  "apiMediaNotFound": "Media not found",
+  "@apiMediaNotFound": {
+    "description": "API error: apiMediaNotFound"
+  },
+  "apiMediaFileNotFound": "Media file not found",
+  "@apiMediaFileNotFound": {
+    "description": "API error: apiMediaFileNotFound"
+  },
+  "apiFailedListMedia": "Could not load media. Please try again.",
+  "@apiFailedListMedia": {
+    "description": "API error: apiFailedListMedia"
+  },
+  "apiFailedLoadMedia": "Could not load media. Please try again.",
+  "@apiFailedLoadMedia": {
+    "description": "API error: apiFailedLoadMedia"
+  },
+  "apiFeedbackImportedOnly": "Feedback is only available on imported decks",
+  "@apiFeedbackImportedOnly": {
+    "description": "API error: apiFeedbackImportedOnly"
+  },
+  "apiFeedbackSourceNotPublished": "Source deck is not published",
+  "@apiFeedbackSourceNotPublished": {
+    "description": "API error: apiFeedbackSourceNotPublished"
+  },
+  "apiInvalidFeedbackCategory": "Invalid feedback category",
+  "@apiInvalidFeedbackCategory": {
+    "description": "API error: apiInvalidFeedbackCategory"
+  },
+  "apiFeedbackMessageRequired": "Message is required",
+  "@apiFeedbackMessageRequired": {
+    "description": "API error: apiFeedbackMessageRequired"
+  },
+  "apiFeedbackMessageLength": "Message must be 1–2000 characters",
+  "@apiFeedbackMessageLength": {
+    "description": "API error: apiFeedbackMessageLength"
+  },
+  "apiEntryIndexOutOfRange": "Entry index is out of range",
+  "@apiEntryIndexOutOfRange": {
+    "description": "API error: apiEntryIndexOutOfRange"
+  },
+  "apiProposedEntriesContent": "Proposed entries must have content",
+  "@apiProposedEntriesContent": {
+    "description": "API error: apiProposedEntriesContent"
+  },
+  "apiProposedEntriesLength": "Proposed entries must match the fact length",
+  "@apiProposedEntriesLength": {
+    "description": "API error: apiProposedEntriesLength"
+  },
+  "apiProposedEntriesDiffer": "Proposed entries must differ from the original",
+  "@apiProposedEntriesDiffer": {
+    "description": "API error: apiProposedEntriesDiffer"
+  },
+  "apiFactNotInSnapshot": "Fact is not in the pinned snapshot",
+  "@apiFactNotInSnapshot": {
+    "description": "API error: apiFactNotInSnapshot"
+  },
+  "apiFeedbackDeckNotFound": "Deck not found",
+  "@apiFeedbackDeckNotFound": {
+    "description": "API error: apiFeedbackDeckNotFound"
+  },
+  "apiFeedbackFactNotFound": "Fact not found",
+  "@apiFeedbackFactNotFound": {
+    "description": "API error: apiFeedbackFactNotFound"
+  },
+  "apiFeedbackDailyLimit": "Daily feedback limit reached. Try again tomorrow.",
+  "@apiFeedbackDailyLimit": {
+    "description": "API error: apiFeedbackDailyLimit"
+  },
+  "apiServerSubmitFeedback": "Could not submit feedback. Please try again.",
+  "@apiServerSubmitFeedback": {
+    "description": "API error: apiServerSubmitFeedback"
+  },
+  "apiFeedbackInboxSourceOnly": "Feedback inbox is only available on source decks",
+  "@apiFeedbackInboxSourceOnly": {
+    "description": "API error: apiFeedbackInboxSourceOnly"
+  },
+  "apiServerListFeedback": "Could not load feedback. Please try again.",
+  "@apiServerListFeedback": {
+    "description": "API error: apiServerListFeedback"
+  },
+  "apiInvalidFeedbackStatus": "Invalid feedback status",
+  "@apiInvalidFeedbackStatus": {
+    "description": "API error: apiInvalidFeedbackStatus"
+  },
+  "apiFeedbackNotFound": "Feedback not found",
+  "@apiFeedbackNotFound": {
+    "description": "API error: apiFeedbackNotFound"
+  },
+  "apiServerUpdateFeedback": "Could not update feedback. Please try again.",
+  "@apiServerUpdateFeedback": {
+    "description": "API error: apiServerUpdateFeedback"
+  },
+  "apiProposedEntriesRequiredAccept": "Proposed entries are required to accept feedback",
+  "@apiProposedEntriesRequiredAccept": {
+    "description": "API error: apiProposedEntriesRequiredAccept"
+  },
+  "apiFactNotOnSourceDeck": "Fact not found on source deck",
+  "@apiFactNotOnSourceDeck": {
+    "description": "API error: apiFactNotOnSourceDeck"
+  },
+  "apiServerAcceptFeedback": "Could not accept feedback. Please try again.",
+  "@apiServerAcceptFeedback": {
+    "description": "API error: apiServerAcceptFeedback"
+  },
+  "apiBadCertificate": "Secure connection failed",
+  "@apiBadCertificate": {
+    "description": "API error: apiBadCertificate"
+  },
+  "apiBadResponse": "Unexpected server response",
+  "@apiBadResponse": {
+    "description": "API error: apiBadResponse"
+  },
+  "apiRequestCancel": "Request was cancelled",
+  "@apiRequestCancel": {
+    "description": "API error: apiRequestCancel"
+  },
+  "apiUnknownError": "An unexpected error occurred",
+  "@apiUnknownError": {
+    "description": "API error: apiUnknownError"
+  },
+  "errorServerError": "Something went wrong. Please try again later.",
+  "@errorServerError": {
+    "description": "API error: errorServerError"
+  },
+  "apiFactEntryRequired": "Fact {index}: at least one entry is required",
+  "@apiFactEntryRequired": {
+    "description": "API error pattern: apiFactEntryRequired",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "apiFactEntryContent": "Fact {index}: each entry needs text, audio, image, video, or JSON",
+  "@apiFactEntryContent": {
+    "description": "API error pattern: apiFactEntryContent",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "apiInvalidTemplate": "Invalid card template for this fact",
+  "@apiInvalidTemplate": {
+    "description": "API error pattern: apiInvalidTemplate"
+  },
+  "apiNegativeInterval": "Something went wrong with this card. Try removing fact {factId}.",
+  "@apiNegativeInterval": {
+    "description": "API error pattern: apiNegativeInterval",
+    "placeholders": {
+      "factId": {
+        "type": "String"
+      }
+    }
+  },
+  "apiUnsupportedMediaMime": "Unsupported file type: {mime}",
+  "@apiUnsupportedMediaMime": {
+    "description": "API error pattern: apiUnsupportedMediaMime",
+    "placeholders": {
+      "mime": {
+        "type": "String"
+      }
+    }
+  },
+  "apiInvalidTargetVersion": "Invalid target version",
+  "@apiInvalidTargetVersion": {
+    "description": "API error pattern: apiInvalidTargetVersion"
+  },
+  "errorSubmitCardFailed": "Could not save card progress. Please try again.",
+  "@errorSubmitCardFailed": {
+    "description": "Deck study submit failure"
+  },
+  "deckCheckUpdates": "Check updates",
+  "@deckCheckUpdates": {
+    "description": "Menu action to check imported deck updates"
+  },
+  "deckSyncNow": "Sync now",
+  "@deckSyncNow": {
+    "description": "Action label to sync imported deck"
+  },
+  "deckUpToDate": "Already up to date",
+  "@deckUpToDate": {
+    "description": "Shown when imported deck has no updates"
+  },
+  "deckSyncSuccess": "Deck synced",
+  "@deckSyncSuccess": {
+    "description": "Toast after imported deck sync succeeds"
+  },
+  "deckUpdatesVersion": "Current v{source} -> latest v{latest}",
+  "@deckUpdatesVersion": {
+    "description": "Version comparison for imported deck updates",
+    "placeholders": {
+      "source": {
+        "type": "int"
+      },
+      "latest": {
+        "type": "int"
+      }
+    }
+  },
+  "deckUpdatesCounts": "Added {added}, edited {edited}, removed {removed}, media changes {media}",
+  "@deckUpdatesCounts": {
+    "description": "Fact/media change counts in imported deck updates",
+    "placeholders": {
+      "added": {
+        "type": "int"
+      },
+      "edited": {
+        "type": "int"
+      },
+      "removed": {
+        "type": "int"
+      },
+      "media": {
+        "type": "int"
+      }
+    }
+  },
+  "feedbackSubmit": "Submit feedback",
+  "@feedbackSubmit": {
+    "description": "Action to submit feedback for imported deck fact"
+  },
+  "feedbackMessageHint": "Describe the issue for this fact",
+  "@feedbackMessageHint": {
+    "description": "Hint text for feedback message input"
+  },
+  "feedbackMessageRequired": "Please enter feedback message",
+  "@feedbackMessageRequired": {
+    "description": "Validation error when feedback message is empty"
+  },
+  "feedbackSubmitSuccess": "Feedback submitted",
+  "@feedbackSubmitSuccess": {
+    "description": "Toast after feedback submission succeeds"
+  },
+  "factEditNoEntries": "This fact has no entries",
+  "@factEditNoEntries": {
+    "description": "Shown when fact edit opens an invalid empty fact"
   }
 }

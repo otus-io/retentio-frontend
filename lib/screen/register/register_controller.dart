@@ -36,12 +36,13 @@ class RegisterController {
 
       if (result?.isSuccess == true) {
         showSnack(context, '${loc.registerSuccess}: $username');
-        onSuccess(); // 通过回调通知 UI 层
+        onSuccess();
       } else {
-        showSnack(context, result?.msg ?? '注册失败');
+        showSnack(context, ApiErrorMessages.resolve(result?.msg, loc));
       }
     } catch (e) {
-      showSnack(context, '注册失败: $e');
+      if (!context.mounted) return;
+      showSnack(context, ApiErrorMessages.resolve(rawApiErrorMessage(e), loc));
     } finally {
       setLoading(false);
     }

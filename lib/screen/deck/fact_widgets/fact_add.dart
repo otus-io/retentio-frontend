@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/features/tags/widgets/tag_chip.dart';
 import 'package:retentio/features/tags/widgets/tag_picker_sheet.dart';
@@ -22,6 +23,7 @@ import 'package:retentio/services/apis/card_service.dart';
 import 'package:retentio/services/apis/media_service.dart';
 import 'package:retentio/utils/media_client_id.dart';
 import 'package:retentio/widgets/app_button.dart';
+import 'package:retentio/widgets/app_toast.dart';
 
 const _kComposerOutlineAlpha = 0.62;
 const _kComposerCardPadding = EdgeInsets.fromLTRB(14, 12, 14, 8);
@@ -101,9 +103,7 @@ class _FactAddState extends ConsumerState<FactAdd>
 
   void _snack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    AppToast.show(context, message);
   }
 
   @override
@@ -268,7 +268,7 @@ class _FactAddState extends ConsumerState<FactAdd>
         _resetForm();
         _snack(loc.addFactSuccess);
       } else {
-        _snack(res?.msg ?? loc.addFactFailed);
+        _snack(ApiErrorMessages.resolve(res?.msg ?? loc.addFactFailed, loc));
       }
     } finally {
       if (mounted) setState(() => _submitting = false);

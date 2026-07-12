@@ -123,7 +123,7 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
       _emit(
         state.copyWith(
           loadingPhase: DeckStudyLoadingPhase.error,
-          errorMessage: 'Failed to submit current card.',
+          errorMessage: 'submit_card_failed',
         ),
       );
       return;
@@ -149,7 +149,7 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
       _emit(
         state.copyWith(
           loadingPhase: DeckStudyLoadingPhase.error,
-          errorMessage: 'Failed to delete current card.',
+          errorMessage: 'delete_card_failed',
         ),
       );
       return;

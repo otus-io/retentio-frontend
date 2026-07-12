@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/services/apis/deck_service.dart';
 
@@ -52,7 +53,7 @@ class DeckListCubit extends Cubit<DeckListState> {
       final decks = await DeckService.of.getDecks();
       emit(state.copyWith(decks: decks, isLoading: false, clearError: true));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      emit(state.copyWith(isLoading: false, error: rawApiErrorMessage(e)));
     }
   }
 
@@ -93,7 +94,7 @@ class DeckListCubit extends Cubit<DeckListState> {
       if (_disposed) {
         return;
       }
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      emit(state.copyWith(isLoading: false, error: rawApiErrorMessage(e)));
     }
   }
 

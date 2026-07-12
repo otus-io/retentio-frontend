@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/core/error/api_error_messages.dart';
+import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/fact.dart';
 import 'package:retentio/models/tag.dart';
@@ -33,7 +35,7 @@ class _TagFactsScreenState extends State<TagFactsScreen> {
       final facts = await TagService.of.getTagFacts(widget.tag.id);
       if (mounted) setState(() => _facts = facts);
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = rawApiErrorMessage(e));
     }
   }
 
@@ -76,7 +78,7 @@ class _TagFactsScreenState extends State<TagFactsScreen> {
           spacing: 16,
           children: [
             Text(
-              _error!,
+              ApiErrorMessages.resolve(_error, loc),
               textAlign: TextAlign.center,
               style: TextStyle(color: scheme.error),
             ),

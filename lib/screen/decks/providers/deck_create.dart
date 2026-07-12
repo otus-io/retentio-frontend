@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/providers/loading_state_provider.dart';
-import 'package:retentio/screen/decks/deck_text_styles.dart';
 import '../../../main.dart';
 import '../../../mixins/notifier_mixin.dart';
 import '../../../services/apis/deck_service.dart';
+import '../../../widgets/app_toast.dart';
 import 'deck_list.dart';
 
 /// Inclusive bounds for the rate field when creating or editing a deck.
@@ -105,20 +106,11 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
 
   Future<void> createDeck(BuildContext context, List<String> fieldNames) async {
     final loc = AppLocalizations.of(context);
-    final scheme = Theme.of(context).colorScheme;
     final name = nameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            loc?.deckEditorNameRequired ?? 'Please enter a deck name',
-            style: DeckTextStyles.feedbackMessage(
-              Theme.of(context),
-              scheme.onError,
-            ),
-          ),
-          backgroundColor: scheme.error,
-        ),
+      AppToast.error(
+        context,
+        loc?.deckEditorNameRequired ?? 'Please enter a deck name',
       );
       return;
     }
@@ -141,18 +133,8 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
       } else {
         ref.read(loadingStateProvider.notifier).showInitial();
         if (res?.msg.isNotEmpty == true && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                res!.msg,
-                style: DeckTextStyles.feedbackMessage(
-                  Theme.of(context),
-                  scheme.onError,
-                ),
-              ),
-              backgroundColor: scheme.error,
-            ),
-          );
+          final loc = AppLocalizations.of(context)!;
+          AppToast.error(context, ApiErrorMessages.resolve(res!.msg, loc));
         }
       }
     } else {
@@ -167,18 +149,8 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
       } else {
         ref.read(loadingStateProvider.notifier).showInitial();
         if (res?.msg.isNotEmpty == true && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                res!.msg,
-                style: DeckTextStyles.feedbackMessage(
-                  Theme.of(context),
-                  scheme.onError,
-                ),
-              ),
-              backgroundColor: scheme.error,
-            ),
-          );
+          final loc = AppLocalizations.of(context)!;
+          AppToast.error(context, ApiErrorMessages.resolve(res!.msg, loc));
         }
       }
     }

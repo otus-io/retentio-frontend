@@ -86,6 +86,118 @@ void main() {
     });
   });
 
+  group('CardText textAlign', () {
+    testWidgets('scrollable: textAlign.start → Align.centerLeft', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          const Scaffold(
+            body: SizedBox(
+              height: 200,
+              width: 400,
+              child: CardText(
+                text: 'Hello',
+                color: Colors.black,
+                scrollable: true,
+                textAlign: TextAlign.start,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final align = tester.widget<Align>(
+        find.descendant(
+          of: find.byType(SingleChildScrollView),
+          matching: find.byType(Align),
+        ).first,
+      );
+      expect(align.alignment, Alignment.centerLeft);
+    });
+
+    testWidgets('scrollable: textAlign.end → Align.centerRight', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          const Scaffold(
+            body: SizedBox(
+              height: 200,
+              width: 400,
+              child: CardText(
+                text: 'Hello',
+                color: Colors.black,
+                scrollable: true,
+                textAlign: TextAlign.end,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final align = tester.widget<Align>(
+        find.descendant(
+          of: find.byType(SingleChildScrollView),
+          matching: find.byType(Align),
+        ).first,
+      );
+      expect(align.alignment, Alignment.centerRight);
+    });
+
+    testWidgets('scrollable: default textAlign.center → Align.center', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          const Scaffold(
+            body: SizedBox(
+              height: 200,
+              width: 400,
+              child: CardText(
+                text: 'Hello',
+                color: Colors.black,
+                scrollable: true,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final align = tester.widget<Align>(
+        find.descendant(
+          of: find.byType(SingleChildScrollView),
+          matching: find.byType(Align),
+        ).first,
+      );
+      expect(align.alignment, Alignment.center);
+    });
+
+    testWidgets('non-scrollable: textAlign passed to underlying Text widget', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          const Scaffold(
+            body: CardText(
+              text: 'Left text',
+              color: Colors.black,
+              scrollable: false,
+              textAlign: TextAlign.start,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final text = tester.widget<Text>(find.text('Left text'));
+      expect(text.textAlign, TextAlign.start);
+    });
+  });
+
   group('FactContent text-only (no transcript JSON)', () {
     testWidgets('text item from normal fact shows ruby same as CardText', (
       tester,

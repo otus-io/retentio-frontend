@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/features/auth/domain/entities/auth_session.dart';
 import 'package:retentio/features/auth/domain/usecases/login.dart';
 import 'package:retentio/features/auth/domain/usecases/logout.dart';
@@ -67,7 +68,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         state.copyWith(
           status: AuthStatus.failure,
           session: const AuthSession.unauthenticated(),
-          errorMessage: e.toString(),
+          errorMessage: rawApiErrorMessage(e),
         ),
       );
     }
@@ -105,7 +106,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         state.copyWith(
           status: AuthStatus.failure,
           session: const AuthSession.unauthenticated(),
-          errorMessage: e.toString(),
+          errorMessage: rawApiErrorMessage(e),
         ),
       );
     }
@@ -131,7 +132,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
     } catch (e) {
       emit(
-        state.copyWith(status: AuthStatus.failure, errorMessage: e.toString()),
+        state.copyWith(
+          status: AuthStatus.failure,
+          errorMessage: rawApiErrorMessage(e),
+        ),
       );
     }
   }

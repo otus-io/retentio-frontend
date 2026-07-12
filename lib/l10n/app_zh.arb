@@ -1,157 +1,1047 @@
 {
-    "@@locale": "zh",
-    "appTitle": "Rete",
-    "login": "登录",
-    "register": "注册",
-    "forgotPassword": "忘记密码？",
-    "username": "用户名",
-    "password": "密码",
-    "loginPageTitle": "登录",
-    "email": "邮箱",
-    "confirmPassword": "确认密码",
-    "pleaseFillAllFields": "请填写所有字段",
-    "passwordNotMatch": "两次密码输入不一致",
-    "registerSuccess": "注册成功",
-    "loginSuccess": "登录成功",
-    "loginFailed": "登录失败",
-    "backToLogin": "返回登录",
-    "resetPassword": "重置密码",
-    "resetPasswordSent": "重置密码邮件已发送",
-    "home": "首页",
-    "decks": "卡组",
-    "profile": "我的",
-    "noDecksAvailable": "暂无卡组",
-    "retry": "重试",
-    "words": "单词",
-    "progress": "学习进度",
-    "cards": "卡片",
-    "newCards": "新卡片",
-    "review": "复习",
-    "facts": "词条",
-    "openDeck": "打开卡组：{deckName}",
-    "logout": "退出登录",
-    "logoutConfirmTitle": "退出登录",
-    "logoutConfirmMessage": "确定要退出登录吗？",
-    "cancel": "取消",
-    "changeLanguage": "更改语言",
-    "changeTheme": "更改主题",
-    "themeLight": "浅色",
-    "themeDark": "深色",
-    "themeSystem": "跟随系统",
-    "totalCards": "总计",
-    "dueCards": "待复习",
-    "learned": "已学习",
-    "noCardsInDeck": "卡组中没有卡片",
-    "startLearning": "开始学习",
-    "allCaughtUp": "全部完成！",
-    "noCardsForTagFilter": "该标签下暂无卡片",
-    "noCardsForTagFilterNamed": "标签「{tagName}」下暂无卡片",
-    "clearTagFilter": "清除筛选",
-    "startLearningDeck": "开始学习：{deckName}",
-    "showAnswer": "显示答案",
-    "hard": "困难",
-    "good": "一般",
-    "easy": "简单",
-    "backToDeck": "返回卡组",
-    "viewCards": "查看",
-    "learnButton": "学习",
-    "manage": "管理",
-    "review": "复习",
-    "createDeck": "创建卡组",
-    "createInputDeckName": "卡组名称",
-    "createInputDeckNameHint": "为你的deck设置name",
-    "deckEditorFieldHint": "例如：英语",
-    "deckEditorFieldHintSecond": "例如：日语",
-    "deckEditorAddFieldTooltip": "添加列标题",
-    "deckEditorRemoveFieldTooltip": "移除此列标题",
-    "deckCreateAddField": "新增一个字段",
-    "deckEditorNameRequired": "请输入卡组名称",
-    "deckEditorMinTwoFields": "请再添加一个列标题（至少需要两列）",
-    "deckEditorFieldNamesRequired": "请填写每个列标题",
-    "language": "语言",
-    "rate": "速率",
-    "cardsPerDay": "张新卡片/天",
-    "slow": "慢",
-    "fast": "快",
-    "unidirectional": "单向",
-    "bidirectional": "双向",
-    "template": "模版",
-    "next": "下一个",
-    "noNetworkConnection": "网络连接不可用，请检查网络设置",
-    "reviewAgain": "再次复习",
-    "editDeck": "编辑卡组",
-    "editFact": "编辑词条",
-    "hideCard": "隐藏卡片",
-    "deleteCard": "删除卡片",
-    "deleteCardConfirm": "只会删除这一张卡片；对应的词条及其他卡片仍会保留。",
-    "deleteCardFailed": "无法删除卡片",
-    "deleteDeck": "删除卡组",
-    "noCardsInThisDeck": "这个卡组中没有卡片",
-    "hard": "困难",
-    "easy": "简单",
-    "save": "保存",
-    "newCardEveryMinutes": "每{interval}分钟引入一张新卡片",
-    "addFact": "添加词条",
-    "addFactAddRow": "添加一行",
-    "addFactRemoveRow": "删除该行",
-    "addFactFieldNameHint": "字段名（可选）",
-    "addFactContentHint": "文本（若已添加媒体可留空）",
-    "addFactAttachImage": "图片",
-    "addFactAttachVideo": "视频",
-    "addFactAttachAudio": "音频",
-    "addFactClearAttachment": "清除",
-    "addFactAttachMediaTooltip": "添加图片、视频或音频；长按可移除。",
-    "addFactGalleryMediaTooltip": "从相册选择照片或视频；长按可移除。",
-    "addFactRecordAudioTooltip": "使用麦克风录音；再次点击结束并附加。录音时长按可放弃。",
-    "addFactStopRecordingTooltip": "停止录音并将音频附加到该字段",
-    "addFactMicPermissionDenied": "录音需要麦克风权限。",
-    "addFactRecordingFailed": "录音失败，请重试。",
-    "addFactSubmit": "保存词条",
-    "addFactUploadFailed": "上传失败，请重试。",
-    "addFactFileTooLarge": "文件过大（最大 {maxMb} MB）。",
-    "addFactEntryNeedsContent": "每一行至少需要填写文本或添加一种附件。",
-    "addFactFileTypeNotSupported": "不支持此文件类型。",
-    "addFactFileWrongSlot": "请选择与附件类型匹配的文件。",
-    "addFactFailed": "无法添加词条",
-    "addFactSuccess": "已添加词条",
-    "addFactFieldFallback": "字段 {number}",
-    "addFactFieldShortLabel": "字段",
-    "addFactPasteFromClipboard": "从剪贴板粘贴",
-    "cardAudioUnavailable": "音频不可用（文件无效或缺失）",
-    "font": "字体",
-    "deckFontSheetTitle": "字体与注音",
-    "deckFontMainSizeLabel": "正文字号",
-    "deckFontRubySizeLabel": "注音字号",
-    "deckFontPreviewCaption": "预览",
-    "deckFontTabFront": "正面",
-    "deckFontTabBack": "背面",
-    "tags": "标签",
-    "tagLabel": "标签",
-    "addTag": "添加标签",
-    "createTag": "创建标签",
-    "editTag": "编辑标签",
-    "deleteTag": "删除标签",
-    "tagName": "标签名称",
-    "tagDescription": "描述（可选）",
-    "tagNameHint": "例如：语法、动词…",
-    "tagNameRequired": "请输入标签名称",
-    "tagCreated": "标签已创建",
-    "tagUpdated": "标签已更新",
-    "tagDeleted": "标签已删除",
-    "tagCreateFailed": "无法创建标签",
-    "tagUpdateFailed": "无法更新标签",
-    "tagDeleteFailed": "无法删除标签",
-    "tagAlreadyExists": "已存在同名标签",
-    "tagLimitReached": "最多只能创建 100 个标签",
-    "noTags": "暂无标签",
-    "manageTags": "管理标签",
-    "tagPickerTitle": "选择标签",
-    "tagPickerSearchHint": "搜索标签…",
-    "tagPickerDone": "完成",
-    "tagPickerNoMatch": "没有匹配\"{query}\"的标签",
-    "tagPickerEmptyHint": "暂无标签，点击下方创建第一个",
-    "filterAll": "全部",
-    "studyTagFilterTitle": "按标签复习",
-    "tagFacts": "词条",
-    "noFactsInTag": "该标签下还没有词条"
+  "@@locale": "zh",
+  "appTitle": "Rete",
+  "login": "登录",
+  "register": "注册",
+  "forgotPassword": "忘记密码？",
+  "username": "用户名",
+  "password": "密码",
+  "loginPageTitle": "登录",
+  "email": "邮箱",
+  "confirmPassword": "确认密码",
+  "pleaseFillAllFields": "请填写所有字段",
+  "passwordNotMatch": "两次密码输入不一致",
+  "registerSuccess": "注册成功",
+  "loginSuccess": "登录成功",
+  "loginFailed": "登录失败",
+  "backToLogin": "返回登录",
+  "resetPassword": "重置密码",
+  "resetPasswordSent": "重置密码邮件已发送",
+  "home": "首页",
+  "decks": "卡组",
+  "profile": "我的",
+  "noDecksAvailable": "暂无卡组",
+  "retry": "重试",
+  "words": "单词",
+  "progress": "学习进度",
+  "cards": "卡片",
+  "newCards": "新卡片",
+  "review": "复习",
+  "facts": "词条",
+  "openDeck": "打开卡组：{deckName}",
+  "logout": "退出登录",
+  "logoutConfirmTitle": "退出登录",
+  "logoutConfirmMessage": "确定要退出登录吗？",
+  "cancel": "取消",
+  "changeLanguage": "更改语言",
+  "changeTheme": "更改主题",
+  "themeLight": "浅色",
+  "themeDark": "深色",
+  "themeSystem": "跟随系统",
+  "totalCards": "总计",
+  "dueCards": "待复习",
+  "learned": "已学习",
+  "noCardsInDeck": "卡组中没有卡片",
+  "startLearning": "开始学习",
+  "allCaughtUp": "全部完成！",
+  "noCardsForTagFilter": "该标签下暂无卡片",
+  "noCardsForTagFilterNamed": "标签「{tagName}」下暂无卡片",
+  "clearTagFilter": "清除筛选",
+  "startLearningDeck": "开始学习：{deckName}",
+  "showAnswer": "显示答案",
+  "hard": "困难",
+  "good": "一般",
+  "easy": "简单",
+  "backToDeck": "返回卡组",
+  "viewCards": "查看",
+  "learnButton": "学习",
+  "manage": "管理",
+  "createDeck": "创建卡组",
+  "createInputDeckName": "卡组名称",
+  "createInputDeckNameHint": "为你的deck设置name",
+  "deckEditorFieldHint": "例如：英语",
+  "deckEditorFieldHintSecond": "例如：日语",
+  "deckEditorAddFieldTooltip": "添加列标题",
+  "deckEditorRemoveFieldTooltip": "移除此列标题",
+  "deckCreateAddField": "新增一个字段",
+  "deckEditorNameRequired": "请输入卡组名称",
+  "deckEditorMinTwoFields": "请再添加一个列标题（至少需要两列）",
+  "deckEditorFieldNamesRequired": "请填写每个列标题",
+  "language": "语言",
+  "rate": "速率",
+  "cardsPerDay": "张新卡片/天",
+  "slow": "慢",
+  "fast": "快",
+  "unidirectional": "单向",
+  "bidirectional": "双向",
+  "template": "模版",
+  "next": "下一个",
+  "noNetworkConnection": "网络连接不可用，请检查网络设置",
+  "reviewAgain": "再次复习",
+  "editDeck": "编辑卡组",
+  "editFact": "编辑词条",
+  "hideCard": "隐藏卡片",
+  "deleteCard": "删除卡片",
+  "deleteCardConfirm": "只会删除这一张卡片；对应的词条及其他卡片仍会保留。",
+  "deleteCardFailed": "无法删除卡片",
+  "deleteDeck": "删除卡组",
+  "noCardsInThisDeck": "这个卡组中没有卡片",
+  "save": "保存",
+  "newCardEveryMinutes": "每{interval}分钟引入一张新卡片",
+  "addFact": "添加词条",
+  "addFactAddRow": "添加一行",
+  "addFactRemoveRow": "删除该行",
+  "addFactFieldNameHint": "字段名（可选）",
+  "addFactContentHint": "文本（若已添加媒体可留空）",
+  "addFactAttachImage": "图片",
+  "addFactAttachVideo": "视频",
+  "addFactAttachAudio": "音频",
+  "addFactClearAttachment": "清除",
+  "addFactAttachMediaTooltip": "添加图片、视频或音频；长按可移除。",
+  "addFactGalleryMediaTooltip": "从相册选择照片或视频；长按可移除。",
+  "addFactRecordAudioTooltip": "使用麦克风录音；再次点击结束并附加。录音时长按可放弃。",
+  "addFactStopRecordingTooltip": "停止录音并将音频附加到该字段",
+  "addFactMicPermissionDenied": "录音需要麦克风权限。",
+  "addFactRecordingFailed": "录音失败，请重试。",
+  "addFactSubmit": "保存词条",
+  "addFactUploadFailed": "上传失败，请重试。",
+  "addFactFileTooLarge": "文件过大（最大 {maxMb} MB）。",
+  "addFactEntryNeedsContent": "每一行至少需要填写文本或添加一种附件。",
+  "addFactFileTypeNotSupported": "不支持此文件类型。",
+  "addFactFileWrongSlot": "请选择与附件类型匹配的文件。",
+  "addFactFailed": "无法添加词条",
+  "addFactSuccess": "已添加词条",
+  "addFactFieldFallback": "字段 {number}",
+  "addFactFieldShortLabel": "字段",
+  "addFactPasteFromClipboard": "从剪贴板粘贴",
+  "cardAudioUnavailable": "音频不可用（文件无效或缺失）",
+  "font": "字体",
+  "deckFontSheetTitle": "字体与注音",
+  "deckFontMainSizeLabel": "正文字号",
+  "deckFontRubySizeLabel": "注音字号",
+  "deckFontPreviewCaption": "预览",
+  "deckFontTabFront": "正面",
+  "deckFontTabBack": "背面",
+  "tags": "标签",
+  "tagLabel": "标签",
+  "addTag": "添加标签",
+  "createTag": "创建标签",
+  "editTag": "编辑标签",
+  "deleteTag": "删除标签",
+  "tagName": "标签名称",
+  "tagDescription": "描述（可选）",
+  "tagNameHint": "例如：语法、动词…",
+  "tagNameRequired": "请输入标签名称",
+  "tagCreated": "标签已创建",
+  "tagUpdated": "标签已更新",
+  "tagDeleted": "标签已删除",
+  "tagCreateFailed": "无法创建标签",
+  "tagUpdateFailed": "无法更新标签",
+  "tagDeleteFailed": "无法删除标签",
+  "tagAlreadyExists": "已存在同名标签",
+  "tagLimitReached": "最多只能创建 1000 个标签",
+  "noTags": "暂无标签",
+  "manageTags": "管理标签",
+  "tagPickerTitle": "选择标签",
+  "tagPickerSearchHint": "搜索标签…",
+  "tagPickerDone": "完成",
+  "tagPickerNoMatch": "没有匹配\"{query}\"的标签",
+  "tagPickerEmptyHint": "暂无标签，点击下方创建第一个",
+  "filterAll": "全部",
+  "studyTagFilterTitle": "按标签复习",
+  "tagFacts": "词条",
+  "noFactsInTag": "该标签下还没有词条",
+  "discoveryTab": "发现",
+  "discoverySearchHint": "搜索卡组、作者、标签",
+  "discoveryFilterLatest": "最新",
+  "discoveryFilterFavorites": "收藏",
+  "discoveryEmpty": "暂无公开卡组",
+  "discoveryFavoritesEmpty": "暂无收藏卡组",
+  "discoveryImport": "导入",
+  "discoveryImporting": "导入中…",
+  "discoveryImported": "已导入",
+  "discoveryGoStudy": "去学习",
+  "discoveryImportSuccess": "已添加到你的卡组",
+  "discoveryFavorite": "收藏",
+  "discoveryUnfavorite": "取消收藏",
+  "discoveryNotFound": "卡组不存在或已下架",
+  "discoveryImportSelf": "不能导入自己的卡组",
+  "discoveryImportDuplicate": "该卡组已经导入过了",
+  "discoveryImportFailed": "导入失败，请重试",
+  "discoveryLoginToImport": "请登录后导入",
+  "discoveryRetry": "重试",
+  "publishDeck": "发布卡组",
+  "publishDeckHint": "发布后，其他用户可在「发现」页浏览并导入你的卡组。",
+  "publishDeckAction": "发布",
+  "publishingDeck": "发布中…",
+  "publishDeckSuccess": "已发布！",
+  "publishDeckFailed": "发布失败，请重试",
+  "publishDeckAlreadyPublished": "已发布",
+  "publishDeckUpdate": "更新已发布版本",
+  "errorUnknown": "发生意外错误",
+  "authInvalidCredentials": "用户名或密码错误",
+  "authUsernameAlreadyExists": "用户名已被使用",
+  "authEmailAlreadyInUse": "邮箱已被注册",
+  "authSessionExpired": "登录已过期，请重新登录",
+  "authTokenRequired": "请登录后继续",
+  "authResetTokenInvalid": "重置链接无效或已过期",
+  "errorLoginFailed": "登录失败，请重试",
+  "errorRegisterFailed": "注册失败，请重试",
+  "errorPublishedDeckCannotDelete": "已发布的卡组不能删除",
+  "errorNoChangesToPublish": "没有需要发布的更改",
+  "errorSourceDeckNotImportable": "该卡组不支持导入",
+  "errorCannotImportImportedDeck": "不能重复导入同一卡组",
+  "errorSourceDeckNotPublished": "该卡组尚未发布",
+  "errorCannotModifyImportedDeck": "导入的卡组不能修改",
+  "discoveryDetailFields": "字段",
+  "discoveryDetailDescription": "简介",
+  "discoveryDetailFactCount": "{count}词",
+  "imageLoadFailed": "加载失败",
+  "homeDailyGoal": "每日目标",
+  "homeLearningPath": "学习路径",
+  "homeToday": "今日",
+  "homeTodayFocus": "今日重点",
+  "homeTodayFocusText": "先完成一轮复习，再从学习笔记中添加新词条。",
+  "apiUserNotFound": "用户不存在",
+  "@apiUserNotFound": {
+    "description": "API error: apiUserNotFound"
+  },
+  "apiInvalidRequestPayload": "请求无效，请重试",
+  "@apiInvalidRequestPayload": {
+    "description": "API error: apiInvalidRequestPayload"
+  },
+  "apiDeckNotFound": "卡组不存在",
+  "@apiDeckNotFound": {
+    "description": "API error: apiDeckNotFound"
+  },
+  "apiNotAuthorizedAccessDeck": "无权访问此卡组",
+  "@apiNotAuthorizedAccessDeck": {
+    "description": "API error: apiNotAuthorizedAccessDeck"
+  },
+  "apiNotAuthorizedModifyDeck": "无权修改此卡组",
+  "@apiNotAuthorizedModifyDeck": {
+    "description": "API error: apiNotAuthorizedModifyDeck"
+  },
+  "apiNotAuthorizedDeleteDeck": "无权删除此卡组",
+  "@apiNotAuthorizedDeleteDeck": {
+    "description": "API error: apiNotAuthorizedDeleteDeck"
+  },
+  "apiNotAuthorized": "无权执行此操作",
+  "@apiNotAuthorized": {
+    "description": "API error: apiNotAuthorized"
+  },
+  "apiServerRetrieveDeck": "无法加载卡组，请重试",
+  "@apiServerRetrieveDeck": {
+    "description": "API error: apiServerRetrieveDeck"
+  },
+  "apiServerParseDeck": "卡组数据异常，请重试",
+  "@apiServerParseDeck": {
+    "description": "API error: apiServerParseDeck"
+  },
+  "apiRegisterFieldsRequired": "请填写用户名、密码和邮箱",
+  "@apiRegisterFieldsRequired": {
+    "description": "API error: apiRegisterFieldsRequired"
+  },
+  "apiLoginFieldsRequired": "请填写用户名和密码",
+  "@apiLoginFieldsRequired": {
+    "description": "API error: apiLoginFieldsRequired"
+  },
+  "apiServerCheckUsername": "无法验证用户名，请重试",
+  "@apiServerCheckUsername": {
+    "description": "API error: apiServerCheckUsername"
+  },
+  "apiServerCheckEmail": "无法验证邮箱，请重试",
+  "@apiServerCheckEmail": {
+    "description": "API error: apiServerCheckEmail"
+  },
+  "apiServerHashPassword": "无法处理密码，请重试",
+  "@apiServerHashPassword": {
+    "description": "API error: apiServerHashPassword"
+  },
+  "apiServerSerializeUser": "无法保存用户数据，请重试",
+  "@apiServerSerializeUser": {
+    "description": "API error: apiServerSerializeUser"
+  },
+  "apiServerCreateUser": "无法创建账户，请重试",
+  "@apiServerCreateUser": {
+    "description": "API error: apiServerCreateUser"
+  },
+  "apiServerRetrieveUser": "无法加载用户数据，请重试",
+  "@apiServerRetrieveUser": {
+    "description": "API error: apiServerRetrieveUser"
+  },
+  "apiServerParseUser": "用户数据异常，请重试",
+  "@apiServerParseUser": {
+    "description": "API error: apiServerParseUser"
+  },
+  "apiServerGenerateToken": "无法登录，请重试",
+  "@apiServerGenerateToken": {
+    "description": "API error: apiServerGenerateToken"
+  },
+  "apiServerLogout": "无法退出登录，请重试",
+  "@apiServerLogout": {
+    "description": "API error: apiServerLogout"
+  },
+  "apiEmailRequired": "请填写邮箱",
+  "@apiEmailRequired": {
+    "description": "API error: apiEmailRequired"
+  },
+  "apiServerGenerateResetToken": "无法发送重置邮件，请重试",
+  "@apiServerGenerateResetToken": {
+    "description": "API error: apiServerGenerateResetToken"
+  },
+  "apiServerStoreResetToken": "无法处理重置请求，请重试",
+  "@apiServerStoreResetToken": {
+    "description": "API error: apiServerStoreResetToken"
+  },
+  "apiResetFieldsRequired": "请提供重置令牌和新密码",
+  "@apiResetFieldsRequired": {
+    "description": "API error: apiResetFieldsRequired"
+  },
+  "apiServerValidateResetToken": "无法验证重置链接，请重试",
+  "@apiServerValidateResetToken": {
+    "description": "API error: apiServerValidateResetToken"
+  },
+  "apiServerResetPassword": "无法重置密码，请重试",
+  "@apiServerResetPassword": {
+    "description": "API error: apiServerResetPassword"
+  },
+  "apiServerRetrieveProfile": "无法加载个人资料，请重试",
+  "@apiServerRetrieveProfile": {
+    "description": "API error: apiServerRetrieveProfile"
+  },
+  "apiDeckNameRequired": "请填写卡组名称",
+  "@apiDeckNameRequired": {
+    "description": "API error: apiDeckNameRequired"
+  },
+  "apiDeckFieldsRequired": "至少需要一个列名",
+  "@apiDeckFieldsRequired": {
+    "description": "API error: apiDeckFieldsRequired"
+  },
+  "apiDeckFieldNameEmpty": "列名不能为空",
+  "@apiDeckFieldNameEmpty": {
+    "description": "API error: apiDeckFieldNameEmpty"
+  },
+  "apiDeckRateRequired": "每日新卡数量须在 1 到 1000 之间",
+  "@apiDeckRateRequired": {
+    "description": "API error: apiDeckRateRequired"
+  },
+  "apiTagsOrTagIds": "请只填写标签名或标签 ID，不能同时填写",
+  "@apiTagsOrTagIds": {
+    "description": "API error: apiTagsOrTagIds"
+  },
+  "apiDeckDescriptionInvalidChars": "卡组描述包含无效字符",
+  "@apiDeckDescriptionInvalidChars": {
+    "description": "API error: apiDeckDescriptionInvalidChars"
+  },
+  "apiDeckDescriptionTooLong": "卡组描述最多 500 个字符",
+  "@apiDeckDescriptionTooLong": {
+    "description": "API error: apiDeckDescriptionTooLong"
+  },
+  "apiTagIdRequired": "请提供标签 ID",
+  "@apiTagIdRequired": {
+    "description": "API error: apiTagIdRequired"
+  },
+  "apiMaxTagsPerDeck": "卡组标签数量已达上限",
+  "@apiMaxTagsPerDeck": {
+    "description": "API error: apiMaxTagsPerDeck"
+  },
+  "apiTagNameRequired": "请填写标签名称",
+  "@apiTagNameRequired": {
+    "description": "API error: apiTagNameRequired"
+  },
+  "apiTagNameInvalidChars": "标签名称包含无效字符",
+  "@apiTagNameInvalidChars": {
+    "description": "API error: apiTagNameInvalidChars"
+  },
+  "apiTagNameTooLong": "标签名称过长（最多 50 个字符）",
+  "@apiTagNameTooLong": {
+    "description": "API error: apiTagNameTooLong"
+  },
+  "apiTagNotFound": "标签不存在",
+  "@apiTagNotFound": {
+    "description": "API error: apiTagNotFound"
+  },
+  "apiServerResolveDeckTags": "无法解析卡组标签，请重试",
+  "@apiServerResolveDeckTags": {
+    "description": "API error: apiServerResolveDeckTags"
+  },
+  "apiServerGenerateDeckId": "无法创建卡组，请重试",
+  "@apiServerGenerateDeckId": {
+    "description": "API error: apiServerGenerateDeckId"
+  },
+  "apiServerMarshalDeck": "无法保存卡组，请重试",
+  "@apiServerMarshalDeck": {
+    "description": "API error: apiServerMarshalDeck"
+  },
+  "apiServerCreateDeck": "无法创建卡组，请重试",
+  "@apiServerCreateDeck": {
+    "description": "API error: apiServerCreateDeck"
+  },
+  "apiServerPrepareDeckMedia": "无法准备媒体存储，请重试",
+  "@apiServerPrepareDeckMedia": {
+    "description": "API error: apiServerPrepareDeckMedia"
+  },
+  "apiDeckRateRange": "每日新卡数量须在 1 到 1000 之间",
+  "@apiDeckRateRange": {
+    "description": "API error: apiDeckRateRange"
+  },
+  "apiInvalidVisibility": "可见性设置无效",
+  "@apiInvalidVisibility": {
+    "description": "API error: apiInvalidVisibility"
+  },
+  "apiCannotChangeVisibilityAfterPublish": "发布后不能更改可见性",
+  "@apiCannotChangeVisibilityAfterPublish": {
+    "description": "API error: apiCannotChangeVisibilityAfterPublish"
+  },
+  "apiCannotChangeVisibilityImported": "导入的卡组不能更改可见性",
+  "@apiCannotChangeVisibilityImported": {
+    "description": "API error: apiCannotChangeVisibilityImported"
+  },
+  "apiCannotChangeFieldsImported": "导入的卡组不能更改字段",
+  "@apiCannotChangeFieldsImported": {
+    "description": "API error: apiCannotChangeFieldsImported"
+  },
+  "apiCannotChangeNameImported": "导入的卡组不能更改名称",
+  "@apiCannotChangeNameImported": {
+    "description": "API error: apiCannotChangeNameImported"
+  },
+  "apiCannotChangeDescriptionImported": "导入的卡组不能更改描述",
+  "@apiCannotChangeDescriptionImported": {
+    "description": "API error: apiCannotChangeDescriptionImported"
+  },
+  "apiImportedDeckRateRequired": "更新导入卡组需要设置每日新卡数量",
+  "@apiImportedDeckRateRequired": {
+    "description": "API error: apiImportedDeckRateRequired"
+  },
+  "apiServerSerializeDeck": "无法保存卡组，请重试",
+  "@apiServerSerializeDeck": {
+    "description": "API error: apiServerSerializeDeck"
+  },
+  "apiServerLoadCards": "无法加载卡片，请重试",
+  "@apiServerLoadCards": {
+    "description": "API error: apiServerLoadCards"
+  },
+  "apiServerRescheduleCards": "无法重新安排卡片，请重试",
+  "@apiServerRescheduleCards": {
+    "description": "API error: apiServerRescheduleCards"
+  },
+  "apiServerUpdateDeckCards": "无法更新卡组，请重试",
+  "@apiServerUpdateDeckCards": {
+    "description": "API error: apiServerUpdateDeckCards"
+  },
+  "apiServerUpdateDeck": "无法更新卡组，请重试",
+  "@apiServerUpdateDeck": {
+    "description": "API error: apiServerUpdateDeck"
+  },
+  "apiServerLoadFactsDelete": "无法删除卡组，请重试",
+  "@apiServerLoadFactsDelete": {
+    "description": "API error: apiServerLoadFactsDelete"
+  },
+  "apiServerCleanupTags": "无法删除卡组，请重试",
+  "@apiServerCleanupTags": {
+    "description": "API error: apiServerCleanupTags"
+  },
+  "apiServerDeleteDeck": "无法删除卡组，请重试",
+  "@apiServerDeleteDeck": {
+    "description": "API error: apiServerDeleteDeck"
+  },
+  "apiServerRevokeMediaGrants": "无法删除卡组，请重试",
+  "@apiServerRevokeMediaGrants": {
+    "description": "API error: apiServerRevokeMediaGrants"
+  },
+  "apiServerRetrieveDecks": "无法加载卡组列表，请重试",
+  "@apiServerRetrieveDecks": {
+    "description": "API error: apiServerRetrieveDecks"
+  },
+  "apiServerRetrieveDeckData": "无法加载卡组，请重试",
+  "@apiServerRetrieveDeckData": {
+    "description": "API error: apiServerRetrieveDeckData"
+  },
+  "apiServerListCatalog": "无法加载目录，请重试",
+  "@apiServerListCatalog": {
+    "description": "API error: apiServerListCatalog"
+  },
+  "apiServerLoadCatalogDeck": "无法加载卡组详情，请重试",
+  "@apiServerLoadCatalogDeck": {
+    "description": "API error: apiServerLoadCatalogDeck"
+  },
+  "apiFirstPublishPublic": "首次发布需要设为公开",
+  "@apiFirstPublishPublic": {
+    "description": "API error: apiFirstPublishPublic"
+  },
+  "apiCannotPublishImported": "导入的卡组不能发布",
+  "@apiCannotPublishImported": {
+    "description": "API error: apiCannotPublishImported"
+  },
+  "apiSourceDeckIdRequired": "请提供源卡组 ID",
+  "@apiSourceDeckIdRequired": {
+    "description": "API error: apiSourceDeckIdRequired"
+  },
+  "apiMaxFactTagsPerDeck": "词条标签数量已达上限",
+  "@apiMaxFactTagsPerDeck": {
+    "description": "API error: apiMaxFactTagsPerDeck"
+  },
+  "apiUpdatesImportedOnly": "仅导入的卡组可查看更新",
+  "@apiUpdatesImportedOnly": {
+    "description": "API error: apiUpdatesImportedOnly"
+  },
+  "apiNotImportedDeck": "此卡组不是导入的卡组",
+  "@apiNotImportedDeck": {
+    "description": "API error: apiNotImportedDeck"
+  },
+  "apiSourceDeckMissing": "源卡组不存在",
+  "@apiSourceDeckMissing": {
+    "description": "API error: apiSourceDeckMissing"
+  },
+  "apiFactsArrayRequired": "请提供词条数据",
+  "@apiFactsArrayRequired": {
+    "description": "API error: apiFactsArrayRequired"
+  },
+  "apiInvalidFactOperation": "无效操作，支持：append、prepend、shuffle、spread",
+  "@apiInvalidFactOperation": {
+    "description": "API error: apiInvalidFactOperation"
+  },
+  "apiDeckRateMinForFacts": "添加词条前请将每日新卡数量设为至少 1",
+  "@apiDeckRateMinForFacts": {
+    "description": "API error: apiDeckRateMinForFacts"
+  },
+  "apiAtLeastOneFact": "至少需要一个词条",
+  "@apiAtLeastOneFact": {
+    "description": "API error: apiAtLeastOneFact"
+  },
+  "apiTemplateInvalid": "卡片模板无效",
+  "@apiTemplateInvalid": {
+    "description": "API error: apiTemplateInvalid"
+  },
+  "apiEntryContentRequired": "每个条目需要文字、音频、图片、视频或 JSON",
+  "@apiEntryContentRequired": {
+    "description": "API error: apiEntryContentRequired"
+  },
+  "apiFactNotFound": "词条不存在",
+  "@apiFactNotFound": {
+    "description": "API error: apiFactNotFound"
+  },
+  "apiServerAddFacts": "无法添加词条，请重试",
+  "@apiServerAddFacts": {
+    "description": "API error: apiServerAddFacts"
+  },
+  "apiServerMergeFacts": "无法添加词条，请重试",
+  "@apiServerMergeFacts": {
+    "description": "API error: apiServerMergeFacts"
+  },
+  "apiServerSerializeFact": "无法保存词条，请重试",
+  "@apiServerSerializeFact": {
+    "description": "API error: apiServerSerializeFact"
+  },
+  "apiServerRebuildTemplate": "无法更新卡片，请重试",
+  "@apiServerRebuildTemplate": {
+    "description": "API error: apiServerRebuildTemplate"
+  },
+  "apiServerRetrieveCards": "无法加载卡片，请重试",
+  "@apiServerRetrieveCards": {
+    "description": "API error: apiServerRetrieveCards"
+  },
+  "apiServerSerializeCard": "无法保存卡片，请重试",
+  "@apiServerSerializeCard": {
+    "description": "API error: apiServerSerializeCard"
+  },
+  "apiServerUpdateFact": "无法更新词条，请重试",
+  "@apiServerUpdateFact": {
+    "description": "API error: apiServerUpdateFact"
+  },
+  "apiServerRemoveFactTags": "无法更新词条，请重试",
+  "@apiServerRemoveFactTags": {
+    "description": "API error: apiServerRemoveFactTags"
+  },
+  "apiServerRemoveFact": "无法移除词条，请重试",
+  "@apiServerRemoveFact": {
+    "description": "API error: apiServerRemoveFact"
+  },
+  "apiServerDeleteFact": "无法删除词条，请重试",
+  "@apiServerDeleteFact": {
+    "description": "API error: apiServerDeleteFact"
+  },
+  "apiServerRetrieveFacts": "无法加载词条，请重试",
+  "@apiServerRetrieveFacts": {
+    "description": "API error: apiServerRetrieveFacts"
+  },
+  "apiServerRetrieveFactTags": "无法加载词条标签，请重试",
+  "@apiServerRetrieveFactTags": {
+    "description": "API error: apiServerRetrieveFactTags"
+  },
+  "apiServerCheckFact": "无法验证词条，请重试",
+  "@apiServerCheckFact": {
+    "description": "API error: apiServerCheckFact"
+  },
+  "apiInvalidUsedOnFilter": "筛选条件无效",
+  "@apiInvalidUsedOnFilter": {
+    "description": "API error: apiInvalidUsedOnFilter"
+  },
+  "apiUsedOnRequired": "设置卡组 ID 时需要指定筛选类型",
+  "@apiUsedOnRequired": {
+    "description": "API error: apiUsedOnRequired"
+  },
+  "apiDeckIdRequiredForFact": "按词条筛选时需要提供卡组 ID",
+  "@apiDeckIdRequiredForFact": {
+    "description": "API error: apiDeckIdRequiredForFact"
+  },
+  "apiServerRetrieveTags": "无法加载标签，请重试",
+  "@apiServerRetrieveTags": {
+    "description": "API error: apiServerRetrieveTags"
+  },
+  "apiServerCheckTags": "无法验证标签，请重试",
+  "@apiServerCheckTags": {
+    "description": "API error: apiServerCheckTags"
+  },
+  "apiServerCheckTagName": "无法验证标签名称，请重试",
+  "@apiServerCheckTagName": {
+    "description": "API error: apiServerCheckTagName"
+  },
+  "apiServerGenerateTagId": "无法创建标签，请重试",
+  "@apiServerGenerateTagId": {
+    "description": "API error: apiServerGenerateTagId"
+  },
+  "apiServerCreateTag": "无法创建标签，请重试",
+  "@apiServerCreateTag": {
+    "description": "API error: apiServerCreateTag"
+  },
+  "apiServerSerializeTag": "无法保存标签，请重试",
+  "@apiServerSerializeTag": {
+    "description": "API error: apiServerSerializeTag"
+  },
+  "apiServerSaveTag": "无法保存标签，请重试",
+  "@apiServerSaveTag": {
+    "description": "API error: apiServerSaveTag"
+  },
+  "apiServerAssociateTag": "无法添加标签，请重试",
+  "@apiServerAssociateTag": {
+    "description": "API error: apiServerAssociateTag"
+  },
+  "apiServerRemoveTag": "无法移除标签，请重试",
+  "@apiServerRemoveTag": {
+    "description": "API error: apiServerRemoveTag"
+  },
+  "apiServerLoadTags": "无法加载标签，请重试",
+  "@apiServerLoadTags": {
+    "description": "API error: apiServerLoadTags"
+  },
+  "apiFactIdRequired": "请提供词条 ID",
+  "@apiFactIdRequired": {
+    "description": "API error: apiFactIdRequired"
+  },
+  "apiTemplateRequired": "请提供卡片模板",
+  "@apiTemplateRequired": {
+    "description": "API error: apiTemplateRequired"
+  },
+  "apiTemplateExists": "该词条已有卡片模板",
+  "@apiTemplateExists": {
+    "description": "API error: apiTemplateExists"
+  },
+  "apiCardNotFound": "卡片不存在",
+  "@apiCardNotFound": {
+    "description": "API error: apiCardNotFound"
+  },
+  "apiCardIdRequired": "请提供卡片 ID",
+  "@apiCardIdRequired": {
+    "description": "API error: apiCardIdRequired"
+  },
+  "apiCardIdEmpty": "卡片 ID 不能为空",
+  "@apiCardIdEmpty": {
+    "description": "API error: apiCardIdEmpty"
+  },
+  "apiIntervalOrHiddenRequired": "请提供 interval 或 hidden 字段",
+  "@apiIntervalOrHiddenRequired": {
+    "description": "API error: apiIntervalOrHiddenRequired"
+  },
+  "apiIntervalAndHiddenConflict": "不能在同一请求中同时发送 interval 和 hidden",
+  "@apiIntervalAndHiddenConflict": {
+    "description": "API error: apiIntervalAndHiddenConflict"
+  },
+  "apiLastReviewRequired": "更新间隔时需要提供 last_review",
+  "@apiLastReviewRequired": {
+    "description": "API error: apiLastReviewRequired"
+  },
+  "apiLastReviewIntervalOnly": "last_review 仅适用于间隔更新",
+  "@apiLastReviewIntervalOnly": {
+    "description": "API error: apiLastReviewIntervalOnly"
+  },
+  "apiLastReviewNumeric": "last_review 必须是数字 Unix 时间戳",
+  "@apiLastReviewNumeric": {
+    "description": "API error: apiLastReviewNumeric"
+  },
+  "apiLastReviewWhole": "last_review 必须是整数 Unix 时间戳",
+  "@apiLastReviewWhole": {
+    "description": "API error: apiLastReviewWhole"
+  },
+  "apiLastReviewPositive": "last_review 必须是正数 Unix 时间戳",
+  "@apiLastReviewPositive": {
+    "description": "API error: apiLastReviewPositive"
+  },
+  "apiIntervalNumeric": "interval 必须是数字",
+  "@apiIntervalNumeric": {
+    "description": "API error: apiIntervalNumeric"
+  },
+  "apiIntervalPositive": "interval 必须是正数",
+  "@apiIntervalPositive": {
+    "description": "API error: apiIntervalPositive"
+  },
+  "apiHiddenBoolean": "hidden 必须是布尔值",
+  "@apiHiddenBoolean": {
+    "description": "API error: apiHiddenBoolean"
+  },
+  "apiUnsupportedCardOperation": "支持的操作：interval、visibility",
+  "@apiUnsupportedCardOperation": {
+    "description": "API error: apiUnsupportedCardOperation"
+  },
+  "apiCardTemplateInvalidForFact": "此词条的卡片模板无效",
+  "@apiCardTemplateInvalidForFact": {
+    "description": "API error: apiCardTemplateInvalidForFact"
+  },
+  "apiServerUpdateCardRedis": "无法更新卡片，请重试",
+  "@apiServerUpdateCardRedis": {
+    "description": "API error: apiServerUpdateCardRedis"
+  },
+  "apiServerCheckCardMembership": "无法验证卡片，请重试",
+  "@apiServerCheckCardMembership": {
+    "description": "API error: apiServerCheckCardMembership"
+  },
+  "apiServerParseCard": "卡片数据异常，请重试",
+  "@apiServerParseCard": {
+    "description": "API error: apiServerParseCard"
+  },
+  "apiServerUpdateCard": "无法更新卡片，请重试",
+  "@apiServerUpdateCard": {
+    "description": "API error: apiServerUpdateCard"
+  },
+  "apiServerCheckCard": "无法验证卡片，请重试",
+  "@apiServerCheckCard": {
+    "description": "API error: apiServerCheckCard"
+  },
+  "apiServerDeleteCard": "无法删除卡片，请重试",
+  "@apiServerDeleteCard": {
+    "description": "API error: apiServerDeleteCard"
+  },
+  "apiServerGenerateCardId": "无法创建卡片，请重试",
+  "@apiServerGenerateCardId": {
+    "description": "API error: apiServerGenerateCardId"
+  },
+  "apiServerMergeCard": "无法添加卡片，请重试",
+  "@apiServerMergeCard": {
+    "description": "API error: apiServerMergeCard"
+  },
+  "apiServerAddCard": "无法添加卡片，请重试",
+  "@apiServerAddCard": {
+    "description": "API error: apiServerAddCard"
+  },
+  "apiServerParseFact": "词条数据异常，请重试",
+  "@apiServerParseFact": {
+    "description": "API error: apiServerParseFact"
+  },
+  "apiInvalidMultipart": "文件上传无效",
+  "@apiInvalidMultipart": {
+    "description": "API error: apiInvalidMultipart"
+  },
+  "apiMissingFileField": "未选择文件或文件字段无效",
+  "@apiMissingFileField": {
+    "description": "API error: apiMissingFileField"
+  },
+  "apiMediaDeckIdRequired": "上传媒体需要卡组 ID",
+  "@apiMediaDeckIdRequired": {
+    "description": "API error: apiMediaDeckIdRequired"
+  },
+  "apiClientIdInUse": "上传 ID 已被使用，请重试",
+  "@apiClientIdInUse": {
+    "description": "API error: apiClientIdInUse"
+  },
+  "apiFileTooLarge": "文件过大",
+  "@apiFileTooLarge": {
+    "description": "API error: apiFileTooLarge"
+  },
+  "apiUnsupportedMediaType": "不支持的文件类型",
+  "@apiUnsupportedMediaType": {
+    "description": "API error: apiUnsupportedMediaType"
+  },
+  "apiInvalidJsonDocument": "JSON 文件无效",
+  "@apiInvalidJsonDocument": {
+    "description": "API error: apiInvalidJsonDocument"
+  },
+  "apiMediaStorageNotConfigured": "媒体存储不可用",
+  "@apiMediaStorageNotConfigured": {
+    "description": "API error: apiMediaStorageNotConfigured"
+  },
+  "apiFailedCheckClientId": "上传失败，请重试",
+  "@apiFailedCheckClientId": {
+    "description": "API error: apiFailedCheckClientId"
+  },
+  "apiFailedVerifyDeck": "无法验证卡组，请重试",
+  "@apiFailedVerifyDeck": {
+    "description": "API error: apiFailedVerifyDeck"
+  },
+  "apiFailedReadFile": "无法读取文件，请重试",
+  "@apiFailedReadFile": {
+    "description": "API error: apiFailedReadFile"
+  },
+  "apiFailedGenerateId": "上传失败，请重试",
+  "@apiFailedGenerateId": {
+    "description": "API error: apiFailedGenerateId"
+  },
+  "apiFailedPrepareMedia": "上传失败，请重试",
+  "@apiFailedPrepareMedia": {
+    "description": "API error: apiFailedPrepareMedia"
+  },
+  "apiFailedStoreFile": "无法保存文件，请重试",
+  "@apiFailedStoreFile": {
+    "description": "API error: apiFailedStoreFile"
+  },
+  "apiFailedSaveMetadata": "无法保存文件信息，请重试",
+  "@apiFailedSaveMetadata": {
+    "description": "API error: apiFailedSaveMetadata"
+  },
+  "apiMediaVersionRequired": "此媒体需要指定版本参数",
+  "@apiMediaVersionRequired": {
+    "description": "API error: apiMediaVersionRequired"
+  },
+  "apiAccessDenied": "访问被拒绝",
+  "@apiAccessDenied": {
+    "description": "API error: apiAccessDenied"
+  },
+  "apiMediaNotFound": "媒体不存在",
+  "@apiMediaNotFound": {
+    "description": "API error: apiMediaNotFound"
+  },
+  "apiMediaFileNotFound": "媒体文件不存在",
+  "@apiMediaFileNotFound": {
+    "description": "API error: apiMediaFileNotFound"
+  },
+  "apiFailedListMedia": "无法加载媒体，请重试",
+  "@apiFailedListMedia": {
+    "description": "API error: apiFailedListMedia"
+  },
+  "apiFailedLoadMedia": "无法加载媒体，请重试",
+  "@apiFailedLoadMedia": {
+    "description": "API error: apiFailedLoadMedia"
+  },
+  "apiFeedbackImportedOnly": "仅导入的卡组可提交反馈",
+  "@apiFeedbackImportedOnly": {
+    "description": "API error: apiFeedbackImportedOnly"
+  },
+  "apiFeedbackSourceNotPublished": "源卡组尚未发布",
+  "@apiFeedbackSourceNotPublished": {
+    "description": "API error: apiFeedbackSourceNotPublished"
+  },
+  "apiInvalidFeedbackCategory": "反馈类别无效",
+  "@apiInvalidFeedbackCategory": {
+    "description": "API error: apiInvalidFeedbackCategory"
+  },
+  "apiFeedbackMessageRequired": "请填写反馈内容",
+  "@apiFeedbackMessageRequired": {
+    "description": "API error: apiFeedbackMessageRequired"
+  },
+  "apiFeedbackMessageLength": "反馈内容须在 1 到 2000 个字符之间",
+  "@apiFeedbackMessageLength": {
+    "description": "API error: apiFeedbackMessageLength"
+  },
+  "apiEntryIndexOutOfRange": "条目索引超出范围",
+  "@apiEntryIndexOutOfRange": {
+    "description": "API error: apiEntryIndexOutOfRange"
+  },
+  "apiProposedEntriesContent": "建议条目不能为空",
+  "@apiProposedEntriesContent": {
+    "description": "API error: apiProposedEntriesContent"
+  },
+  "apiProposedEntriesLength": "建议条目数量须与词条一致",
+  "@apiProposedEntriesLength": {
+    "description": "API error: apiProposedEntriesLength"
+  },
+  "apiProposedEntriesDiffer": "建议条目须与原文不同",
+  "@apiProposedEntriesDiffer": {
+    "description": "API error: apiProposedEntriesDiffer"
+  },
+  "apiFactNotInSnapshot": "词条不在固定快照中",
+  "@apiFactNotInSnapshot": {
+    "description": "API error: apiFactNotInSnapshot"
+  },
+  "apiFeedbackDeckNotFound": "卡组不存在",
+  "@apiFeedbackDeckNotFound": {
+    "description": "API error: apiFeedbackDeckNotFound"
+  },
+  "apiFeedbackFactNotFound": "词条不存在",
+  "@apiFeedbackFactNotFound": {
+    "description": "API error: apiFeedbackFactNotFound"
+  },
+  "apiFeedbackDailyLimit": "今日反馈次数已达上限，请明天再试",
+  "@apiFeedbackDailyLimit": {
+    "description": "API error: apiFeedbackDailyLimit"
+  },
+  "apiServerSubmitFeedback": "无法提交反馈，请重试",
+  "@apiServerSubmitFeedback": {
+    "description": "API error: apiServerSubmitFeedback"
+  },
+  "apiFeedbackInboxSourceOnly": "仅源卡组可查看反馈收件箱",
+  "@apiFeedbackInboxSourceOnly": {
+    "description": "API error: apiFeedbackInboxSourceOnly"
+  },
+  "apiServerListFeedback": "无法加载反馈，请重试",
+  "@apiServerListFeedback": {
+    "description": "API error: apiServerListFeedback"
+  },
+  "apiInvalidFeedbackStatus": "反馈状态无效",
+  "@apiInvalidFeedbackStatus": {
+    "description": "API error: apiInvalidFeedbackStatus"
+  },
+  "apiFeedbackNotFound": "反馈不存在",
+  "@apiFeedbackNotFound": {
+    "description": "API error: apiFeedbackNotFound"
+  },
+  "apiServerUpdateFeedback": "无法更新反馈，请重试",
+  "@apiServerUpdateFeedback": {
+    "description": "API error: apiServerUpdateFeedback"
+  },
+  "apiProposedEntriesRequiredAccept": "接受反馈需要提供建议条目",
+  "@apiProposedEntriesRequiredAccept": {
+    "description": "API error: apiProposedEntriesRequiredAccept"
+  },
+  "apiFactNotOnSourceDeck": "源卡组中找不到该词条",
+  "@apiFactNotOnSourceDeck": {
+    "description": "API error: apiFactNotOnSourceDeck"
+  },
+  "apiServerAcceptFeedback": "无法接受反馈，请重试",
+  "@apiServerAcceptFeedback": {
+    "description": "API error: apiServerAcceptFeedback"
+  },
+  "apiBadCertificate": "安全连接失败",
+  "@apiBadCertificate": {
+    "description": "API error: apiBadCertificate"
+  },
+  "apiBadResponse": "服务器响应异常",
+  "@apiBadResponse": {
+    "description": "API error: apiBadResponse"
+  },
+  "apiRequestCancel": "请求已取消",
+  "@apiRequestCancel": {
+    "description": "API error: apiRequestCancel"
+  },
+  "apiUnknownError": "发生意外错误",
+  "@apiUnknownError": {
+    "description": "API error: apiUnknownError"
+  },
+  "errorServerError": "出了点问题，请稍后再试。",
+  "@errorServerError": {
+    "description": "API error: errorServerError"
+  },
+  "apiFactEntryRequired": "词条 {index}：至少需要一个条目",
+  "@apiFactEntryRequired": {
+    "description": "API error pattern: apiFactEntryRequired",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "apiFactEntryContent": "词条 {index}：每个条目需要文字、音频、图片、视频或 JSON",
+  "@apiFactEntryContent": {
+    "description": "API error pattern: apiFactEntryContent",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "apiInvalidTemplate": "此词条的卡片模板无效",
+  "@apiInvalidTemplate": {
+    "description": "API error pattern: apiInvalidTemplate"
+  },
+  "apiNegativeInterval": "此卡片异常，请尝试删除词条 {factId}",
+  "@apiNegativeInterval": {
+    "description": "API error pattern: apiNegativeInterval",
+    "placeholders": {
+      "factId": {
+        "type": "String"
+      }
+    }
+  },
+  "apiUnsupportedMediaMime": "不支持的文件类型：{mime}",
+  "@apiUnsupportedMediaMime": {
+    "description": "API error pattern: apiUnsupportedMediaMime",
+    "placeholders": {
+      "mime": {
+        "type": "String"
+      }
+    }
+  },
+  "apiInvalidTargetVersion": "目标版本无效",
+  "@apiInvalidTargetVersion": {
+    "description": "API error pattern: apiInvalidTargetVersion"
+  },
+  "errorSubmitCardFailed": "无法保存卡片进度，请重试",
+  "@errorSubmitCardFailed": {
+    "description": "Deck study submit failure"
+  },
+  "deckCheckUpdates": "检查更新",
+  "@deckCheckUpdates": {
+    "description": "Menu action to check imported deck updates"
+  },
+  "deckSyncNow": "立即同步",
+  "@deckSyncNow": {
+    "description": "Action label to sync imported deck"
+  },
+  "deckUpToDate": "已是最新版本",
+  "@deckUpToDate": {
+    "description": "Shown when imported deck has no updates"
+  },
+  "deckSyncSuccess": "卡组已同步",
+  "@deckSyncSuccess": {
+    "description": "Toast after imported deck sync succeeds"
+  },
+  "deckUpdatesVersion": "当前版本 v{source} -> 最新版本 v{latest}",
+  "@deckUpdatesVersion": {
+    "description": "Version comparison for imported deck updates",
+    "placeholders": {
+      "source": {
+        "type": "int"
+      },
+      "latest": {
+        "type": "int"
+      }
+    }
+  },
+  "deckUpdatesCounts": "新增 {added}，修改 {edited}，删除 {removed}，媒体变更 {media}",
+  "@deckUpdatesCounts": {
+    "description": "Fact/media change counts in imported deck updates",
+    "placeholders": {
+      "added": {
+        "type": "int"
+      },
+      "edited": {
+        "type": "int"
+      },
+      "removed": {
+        "type": "int"
+      },
+      "media": {
+        "type": "int"
+      }
+    }
+  },
+  "feedbackSubmit": "提交反馈",
+  "@feedbackSubmit": {
+    "description": "Action to submit feedback for imported deck fact"
+  },
+  "feedbackMessageHint": "描述这个词条的问题",
+  "@feedbackMessageHint": {
+    "description": "Hint text for feedback message input"
+  },
+  "feedbackMessageRequired": "请输入反馈内容",
+  "@feedbackMessageRequired": {
+    "description": "Validation error when feedback message is empty"
+  },
+  "feedbackSubmitSuccess": "反馈已提交",
+  "@feedbackSubmitSuccess": {
+    "description": "Toast after feedback submission succeeds"
+  },
+  "factEditNoEntries": "该词条没有可编辑内容",
+  "@factEditNoEntries": {
+    "description": "Shown when fact edit opens an invalid empty fact"
+  }
 }

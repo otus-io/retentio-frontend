@@ -72,8 +72,10 @@ class AppIconButton extends StatelessWidget {
       icon: resolvedIcon,
       tooltip: tooltip,
       padding: padding ?? EdgeInsets.zero,
-      constraints:
-          constraints ?? const BoxConstraints(minWidth: 44, minHeight: 44),
+      constraints: BoxConstraints(
+        minWidth: constraints != null ? constraints!.minWidth.clamp(44.0, double.infinity) : 44,
+        minHeight: constraints != null ? constraints!.minHeight.clamp(44.0, double.infinity) : 44,
+      ),
       visualDensity: visualDensity,
       iconSize: iconSize,
       color: resolvedEnabledColor,
