@@ -193,9 +193,9 @@ Future<T?> showCommonBottomSheet<T>({
     constraints: constraints,
     barrierColor:
         barrierColor ??
-        Theme.of(context).colorScheme.scrim.withValues(
-          alpha: _kSheetBarrierOpacity,
-        ),
+        Theme.of(
+          context,
+        ).colorScheme.scrim.withValues(alpha: _kSheetBarrierOpacity),
     isScrollControlled: isScrollControlled,
     useRootNavigator: useRootNavigator,
     isDismissible: isDismissible,

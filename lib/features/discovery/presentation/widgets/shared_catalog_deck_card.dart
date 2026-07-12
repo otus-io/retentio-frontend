@@ -130,7 +130,10 @@ class SharedCatalogDeckCard extends StatelessWidget {
               const SizedBox(height: 6),
               // ── Row ②: fact count · relative time ────────────────────────
               Text(
-                [loc.discoveryDetailFactCount(deck.factCount), if (time.isNotEmpty) time].join(' · '),
+                [
+                  loc.discoveryDetailFactCount(deck.factCount),
+                  if (time.isNotEmpty) time,
+                ].join(' · '),
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: isUnavailable
                       ? scheme.onSurface.withValues(alpha: 0.35)

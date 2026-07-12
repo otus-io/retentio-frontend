@@ -120,7 +120,8 @@ class _AppInputState extends State<AppInput> {
 
     // Built-in show/hide toggle for password fields; only shown when no custom
     // suffixIcon is provided so callers retain full control when they need it.
-    final Widget? passwordToggle = widget.obscureText && widget.suffixIcon == null
+    final Widget? passwordToggle =
+        widget.obscureText && widget.suffixIcon == null
         ? IconButton(
             icon: Icon(
               _isObscured ? LucideIcons.eyeOff : LucideIcons.eye,
@@ -140,7 +141,8 @@ class _AppInputState extends State<AppInput> {
       prefixIcon: widget.prefix,
       suffix: widget.suffix,
       suffixIcon: passwordToggle ?? widget.suffixIcon,
-      contentPadding: widget.contentPadding ?? AppThemeTokens.inputContentPadding,
+      contentPadding:
+          widget.contentPadding ?? AppThemeTokens.inputContentPadding,
       isDense: widget.isDense,
       constraints: isSingleLine
           ? const BoxConstraints(
@@ -151,12 +153,22 @@ class _AppInputState extends State<AppInput> {
       filled: widget.filled ?? !widget.enabled,
       fillColor:
           widget.fillColor ??
-          (!widget.enabled ? colorScheme.onSurface.withValues(alpha: 0.08) : null),
+          (!widget.enabled
+              ? colorScheme.onSurface.withValues(alpha: 0.08)
+              : null),
       border: widget.border,
-      enabledBorder: _hasCustomBorder ? widget.border : _border(colorScheme.outline),
-      focusedBorder: _hasCustomBorder ? widget.border : _border(colorScheme.primary),
-      errorBorder: _hasCustomBorder ? widget.border : _border(colorScheme.error),
-      focusedErrorBorder: _hasCustomBorder ? widget.border : _border(colorScheme.error),
+      enabledBorder: _hasCustomBorder
+          ? widget.border
+          : _border(colorScheme.outline),
+      focusedBorder: _hasCustomBorder
+          ? widget.border
+          : _border(colorScheme.primary),
+      errorBorder: _hasCustomBorder
+          ? widget.border
+          : _border(colorScheme.error),
+      focusedErrorBorder: _hasCustomBorder
+          ? widget.border
+          : _border(colorScheme.error),
       disabledBorder: _hasCustomBorder
           ? widget.border
           : _border(colorScheme.onSurface.withValues(alpha: 0.12)),
@@ -179,7 +191,8 @@ class _AppInputState extends State<AppInput> {
       style: widget.style,
       textAlign: widget.textAlign,
       textAlignVertical:
-          widget.textAlignVertical ?? (isSingleLine ? TextAlignVertical.center : null),
+          widget.textAlignVertical ??
+          (isSingleLine ? TextAlignVertical.center : null),
       selectAllOnFocus: widget.selectAllOnFocus ?? false,
       onTapAlwaysCalled: widget.onTapAlwaysCalled ?? false,
       onTap: widget.onTap,
@@ -189,7 +202,8 @@ class _AppInputState extends State<AppInput> {
       onSubmitted: widget.onSubmitted,
       maxLength: widget.maxLength,
       autofillHints: widget.autofillHints,
-      decoration: widget.decorationBuilder?.call(baseDecoration) ?? baseDecoration,
+      decoration:
+          widget.decorationBuilder?.call(baseDecoration) ?? baseDecoration,
     );
   }
 }

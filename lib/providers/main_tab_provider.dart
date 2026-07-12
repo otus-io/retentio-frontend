@@ -8,8 +8,9 @@ class _TabIndexNotifier extends Notifier<int> {
 }
 
 /// Controls the currently selected bottom-nav tab in [MainTabScreen].
-final selectedTabIndexProvider =
-    NotifierProvider<_TabIndexNotifier, int>(_TabIndexNotifier.new);
+final selectedTabIndexProvider = NotifierProvider<_TabIndexNotifier, int>(
+  _TabIndexNotifier.new,
+);
 
 class _RefreshSignalNotifier extends Notifier<int> {
   @override

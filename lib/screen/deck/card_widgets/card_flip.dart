@@ -134,6 +134,7 @@ class CardFlip extends HookWidget {
         final val = controller.value < 0.5;
         if (showFrontNotifier.value != val) showFrontNotifier.value = val;
       }
+
       controller.addListener(onTick);
       return () => controller.removeListener(onTick);
     }, [controller, showFrontNotifier]);

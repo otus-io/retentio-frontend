@@ -49,9 +49,9 @@ class AppButton extends StatelessWidget {
   Widget _buildChild(BuildContext context) {
     final typography = Theme.of(context).semanticTypography;
     final textStyle = switch (size) {
-      AppButtonSize.sm => (Theme.of(context).textTheme.labelMedium ?? typography.caption).copyWith(
-        fontWeight: AppTypographyTokens.weightBold,
-      ),
+      AppButtonSize.sm =>
+        (Theme.of(context).textTheme.labelMedium ?? typography.caption)
+            .copyWith(fontWeight: AppTypographyTokens.weightBold),
       AppButtonSize.md => typography.controlLabel,
       AppButtonSize.lg => typography.controlLabel.copyWith(
         fontWeight: AppTypographyTokens.weightSemiBold,

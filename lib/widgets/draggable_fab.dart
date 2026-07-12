@@ -94,8 +94,10 @@ class _DraggableFabState extends State<DraggableFab> {
             onPanStart: (_) => setState(() => _dragging = true),
             onPanUpdate: (d) {
               setState(() {
-                _right = (_right - d.delta.dx)
-                    .clamp(_kEdgeMargin, size.width - _kFabSize - _kEdgeMargin);
+                _right = (_right - d.delta.dx).clamp(
+                  _kEdgeMargin,
+                  size.width - _kFabSize - _kEdgeMargin,
+                );
                 _bottom = (_bottom - d.delta.dy).clamp(
                   safeBottom + _kEdgeMargin,
                   size.height - _kFabSize - _kEdgeMargin,
