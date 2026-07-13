@@ -97,10 +97,11 @@ class MainTabScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(selectedTabIndexProvider);
+    final deckListRefreshSignal = ref.watch(deckListRefreshSignalProvider);
     final isLoggedIn = ref.watch(isLoginProvider);
     final pages = <Widget>[
       isLoggedIn
-          ? const DeckListScreen()
+          ? DeckListScreen(key: ValueKey(deckListRefreshSignal))
           : const _AuthRequiredTabPlaceholder(tabLabelBuilder: _tabDecksLabel),
       const DiscoveryScreen(),
       isLoggedIn

@@ -22,3 +22,7 @@ class _RefreshSignalNotifier extends Notifier<int> {
 /// Incrementing this counter tells [DiscoveryScreen] to refresh its list.
 final discoveryRefreshSignalProvider =
     NotifierProvider<_RefreshSignalNotifier, int>(_RefreshSignalNotifier.new);
+
+/// Incrementing this counter recreates [DeckListScreen] and reloads deck data.
+final deckListRefreshSignalProvider =
+    NotifierProvider<_RefreshSignalNotifier, int>(_RefreshSignalNotifier.new);

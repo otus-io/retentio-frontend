@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/error/api_error_messages.dart';
@@ -10,13 +11,13 @@ import 'package:retentio/features/discovery/bloc/discovery_detail_cubit.dart';
 import 'package:retentio/features/discovery/data/discovery_favorites_repository.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/catalog_deck.dart';
+import 'package:retentio/providers/main_tab_provider.dart';
 import 'package:retentio/routers/routers.dart';
 import 'package:retentio/theme/theme_tokens.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_icon_button.dart';
 import 'package:retentio/widgets/app_toast.dart';
 import 'package:retentio/core/di/app_service_locator.dart';
-import 'package:retentio/services/apis/deck_service.dart';
 
 class DiscoveryDetailScreen extends StatefulWidget {
   const DiscoveryDetailScreen({super.key, required this.sourceDeckId});
@@ -64,21 +65,20 @@ class _DiscoveryDetailScreenState extends State<DiscoveryDetailScreen> {
 
   Future<void> _goToImportedDeckStudy() async {
     final importResult = _cubit.state.importResult;
+    final container = ProviderScope.containerOf(context, listen: false);
     if (importResult == null) {
       if (mounted) {
+        container.read(selectedTabIndexProvider.notifier).setIndex(0);
+        container.read(deckListRefreshSignalProvider.notifier).increment();
         context.go(AppRoutes.main.path);
       }
       return;
     }
 
-    try {
-      final deck = await DeckService.of.getDeckDetail(importResult.id);
-      if (!mounted) return;
-      context.go(AppRoutes.study.path, extra: {'deck': deck});
-    } catch (_) {
-      if (!mounted) return;
-      context.go(AppRoutes.main.path);
-    }
+    if (!mounted) return;
+    container.read(selectedTabIndexProvider.notifier).setIndex(0);
+    container.read(deckListRefreshSignalProvider.notifier).increment();
+    context.go(AppRoutes.main.path);
   }
 
   @override
