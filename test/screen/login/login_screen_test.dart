@@ -102,7 +102,7 @@ void main() {
       await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
       await tester.pumpAndSettle();
 
-      expect(find.byType(IconButton), findsOneWidget);
+      expect(find.byTooltip('Switch to dark mode'), findsOneWidget);
     });
 
     testWidgets('has language dropdown', (tester) async {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/home/home_screen.dart';
 
 import '../../helpers/test_wrapper.dart';
@@ -76,7 +77,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Learning Path'), findsOneWidget);
+      final context = tester.element(find.byType(HomeScreen));
+      final loc = AppLocalizations.of(context)!;
+      expect(find.text(loc.homeLearningPath), findsOneWidget);
     });
   });
 }
