@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:retentio/core/di/app_service_locator.dart';
 import 'package:retentio/features/auth/presentation/bloc/auth_bloc.dart';
@@ -134,9 +135,7 @@ class _AuthRequiredTabPlaceholder extends StatelessWidget {
     final loc = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
     final tabLabel = tabLabelBuilder(loc);
-    final description = Localizations.localeOf(context).languageCode == 'zh'
-        ? '登录后即可使用$tabLabel。'
-        : 'Log in to access $tabLabel.';
+    final description = loc.discoveryLoginToAccessTab(tabLabel);
 
     return Scaffold(
       body: Center(
@@ -145,7 +144,7 @@ class _AuthRequiredTabPlaceholder extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.lock_outline, size: 48, color: scheme.outline),
+              Icon(LucideIcons.lock, size: 48, color: scheme.outline),
               const SizedBox(height: 12),
               Text(tabLabel, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),

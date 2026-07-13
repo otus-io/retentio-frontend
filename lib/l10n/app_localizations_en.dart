@@ -526,6 +526,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get discoveryUnfavorite => 'Unfavorite';
 
   @override
+  String discoveryYearsAgo(int count) {
+    return '${count}y ago';
+  }
+
+  @override
+  String discoveryMonthsAgo(int count) {
+    return '${count}mo ago';
+  }
+
+  @override
+  String discoveryDaysAgo(int count) {
+    return '${count}d ago';
+  }
+
+  @override
+  String discoveryHoursAgo(int count) {
+    return '${count}h ago';
+  }
+
+  @override
+  String get discoveryJustNow => 'Just now';
+
+  @override
+  String get discoveryDeckUnavailable => 'Unavailable';
+
+  @override
+  String discoveryCardSemantics(String name, String factCount, String owner) {
+    return '$name, $factCount, by $owner';
+  }
+
+  @override
+  String get discoveryImportedBadgeSemantics => 'Imported to my decks';
+
+  @override
+  String get discoveryUnavailableBadgeSemantics => 'This deck is unavailable';
+
+  @override
+  String discoveryLoginToAccessTab(String tabLabel) {
+    return 'Log in to access $tabLabel.';
+  }
+
+  @override
+  String get deckOptionsTooltip => 'Deck options';
+
+  @override
   String get discoveryNotFound => 'Deck not found or no longer available';
 
   @override

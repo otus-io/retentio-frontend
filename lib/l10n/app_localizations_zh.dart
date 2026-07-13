@@ -515,6 +515,51 @@ class AppLocalizationsZh extends AppLocalizations {
   String get discoveryUnfavorite => '取消收藏';
 
   @override
+  String discoveryYearsAgo(int count) {
+    return '$count年前';
+  }
+
+  @override
+  String discoveryMonthsAgo(int count) {
+    return '$count个月前';
+  }
+
+  @override
+  String discoveryDaysAgo(int count) {
+    return '$count天前';
+  }
+
+  @override
+  String discoveryHoursAgo(int count) {
+    return '$count小时前';
+  }
+
+  @override
+  String get discoveryJustNow => '刚刚';
+
+  @override
+  String get discoveryDeckUnavailable => '已下架';
+
+  @override
+  String discoveryCardSemantics(String name, String factCount, String owner) {
+    return '$name，$factCount，作者 $owner';
+  }
+
+  @override
+  String get discoveryImportedBadgeSemantics => '已导入到我的卡组';
+
+  @override
+  String get discoveryUnavailableBadgeSemantics => '该卡组已下架';
+
+  @override
+  String discoveryLoginToAccessTab(String tabLabel) {
+    return '登录后即可使用$tabLabel。';
+  }
+
+  @override
+  String get deckOptionsTooltip => '卡组选项';
+
+  @override
   String get discoveryNotFound => '卡组不存在或已下架';
 
   @override

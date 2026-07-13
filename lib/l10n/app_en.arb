@@ -697,6 +697,86 @@
   "@discoveryUnfavorite": {
     "description": "Unfavorite tooltip"
   },
+  "discoveryYearsAgo": "{count}y ago",
+  "@discoveryYearsAgo": {
+    "description": "Relative time in years for discovery card",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "discoveryMonthsAgo": "{count}mo ago",
+  "@discoveryMonthsAgo": {
+    "description": "Relative time in months for discovery card",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "discoveryDaysAgo": "{count}d ago",
+  "@discoveryDaysAgo": {
+    "description": "Relative time in days for discovery card",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "discoveryHoursAgo": "{count}h ago",
+  "@discoveryHoursAgo": {
+    "description": "Relative time in hours for discovery card",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "discoveryJustNow": "Just now",
+  "@discoveryJustNow": {
+    "description": "Relative time for just-published discovery cards"
+  },
+  "discoveryDeckUnavailable": "Unavailable",
+  "@discoveryDeckUnavailable": {
+    "description": "Badge text when a favorited deck is no longer available"
+  },
+  "discoveryCardSemantics": "{name}, {factCount}, by {owner}",
+  "@discoveryCardSemantics": {
+    "description": "Accessibility label for discovery card",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "factCount": {
+        "type": "String"
+      },
+      "owner": {
+        "type": "String"
+      }
+    }
+  },
+  "discoveryImportedBadgeSemantics": "Imported to my decks",
+  "@discoveryImportedBadgeSemantics": {
+    "description": "Accessibility label for imported badge on discovery card"
+  },
+  "discoveryUnavailableBadgeSemantics": "This deck is unavailable",
+  "@discoveryUnavailableBadgeSemantics": {
+    "description": "Accessibility label for unavailable badge on discovery card"
+  },
+  "discoveryLoginToAccessTab": "Log in to access {tabLabel}.",
+  "@discoveryLoginToAccessTab": {
+    "description": "Placeholder text for tabs that require authentication",
+    "placeholders": {
+      "tabLabel": {
+        "type": "String"
+      }
+    }
+  },
+  "deckOptionsTooltip": "Deck options",
+  "@deckOptionsTooltip": {
+    "description": "Tooltip for deck menu button"
+  },
   "discoveryNotFound": "Deck not found or no longer available",
   "@discoveryNotFound": {
     "description": "404 error for catalog deck"

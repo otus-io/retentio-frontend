@@ -1082,6 +1082,72 @@ abstract class AppLocalizations {
   /// **'Unfavorite'**
   String get discoveryUnfavorite;
 
+  /// Relative time in years for discovery card
+  ///
+  /// In en, this message translates to:
+  /// **'{count}y ago'**
+  String discoveryYearsAgo(int count);
+
+  /// Relative time in months for discovery card
+  ///
+  /// In en, this message translates to:
+  /// **'{count}mo ago'**
+  String discoveryMonthsAgo(int count);
+
+  /// Relative time in days for discovery card
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d ago'**
+  String discoveryDaysAgo(int count);
+
+  /// Relative time in hours for discovery card
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h ago'**
+  String discoveryHoursAgo(int count);
+
+  /// Relative time for just-published discovery cards
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get discoveryJustNow;
+
+  /// Badge text when a favorited deck is no longer available
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get discoveryDeckUnavailable;
+
+  /// Accessibility label for discovery card
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, {factCount}, by {owner}'**
+  String discoveryCardSemantics(String name, String factCount, String owner);
+
+  /// Accessibility label for imported badge on discovery card
+  ///
+  /// In en, this message translates to:
+  /// **'Imported to my decks'**
+  String get discoveryImportedBadgeSemantics;
+
+  /// Accessibility label for unavailable badge on discovery card
+  ///
+  /// In en, this message translates to:
+  /// **'This deck is unavailable'**
+  String get discoveryUnavailableBadgeSemantics;
+
+  /// Placeholder text for tabs that require authentication
+  ///
+  /// In en, this message translates to:
+  /// **'Log in to access {tabLabel}.'**
+  String discoveryLoginToAccessTab(String tabLabel);
+
+  /// Tooltip for deck menu button
+  ///
+  /// In en, this message translates to:
+  /// **'Deck options'**
+  String get deckOptionsTooltip;
+
   /// 404 error for catalog deck
   ///
   /// In en, this message translates to:

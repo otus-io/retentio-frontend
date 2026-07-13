@@ -397,20 +397,18 @@ class _FactEditState extends ConsumerState<FactEdit>
                 maxLength: 2000,
               ),
               actions: [
-                TextButton(
+                AppButton(
+                  label: loc.cancel,
+                  variant: AppButtonVariant.ghost,
                   onPressed: submitting
                       ? null
                       : () => Navigator.of(dialogContext).pop(),
-                  child: Text(loc.cancel),
                 ),
-                FilledButton(
+                AppButton(
+                  label: loc.feedbackSubmit,
+                  variant: AppButtonVariant.primary,
+                  isLoading: submitting,
                   onPressed: submitting ? null : onSubmit,
-                  child: submitting
-                      ? const SizedBox.square(
-                          dimension: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(loc.feedbackSubmit),
                 ),
               ],
             );

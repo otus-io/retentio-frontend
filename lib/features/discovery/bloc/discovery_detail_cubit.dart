@@ -68,6 +68,7 @@ class DiscoveryDetailCubit extends Cubit<DiscoveryDetailState> {
     try {
       final ids = await _favoritesRepository.loadFavorites();
       final deck = await DeckCatalogService.of.getCatalogDeck(sourceDeckId);
+      if (isClosed) return;
       if (deck == null) {
         emit(state.copyWith(isLoading: false, error: 'deck_not_found'));
         return;
@@ -81,6 +82,7 @@ class DiscoveryDetailCubit extends Cubit<DiscoveryDetailState> {
         ),
       );
     } catch (e) {
+      if (isClosed) return;
       emit(state.copyWith(isLoading: false, error: rawApiErrorMessage(e)));
     }
   }
@@ -89,6 +91,7 @@ class DiscoveryDetailCubit extends Cubit<DiscoveryDetailState> {
     final deck = state.deck;
     if (deck == null) return;
     final ids = await _favoritesRepository.toggle(deck.id);
+    if (isClosed) return;
     emit(state.copyWith(isFavorite: ids.contains(deck.id)));
   }
 
@@ -105,6 +108,7 @@ class DiscoveryDetailCubit extends Cubit<DiscoveryDetailState> {
     );
     try {
       final result = await DeckCatalogService.of.importDeck(deck.id);
+      if (isClosed) return;
       emit(
         state.copyWith(
           importStatus: ImportStatus.imported,
@@ -113,6 +117,7 @@ class DiscoveryDetailCubit extends Cubit<DiscoveryDetailState> {
         ),
       );
     } catch (e) {
+      if (isClosed) return;
       emit(
         state.copyWith(
           importStatus: ImportStatus.error,

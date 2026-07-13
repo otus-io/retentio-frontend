@@ -255,7 +255,7 @@ class DeckMenu extends StatelessWidget {
         constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
         padding: const EdgeInsets.all(AppThemeTokens.spaceSm),
         onPressed: showMenu,
-        tooltip: 'Deck options',
+        tooltip: loc.deckOptionsTooltip,
       ),
     );
   }

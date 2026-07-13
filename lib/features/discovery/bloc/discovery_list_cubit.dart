@@ -80,6 +80,7 @@ class DiscoveryListCubit extends Cubit<DiscoveryListState> {
   Future<void> close() {
     _disposed = true;
     _debounce?.cancel();
+    refreshController.dispose();
     return super.close();
   }
 
@@ -126,6 +127,7 @@ class DiscoveryListCubit extends Cubit<DiscoveryListState> {
       return;
     }
     try {
+      final ids = await _favoritesRepository.loadFavorites();
       final result = await _fetchPage(offset: 0);
       _safe(refreshController.refreshCompleted);
       if (!result.meta.hasMore) {
@@ -137,6 +139,7 @@ class DiscoveryListCubit extends Cubit<DiscoveryListState> {
       emit(
         state.copyWith(
           decks: result.decks,
+          favoriteIds: ids,
           isLoading: false,
           clearError: true,
           hasMore: result.meta.hasMore,

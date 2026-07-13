@@ -144,7 +144,6 @@ class LoginScreen extends HookConsumerWidget {
                                   AppInput(
                                     controller: usernameController,
                                     label: loc.username,
-                                    hint: 'your_username',
                                     autofillHints: const [
                                       AutofillHints.username,
                                     ],

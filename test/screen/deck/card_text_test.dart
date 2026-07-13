@@ -87,7 +87,7 @@ void main() {
   });
 
   group('CardText textAlign', () {
-    testWidgets('scrollable: textAlign.start → Align.centerLeft', (
+    testWidgets('scrollable: textAlign.start → Align.centerStart', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -109,17 +109,17 @@ void main() {
       await tester.pumpAndSettle();
 
       final align = tester.widget<Align>(
-        find.descendant(
-          of: find.byType(SingleChildScrollView),
-          matching: find.byType(Align),
-        ).first,
+        find
+            .descendant(
+              of: find.byType(SingleChildScrollView),
+              matching: find.byType(Align),
+            )
+            .first,
       );
-      expect(align.alignment, Alignment.centerLeft);
+      expect(align.alignment, AlignmentDirectional.centerStart);
     });
 
-    testWidgets('scrollable: textAlign.end → Align.centerRight', (
-      tester,
-    ) async {
+    testWidgets('scrollable: textAlign.end → Align.centerEnd', (tester) async {
       await tester.pumpWidget(
         buildTestableWidgetWithOverrides(
           const Scaffold(
@@ -139,12 +139,14 @@ void main() {
       await tester.pumpAndSettle();
 
       final align = tester.widget<Align>(
-        find.descendant(
-          of: find.byType(SingleChildScrollView),
-          matching: find.byType(Align),
-        ).first,
+        find
+            .descendant(
+              of: find.byType(SingleChildScrollView),
+              matching: find.byType(Align),
+            )
+            .first,
       );
-      expect(align.alignment, Alignment.centerRight);
+      expect(align.alignment, AlignmentDirectional.centerEnd);
     });
 
     testWidgets('scrollable: default textAlign.center → Align.center', (
@@ -168,10 +170,12 @@ void main() {
       await tester.pumpAndSettle();
 
       final align = tester.widget<Align>(
-        find.descendant(
-          of: find.byType(SingleChildScrollView),
-          matching: find.byType(Align),
-        ).first,
+        find
+            .descendant(
+              of: find.byType(SingleChildScrollView),
+              matching: find.byType(Align),
+            )
+            .first,
       );
       expect(align.alignment, Alignment.center);
     });

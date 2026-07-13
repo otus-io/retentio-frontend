@@ -38,15 +38,19 @@ class SharedCatalogDeckCard extends StatelessWidget {
 
   // ── helpers ──────────────────────────────────────────────────────────────
 
-  String _relativeTime(BuildContext context) {
+  String _relativeTime(AppLocalizations loc) {
     final dt = deck.publishedAt;
     if (dt == null) return '';
     final diff = DateTime.now().difference(dt);
-    if (diff.inDays >= 365) return '${(diff.inDays / 365).floor()}年前';
-    if (diff.inDays >= 30) return '${(diff.inDays / 30).floor()}个月前';
-    if (diff.inDays >= 1) return '${diff.inDays}天前';
-    if (diff.inHours >= 1) return '${diff.inHours}小时前';
-    return '刚刚';
+    if (diff.inDays >= 365) {
+      return loc.discoveryYearsAgo((diff.inDays / 365).floor());
+    }
+    if (diff.inDays >= 30) {
+      return loc.discoveryMonthsAgo((diff.inDays / 30).floor());
+    }
+    if (diff.inDays >= 1) return loc.discoveryDaysAgo(diff.inDays);
+    if (diff.inHours >= 1) return loc.discoveryHoursAgo(diff.inHours);
+    return loc.discoveryJustNow;
   }
 
   // ── build ─────────────────────────────────────────────────────────────────
@@ -56,10 +60,14 @@ class SharedCatalogDeckCard extends StatelessWidget {
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final time = _relativeTime(context);
+    final time = _relativeTime(loc);
 
     return Semantics(
-      label: '${deck.name}，${deck.factCount}词，${deck.owner}发布',
+      label: loc.discoveryCardSemantics(
+        deck.name,
+        loc.discoveryDetailFactCount(deck.factCount),
+        deck.owner,
+      ),
       button: true,
       child: InkWell(
         onTap: isUnavailable ? null : onTap,
@@ -95,7 +103,12 @@ class SharedCatalogDeckCard extends StatelessWidget {
                 children: [
                   if (isImported || isUnavailable) ...[
                     _StatusBadge(
-                      label: isUnavailable ? '已下架' : '已导入',
+                      label: isUnavailable
+                          ? loc.discoveryDeckUnavailable
+                          : loc.discoveryImported,
+                      semanticsLabel: isUnavailable
+                          ? loc.discoveryUnavailableBadgeSemantics
+                          : loc.discoveryImportedBadgeSemantics,
                       isImported: isImported,
                       scheme: scheme,
                     ),
@@ -113,17 +126,17 @@ class SharedCatalogDeckCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  ExcludeSemantics(
-                    child: AppIconButton(
-                      variant: AppIconButtonVariant.subtle,
-                      icon: LucideIcons.heart,
-                      color: isFavorite
-                          ? scheme.error
-                          : scheme.onSurface.withValues(alpha: 0.38),
-                      tooltip: isFavorite ? '取消收藏' : '收藏',
-                      onPressed: onFavoriteToggle,
-                      size: 18,
-                    ),
+                  AppIconButton(
+                    variant: AppIconButtonVariant.subtle,
+                    icon: LucideIcons.heart,
+                    color: isFavorite
+                        ? scheme.error
+                        : scheme.onSurface.withValues(alpha: 0.38),
+                    tooltip: isFavorite
+                        ? loc.discoveryUnfavorite
+                        : loc.discoveryFavorite,
+                    onPressed: onFavoriteToggle,
+                    size: 18,
                   ),
                 ],
               ),
@@ -194,11 +207,13 @@ class SharedCatalogDeckCard extends StatelessWidget {
 class _StatusBadge extends StatelessWidget {
   const _StatusBadge({
     required this.label,
+    required this.semanticsLabel,
     required this.isImported,
     required this.scheme,
   });
 
   final String label;
+  final String semanticsLabel;
   final bool isImported;
   final ColorScheme scheme;
 
@@ -212,7 +227,7 @@ class _StatusBadge extends StatelessWidget {
         : scheme.onSurface.withValues(alpha: 0.55);
 
     return Semantics(
-      label: isImported ? '已导入到我的卡组' : '该卡组已下架',
+      label: semanticsLabel,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
         decoration: BoxDecoration(
