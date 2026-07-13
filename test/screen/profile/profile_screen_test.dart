@@ -4,11 +4,21 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/profile/profile_screen.dart';
 
+import '../../helpers/fake_profile_api_interceptor.dart';
 import '../../helpers/test_wrapper.dart';
 
 void main() {
-  setUpAll(setupTestEnvironment);
-  tearDownAll(tearDownTestEnvironment);
+  late FakeProfileApiInterceptor interceptor;
+
+  setUpAll(() async {
+    await setupTestEnvironment();
+    interceptor = attachFakeProfileApiInterceptor();
+  });
+
+  tearDownAll(() {
+    detachFakeProfileApiInterceptor(interceptor);
+    tearDownTestEnvironment();
+  });
 
   group('ProfileScreen Widget', () {
     testWidgets('renders without errors', (tester) async {
