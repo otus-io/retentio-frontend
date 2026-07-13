@@ -128,7 +128,7 @@ class DiscoveryListCubit extends Cubit<DiscoveryListState> {
     }
     try {
       final ids = await _favoritesRepository.loadFavorites();
-      final result = await _fetchPage(offset: 0);
+      final result = await _fetchPage(offset: 0, favoriteIds: ids);
       _safe(refreshController.refreshCompleted);
       if (!result.meta.hasMore) {
         _safe(refreshController.loadNoData);
@@ -163,7 +163,10 @@ class DiscoveryListCubit extends Cubit<DiscoveryListState> {
       return;
     }
     try {
-      final result = await _fetchPage(offset: state.offset);
+      final result = await _fetchPage(
+        offset: state.offset,
+        favoriteIds: state.favoriteIds,
+      );
       _safe(
         result.meta.hasMore
             ? refreshController.loadComplete
@@ -186,9 +189,12 @@ class DiscoveryListCubit extends Cubit<DiscoveryListState> {
 
   // ── helpers ────────────────────────────────────────────────────────────────
 
-  Future<CatalogPage> _fetchPage({required int offset}) async {
+  Future<CatalogPage> _fetchPage({
+    required int offset,
+    Set<String>? favoriteIds,
+  }) async {
     if (state.filter == DiscoveryFilter.favorites) {
-      return _fetchFavoritesPage(offset: offset);
+      return _fetchFavoritesPage(offset: offset, favoriteIds: favoriteIds);
     }
     return DeckCatalogService.of.getCatalog(
       limit: _pageSize,
@@ -197,8 +203,11 @@ class DiscoveryListCubit extends Cubit<DiscoveryListState> {
     );
   }
 
-  Future<CatalogPage> _fetchFavoritesPage({required int offset}) async {
-    final ids = state.favoriteIds.toList();
+  Future<CatalogPage> _fetchFavoritesPage({
+    required int offset,
+    Set<String>? favoriteIds,
+  }) async {
+    final ids = (favoriteIds ?? state.favoriteIds).toList();
     if (ids.isEmpty) {
       return const CatalogPage(
         decks: [],

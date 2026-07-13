@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -5,14 +6,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// 本地收藏仓库，以 source_deck_id 为主键，存储于 SharedPreferences。
 class DiscoveryFavoritesRepository {
   static const _key = 'discovery_favorite_ids';
+  Future<void> _pending = Future.value();
 
   Future<Set<String>> loadFavorites() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_key);
     if (raw == null) return {};
-    final decoded = json.decode(raw);
-    if (decoded is! List) return {};
-    return Set<String>.from(decoded.whereType<String>());
+    try {
+      final decoded = json.decode(raw);
+      if (decoded is! List) return {};
+      return Set<String>.from(decoded.whereType<String>());
+    } catch (_) {
+      return {};
+    }
   }
 
   Future<void> _save(Set<String> ids) async {
@@ -21,27 +27,45 @@ class DiscoveryFavoritesRepository {
   }
 
   Future<Set<String>> addFavorite(String sourceDeckId) async {
-    final ids = await loadFavorites();
-    ids.add(sourceDeckId);
-    await _save(ids);
-    return ids;
+    return _serialized(() async {
+      final ids = await loadFavorites();
+      ids.add(sourceDeckId);
+      await _save(ids);
+      return ids;
+    });
   }
 
   Future<Set<String>> removeFavorite(String sourceDeckId) async {
-    final ids = await loadFavorites();
-    ids.remove(sourceDeckId);
-    await _save(ids);
-    return ids;
+    return _serialized(() async {
+      final ids = await loadFavorites();
+      ids.remove(sourceDeckId);
+      await _save(ids);
+      return ids;
+    });
   }
 
   Future<Set<String>> toggle(String sourceDeckId) async {
-    final ids = await loadFavorites();
-    if (ids.contains(sourceDeckId)) {
-      ids.remove(sourceDeckId);
-    } else {
-      ids.add(sourceDeckId);
-    }
-    await _save(ids);
-    return ids;
+    return _serialized(() async {
+      final ids = await loadFavorites();
+      if (ids.contains(sourceDeckId)) {
+        ids.remove(sourceDeckId);
+      } else {
+        ids.add(sourceDeckId);
+      }
+      await _save(ids);
+      return ids;
+    });
+  }
+
+  Future<T> _serialized<T>(Future<T> Function() action) {
+    final completer = Completer<T>();
+    _pending = _pending.then((_) async {
+      try {
+        completer.complete(await action());
+      } catch (error, stackTrace) {
+        completer.completeError(error, stackTrace);
+      }
+    });
+    return completer.future;
   }
 }

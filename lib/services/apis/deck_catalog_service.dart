@@ -102,7 +102,7 @@ class DeckCatalogService {
       Api.deckImport,
       body: {'source_deck_id': sourceDeckId},
     );
-    if (res == null || !res.isSuccess) {
+    if (res == null || !res.isSuccess || res.data is! Map) {
       throw Exception(res?.msg ?? 'import_failed');
     }
     return ImportDeckResult.fromJson(

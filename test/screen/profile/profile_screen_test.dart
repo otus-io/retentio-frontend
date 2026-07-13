@@ -66,7 +66,14 @@ void main() {
       final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
       expect(tiles, hasLength(3));
       for (final tile in tiles) {
-        expect(tile.trailing, isA<Icon>());
+        expect(
+          tile.trailing,
+          isA<Icon>().having(
+            (icon) => icon.icon,
+            'icon',
+            LucideIcons.chevronRight,
+          ),
+        );
       }
     });
   });
