@@ -12,6 +12,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/utils/log.dart';
 
@@ -111,6 +112,7 @@ class _CommonNetImageState extends State<CommonNetImage> {
   }
 
   Widget _buildDefaultErrorWidget(BuildContext context, double? height) {
+    final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return Container(
@@ -126,7 +128,7 @@ class _CommonNetImageState extends State<CommonNetImage> {
           if (height != null && height > _kImageErrorLabelThresholdHeight) ...[
             const SizedBox(height: _kImageErrorTextGap),
             Text(
-              'load failed',
+              loc.imageLoadFailed,
               style:
                   theme.textTheme.labelSmall?.copyWith(
                     color: scheme.onSurface.withValues(

@@ -89,19 +89,19 @@ void main() {
 
     // ── isAtLimit ─────────────────────────────────────────────
 
-    test('isAtLimit is false when fewer than 100 tags are loaded', () {
-      // Emit a state with 99 tags via the stream (bypasses service call).
-      cubit.emit(_stateWithTags(99));
+    test('isAtLimit is false when fewer than 1000 tags are loaded', () {
+      // Emit a state with 999 tags via the stream (bypasses service call).
+      cubit.emit(_stateWithTags(999));
       expect(cubit.isAtLimit, isFalse);
     });
 
-    test('isAtLimit is true when exactly 100 tags are loaded', () {
-      cubit.emit(_stateWithTags(100));
+    test('isAtLimit is true when exactly 1000 tags are loaded', () {
+      cubit.emit(_stateWithTags(1000));
       expect(cubit.isAtLimit, isTrue);
     });
 
-    test('isAtLimit is true when more than 100 tags are present', () {
-      cubit.emit(_stateWithTags(101));
+    test('isAtLimit is true when more than 1000 tags are present', () {
+      cubit.emit(_stateWithTags(1001));
       expect(cubit.isAtLimit, isTrue);
     });
 

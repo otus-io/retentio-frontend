@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/models/tag.dart';
 import 'package:retentio/services/apis/tag_service.dart';
 
@@ -52,7 +53,10 @@ class DeckTagCubit extends Cubit<DeckTagState> {
       emit(state.copyWith(status: DeckTagStatus.loaded, tags: _sorted(tags)));
     } catch (e) {
       emit(
-        state.copyWith(status: DeckTagStatus.error, errorMessage: e.toString()),
+        state.copyWith(
+          status: DeckTagStatus.error,
+          errorMessage: rawApiErrorMessage(e),
+        ),
       );
     }
   }
@@ -66,7 +70,7 @@ class DeckTagCubit extends Cubit<DeckTagState> {
       emit(state.copyWith(status: DeckTagStatus.loaded, tags: _sorted(tags)));
       return null;
     } catch (e) {
-      return e.toString();
+      return rawApiErrorMessage(e);
     }
   }
 
@@ -81,7 +85,7 @@ class DeckTagCubit extends Cubit<DeckTagState> {
       return null;
     } catch (e) {
       emit(state.copyWith(tags: previous));
-      return e.toString();
+      return rawApiErrorMessage(e);
     }
   }
 

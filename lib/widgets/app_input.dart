@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/constants.dart';
 import 'package:retentio/theme/theme_tokens.dart';
 
-class AppInput extends StatelessWidget {
+class AppInput extends StatefulWidget {
   const AppInput({
     super.key,
     this.controller,
@@ -42,6 +43,7 @@ class AppInput extends StatelessWidget {
     this.style,
     this.enableInteractiveSelection,
     this.decorationBuilder,
+    this.autofillHints,
   });
 
   final TextEditingController? controller;
@@ -81,8 +83,16 @@ class AppInput extends StatelessWidget {
   final TextStyle? style;
   final bool? enableInteractiveSelection;
   final InputDecoration Function(InputDecoration decoration)? decorationBuilder;
+  final Iterable<String>? autofillHints;
 
-  bool get _hasCustomBorder => border != null;
+  @override
+  State<AppInput> createState() => _AppInputState();
+}
+
+class _AppInputState extends State<AppInput> {
+  bool _isObscured = true;
+
+  bool get _hasCustomBorder => widget.border != null;
 
   static const BoxConstraints _kAffixConstraints = BoxConstraints(
     minWidth: 44,
@@ -100,71 +110,100 @@ class AppInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final resolvedMaxLines = obscureText ? 1 : maxLines;
-    final resolvedMinLines = obscureText ? 1 : minLines;
+
+    final bool effectiveObscure = widget.obscureText && _isObscured;
+    final resolvedMaxLines = widget.obscureText ? 1 : widget.maxLines;
+    final resolvedMinLines = widget.obscureText ? 1 : widget.minLines;
     final isSingleLine =
         resolvedMaxLines == 1 &&
         (resolvedMinLines == null || resolvedMinLines == 1);
 
+    // Built-in show/hide toggle for password fields; only shown when no custom
+    // suffixIcon is provided so callers retain full control when they need it.
+    final Widget? passwordToggle =
+        widget.obscureText && widget.suffixIcon == null
+        ? IconButton(
+            icon: Icon(
+              _isObscured ? LucideIcons.eyeOff : LucideIcons.eye,
+              size: 18,
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+            splashRadius: 18,
+            onPressed: () => setState(() => _isObscured = !_isObscured),
+          )
+        : null;
+
     final baseDecoration = InputDecoration(
-      labelText: label,
-      hintText: hint,
-      helperText: helperText,
-      errorText: errorText,
-      prefixIcon: prefix,
-      suffix: suffix,
-      suffixIcon: suffixIcon,
-      contentPadding: contentPadding ?? AppThemeTokens.inputContentPadding,
-      isDense: isDense,
+      labelText: widget.label,
+      hintText: widget.hint,
+      helperText: widget.helperText,
+      errorText: widget.errorText,
+      prefixIcon: widget.prefix,
+      suffix: widget.suffix,
+      suffixIcon: passwordToggle ?? widget.suffixIcon,
+      contentPadding:
+          widget.contentPadding ?? AppThemeTokens.inputContentPadding,
+      isDense: widget.isDense,
       constraints: isSingleLine
           ? const BoxConstraints(
               minHeight: kTextFieldHeight,
               maxHeight: kTextFieldHeight,
             )
           : null,
-      filled: filled ?? !enabled,
+      filled: widget.filled ?? !widget.enabled,
       fillColor:
-          fillColor ??
-          (!enabled ? colorScheme.onSurface.withValues(alpha: 0.08) : null),
-      border: border,
-      enabledBorder: _hasCustomBorder ? border : _border(colorScheme.outline),
-      focusedBorder: _hasCustomBorder ? border : _border(colorScheme.primary),
-      errorBorder: _hasCustomBorder ? border : _border(colorScheme.error),
+          widget.fillColor ??
+          (!widget.enabled
+              ? colorScheme.onSurface.withValues(alpha: 0.08)
+              : null),
+      border: widget.border,
+      enabledBorder: _hasCustomBorder
+          ? widget.border
+          : _border(colorScheme.outline),
+      focusedBorder: _hasCustomBorder
+          ? widget.border
+          : _border(colorScheme.primary),
+      errorBorder: _hasCustomBorder
+          ? widget.border
+          : _border(colorScheme.error),
       focusedErrorBorder: _hasCustomBorder
-          ? border
+          ? widget.border
           : _border(colorScheme.error),
       disabledBorder: _hasCustomBorder
-          ? border
+          ? widget.border
           : _border(colorScheme.onSurface.withValues(alpha: 0.12)),
-      suffixIconConstraints: suffixConstraints ?? _kAffixConstraints,
-      prefixIconConstraints: prefixConstraints ?? _kAffixConstraints,
-      floatingLabelBehavior: floatingLabelBehavior,
+      suffixIconConstraints: widget.suffixConstraints ?? _kAffixConstraints,
+      prefixIconConstraints: widget.prefixConstraints ?? _kAffixConstraints,
+      floatingLabelBehavior: widget.floatingLabelBehavior,
     );
 
     return TextField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      onChanged: onChanged,
-      onEditingComplete: onEditingComplete,
-      enabled: enabled,
+      controller: widget.controller,
+      obscureText: effectiveObscure,
+      keyboardType: widget.keyboardType,
+      onChanged: widget.onChanged,
+      onEditingComplete: widget.onEditingComplete,
+      enabled: widget.enabled,
       maxLines: resolvedMaxLines,
       minLines: resolvedMinLines,
-      textInputAction: textInputAction,
-      focusNode: focusNode,
-      style: style,
-      textAlign: textAlign,
+      textInputAction: widget.textInputAction,
+      focusNode: widget.focusNode,
+      style: widget.style,
+      textAlign: widget.textAlign,
       textAlignVertical:
-          textAlignVertical ?? (isSingleLine ? TextAlignVertical.center : null),
-      selectAllOnFocus: selectAllOnFocus ?? false,
-      onTapAlwaysCalled: onTapAlwaysCalled ?? false,
-      onTap: onTap,
-      contextMenuBuilder: contextMenuBuilder,
-      enableInteractiveSelection: enableInteractiveSelection ?? true,
-      textCapitalization: textCapitalization,
-      onSubmitted: onSubmitted,
-      maxLength: maxLength,
-      decoration: decorationBuilder?.call(baseDecoration) ?? baseDecoration,
+          widget.textAlignVertical ??
+          (isSingleLine ? TextAlignVertical.center : null),
+      selectAllOnFocus: widget.selectAllOnFocus ?? false,
+      onTapAlwaysCalled: widget.onTapAlwaysCalled ?? false,
+      onTap: widget.onTap,
+      contextMenuBuilder: widget.contextMenuBuilder,
+      enableInteractiveSelection: widget.enableInteractiveSelection ?? true,
+      textCapitalization: widget.textCapitalization,
+      onSubmitted: widget.onSubmitted,
+      maxLength: widget.maxLength,
+      autofillHints: widget.autofillHints,
+      decoration:
+          widget.decorationBuilder?.call(baseDecoration) ?? baseDecoration,
     );
   }
 }

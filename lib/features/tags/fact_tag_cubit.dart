@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/models/tag.dart';
 import 'package:retentio/services/apis/tag_service.dart';
 
@@ -62,7 +63,10 @@ class FactTagCubit extends Cubit<FactTagState> {
       emit(state.copyWith(status: FactTagStatus.loaded, tags: _sorted(tags)));
     } catch (e) {
       emit(
-        state.copyWith(status: FactTagStatus.error, errorMessage: e.toString()),
+        state.copyWith(
+          status: FactTagStatus.error,
+          errorMessage: rawApiErrorMessage(e),
+        ),
       );
     }
   }
@@ -76,7 +80,7 @@ class FactTagCubit extends Cubit<FactTagState> {
       emit(state.copyWith(status: FactTagStatus.loaded, tags: _sorted(tags)));
       return null;
     } catch (e) {
-      return e.toString();
+      return rawApiErrorMessage(e);
     }
   }
 
@@ -91,7 +95,7 @@ class FactTagCubit extends Cubit<FactTagState> {
       return null;
     } catch (e) {
       emit(state.copyWith(tags: previous));
-      return e.toString();
+      return rawApiErrorMessage(e);
     }
   }
 

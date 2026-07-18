@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/widgets/app_button.dart';
@@ -20,6 +21,10 @@ class DeckScreenBody extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return BlocBuilder<DeckListCubit, DeckListState>(
+      buildWhen: (prev, curr) =>
+          prev.decks != curr.decks ||
+          prev.isLoading != curr.isLoading ||
+          prev.error != curr.error,
       builder: (context, state) {
         if (state.isLoading && state.decks.isEmpty) {
           return Center(
@@ -40,7 +45,10 @@ class DeckScreenBody extends StatelessWidget {
                     color: scheme.error,
                   ),
                   const SizedBox(height: 12),
-                  Text('Error: ${state.error}', textAlign: TextAlign.center),
+                  Text(
+                    ApiErrorMessages.resolve(state.error, loc),
+                    textAlign: TextAlign.center,
+                  ),
                   const SizedBox(height: 14),
                   AppButton(
                     label: loc.retry,
@@ -82,6 +90,7 @@ class DeckScreenBody extends StatelessWidget {
             itemBuilder: (context, index) {
               final deck = state.decks[index];
               return Padding(
+                key: ValueKey(deck.id),
                 padding: const EdgeInsets.only(bottom: 12),
                 child: DeckListCard(deck: deck),
               );

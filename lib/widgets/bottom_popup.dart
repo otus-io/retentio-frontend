@@ -25,12 +25,17 @@ class BottomPopup extends StatelessWidget {
           top: Radius.circular(_kPopupTopRadius),
         ),
       ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: SizedBox(height: height ?? _kPopupDefaultHeight, child: child),
-      ),
+      builder: (context) {
+        final safeBottom = MediaQuery.paddingOf(context).bottom;
+        final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: keyboardBottom),
+          child: SizedBox(
+            height: (height ?? _kPopupDefaultHeight) + safeBottom,
+            child: SafeArea(top: false, child: child),
+          ),
+        );
+      },
     );
   }
 

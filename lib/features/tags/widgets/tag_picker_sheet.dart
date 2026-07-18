@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/features/tags/widgets/tag_edit_dialog.dart';
 import 'package:retentio/l10n/app_localizations.dart';
@@ -186,7 +187,9 @@ class _TagPickerSheet extends HookWidget {
                                 name: name,
                                 description: description,
                               );
-                              if (err != null) return err;
+                              if (err != null) {
+                                return ApiErrorMessages.resolve(err, loc);
+                              }
                               String? createdTagId;
                               for (final tag in cubit.state.tags) {
                                 if (!beforeIds.contains(tag.id)) {

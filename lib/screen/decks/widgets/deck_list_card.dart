@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/decks/deck_text_styles.dart';
+import 'package:retentio/screen/decks/widgets/publish_deck_sheet.dart';
 import 'package:retentio/theme/theme_tokens.dart';
+import 'package:retentio/widgets/app_icon_button.dart';
+import 'package:retentio/widgets/common_bottom_sheet.dart';
 
 import '../../../routers/routers.dart';
 
@@ -67,7 +71,26 @@ class DeckListCard extends StatelessWidget {
                     style: DeckTextStyles.deckTitle(theme),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
+                if (!deck.isImported)
+                  AppIconButton(
+                    icon: LucideIcons.share2,
+                    tooltip: loc.publishDeck,
+                    variant: AppIconButtonVariant.subtle,
+                    size: 18,
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
+                    onPressed: () {
+                      showCommonBottomSheet<void>(
+                        context: context,
+                        title: loc.publishDeck,
+                        child: PublishDeckSheet(deck: deck),
+                      );
+                    },
+                  ),
+                const SizedBox(width: 4),
                 Text(
                   '${deck.totalCards} ${loc.cards}',
                   style: theme.textTheme.labelMedium?.copyWith(

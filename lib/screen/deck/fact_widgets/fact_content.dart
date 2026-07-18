@@ -36,6 +36,12 @@ class FactContent extends ConsumerWidget {
     String() => LucideIcons.fileText,
   };
 
+  static Widget _mediaWidget(Item e) => switch (e.type) {
+    'video' => CardVideo(url: e.value),
+    'image' => Center(child: CardImage(url: e.value)),
+    String() => const SizedBox.shrink(),
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef _) {
     final textLikeItems = <Item>[];
@@ -81,32 +87,27 @@ class FactContent extends ConsumerWidget {
           typographyIsFront: typographyIsFront,
         ),
       );
-      final combinedTrailing = <Widget>[
-        _CombinedAudioTrailing(
-          audioItems: audioItems,
-          color: color,
-          singleAudioScope: singleAudioScope,
-        ),
-      ];
       tabWidgets.add(
-        combinedTrailing.isEmpty
+        audioItems.isEmpty
             ? const Tab(icon: Icon(LucideIcons.fileText))
             : Tab(
                 icon: const Icon(LucideIcons.fileText),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: combinedTrailing,
+                  children: [
+                    _CombinedAudioTrailing(
+                      audioItems: audioItems,
+                      color: color,
+                      singleAudioScope: singleAudioScope,
+                    ),
+                  ],
                 ),
               ),
       );
     }
 
     for (final e in mediaTabs) {
-      tabPages.add(switch (e.type) {
-        'video' => CardVideo(url: e.value),
-        'image' => Center(child: CardImage(url: e.value)),
-        String() => const SizedBox.shrink(),
-      });
+      tabPages.add(_mediaWidget(e));
       tabWidgets.add(Tab(icon: Icon(_tabIconForMedia(e))));
     }
 
@@ -202,14 +203,7 @@ class FactContent extends ConsumerWidget {
 
     for (final e in mediaTabs) {
       children.add(
-        Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: switch (e.type) {
-            'video' => CardVideo(url: e.value),
-            'image' => Center(child: CardImage(url: e.value)),
-            String() => const SizedBox.shrink(),
-          },
-        ),
+        Padding(padding: const EdgeInsets.only(top: 8), child: _mediaWidget(e)),
       );
     }
 
@@ -218,6 +212,7 @@ class FactContent extends ConsumerWidget {
         CardText(
           text: '',
           color: color,
+          scrollable: false,
           typographyDeckId: typographyDeckId,
           typographyIsFront: typographyIsFront,
         ),
@@ -284,23 +279,23 @@ class _InlineTextPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final nonEmpty = textItems.where((t) => t.value.trim().isNotEmpty).toList();
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final t in textItems)
-          if (t.value.trim().isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: CardText(
-                text: t.value,
-                color: color,
-                scrollable: false,
-                typographyDeckId: typographyDeckId,
-                typographyIsFront: typographyIsFront,
-                textAlign: TextAlign.start,
-              ),
+        for (var i = 0; i < nonEmpty.length; i++)
+          Padding(
+            padding: EdgeInsets.only(bottom: i < nonEmpty.length - 1 ? 8 : 0),
+            child: CardText(
+              text: nonEmpty[i].value,
+              color: color,
+              scrollable: false,
+              typographyDeckId: typographyDeckId,
+              typographyIsFront: typographyIsFront,
+              textAlign: TextAlign.start,
             ),
+          ),
       ],
     );
   }

@@ -111,7 +111,7 @@ class _CardVideoState extends State<CardVideo>
         : isError
         ? Center(
             child: Row(
-              mainAxisSize: .min,
+              mainAxisSize: MainAxisSize.min,
               spacing: 5,
               children: [Icon(LucideIcons.bug), Text('Error')],
             ),

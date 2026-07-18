@@ -35,4 +35,13 @@ class Api {
   // Fact <-> Tag
   static const String factTags = '/api/decks/{id}/facts/{factId}/tags';
   static const String factTag = '/api/decks/{id}/facts/{factId}/tags/{tagId}';
+
+  // Deck sharing / catalog
+  static const String deckCatalog = '/api/decks/catalog';
+  static const String deckCatalogById = '/api/decks/catalog/{id}';
+  static const String deckPublish = '/api/decks/{id}/publish';
+  static const String deckImport = '/api/decks/import';
+  static const String deckUpdates = '/api/decks/{id}/updates';
+  static const String deckSync = '/api/decks/{id}/sync';
+  static const String deckFeedback = '/api/decks/{id}/feedback';
 }

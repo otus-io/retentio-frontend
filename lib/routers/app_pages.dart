@@ -8,6 +8,7 @@ import 'package:retentio/screen/login/login_screen.dart';
 import 'package:retentio/screen/register/register_screen.dart';
 import 'package:retentio/core/di/app_service_locator.dart';
 import 'package:retentio/core/navigation/router_refresh_bridge.dart';
+import 'package:retentio/features/discovery/presentation/discovery_detail_screen.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/features/auth/presentation/bloc/auth_bloc.dart'
     as feature_auth;
@@ -53,6 +54,16 @@ class AppPages {
       GoRoute(
         path: AppRoutes.main.path,
         builder: (context, state) => const MainTabScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.discoveryDetail.path,
+        builder: (context, state) {
+          final id = state.pathParameters['id'];
+          if (id == null || id.isEmpty) {
+            return const _MissingStudyExtraScreen();
+          }
+          return DiscoveryDetailScreen(sourceDeckId: id);
+        },
       ),
       GoRoute(
         path: AppRoutes.study.path,

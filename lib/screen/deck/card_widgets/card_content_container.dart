@@ -54,18 +54,14 @@ class CardContentContainer extends StatelessWidget {
     final effectiveTextColor = textColor ?? color;
 
     if (cards.isEmpty) {
-      return Stack(
-        children: [
-          Positioned.fill(
-            child: FactContent(
-              items: const [],
-              color: color,
-              typographyDeckId: typographyDeckId,
-              typographyIsFront: typographyIsFront,
-            ),
-          ),
-          if (trailing != null) Positioned(top: 4, right: 4, child: trailing!),
-        ],
+      return _CardContentShell(
+        trailing: trailing,
+        child: FactContent(
+          items: const [],
+          color: color,
+          typographyDeckId: typographyDeckId,
+          typographyIsFront: typographyIsFront,
+        ),
       );
     }
 
@@ -140,25 +136,12 @@ class CardContentContainer extends StatelessWidget {
         ? _kContentPaddingWithMenu
         : _kContentPadding;
 
-    if (cards.isEmpty) {
+    if (cards.length <= 1) {
       return _CardContentShell(
         trailing: trailing,
         padding: padding,
         child: FactContent(
-          items: const [],
-          color: color,
-          typographyDeckId: typographyDeckId,
-          typographyIsFront: typographyIsFront,
-        ),
-      );
-    }
-
-    if (cards.length == 1) {
-      return _CardContentShell(
-        trailing: trailing,
-        padding: padding,
-        child: FactContent(
-          items: cards.first.items,
+          items: cards.isEmpty ? const [] : cards.first.items,
           color: color,
           typographyDeckId: typographyDeckId,
           typographyIsFront: typographyIsFront,

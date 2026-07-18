@@ -19,12 +19,22 @@ void main() {
       expect(AppRoutes.study.path, '/study');
     });
 
+    test('discovery detail has correct path', () {
+      expect(AppRoutes.discoveryDetail.path, '/discovery/:id');
+    });
+
+    test('main and discovery detail are auth-exempt', () {
+      expect(AppRoutes.isAuthExemptPath('/'), isTrue);
+      expect(AppRoutes.isAuthExemptPath('/discovery/deck-123'), isTrue);
+    });
+
     test('all enum values are defined', () {
-      expect(AppRoutes.values.length, 4);
+      expect(AppRoutes.values.length, 5);
       expect(AppRoutes.values, contains(AppRoutes.login));
       expect(AppRoutes.values, contains(AppRoutes.main));
       expect(AppRoutes.values, contains(AppRoutes.register));
       expect(AppRoutes.values, contains(AppRoutes.study));
+      expect(AppRoutes.values, contains(AppRoutes.discoveryDetail));
     });
   });
 }

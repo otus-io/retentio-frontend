@@ -39,9 +39,9 @@ class AppNavigationBar extends StatelessWidget {
             label: loc.decks,
           ),
           NavigationDestination(
-            icon: const Icon(LucideIcons.tag),
-            selectedIcon: const Icon(LucideIcons.tags),
-            label: loc.tags,
+            icon: const Icon(LucideIcons.compass),
+            selectedIcon: const Icon(LucideIcons.navigation),
+            label: loc.discoveryTab,
           ),
           NavigationDestination(
             icon: const Icon(LucideIcons.user),

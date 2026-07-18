@@ -39,5 +39,37 @@ void main() {
 
       expect(find.text('6/2387 (0.25%)'), findsOneWidget);
     });
+
+    testWidgets('hides publish action for imported decks', (tester) async {
+      final deck = Deck.fromJson({
+        'id': 'deck-imported-1',
+        'name': 'Imported Deck',
+        'source_deck_id': 'source-123',
+        'stats': {
+          'cards_count': 10,
+          'unseen_cards': 5,
+          'due_cards': 2,
+          'facts_count': 4,
+          'reviewed_cards': 5,
+          'hidden_cards': 0,
+          'new_cards_today': 0,
+          'last_reviewed_at': 0,
+        },
+        'rate': 30,
+        'min_interval': 60,
+        'def_interval': 300,
+        'max_interval': 86400,
+        'owner': {'username': 'u', 'email': 'u@t.com'},
+        'fields': ['Front', 'Back'],
+      });
+
+      await tester.pumpWidget(
+        buildTestableWidgetWithoutProvider(
+          Scaffold(body: DeckListCard(deck: deck)),
+        ),
+      );
+
+      expect(find.byTooltip('Publish Deck'), findsNothing);
+    });
   });
 }

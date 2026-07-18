@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/providers/locale_provider.dart';
 import 'package:retentio/providers/theme_provider.dart';
@@ -9,6 +10,7 @@ import 'package:retentio/screen/profile/bloc/profile_cubit.dart';
 import 'package:retentio/screen/profile/profile_settings_dialogs.dart';
 import 'package:retentio/screen/profile/widgets/profile_user_header.dart';
 import 'package:retentio/theme/theme_tokens.dart';
+import 'package:retentio/widgets/app_button.dart';
 
 const _kListBottomPadding = 24.0;
 const _kHeaderToCardSpacing = 14.0;
@@ -36,75 +38,110 @@ class ProfileScreen extends HookConsumerWidget {
           final profileCubit = context.read<ProfileCubit>();
           return Scaffold(
             appBar: AppBar(title: Text(loc.profile)),
-            body: ListView(
-              padding: const EdgeInsets.only(bottom: _kListBottomPadding),
-              children: [
-                const ProfileUserHeader(),
-                const SizedBox(height: _kHeaderToCardSpacing),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: _kCardHorizontalMargin,
-                  ),
-                  child: Material(
-                    color: scheme.surfaceContainerHighest,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppThemeTokens.borderRadiusXl,
-                      side: BorderSide(
-                        color: scheme.outline,
-                        width: AppThemeTokens.borderWidthHairline,
+            body: BlocBuilder<ProfileCubit, ProfileState>(
+              builder: (context, state) {
+                if (state.status == ProfileStatus.loading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (state.status == ProfileStatus.error) {
+                  final error = ApiErrorMessages.resolve(
+                    state.errorMessage ?? 'Error retrieving user profile',
+                    loc,
+                  );
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppThemeTokens.spaceLg),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(error, textAlign: TextAlign.center),
+                          const SizedBox(height: AppThemeTokens.spaceMd),
+                          AppButton(
+                            label: loc.discoveryRetry,
+                            onPressed: profileCubit.getProfile,
+                          ),
+                        ],
                       ),
                     ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      children: [
-                        _ProfileTileWidget(
-                          icon: LucideIcons.globe,
-                          title: loc.changeLanguage,
-                          subtitle: profileLanguageDisplayName(currentLocale),
-                          onTap: () => showProfileLanguageDialog(
-                            context,
-                            ref,
-                            currentLocale,
-                            loc,
+                  );
+                }
+
+                return ListView(
+                  padding: const EdgeInsets.only(bottom: _kListBottomPadding),
+                  children: [
+                    const ProfileUserHeader(),
+                    const SizedBox(height: _kHeaderToCardSpacing),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: _kCardHorizontalMargin,
+                      ),
+                      child: Material(
+                        color: scheme.surfaceContainerHighest,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppThemeTokens.borderRadiusXl,
+                          side: BorderSide(
+                            color: scheme.outline,
+                            width: AppThemeTokens.borderWidthHairline,
                           ),
                         ),
-                        Divider(
-                          height: dividerTheme.space ?? 1,
-                          indent: _kDividerHorizontalInset,
-                          endIndent: _kDividerHorizontalInset,
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          children: [
+                            _ProfileTileWidget(
+                              icon: LucideIcons.globe,
+                              title: loc.changeLanguage,
+                              subtitle: profileLanguageDisplayName(
+                                currentLocale,
+                              ),
+                              onTap: () => showProfileLanguageDialog(
+                                context,
+                                ref,
+                                currentLocale,
+                                loc,
+                              ),
+                            ),
+                            Divider(
+                              height: dividerTheme.space ?? 1,
+                              indent: _kDividerHorizontalInset,
+                              endIndent: _kDividerHorizontalInset,
+                            ),
+                            _ProfileTileWidget(
+                              icon: LucideIcons.palette,
+                              title: loc.changeTheme,
+                              subtitle: profileThemeDisplayName(
+                                currentTheme,
+                                loc,
+                              ),
+                              onTap: () => showProfileThemeDialog(
+                                context,
+                                ref,
+                                currentTheme,
+                                loc,
+                              ),
+                            ),
+                            Divider(
+                              height: dividerTheme.space ?? 1,
+                              indent: _kDividerHorizontalInset,
+                              endIndent: _kDividerHorizontalInset,
+                            ),
+                            _ProfileTileWidget(
+                              icon: LucideIcons.logOut,
+                              title: loc.logout,
+                              titleColor: scheme.error,
+                              iconColor: scheme.error,
+                              onTap: () => showProfileLogoutDialog(
+                                context,
+                                profileCubit,
+                                loc,
+                              ),
+                            ),
+                          ],
                         ),
-                        _ProfileTileWidget(
-                          icon: LucideIcons.palette,
-                          title: loc.changeTheme,
-                          subtitle: profileThemeDisplayName(currentTheme, loc),
-                          onTap: () => showProfileThemeDialog(
-                            context,
-                            ref,
-                            currentTheme,
-                            loc,
-                          ),
-                        ),
-                        Divider(
-                          height: dividerTheme.space ?? 1,
-                          indent: _kDividerHorizontalInset,
-                          endIndent: _kDividerHorizontalInset,
-                        ),
-                        _ProfileTileWidget(
-                          icon: LucideIcons.logOut,
-                          title: loc.logout,
-                          titleColor: scheme.error,
-                          iconColor: scheme.error,
-                          onTap: () => showProfileLogoutDialog(
-                            context,
-                            profileCubit,
-                            loc,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              ],
+                  ],
+                );
+              },
             ),
           );
         },

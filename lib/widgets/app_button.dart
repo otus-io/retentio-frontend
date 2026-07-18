@@ -49,9 +49,9 @@ class AppButton extends StatelessWidget {
   Widget _buildChild(BuildContext context) {
     final typography = Theme.of(context).semanticTypography;
     final textStyle = switch (size) {
-      AppButtonSize.sm => typography.caption.copyWith(
-        fontWeight: AppTypographyTokens.weightBold,
-      ),
+      AppButtonSize.sm =>
+        (Theme.of(context).textTheme.labelMedium ?? typography.caption)
+            .copyWith(fontWeight: AppTypographyTokens.weightBold),
       AppButtonSize.md => typography.controlLabel,
       AppButtonSize.lg => typography.controlLabel.copyWith(
         fontWeight: AppTypographyTokens.weightSemiBold,
@@ -115,7 +115,7 @@ class AppButton extends StatelessWidget {
           padding: padding,
           fixedSize: fixedSize,
           backgroundColor: colorScheme.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: colorScheme.onPrimary,
           shape: RoundedRectangleBorder(
             borderRadius: AppThemeTokens.borderRadiusMd,
           ),
@@ -156,7 +156,7 @@ class AppButton extends StatelessWidget {
           padding: padding,
           fixedSize: fixedSize,
           backgroundColor: colorScheme.error,
-          foregroundColor: Colors.white,
+          foregroundColor: colorScheme.onError,
           shape: RoundedRectangleBorder(
             borderRadius: AppThemeTokens.borderRadiusMd,
           ),

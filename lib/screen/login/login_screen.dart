@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/constants.dart';
+import 'package:retentio/core/error/api_error_messages.dart';
+import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/providers/theme_provider.dart';
+import 'package:retentio/routers/routers.dart';
 import 'package:retentio/screen/login/login_tokens.dart';
 import 'package:retentio/screen/login/widgets/forgot_password.dart';
 import 'package:retentio/screen/login/widgets/login_gradient_background.dart';
@@ -134,66 +138,79 @@ class LoginScreen extends HookConsumerWidget {
                               ),
                             ),
                             const SizedBox(height: LoginTokens.spaceXl),
-                            AppInput(
-                              controller: usernameController,
-                              label: loc.username,
-                              hint: 'your_username',
-                              floatingLabelBehavior:
-                                  FloatingLabelBehavior.never,
-                              filled: true,
-                              fillColor: scheme.surface.withValues(
-                                alpha: isDark ? 0.46 : 0.92,
-                              ),
-                              border: inputBorder,
-                              decorationBuilder: (decoration) =>
-                                  decoration.copyWith(
-                                    enabledBorder: inputBorder,
-                                    focusedBorder: inputBorder.copyWith(
-                                      borderSide: BorderSide(
-                                        color: scheme.primary.withValues(
-                                          alpha: 0.62,
-                                        ),
-                                        width: LoginTokens.hairlineBorderWidth,
-                                      ),
+                            AutofillGroup(
+                              child: Column(
+                                children: [
+                                  AppInput(
+                                    controller: usernameController,
+                                    label: loc.username,
+                                    autofillHints: const [
+                                      AutofillHints.username,
+                                    ],
+                                    textInputAction: TextInputAction.next,
+                                    floatingLabelBehavior:
+                                        FloatingLabelBehavior.never,
+                                    filled: true,
+                                    fillColor: scheme.surface.withValues(
+                                      alpha: isDark ? 0.46 : 0.92,
                                     ),
-                                    labelStyle: theme.textTheme.bodyMedium
-                                        ?.copyWith(
-                                          color: scheme.onSurface.withValues(
-                                            alpha: 0.7,
+                                    border: inputBorder,
+                                    decorationBuilder: (decoration) =>
+                                        decoration.copyWith(
+                                          enabledBorder: inputBorder,
+                                          focusedBorder: inputBorder.copyWith(
+                                            borderSide: BorderSide(
+                                              color: scheme.primary.withValues(
+                                                alpha: 0.62,
+                                              ),
+                                              width: LoginTokens
+                                                  .hairlineBorderWidth,
+                                            ),
                                           ),
+                                          labelStyle: theme.textTheme.bodyMedium
+                                              ?.copyWith(
+                                                color: scheme.onSurface
+                                                    .withValues(alpha: 0.7),
+                                              ),
                                         ),
                                   ),
-                            ),
-                            const SizedBox(height: LoginTokens.spaceMd),
-                            AppInput(
-                              controller: passwordController,
-                              label: loc.password,
-                              obscureText: true,
-                              floatingLabelBehavior:
-                                  FloatingLabelBehavior.never,
-                              filled: true,
-                              fillColor: scheme.surface.withValues(
-                                alpha: isDark ? 0.46 : 0.92,
-                              ),
-                              border: inputBorder,
-                              decorationBuilder: (decoration) =>
-                                  decoration.copyWith(
-                                    enabledBorder: inputBorder,
-                                    focusedBorder: inputBorder.copyWith(
-                                      borderSide: BorderSide(
-                                        color: scheme.primary.withValues(
-                                          alpha: 0.62,
-                                        ),
-                                        width: LoginTokens.hairlineBorderWidth,
-                                      ),
+                                  const SizedBox(height: LoginTokens.spaceMd),
+                                  AppInput(
+                                    controller: passwordController,
+                                    label: loc.password,
+                                    obscureText: true,
+                                    autofillHints: const [
+                                      AutofillHints.password,
+                                    ],
+                                    textInputAction: TextInputAction.done,
+                                    floatingLabelBehavior:
+                                        FloatingLabelBehavior.never,
+                                    filled: true,
+                                    fillColor: scheme.surface.withValues(
+                                      alpha: isDark ? 0.46 : 0.92,
                                     ),
-                                    labelStyle: theme.textTheme.bodyMedium
-                                        ?.copyWith(
-                                          color: scheme.onSurface.withValues(
-                                            alpha: 0.7,
+                                    border: inputBorder,
+                                    decorationBuilder: (decoration) =>
+                                        decoration.copyWith(
+                                          enabledBorder: inputBorder,
+                                          focusedBorder: inputBorder.copyWith(
+                                            borderSide: BorderSide(
+                                              color: scheme.primary.withValues(
+                                                alpha: 0.62,
+                                              ),
+                                              width: LoginTokens
+                                                  .hairlineBorderWidth,
+                                            ),
                                           ),
+                                          labelStyle: theme.textTheme.bodyMedium
+                                              ?.copyWith(
+                                                color: scheme.onSurface
+                                                    .withValues(alpha: 0.7),
+                                              ),
                                         ),
                                   ),
+                                ],
+                              ),
                             ),
                             const SizedBox(height: LoginTokens.spaceXl),
                             AppButton(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_add.dart';
 import 'package:retentio/screen/decks/providers/deck_list.dart';
+import 'package:retentio/widgets/app_toast.dart';
 
 import '../../helpers/card_test_samples.dart';
 import '../../helpers/fake_deck_list_notifier.dart';
@@ -51,6 +52,9 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(interceptor.addFactsCount, 1);
         expect(find.text('Fact added'), findsOneWidget);
+
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
       },
     );
   });

@@ -31,7 +31,7 @@ class HomeScreen extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Learning Path',
+                loc.homeLearningPath,
                 style: theme.textTheme.titleMedium?.copyWith(
                   letterSpacing: -0.1,
                 ),
@@ -47,7 +47,7 @@ class HomeScreen extends StatelessWidget {
                   borderRadius: AppThemeTokens.borderRadiusPill,
                 ),
                 child: Text(
-                  'Today',
+                  loc.homeToday,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: scheme.onSurface.withValues(alpha: 0.78),
                     fontWeight: FontWeight.w600,
@@ -74,7 +74,10 @@ class HomeScreen extends StatelessWidget {
             isLast: true,
           ),
           const SizedBox(height: 18),
-          Text('Today Focus', style: theme.textTheme.titleMedium),
+          Text(
+            loc.homeTodayFocus,
+            style: theme.textTheme.titleMedium?.copyWith(letterSpacing: -0.1),
+          ),
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -84,7 +87,7 @@ class HomeScreen extends StatelessWidget {
               border: Border.all(color: scheme.outline.withValues(alpha: 0.6)),
             ),
             child: Text(
-              'Finish one review round first, then add new facts from your study notes.',
+              loc.homeTodayFocusText,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: scheme.onSurface.withValues(alpha: _kSecondaryTextAlpha),
                 height: 1.45,
@@ -100,6 +103,7 @@ class HomeScreen extends StatelessWidget {
 class _DailyGoalHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
@@ -130,7 +134,7 @@ class _DailyGoalHeader extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Text(
-                'Daily Goal',
+                loc.homeDailyGoal,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: scheme.onSurface,
                 ),

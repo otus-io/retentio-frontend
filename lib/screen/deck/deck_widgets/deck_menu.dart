@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:pull_down_button/pull_down_button.dart';
+import 'package:retentio/core/error/api_error_messages.dart';
+import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck.dart';
@@ -14,9 +16,12 @@ import 'package:retentio/screen/deck/fact_widgets/fact_add.dart';
 import 'package:retentio/screen/decks/widgets/deck_create.dart';
 import 'package:retentio/theme/theme_tokens.dart';
 import 'package:retentio/widgets/app_icon_button.dart';
+import 'package:retentio/screen/decks/widgets/publish_deck_sheet.dart';
+import 'package:retentio/widgets/app_toast.dart';
 import 'package:retentio/widgets/common_bottom_sheet.dart';
 
 import 'deck_font_sheet.dart';
+import 'import_updates_sheet.dart';
 
 class DeckMenu extends StatelessWidget {
   static const _kMenuWidth = 200.0;
@@ -168,11 +173,70 @@ class DeckMenu extends StatelessWidget {
               onPressedBackgroundColor: scheme.surfaceContainerHighest,
             ),
           ),
+          if (!deck.isImported)
+            PullDownMenuItem(
+              title: loc.publishDeck,
+              onTap: () async {
+                await _showSheetAfterMenuDismissed(
+                  context,
+                  showSheet: () {
+                    showCommonBottomSheet<void>(
+                      context: context,
+                      title: loc.publishDeck,
+                      child: PublishDeckSheet(deck: deck),
+                    );
+                  },
+                );
+              },
+              icon: LucideIcons.share2,
+              itemTheme: PullDownMenuItemTheme(
+                textStyle: menuItemStyle(scheme.onSurface),
+                onPressedBackgroundColor: scheme.surfaceContainerHighest,
+              ),
+            ),
+          if (deck.isImported)
+            PullDownMenuItem(
+              title: loc.deckCheckUpdates,
+              onTap: () async {
+                await _showSheetAfterMenuDismissed(
+                  context,
+                  showSheet: () {
+                    showCommonBottomSheet<void>(
+                      context: context,
+                      title: loc.deckCheckUpdates,
+                      initialChildSize: 0.5,
+                      minChildSize: 0.35,
+                      maxChildSize: 0.7,
+                      child: ImportUpdatesSheet(
+                        deckId: deck.id,
+                        onSynced: () =>
+                            context.read<DeckListCubit>().onRefresh(),
+                      ),
+                    );
+                  },
+                );
+              },
+              icon: LucideIcons.refreshCw,
+              itemTheme: PullDownMenuItemTheme(
+                textStyle: menuItemStyle(scheme.onSurface),
+                onPressedBackgroundColor: scheme.surfaceContainerHighest,
+              ),
+            ),
           const PullDownMenuDivider.large(),
           PullDownMenuItem(
             title: loc.deleteDeck,
             onTap: () async {
-              await context.read<DeckListCubit>().deleteDeck(deck);
+              try {
+                await context.read<DeckListCubit>().deleteDeck(deck);
+              } catch (e) {
+                if (context.mounted) {
+                  AppToast.error(
+                    context,
+                    ApiErrorMessages.resolve(rawApiErrorMessage(e), loc),
+                  );
+                }
+                return;
+              }
               if (context.mounted) {
                 context.pop();
               }
@@ -191,7 +255,7 @@ class DeckMenu extends StatelessWidget {
         constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
         padding: const EdgeInsets.all(AppThemeTokens.spaceSm),
         onPressed: showMenu,
-        tooltip: 'Deck options',
+        tooltip: loc.deckOptionsTooltip,
       ),
     );
   }

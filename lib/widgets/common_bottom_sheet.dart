@@ -51,8 +51,7 @@ Future<T?> showCommonBottomSheet<T>({
   final resolvedMin = fullScreen ? _kSheetFullScreenMinChildSize : minChildSize;
   final resolvedExpand = fullScreen || expandSheet;
   final resolvedUseSafeArea = fullScreen || useSafeArea;
-  final resolvedSheetAnimationStyle =
-      sheetAnimationStyle ?? AnimationStyle.noAnimation;
+  final resolvedSheetAnimationStyle = sheetAnimationStyle;
 
   return showModalBottomSheet<T>(
     context: context,
@@ -100,13 +99,8 @@ Future<T?> showCommonBottomSheet<T>({
                         ),
                       ),
                     ),
-                    Center(
-                      child: Text(
-                        title ?? '',
-                        textAlign: TextAlign.center,
-                        style: titleStyle,
-                      ),
-                    ),
+                    if (title != null && title.isNotEmpty)
+                      Text(title, style: titleStyle),
                     const SizedBox(height: _kSheetTitleGapFullScreen),
                     child,
                   ],
@@ -198,7 +192,10 @@ Future<T?> showCommonBottomSheet<T>({
     clipBehavior: clipBehavior,
     constraints: constraints,
     barrierColor:
-        barrierColor ?? Colors.black.withValues(alpha: _kSheetBarrierOpacity),
+        barrierColor ??
+        Theme.of(
+          context,
+        ).colorScheme.scrim.withValues(alpha: _kSheetBarrierOpacity),
     isScrollControlled: isScrollControlled,
     useRootNavigator: useRootNavigator,
     isDismissible: isDismissible,

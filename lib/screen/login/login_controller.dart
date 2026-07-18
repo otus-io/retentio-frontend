@@ -10,9 +10,7 @@ class LoginController {
     final loc = AppLocalizations.of(context)!;
 
     if (username.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(loc.pleaseFillAllFields)));
+      showSnack(context, loc.pleaseFillAllFields);
       return;
     }
 
@@ -29,10 +27,15 @@ class LoginController {
       final isSuccess = result['token'] != null;
 
       if (!isSuccess) {
-        showSnack(context, result['message']);
+        final rawMsg = result['message'] as String?;
+        showSnack(context, ApiErrorMessages.resolve(rawMsg, loc));
+        return;
       }
+
+      context.go(AppRoutes.main.path);
     } catch (e) {
-      showSnack(context, '登录异常: $e');
+      if (!context.mounted) return;
+      showSnack(context, ApiErrorMessages.resolve(rawApiErrorMessage(e), loc));
     } finally {
       setLoading(false);
     }

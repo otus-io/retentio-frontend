@@ -6,6 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/core/error/api_error_messages.dart';
+import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/features/tags/widgets/tag_chip.dart';
 import 'package:retentio/features/tags/widgets/tag_picker_sheet.dart';
@@ -19,7 +21,10 @@ import 'package:retentio/screen/deck/fact_add_composer/toolbars.dart';
 import 'package:record/record.dart';
 import 'package:retentio/services/apis/media_service.dart';
 import 'package:retentio/services/apis/tag_service.dart';
+import 'package:retentio/services/apis/deck_catalog_service.dart';
 import 'package:retentio/widgets/app_button.dart';
+import 'package:retentio/widgets/app_input.dart';
+import 'package:retentio/widgets/app_toast.dart';
 
 import '../../../models/deck.dart';
 import '../../../models/fact.dart';
@@ -102,6 +107,7 @@ class _FactEditState extends ConsumerState<FactEdit>
   }
 
   Future<void> _loadFact() async {
+    final loc = AppLocalizations.of(context)!;
     final deckFuture = DeckService.of
         .getDeckDetail(widget.deck.id)
         .catchError((_) => widget.deck);
@@ -117,7 +123,7 @@ class _FactEditState extends ConsumerState<FactEdit>
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Could not load fact';
+        _error = loc.addFactFailed;
       });
       return;
     }
@@ -130,14 +136,14 @@ class _FactEditState extends ConsumerState<FactEdit>
     if (fact == null) {
       setState(() {
         _loading = false;
-        _error = 'Could not load fact';
+        _error = loc.addFactFailed;
       });
       return;
     }
     if (fact.entries.isEmpty && deckForFields.fields.isEmpty) {
       setState(() {
         _loading = false;
-        _error = 'Fact has no entries';
+        _error = loc.factEditNoEntries;
       });
       return;
     }
@@ -161,9 +167,7 @@ class _FactEditState extends ConsumerState<FactEdit>
 
   void _snack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    AppToast.show(context, message);
   }
 
   @override
@@ -331,7 +335,7 @@ class _FactEditState extends ConsumerState<FactEdit>
       );
       if (!mounted) return;
       if (res?.isSuccess != true) {
-        _snack(res?.msg ?? loc.addFactFailed);
+        _snack(ApiErrorMessages.resolve(res?.msg ?? loc.addFactFailed, loc));
         return;
       }
       // Sync tags (fire-and-forget, non-blocking on UI).
@@ -341,6 +345,78 @@ class _FactEditState extends ConsumerState<FactEdit>
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
+  }
+
+  Future<void> _submitFeedback() async {
+    final loc = AppLocalizations.of(context)!;
+    final controller = TextEditingController();
+    var submitting = false;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (_, setDialogState) {
+            Future<void> onSubmit() async {
+              final message = controller.text.trim();
+              if (message.isEmpty) {
+                _snack(loc.feedbackMessageRequired);
+                return;
+              }
+              setDialogState(() => submitting = true);
+              try {
+                await DeckCatalogService.of.submitFeedback(
+                  importDeckId: widget.deck.id,
+                  factId: widget.factId,
+                  message: message,
+                );
+                if (!mounted) return;
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
+                AppToast.success(context, loc.feedbackSubmitSuccess);
+              } catch (e) {
+                if (!mounted) return;
+                AppToast.error(
+                  context,
+                  ApiErrorMessages.resolve(rawApiErrorMessage(e), loc),
+                );
+              } finally {
+                if (dialogContext.mounted) {
+                  setDialogState(() => submitting = false);
+                }
+              }
+            }
+
+            return AlertDialog(
+              title: Text(loc.feedbackSubmit),
+              content: AppInput(
+                controller: controller,
+                hint: loc.feedbackMessageHint,
+                maxLines: 4,
+                minLines: 4,
+                maxLength: 2000,
+              ),
+              actions: [
+                AppButton(
+                  label: loc.cancel,
+                  variant: AppButtonVariant.ghost,
+                  onPressed: submitting
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
+                ),
+                AppButton(
+                  label: loc.feedbackSubmit,
+                  variant: AppButtonVariant.primary,
+                  isLoading: submitting,
+                  onPressed: submitting ? null : onSubmit,
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    controller.dispose();
   }
 
   Iterable<Widget> _buildEntryRows(
@@ -459,6 +535,14 @@ class _FactEditState extends ConsumerState<FactEdit>
                 isLoading: _submitting,
                 leading: const Icon(LucideIcons.save),
               ),
+              if (widget.deck.isImported)
+                AppButton(
+                  label: loc.feedbackSubmit,
+                  onPressed: _submitting ? null : _submitFeedback,
+                  variant: AppButtonVariant.secondary,
+                  fullWidth: true,
+                  leading: const Icon(LucideIcons.messageSquareWarning),
+                ),
             ],
           ),
         ),

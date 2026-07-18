@@ -1,12 +1,24 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/profile/profile_screen.dart';
 
+import '../../helpers/fake_profile_api_interceptor.dart';
 import '../../helpers/test_wrapper.dart';
 
 void main() {
-  setUpAll(setupTestEnvironment);
-  tearDownAll(tearDownTestEnvironment);
+  late FakeProfileApiInterceptor interceptor;
+
+  setUpAll(() async {
+    await setupTestEnvironment();
+    interceptor = attachFakeProfileApiInterceptor();
+  });
+
+  tearDownAll(() {
+    detachFakeProfileApiInterceptor(interceptor);
+    tearDownTestEnvironment();
+  });
 
   group('ProfileScreen Widget', () {
     testWidgets('renders without errors', (tester) async {
@@ -27,7 +39,9 @@ void main() {
       await tester.pumpWidget(buildTestableWidget(const ProfileScreen()));
       await tester.pumpAndSettle();
 
-      expect(find.text('Change Language'), findsOneWidget);
+      final context = tester.element(find.byType(ProfileScreen));
+      final loc = AppLocalizations.of(context)!;
+      expect(find.text(loc.changeLanguage), findsOneWidget);
       expect(find.byIcon(LucideIcons.globe), findsOneWidget);
     });
 
@@ -35,19 +49,32 @@ void main() {
       await tester.pumpWidget(buildTestableWidget(const ProfileScreen()));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Logout'));
+      final context = tester.element(find.byType(ProfileScreen));
+      final loc = AppLocalizations.of(context)!;
+
+      await tester.tap(find.text(loc.logout));
       await tester.pumpAndSettle();
 
-      expect(find.text('Are you sure you want to logout?'), findsOneWidget);
-      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.text(loc.logoutConfirmMessage), findsOneWidget);
+      expect(find.text(loc.cancel), findsOneWidget);
     });
 
     testWidgets('has forward arrow icons on settings items', (tester) async {
       await tester.pumpWidget(buildTestableWidget(const ProfileScreen()));
       await tester.pumpAndSettle();
 
-      // Three settings items (language, theme, logout) each have a trailing arrow
-      expect(find.byIcon(LucideIcons.chevronRight), findsNWidgets(3));
+      final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
+      expect(tiles, hasLength(3));
+      for (final tile in tiles) {
+        expect(
+          tile.trailing,
+          isA<Icon>().having(
+            (icon) => icon.icon,
+            'icon',
+            LucideIcons.chevronRight,
+          ),
+        );
+      }
     });
   });
 }

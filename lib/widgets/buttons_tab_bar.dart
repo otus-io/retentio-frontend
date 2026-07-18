@@ -13,9 +13,9 @@ const double _kDefaultRadius = 8;
 const double _kUnselectedLabelOpacity = 0.62;
 const double _kUnselectedBorderOpacity = 0.6;
 const double _kSelectedBorderOpacity = 0.85;
-const double _kUnselectedBgOpacity = 0.42;
-const double _kSelectedBgOpacity = 0.14;
-const double _kButtonMinSize = 40;
+const double _kUnselectedBgOpacity = 0.14;
+const double _kSelectedBgOpacity = 0.88;
+const double _kButtonMinSize = 44;
 const double _kTabIconSize = 20;
 
 class ButtonsTabBar extends StatefulWidget implements PreferredSizeWidget {
@@ -347,7 +347,7 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
           ),
       widget.labelStyle ??
           theme.textTheme.labelMedium?.copyWith(
-            color: scheme.primary,
+            color: scheme.onPrimary,
             fontWeight: FontWeight.w700,
           ),
       animationValue,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/features/tags/widgets/tag_edit_dialog.dart';
 import 'package:retentio/l10n/app_localizations.dart';
@@ -8,6 +9,7 @@ import 'package:retentio/models/tag.dart';
 import 'package:retentio/screen/tags/tag_facts_screen.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_input.dart';
+import 'package:retentio/widgets/app_toast.dart';
 
 const double _kTagFabBorderOpacity = 0.12;
 const double _kTagFabBgTint = 0.08;
@@ -41,7 +43,7 @@ class _TagsScreenState extends State<TagsScreen> {
 
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    AppToast.show(context, msg);
   }
 
   bool _matchesTag(Tag tag, String query) {
@@ -60,7 +62,7 @@ class _TagsScreenState extends State<TagsScreen> {
       onConfirm: (name, desc) async {
         final err = await _cubit.createTag(name: name, description: desc);
         if (err != null) {
-          return err;
+          return ApiErrorMessages.resolve(err, loc);
         }
         _snack(loc.tagCreated);
         return null;
@@ -83,7 +85,7 @@ class _TagsScreenState extends State<TagsScreen> {
           description: desc,
         );
         if (err != null) {
-          return err;
+          return ApiErrorMessages.resolve(err, loc);
         }
         _snack(loc.tagUpdated);
         return null;
@@ -114,7 +116,7 @@ class _TagsScreenState extends State<TagsScreen> {
     );
     if (confirmed != true) return;
     final err = await _cubit.deleteTag(tag.id);
-    if (err != null) _snack(err);
+    if (err != null) _snack(ApiErrorMessages.resolve(err, loc));
   }
 
   @override
@@ -167,7 +169,7 @@ class _TagsScreenState extends State<TagsScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      state.errorMessage ?? '',
+                      ApiErrorMessages.resolve(state.errorMessage, loc),
                       textAlign: TextAlign.center,
                       style: TextStyle(color: scheme.error),
                     ),

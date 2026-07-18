@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:retentio/core/error/raw_api_error_message.dart';
 import '../../../mixins/refresh_controller_mixin.dart';
 import '../../../models/deck.dart';
 import '../../../services/apis/deck_service.dart';
@@ -35,7 +36,7 @@ class DeckListNotifier extends Notifier<DeckListState>
       final decks = await DeckService.of.getDecks();
       state = state.copyWith(isLoading: false, decks: decks);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: rawApiErrorMessage(e));
     }
   }
 

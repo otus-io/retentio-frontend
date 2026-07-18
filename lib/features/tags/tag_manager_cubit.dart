@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/models/tag.dart';
 import 'package:retentio/services/apis/tag_service.dart';
 
@@ -55,7 +56,7 @@ class TagManagerCubit extends Cubit<TagManagerState> {
       emit(
         state.copyWith(
           status: TagManagerStatus.error,
-          errorMessage: e.toString(),
+          errorMessage: rawApiErrorMessage(e),
         ),
       );
     }
@@ -83,7 +84,7 @@ class TagManagerCubit extends Cubit<TagManagerState> {
       }
       return res?.msg ?? 'Could not create tag';
     } catch (e) {
-      return e.toString();
+      return rawApiErrorMessage(e);
     }
   }
 
@@ -107,7 +108,7 @@ class TagManagerCubit extends Cubit<TagManagerState> {
       }
       return res?.msg ?? 'Could not update tag';
     } catch (e) {
-      return e.toString();
+      return rawApiErrorMessage(e);
     }
   }
 
@@ -128,12 +129,12 @@ class TagManagerCubit extends Cubit<TagManagerState> {
       return res?.msg ?? 'Could not delete tag';
     } catch (e) {
       emit(state.copyWith(tags: previous));
-      return e.toString();
+      return rawApiErrorMessage(e);
     }
   }
 
   // ── helpers ───────────────────────────────────────────────
 
-  /// Whether the user has already reached the 100-tag limit.
-  bool get isAtLimit => state.tags.length >= 100;
+  /// Whether the user has already reached the 1000-tag limit.
+  bool get isAtLimit => state.tags.length >= 1000;
 }
