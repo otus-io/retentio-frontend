@@ -58,11 +58,7 @@ void main() {
       await tester.pumpWidget(
         buildTestableWidgetWithOverrides(
           const Scaffold(
-            body: FactContent(
-              inline: true,
-              color: Colors.black,
-              items: [],
-            ),
+            body: FactContent(inline: true, color: Colors.black, items: []),
           ),
         ),
       );
@@ -112,10 +108,7 @@ void main() {
       // The single CardText is wrapped in a Padding; bottom should be 0
       final padding = tester.widget<Padding>(
         find
-            .ancestor(
-              of: find.byType(CardText),
-              matching: find.byType(Padding),
-            )
+            .ancestor(of: find.byType(CardText), matching: find.byType(Padding))
             .first,
       );
       expect(padding.padding.resolve(TextDirection.ltr).bottom, 0.0);
@@ -145,12 +138,11 @@ void main() {
       final cardTextFinder = find.byType(CardText);
       expect(cardTextFinder, findsNWidgets(3));
 
-      final paddings = tester.widgetList<Padding>(
-        find.ancestor(
-          of: cardTextFinder,
-          matching: find.byType(Padding),
-        ),
-      ).toList();
+      final paddings = tester
+          .widgetList<Padding>(
+            find.ancestor(of: cardTextFinder, matching: find.byType(Padding)),
+          )
+          .toList();
 
       // Inner-most Padding for each CardText (first ancestor match)
       // paddings may have multiple entries per CardText; we want the direct parent

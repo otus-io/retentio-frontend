@@ -100,10 +100,7 @@ void main() {
     });
 
     test('textAlign.center (default) → WrapAlignment.center', () {
-      final w = wikiRubyWrappedText(
-        text: '[[皆|みな]]さん',
-        baseStyle: base,
-      );
+      final w = wikiRubyWrappedText(text: '[[皆|みな]]さん', baseStyle: base);
       expect(w, isA<Wrap>());
       expect((w as Wrap).alignment, WrapAlignment.center);
     });

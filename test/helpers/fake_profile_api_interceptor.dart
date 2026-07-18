@@ -22,10 +22,7 @@ class FakeProfileApiInterceptor extends Interceptor {
           data: {
             'code': 0,
             'msg': 'ok',
-            'data': {
-              'email': 'test@example.com',
-              'username': 'tester',
-            },
+            'data': {'email': 'test@example.com', 'username': 'tester'},
           },
         ),
       );

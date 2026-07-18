@@ -61,28 +61,34 @@ void main() {
       );
     });
 
-    test('processingState.completed is always atEnd regardless of position', () {
-      expect(
-        AudioPlayerNotifier.computeAtEnd(
-          processingState: ProcessingState.completed,
-          liveDurationMs: 2000,
-          livePositionMs: 0,
-        ),
-        isTrue,
-      );
-    });
+    test(
+      'processingState.completed is always atEnd regardless of position',
+      () {
+        expect(
+          AudioPlayerNotifier.computeAtEnd(
+            processingState: ProcessingState.completed,
+            liveDurationMs: 2000,
+            livePositionMs: 0,
+          ),
+          isTrue,
+        );
+      },
+    );
 
-    test('exactly 200ms clip: threshold == liveDuration, position 199 not atEnd', () {
-      // 200 > 200 is false → endThresholdMs = liveDurationMs = 200
-      expect(
-        AudioPlayerNotifier.computeAtEnd(
-          processingState: ProcessingState.ready,
-          liveDurationMs: 200,
-          livePositionMs: 199,
-        ),
-        isFalse,
-      );
-    });
+    test(
+      'exactly 200ms clip: threshold == liveDuration, position 199 not atEnd',
+      () {
+        // 200 > 200 is false → endThresholdMs = liveDurationMs = 200
+        expect(
+          AudioPlayerNotifier.computeAtEnd(
+            processingState: ProcessingState.ready,
+            liveDurationMs: 200,
+            livePositionMs: 199,
+          ),
+          isFalse,
+        );
+      },
+    );
 
     test('exactly 200ms clip: position 200 → atEnd', () {
       expect(
