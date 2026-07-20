@@ -364,7 +364,7 @@ class _FactEditState extends ConsumerState<FactEdit>
               }
               setDialogState(() => submitting = true);
               try {
-                await DeckCatalogService.of.submitFeedback(
+                await DeckCatalogService.of.submitFactReport(
                   importDeckId: widget.deck.id,
                   factId: widget.factId,
                   message: message,

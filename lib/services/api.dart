@@ -43,5 +43,6 @@ class Api {
   static const String deckImport = '/api/decks/import';
   static const String deckUpdates = '/api/decks/{id}/updates';
   static const String deckSync = '/api/decks/{id}/sync';
-  static const String deckFeedback = '/api/decks/{id}/feedback';
+  static const String deckFactReport =
+      '/api/decks/{id}/contributions/facts/{factId}/report';
 }

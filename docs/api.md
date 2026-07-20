@@ -31,6 +31,10 @@ This guide walks you through using the Retentio API via Swagger UI.
   - [Get import updates (diff)](#get-import-updates-diff)
   - [Sync an imported deck](#sync-an-imported-deck)
   - [Sharing: extended deck & fact behavior](#sharing-extended-deck--fact-behavior)
+  - [Import overlays & contributions](#import-overlays--contributions)
+    - [Private overlay fact mutations](#private-overlay-fact-mutations)
+    - [Submit contributions (importer)](#submit-contributions-importer)
+    - [Author contribution inbox](#author-contribution-inbox)
 - [3. Facts](#3-facts)
   - [Add Facts](#add-facts)
   - [Get all facts](#get-all-facts)
@@ -106,17 +110,24 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/api/decks/catalog`                          | GET    | **(Sharing)** List public published source decks (importable catalog). **No login required.** Query: `limit`, `offset`, optional `query` (name, description, owner, deck tag names). Newest publish first. Import via `POST /api/decks/import` requires JWT. |
 | `/api/decks/catalog/{id}`                     | GET    | **(Sharing)** Get one public published source deck by source deck ID (same row shape as list entries). **No login required.** **404** if not importable. |
 | `/api/decks/{id}/publish`                     | POST   | **(Sharing)** Author: snapshot working copy into next `published_version`. First publish requires `visibility: "public"`. **200**.                             |
-| `/api/decks/{id}/updates`                     | GET    | **(Sharing)** Importer: diff between pinned `source_version` and source’s latest publish. Import deck only.                                                       |
-| `/api/decks/{id}/sync`                        | POST   | **(Sharing)** Importer: accept a newer snapshot (optional `target_version`). Import deck only. **200**.                                                         |
-| `/api/decks/{id}/feedback`                    | POST   | **(Sharing)** Importer: submit fact feedback / proposal to the source deck author. Body on **import** deck id. **201**. **429** when daily limit (20/source/day) exceeded. |
-| `/api/decks/{id}/feedback`                    | GET    | **(Sharing)** Author: list feedback inbox on **source** deck id. Query: `limit`, `offset`, optional `status`, `fact_id`. |
-| `/api/decks/{id}/feedback/{feedbackId}`       | PATCH  | **(Sharing)** Author: update feedback `status` (`open`, `resolved`, `dismissed`). Source deck only. |
-| `/api/decks/{id}/feedback/{feedbackId}/accept` | POST | **(Sharing)** Author: apply `proposed_entries` to working copy; sets status `accepted`. Does not publish. Source deck only. |
-| `/api/decks/{id}/facts/{operation}`           | POST   | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`). Body: `facts` (required), optional `template`, and optional **`tags`** or **`tag_ids`** per fact item (mutually exclusive per item; `tags` = names auto-created if missing, `tag_ids` = existing IDs). Column labels live on the deck (`PATCH /api/decks/{id}` → `fields`), not on each fact. To add a card for an existing fact, use POST `/api/decks/{id}/card` instead. **403** on imported decks. |
+| `/api/decks/{id}/updates`                     | GET    | **(Sharing)** Importer: diff between pinned `source_version` and source’s latest publish (includes overlay/`aligned`/`card_template_changes`). Import deck only. |
+| `/api/decks/{id}/sync`                        | POST   | **(Sharing)** Importer: advance pinned snapshot (optional `target_version`, optional per-fact `decisions[]`). Import deck only. **200**. |
+| `/api/decks/{id}/contributions/facts/{factId}/edit` | POST | **(Sharing)** Importer: submit current private overlay as `fact_edit`. **201**. See [Import overlays & contributions](#import-overlays--contributions). |
+| `/api/decks/{id}/contributions/facts/{factId}/add` | POST | **(Sharing)** Importer: submit a `local_facts` fact as `fact_add`. **201**. |
+| `/api/decks/{id}/contributions/facts/{factId}/tags` | POST | **(Sharing)** Importer: submit fact tag add/remove as `fact_tag_update`. **201**. |
+| `/api/decks/{id}/contributions/facts/{factId}/templates` | POST | **(Sharing)** Importer: submit a card template as `template_add`. **201**. |
+| `/api/decks/{id}/contributions/facts/{factId}/report` | POST | **(Sharing)** Importer: message-only `report` (no accept). **201**. |
+| `/api/decks/{id}/contributions/deck-tags`     | POST   | **(Sharing)** Importer: submit deck tag add/remove as `deck_tag_update`. **201**. |
+| `/api/decks/{id}/contributions/fields/rename` | POST   | **(Sharing)** Importer: submit same-length `proposed_fields` as `field_rename`. **201**. |
+| `/api/decks/{id}/contributions`               | GET    | **(Sharing)** Author inbox on **source** deck. Query: `status`, `type`, `reporter`, `fact_id`, `media_type`, `limit`, `offset`. |
+| `/api/decks/{id}/contributions/{contributionId}` | PATCH | **(Sharing)** Author: set status `open` / `resolved` / `dismissed`. |
+| `/api/decks/{id}/contributions/{contributionId}/accept` | POST | **(Sharing)** Author: accept into working copy (then publish). **200**. |
+| `/api/decks/{id}/contributions/{contributionId}/media/{attachmentId}` | GET | **(Sharing)** Author: download immutable contribution attachment bytes. |
+| `/api/decks/{id}/facts/{operation}`           | POST   | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`). Body: `facts` (required), optional `template`, and optional **`tags`** or **`tag_ids`** per fact item (mutually exclusive per item; `tags` = names auto-created if missing, `tag_ids` = existing IDs). Column labels live on the deck (`PATCH /api/decks/{id}` → `fields`), not on each fact. To add a card for an existing fact, use POST `/api/decks/{id}/card` instead. On **imported** decks: private overlay + `local_facts` (no contribution). |
 | `/api/decks/{id}/facts`                       | GET    | List facts (paged): default `limit` **50**, `offset` **0**; max `limit` **200**. `meta`: `count`, `has_more`, `limit`, `offset`, `total`. |
 | `/api/decks/{id}/facts/{factId}`              | GET    | Get a specific fact                                                                                                                                                                             |
-| `/api/decks/{id}/facts/{factId}`              | PATCH  | Update a fact’s `entries` only (column names are edited on the deck). **403** on imported decks.                                                                                                                               |
-| `/api/decks/{id}/facts/{factId}`              | DELETE | Delete a fact. **403** on imported decks.                                                                                                                                                       |
+| `/api/decks/{id}/facts/{factId}`              | PATCH  | Update a fact’s `entries` only (column names are edited on the deck). On **imported** decks: private overlay only (no contribution).                                                                                                                               |
+| `/api/decks/{id}/facts/{factId}`              | DELETE | Delete a fact. On **imported** decks: soft-hide snapshot fact or drop local-only fact (no contribution).                                                                                                                                                       |
 | `/api/decks/{id}/card`                        | GET    | Get most urgent card. Optional query: `tag_id` to restrict selection to cards whose facts have this tag in this deck.                                                                        |
 | `/api/decks/{id}/card`                        | POST   | Add one card from an existing fact (e.g. reversed). Body: `fact_id`, `template`, optional `operation`.                                                                                          |
 | `/api/decks/{id}/card`                        | PATCH  | Update card interval or visibility (by card_id)                                                                                                                                                 |
@@ -286,7 +297,7 @@ Column labels (`English`, `Japanese`, …) live on the **deck** only (`fields`).
 4. Delete fact → removes that fact and **all** cards in the deck that reference it.
 5. Delete card → removes only that card; fact and other cards for the same fact remain.
 
-**Imported decks ([sharing](#deck-sharing-overview)):** fact **bodies** are read-only (pinned snapshot); deck metadata is mostly snapshot-driven — importers may **`PATCH` only `rate`** on the import deck. The importer still owns a **separate card set** with full card `PATCH` / hide / delete behavior. Tags on import decks are importer-scoped labels — see [§4 Tags](#4-tags).
+**Imported decks ([sharing](#deck-sharing-overview)):** facts resolve from the pinned snapshot with optional private **overlays**; deck metadata is mostly snapshot-driven — importers may **`PATCH` only `rate`** on the import deck (name/fields follow snapshot). The importer still owns a **separate card set** with full card `PATCH` / hide / delete behavior. Tags on import decks are importer-scoped labels — see [§4 Tags](#4-tags).
 
 ---
 
@@ -560,7 +571,7 @@ See [rate-change-update.md](rate-change-update.md) for the full design.
 | --------- | ---------------- |
 | **Source** with `published_version == 0` | Allowed (**200**). |
 | **Source** with `published_version > 0` | **409** — `published decks cannot be deleted`. |
-| **Import** | Allowed (**200**). Revokes `user:{you}:readable_media_versions` grants created for this import. |
+| **Import** | Allowed (**200**). |
 
 **Response:**
 
@@ -589,7 +600,7 @@ When implemented, this endpoint will shift `due_date` and `last_review` of all c
 
 ## Deck sharing (overview)
 
-User-to-user deck sharing lets an **author** publish versioned snapshots of a deck so other users can **import** a personal study copy. Each import is a **new deck** owned by the importer with its own cards and scheduling; **facts and embedded media** are read-only and resolved through pinned snapshot versions.
+User-to-user deck sharing lets an **author** publish versioned snapshots of a deck so other users can **import** a personal study copy. Each import is a **new deck** owned by the importer with its own cards and scheduling; facts resolve through pinned snapshot versions with optional private **overlays**. Explicit **contributions** send proposals to the author — see [Import overlays & contributions](#import-overlays--contributions) and [import-local-overlays-contributions.md](import-local-overlays-contributions.md).
 
 See [deck-sharing-feature.md](deck-sharing-feature.md) for the full design.
 
@@ -820,6 +831,7 @@ Use **`data.id`** as the import deck ID for study and for `GET/POST …/updates`
 - `visibility` is **`public`** (effective visibility).
 - Source is not itself an import (`cannot import an imported deck`).
 - Importer is not the source owner (`cannot import your own deck`).
+- Importer does not already own an import of this source (`deck already imported`).
 
 **Errors:**
 
@@ -827,6 +839,7 @@ Use **`data.id`** as the import deck ID for study and for `GET/POST …/updates`
 | ------ | ------------- |
 | **404** | `source deck not found` |
 | **403** | `source deck is not importable`, `source deck has not been published`, `cannot import an imported deck`, `cannot import your own deck` |
+| **409** | `deck already imported` |
 | **400** | Other validation failures |
 
 ---
@@ -842,9 +855,9 @@ After import, keep the deck aligned with the author's publishes using two endpoi
 
 | Step | Action |
 | ---- | ------ |
-| 1 | `GET …/updates` — show `added_facts`, `removed_facts`, `edited_facts`, `media_changes`. |
+| 1 | `GET …/updates` — show `added_facts`, `removed_facts`, `edited_facts`, `media_changes`, `card_template_changes` (plus overlay `aligned` / `default_action`). |
 | 2 | If `source_version == latest_version`, stop (already up to date; diff arrays are empty). |
-| 3 | If the importer accepts, `POST …/sync` with an **empty body** or `{ "target_version": 0 }`. |
+| 3 | If the importer accepts, `POST …/sync` with an **empty body**, `{ "target_version": 0 }`, and/or per-fact `decisions[]` (`accept` \| `keep`). |
 
 **You do not need to copy `latest_version` from the GET response into sync.** When `target_version` is omitted or `0`, the server advances the import deck to the source's current `published_version` (same value as `latest_version` in the updates response).
 
@@ -860,20 +873,63 @@ Pass **`target_version` explicitly** only when syncing to a **specific intermedi
 
 **Request:** No body.
 
-**Success (200):** Diff from the import’s pinned `source_version` to the source’s latest `published_version`.
+**Success (200):** Diff from the import’s pinned `source_version` to the source’s latest `published_version`. Includes full fact bodies for added/removed rows, overlay metadata (`has_local_overlay`, `local`, `aligned` / `default_action`), and `card_template_changes`.
 
 ```json
 {
   "data": {
     "source_version": 3,
-    "latest_version": 5,
-    "added_facts": [{ "fact_id": "abcd1234" }],
-    "removed_facts": [{ "fact_id": "efgh5678" }],
+    "latest_version": 4,
+    "added_facts": [
+      {
+        "fact_id": "local001",
+        "fact": {
+          "id": "local001",
+          "entries": [
+            { "text": "Orange" },
+            { "text": "オレンジ" }
+          ]
+        },
+        "has_local_overlay": true,
+        "local": true,
+        "aligned": true
+      }
+    ],
+    "removed_facts": [
+      {
+        "fact_id": "fact0002",
+        "fact": {
+          "id": "fact0002",
+          "entries": [
+            { "text": "Banana" },
+            { "text": "バナナ" }
+          ]
+        },
+        "has_local_overlay": true,
+        "local": true,
+        "default_action": "keep"
+      }
+    ],
     "edited_facts": [
       {
-        "fact_id": "ijkl9012",
-        "before": { "id": "ijkl9012", "entries": [{ "text": "old" }, { "text": "old2" }] },
-        "after": { "id": "ijkl9012", "entries": [{ "text": "new" }, { "text": "old2" }] }
+        "fact_id": "fact0001",
+        "before": {
+          "id": "fact0001",
+          "entries": [
+            { "text": "Apple", "audio": "sourceaud1" },
+            { "text": "リンゴ" }
+          ]
+        },
+        "after": {
+          "id": "fact0001",
+          "entries": [
+            { "text": "Apple", "audio": "authaud001" },
+            { "text": "りんご" }
+          ]
+        },
+        "has_local_overlay": true,
+        "local": true,
+        "aligned": true
       }
     ],
     "media_changes": [
@@ -885,6 +941,13 @@ Pass **`target_version` explicitly** only when syncing to a **specific intermedi
         "after_bytes": 23456
       }
     ],
+    "card_template_changes": [
+      {
+        "fact_id": "fact0001",
+        "added_templates": [[[1], [0]]],
+        "removed_templates": []
+      }
+    ],
     "change_summary": ""
   },
   "meta": {
@@ -894,6 +957,12 @@ Pass **`target_version` explicitly** only when syncing to a **specific intermedi
 ```
 
 When already up to date: `source_version == latest_version` and diff arrays are empty.
+
+| Field | Meaning |
+| ----- | ------- |
+| `aligned` | Overlay (or local fact) already matches the published target — default sync action is **accept** (clear overlay / graduate out of `local_facts`). |
+| `default_action` | On removals with a local overlay: usually `"keep"` so the importer retains the private copy unless they choose `accept`. |
+| `card_template_changes` | Templates added/removed on the source between pinned and latest; sync never deletes importer cards for removed templates. |
 
 `edited_facts` lists only facts whose **versioned content** differs between snapshots (not every fact in the deck).
 
@@ -917,21 +986,26 @@ When already up to date: `source_version == latest_version` and diff arrays are 
 
 ```json
 {
-  "target_version": 5
+  "target_version": 4,
+  "decisions": [
+    { "fact_id": "fact0001", "action": "accept" },
+    { "fact_id": "fact0002", "action": "keep" }
+  ]
 }
 ```
 
 | Field | Behavior |
 | ----- | -------- |
-| Omitted or `0` | Advance to the source’s current `published_version`. **Default for the preview → sync workflow** — no need to pass `latest_version` from `GET …/updates`. |
+| Omitted or `target_version: 0` | Advance to the source’s current `published_version`. **Default for the preview → sync workflow** — no need to pass `latest_version` from `GET …/updates`. |
 | `target_version` | Must satisfy `source_version < target_version <= source.published_version`. Use only to land on a specific intermediate publish, not the newest. |
+| `decisions[]` | Optional per-fact `action`: `"accept"` or `"keep"`. Omitted facts use defaults from the updates diff (`aligned` → accept; removed-with-overlay → keep). |
 
 **Success (200):**
 
 ```json
 {
   "data": {
-    "source_version": 5
+    "source_version": 4
   },
   "meta": {
     "msg": "synced"
@@ -939,7 +1013,7 @@ When already up to date: `source_version == latest_version` and diff arrays are 
 }
 ```
 
-**Server behavior:** Bumps pinned version; rebuilds import fact set from target manifest; removes importer cards for deleted facts; adds cards for new facts; updates `user:{importer}:readable_media_versions` grants. Also copies **`name`**, **`fields`**, and **`rate`** from the target snapshot manifest into the import deck row (overwriting any prior importer `rate` set via PATCH).
+**Server behavior:** Bumps pinned version; rebuilds import fact set from target manifest; preserves private overlays / `local_facts` / `hidden_facts` according to decisions; removes importer cards only for facts the importer **accepts** as removed; adds cards for newly accepted facts. Also copies **`name`**, **`fields`**, and **`rate`** from the target snapshot manifest into the import deck row (overwriting any prior importer `rate` set via PATCH). Template removals never delete importer-owned cards.
 
 **Errors:**
 
@@ -968,17 +1042,14 @@ Omitting **`rate`** on an import deck PATCH → **400** `Rate is required for im
 
 | Method | Path | Import deck |
 | ------ | ---- | ------------- |
-| GET | `/api/decks/{id}/facts`, `…/facts/{factId}`, next-card | Snapshot `entries` from the pinned version. |
-| POST / PATCH / DELETE | facts routes | **403** `cannot modify facts on an imported deck` |
+| GET | `/api/decks/{id}/facts`, `…/facts/{factId}`, next-card | Pinned snapshot `entries`, with private overlay when present. |
+| POST / PATCH / DELETE | facts routes | Private overlay / `local_facts` / hide (does not notify the author). |
 
-#### Feedback (import → author)
+Full request/response examples: [Private overlay fact mutations](#private-overlay-fact-mutations).
 
-| Method | Path | Who |
-| ------ | ---- | --- |
-| POST | `/api/decks/{importDeckId}/feedback` | Import deck owner. Body: `fact_id` (required), optional `category` (`translation` \| `audio` \| `typo` \| `other`, default `other`), `message` (required if `proposed_entries` omitted; 1–2000 chars), optional `entry_index`, optional `proposed_entries` (same shape as fact PATCH `entries`; must differ from snapshot). **201** returns `feedback_id`, `source_deck_id`, `fact_id`, `status`. **429** after 20 submissions per source deck per UTC day. |
-| GET | `/api/decks/{sourceDeckId}/feedback` | Source deck owner only. Optional query: `status`, `fact_id`, `limit`, `offset`. |
-| PATCH | `/api/decks/{sourceDeckId}/feedback/{feedbackId}` | Source deck owner. Body: `{ "status": "resolved" \| "dismissed" \| "open" }`. |
-| POST | `/api/decks/{sourceDeckId}/feedback/{feedbackId}/accept` | Source deck owner. Requires `proposed_entries` on the feedback row. Updates author **working copy**. Author must still **POST /publish** and importers **POST /sync**. |
+#### Contributions (import → author)
+
+Resource-specific contribution routes replace the removed `/feedback` API. Saving an overlay **never** creates a contribution — the importer must call an explicit submit route. Full API + examples: [Import overlays & contributions](#import-overlays--contributions). Design doc: [import-local-overlays-contributions.md](import-local-overlays-contributions.md).
 
 #### Cards on import decks
 
@@ -986,14 +1057,701 @@ Same as a normal owned deck: `GET/POST/PATCH/DELETE` card routes work; schedulin
 
 #### Media for importers
 
-- Importers download author media via `GET /api/media/{id}` when `(media_id, version)` is granted in `user:{username}:readable_media_versions` (member format `mediaId@version`).
+- Importers download published author media via `GET /api/media/{id}?v=<version>`.
 - Bytes are served from the **versioned** blob, not the author’s working copy.
-- If multiple grants exist for the same `media_id`, use query **`?v=<version>`** (required when ambiguous).
+- `v` is required for non-owners and must be a positive integer.
+- Importers may upload **their own** media with `POST /api/media` and `deck_id={importId}` for private overlays / contributions.
 - Importers cannot upload or delete another user’s working-copy media.
 
 #### Tags on import decks
 
-Tag associations are keyed by the **importer** (independent from the author). Fact tag mutations that imply editing read-only fact bodies may still be restricted; see tag routes in [§4 Tags](#4-tags).
+Tag associations are keyed by the **importer** (independent from the author). See tag routes in [§4 Tags](#4-tags).
+
+---
+
+### Import overlays & contributions
+
+Private **overlays** let an importer edit facts on an import deck without changing the author’s snapshot. **Contributions** are a separate, explicit “send to author” step on resource-specific routes. Submit on the **import** deck id; list / accept / status / media preview on the **source** deck id.
+
+Examples below use source `srcdeck12345`, import `impdeck12345`, and snapshot fact `fact0001`. All routes require `Authorization: Bearer <token>` for the importer or author as noted.
+
+**Rules:**
+
+- Overlay writes (POST/PATCH/DELETE facts) never create or update a contribution.
+- Submission bodies never include `type` — the server derives internal `type` from the route.
+- Accepted contributions update the author’s **working copy** only; the author must still [publish](#publish-a-deck) before importers see them via updates/sync.
+- Daily quota: max **20 new** contribution rows per source deck per UTC day (refreshing an open dedupe target does not consume quota) → **429** `daily contribution limit exceeded`.
+
+| Internal `type` | Submit route (import id) |
+| --------------- | ------------------------ |
+| `fact_edit` | `POST …/contributions/facts/{factId}/edit` |
+| `fact_add` | `POST …/contributions/facts/{factId}/add` |
+| `fact_tag_update` | `POST …/contributions/facts/{factId}/tags` |
+| `deck_tag_update` | `POST …/contributions/deck-tags` |
+| `template_add` | `POST …/contributions/facts/{factId}/templates` |
+| `field_rename` | `POST …/contributions/fields/rename` |
+| `report` | `POST …/contributions/facts/{factId}/report` (inbox only; cannot accept) |
+
+#### Private overlay fact mutations
+
+Same fact endpoints as [§3 Facts](#3-facts); on import decks they write private state only.
+
+##### Add private facts
+
+**Endpoint:** `POST /api/decks/{importId}/facts/{operation}`
+
+**Who:** Import deck owner.
+
+**Request:**
+
+```json
+{
+  "facts": [
+    {
+      "entries": [
+        { "text": "Orange" },
+        { "text": "オレンジ" }
+      ],
+      "tags": ["food"]
+    }
+  ],
+  "template": [
+    [[0], [1]],
+    [[1], [0]]
+  ]
+}
+```
+
+**Success (200):**
+
+```json
+{
+  "data": {
+    "fact_length": 121
+  },
+  "meta": {
+    "msg": "Added 1 facts successfully"
+  }
+}
+```
+
+Facts are stored under the import’s private overlay + `local_facts`. List facts afterward to obtain generated IDs.
+
+##### Update a private overlay
+
+**Endpoint:** `PATCH /api/decks/{importId}/facts/{factId}`
+
+**Request:**
+
+```json
+{
+  "entries": [
+    { "text": "Apple", "audio": "impaud0001" },
+    { "text": "りんご" }
+  ]
+}
+```
+
+**Success (200):**
+
+```json
+{
+  "data": {
+    "fact_id": "fact0001"
+  },
+  "meta": {
+    "msg": "Fact updated successfully"
+  }
+}
+```
+
+##### Delete or hide a private fact
+
+**Endpoint:** `DELETE /api/decks/{importId}/facts/{factId}`
+
+**Success (200):**
+
+```json
+{
+  "data": {
+    "fact_id": "fact0001"
+  },
+  "meta": {
+    "msg": "Fact deleted successfully"
+  }
+}
+```
+
+Snapshot facts soft-hide privately; local-only facts are removed from the import. Does not notify the author or alter submitted contributions.
+
+##### List / get resolved facts
+
+**Endpoint:** `GET /api/decks/{importId}/facts?limit=50&offset=0`
+
+**Success (200):** Overlay → snapshot resolution; includes `local_facts`; omits `hidden_facts`.
+
+```json
+{
+  "data": {
+    "facts": [
+      {
+        "id": "fact0001",
+        "entries": [
+          { "text": "Apple", "audio": "impaud0001" },
+          { "text": "りんご" }
+        ],
+        "tags": []
+      },
+      {
+        "id": "local001",
+        "entries": [
+          { "text": "Orange" },
+          { "text": "オレンジ" }
+        ],
+        "tags": [
+          { "id": "tag00001", "name": "food", "description": "" }
+        ]
+      }
+    ]
+  },
+  "meta": {
+    "msg": "Facts retrieved successfully",
+    "count": 2,
+    "has_more": false,
+    "limit": 50,
+    "offset": 0,
+    "total": 2
+  }
+}
+```
+
+**Endpoint:** `GET /api/decks/{importId}/facts/{factId}`
+
+```json
+{
+  "data": {
+    "fact": {
+      "id": "fact0001",
+      "entries": [
+        { "text": "Apple", "audio": "impaud0001" },
+        { "text": "りんご" }
+      ],
+      "tags": []
+    }
+  },
+  "meta": {
+    "msg": "Fact retrieved successfully"
+  }
+}
+```
+
+Updates/sync with overlay metadata: [Get import updates (diff)](#get-import-updates-diff) and [Sync an imported deck](#sync-an-imported-deck).
+
+#### Submit contributions (importer)
+
+All submit routes use the **import** deck id and return **201** with the same envelope shape (`contribution_id`, `source_deck_id`, `type`, `status`, optional `fact_id`).
+
+##### Fact edit (current overlay)
+
+**Endpoint:** `POST /api/decks/{importId}/contributions/facts/{factId}/edit`
+
+Requires an existing private overlay that differs from the pinned snapshot. Optional body fields: `entry_index`, `message`. The server freezes current overlay entries as `proposed_entries` (clients do not resend entries).
+
+**Request:**
+
+```json
+{
+  "entry_index": 0,
+  "message": "Replaced the incorrect pronunciation"
+}
+```
+
+**Success (201):**
+
+```json
+{
+  "data": {
+    "contribution_id": "cont0001",
+    "source_deck_id": "srcdeck12345",
+    "fact_id": "fact0001",
+    "type": "fact_edit",
+    "status": "open"
+  },
+  "meta": {
+    "msg": "contribution submitted"
+  }
+}
+```
+
+Upload private audio/images first via `POST /api/media` with `deck_id={importId}`, then save media ids into the overlay before submitting.
+
+##### Fact add (local fact)
+
+**Endpoint:** `POST /api/decks/{importId}/contributions/facts/{factId}/add`
+
+`{factId}` must be in `local_facts`. Optional `message`.
+
+**Request:**
+
+```json
+{
+  "message": "This common word is missing"
+}
+```
+
+**Success (201):**
+
+```json
+{
+  "data": {
+    "contribution_id": "cont0006",
+    "source_deck_id": "srcdeck12345",
+    "fact_id": "newfact001",
+    "type": "fact_add",
+    "status": "open"
+  },
+  "meta": {
+    "msg": "contribution submitted"
+  }
+}
+```
+
+On accept, the author receives the **same** `fact_id` (no remapping).
+
+##### Deck tags
+
+**Endpoint:** `POST /api/decks/{importId}/contributions/deck-tags`
+
+**Request:**
+
+```json
+{
+  "add_tags": ["beginner", "travel"],
+  "remove_tags": ["advanced"],
+  "message": "These names better describe the deck"
+}
+```
+
+**Success (201):**
+
+```json
+{
+  "data": {
+    "contribution_id": "cont0002",
+    "source_deck_id": "srcdeck12345",
+    "type": "deck_tag_update",
+    "status": "open"
+  },
+  "meta": {
+    "msg": "contribution submitted"
+  }
+}
+```
+
+##### Fact tags
+
+**Endpoint:** `POST /api/decks/{importId}/contributions/facts/{factId}/tags`
+
+**Request:**
+
+```json
+{
+  "add_tags": ["noun", "food"],
+  "remove_tags": ["verb"],
+  "message": "Apple is a noun, not a verb"
+}
+```
+
+**Success (201):**
+
+```json
+{
+  "data": {
+    "contribution_id": "cont0003",
+    "source_deck_id": "srcdeck12345",
+    "fact_id": "fact0001",
+    "type": "fact_tag_update",
+    "status": "open"
+  },
+  "meta": {
+    "msg": "contribution submitted"
+  }
+}
+```
+
+##### Card template addition
+
+**Endpoint:** `POST /api/decks/{importId}/contributions/facts/{factId}/templates`
+
+**Request:**
+
+```json
+{
+  "template": [[1], [0]],
+  "message": "A reverse card would be useful"
+}
+```
+
+**Success (201):**
+
+```json
+{
+  "data": {
+    "contribution_id": "cont0004",
+    "source_deck_id": "srcdeck12345",
+    "fact_id": "fact0001",
+    "type": "template_add",
+    "status": "open"
+  },
+  "meta": {
+    "msg": "contribution submitted"
+  }
+}
+```
+
+##### Field rename
+
+**Endpoint:** `POST /api/decks/{importId}/contributions/fields/rename`
+
+`proposed_fields` must be same length as pinned deck `fields` and differ from them.
+
+**Request:**
+
+```json
+{
+  "proposed_fields": ["Word", "Translation"],
+  "message": "Use clearer field labels"
+}
+```
+
+**Success (201):**
+
+```json
+{
+  "data": {
+    "contribution_id": "cont0005",
+    "source_deck_id": "srcdeck12345",
+    "type": "field_rename",
+    "status": "open"
+  },
+  "meta": {
+    "msg": "contribution submitted"
+  }
+}
+```
+
+##### Message-only report
+
+**Endpoint:** `POST /api/decks/{importId}/contributions/facts/{factId}/report`
+
+**Request:**
+
+```json
+{
+  "message": "The explanation is misleading, but I do not have a replacement yet"
+}
+```
+
+**Success (201):**
+
+```json
+{
+  "data": {
+    "contribution_id": "cont0007",
+    "source_deck_id": "srcdeck12345",
+    "fact_id": "fact0001",
+    "type": "report",
+    "status": "open"
+  },
+  "meta": {
+    "msg": "contribution submitted"
+  }
+}
+```
+
+Reports appear in the author inbox but **cannot be accepted** (`report cannot be accepted` → resolve/dismiss via PATCH).
+
+**Typical submit errors:**
+
+| Status | Typical `msg` |
+| ------ | ------------- |
+| **400** | `overlay required: fact has no private overlay`, `overlay must differ from snapshot`, `fact_id must be in local_facts`, `add_tags or remove_tags is required`, `proposed_fields length must match pinned fields`, `message is required`, … |
+| **403** | `Not authorized`, `contributions are only available on imported decks` |
+| **404** | `deck not found`, `fact not found`, `source deck not found` |
+| **429** | `daily contribution limit exceeded` |
+
+#### Author contribution inbox
+
+All author routes use the **source** deck id (`srcdeck12345`).
+
+##### List contributions
+
+**Endpoint:** `GET /api/decks/{sourceId}/contributions`
+
+**Who:** Source deck owner.
+
+**Query parameters** (all optional; combine with AND):
+
+| Parameter | Description |
+| --------- | ----------- |
+| `status` | `open`, `resolved`, `dismissed`, `accepted` |
+| `type` | `fact_edit`, `fact_add`, `fact_tag_update`, `deck_tag_update`, `template_add`, `field_rename`, `report` |
+| `reporter` | Exact username |
+| `fact_id` | Exact fact id |
+| `media_type` | Derived filter (e.g. `audio`) |
+| `limit` / `offset` | Pagination (same defaults/max as other list routes) |
+
+**Example:** `GET /api/decks/srcdeck12345/contributions?status=open&type=fact_edit&media_type=audio&reporter=bob&fact_id=fact0001&limit=50&offset=0`
+
+**Success (200):**
+
+```json
+{
+  "data": {
+    "contributions": [
+      {
+        "id": "cont0001",
+        "source_deck_id": "srcdeck12345",
+        "import_deck_id": "impdeck12345",
+        "fact_id": "fact0001",
+        "reporter": "bob",
+        "source_version": 3,
+        "type": "fact_edit",
+        "message": "Replaced the incorrect pronunciation",
+        "entry_index": 0,
+        "reported_fact": {
+          "id": "fact0001",
+          "entries": [
+            { "text": "Apple", "audio": "sourceaud1" },
+            { "text": "リンゴ" }
+          ]
+        },
+        "proposed_entries": [
+          { "text": "Apple", "audio": "impaud0001" },
+          { "text": "りんご" }
+        ],
+        "media_changes": [
+          { "type": "audio", "action": "edit", "entry_index": 0 }
+        ],
+        "media_attachments": [
+          {
+            "attachment_id": "attach01",
+            "source_media_id": "impaud0001",
+            "references": [{ "entry_index": 0, "field": "audio" }],
+            "filename": "apple.mp3",
+            "mime": "audio/mpeg",
+            "size": 51200,
+            "checksum": "sha256:abc123",
+            "preview_path": "/api/decks/srcdeck12345/contributions/cont0001/media/attach01"
+          }
+        ],
+        "status": "open",
+        "created_at": "2026-07-17T20:00:00Z",
+        "updated_at": "2026-07-17T20:00:00Z",
+        "edit": {
+          "deck_id": "srcdeck12345",
+          "fact_id": "fact0001",
+          "get_fact_path": "/api/decks/srcdeck12345/facts/fact0001",
+          "patch_fact_path": "/api/decks/srcdeck12345/facts/fact0001"
+        }
+      }
+    ]
+  },
+  "meta": {
+    "msg": "ok",
+    "count": 1,
+    "total": 1,
+    "limit": 50,
+    "offset": 0,
+    "has_more": false
+  }
+}
+```
+
+List item fields vary by `type` (e.g. tag contributions include `add_tags` / `remove_tags` / `reported_tags`; field rename includes `proposed_fields` / `reported_fields`).
+
+##### Preview contribution media
+
+**Endpoint:** `GET /api/decks/{sourceId}/contributions/{contributionId}/media/{attachmentId}`
+
+**Who:** Source deck owner.
+
+Returns **binary** media (not JSON):
+
+```http
+HTTP/1.1 200 OK
+Content-Type: audio/mpeg
+Content-Length: 51200
+ETag: "sha256:abc123"
+
+<audio bytes>
+```
+
+##### Accept a contribution
+
+**Endpoint:** `POST /api/decks/{sourceId}/contributions/{contributionId}/accept`
+
+**Who:** Source deck owner. **Request body:** none.
+
+Applies the stored proposal to the author’s working copy and sets `status` to `accepted`. Author must still publish for importers to see the change.
+
+**Success (200) — fact_edit example:**
+
+```json
+{
+  "data": {
+    "id": "cont0001",
+    "fact_id": "fact0001",
+    "reporter": "bob",
+    "import_deck_id": "impdeck12345",
+    "source_version": 3,
+    "type": "fact_edit",
+    "message": "Replaced the incorrect pronunciation",
+    "entry_index": 0,
+    "status": "accepted",
+    "reported_fact": {
+      "id": "fact0001",
+      "entries": [
+        { "text": "Apple", "audio": "sourceaud1" },
+        { "text": "リンゴ" }
+      ]
+    },
+    "proposed_entries": [
+      { "text": "Apple", "audio": "impaud0001" },
+      { "text": "りんご" }
+    ],
+    "media_attachments": [
+      {
+        "attachment_id": "attach01",
+        "source_media_id": "impaud0001",
+        "references": [{ "entry_index": 0, "field": "audio" }],
+        "filename": "apple.mp3",
+        "mime": "audio/mpeg",
+        "size": 51200,
+        "checksum": "sha256:abc123",
+        "available": false
+      }
+    ],
+    "accepted_media_mapping": {
+      "impaud0001": {
+        "author_media_id": "authaud001",
+        "checksum": "sha256:abc123"
+      }
+    },
+    "working_copy_updated": true,
+    "created_at": "2026-07-17T20:00:00Z",
+    "updated_at": "2026-07-17T20:05:00Z",
+    "accepted_at": "2026-07-17T20:05:00Z"
+  },
+  "meta": {
+    "msg": "contribution accepted"
+  }
+}
+```
+
+**Success (200) — deck_tag_update example:**
+
+```json
+{
+  "data": {
+    "id": "cont0002",
+    "source_deck_id": "srcdeck12345",
+    "import_deck_id": "impdeck12345",
+    "reporter": "bob",
+    "source_version": 3,
+    "type": "deck_tag_update",
+    "message": "These names better describe the deck",
+    "reported_tags": ["advanced", "vocabulary"],
+    "add_tags": ["beginner", "travel"],
+    "remove_tags": ["advanced"],
+    "status": "accepted",
+    "working_copy_updated": true,
+    "created_at": "2026-07-17T20:00:00Z",
+    "updated_at": "2026-07-17T20:05:00Z",
+    "accepted_at": "2026-07-17T20:05:00Z"
+  },
+  "meta": {
+    "msg": "contribution accepted"
+  }
+}
+```
+
+##### Resolve or dismiss (without accepting)
+
+**Endpoint:** `PATCH /api/decks/{sourceId}/contributions/{contributionId}`
+
+**Request:**
+
+```json
+{
+  "status": "dismissed"
+}
+```
+
+Allowed statuses: `open`, `resolved`, `dismissed`. Terminal cleanup on media-bearing rows prevents returning to `open` (`cannot reopen media-bearing contribution after cleanup`).
+
+**Success (200):**
+
+```json
+{
+  "data": {
+    "id": "cont0001",
+    "source_deck_id": "srcdeck12345",
+    "import_deck_id": "impdeck12345",
+    "fact_id": "fact0001",
+    "reporter": "bob",
+    "source_version": 3,
+    "type": "fact_edit",
+    "message": "Replaced the incorrect pronunciation",
+    "entry_index": 0,
+    "reported_fact": {
+      "id": "fact0001",
+      "entries": [
+        { "text": "Apple", "audio": "sourceaud1" },
+        { "text": "リンゴ" }
+      ]
+    },
+    "proposed_entries": [
+      { "text": "Apple", "audio": "impaud0001" },
+      { "text": "りんご" }
+    ],
+    "media_attachments": [
+      {
+        "attachment_id": "attach01",
+        "source_media_id": "impaud0001",
+        "references": [{ "entry_index": 0, "field": "audio" }],
+        "filename": "apple.mp3",
+        "mime": "audio/mpeg",
+        "size": 51200,
+        "checksum": "sha256:abc123",
+        "available": false
+      }
+    ],
+    "status": "dismissed",
+    "created_at": "2026-07-17T20:00:00Z",
+    "updated_at": "2026-07-17T20:05:00Z",
+    "resolved_at": "2026-07-17T20:05:00Z",
+    "edit": {
+      "deck_id": "srcdeck12345",
+      "fact_id": "fact0001",
+      "get_fact_path": "/api/decks/srcdeck12345/facts/fact0001",
+      "patch_fact_path": "/api/decks/srcdeck12345/facts/fact0001"
+    }
+  },
+  "meta": {
+    "msg": "contribution updated"
+  }
+}
+```
+
+**Typical author inbox errors:**
+
+| Status | Typical `msg` |
+| ------ | ------------- |
+| **400** | `invalid type filter`, `invalid status filter`, `invalid status`, `report cannot be accepted`, … |
+| **403** | `Not authorized`, `contribution inbox is only available on source decks` |
+| **404** | `Deck not found`, `contribution not found` |
+| **409** | `cannot reopen media-bearing contribution after cleanup`, `fact already exists`, … |
 
 ---
 
@@ -1003,7 +1761,7 @@ Tag associations are keyed by the **importer** (independent from the author). Fa
 
 **Endpoint:** `POST /api/decks/{id}/facts/{operation}`
 
-> **Imported decks:** **403** `cannot modify facts on an imported deck`. Use [Sync an imported deck](#sync-an-imported-deck) to accept new content from the author.
+> **Imported decks:** fact mutations write a **private overlay**. Use [Sync an imported deck](#sync-an-imported-deck) for author publishes, or submit a contribution via [Import overlays & contributions](#import-overlays--contributions).
 
 **Parameters:**
 
@@ -1219,7 +1977,7 @@ Each fact always includes **`tags`**: an array of `{ "id", "name", "description"
 
 **Request Body:** Optional **`entries`** only — array of entry objects with optional `text`, `audio`, `image`, `video`, `json`. When provided, it replaces the fact’s entries. To rename or reorder **column labels**, use **`PATCH /api/decks/{id}`** with a new `fields` array (not this endpoint).
 
-> **Imported decks:** **403** `cannot modify facts on an imported deck`. Use [Sync an imported deck](#sync-an-imported-deck) to accept new content from the author, or `POST …/feedback` to propose corrections to the author.
+> **Imported decks:** fact mutations write a **private overlay** (do not change the author snapshot). Use [Sync an imported deck](#sync-an-imported-deck) for author publishes, or submit a **contribution** — see [Import overlays & contributions](#import-overlays--contributions).
 
 ```json
 {
@@ -1240,7 +1998,7 @@ Each fact always includes **`tags`**: an array of `{ "id", "name", "description"
 
 **Endpoint:** `DELETE /api/decks/{id}/facts/{factId}`
 
-> **Imported decks:** **403** `cannot modify facts on an imported deck`.
+> **Imported decks:** fact mutations write a **private overlay** (see [Import overlays & contributions](#import-overlays--contributions)).
 
 **Parameters:** `id` (deck ID), `factId` (fact ID).
 
@@ -1864,10 +2622,6 @@ After viewing a card, you need to update its interval based on how well you reme
 >
 > The slider default is `def_interval` (not the midpoint of min and max).
 >
-> Round each bound to whole seconds. If rounding collapses the range so
-> `max_interval <= min_interval`, widen `max_interval` to `min_interval × 4.0`.
-> Clamp `def_interval` into `[min_interval, max_interval]`.
->
 > **Step 4 — Validate before sending:**
 >
 > The frontend must verify that the chosen `interval` satisfies
@@ -2069,7 +2823,7 @@ You can attach audio, images, and video to facts. Each **entry** object uses str
 
 **Endpoint:** `GET /api/media/{id}/meta`
 
-Returns metadata only (id, owner, filename, mime, size, checksum, created_at), no file body. **Owners** receive working-copy metadata. **Importers** with a deck-sharing grant receive **versioned** snapshot metadata (same grant and **`?v=`** rules as download).
+Returns metadata only (id, owner, filename, mime, size, checksum, created_at), no file body. Without `v`, only the owner can receive working-copy metadata. With a positive **`?v=`**, any authenticated user can receive metadata for that published version.
 
 ### Download media
 
@@ -2077,7 +2831,7 @@ Returns metadata only (id, owner, filename, mime, size, checksum, created_at), n
 
 Returns the media file (binary) for user-owned media by ID. Requires `Authorization: Bearer <token>`. Response headers include `Content-Type`, `Content-Length`, and `ETag` (same as `checksum`). Send `If-None-Match: <ETag>` to get `304 Not Modified` when the file is unchanged. The **Get Next Card** response puts full URLs in the `audio`, `image`, and `video` fields of each front/back entry (e.g. `https://api.retentio.app:8443/api/media/{id}`); use that URL with the same auth header to load the file.
 
-**Deck sharing (importers):** If you imported a deck, you may download the author’s media when your account has a grant `mediaId@version` from that snapshot. The server serves **versioned** bytes. Append **`?v=<version>`** when the API returns multiple possible versions for the same `media_id` (some fact responses include `?v=` on media URLs automatically).
+**Published media:** Any authenticated user may download immutable published bytes by passing **`?v=<version>`** with a positive version. Without `v`, only the media owner may download the working copy. Import-deck card responses include the pinned `?v=` in media URLs automatically.
 
 ### Delete media
 
@@ -2122,7 +2876,7 @@ Success responses use `{ "data": …, "meta": … }` instead (see [Response exam
 | **409** | Conflict — duplicate resource or illegal state | e.g. username taken, published deck delete, duplicate template |
 | **413** | Payload too large — media upload over size limit | Compress or split file |
 | **415** | Unsupported media type | Use a supported image/audio/video/JSON format |
-| **429** | Too many requests — feedback daily limit | Retry next UTC day |
+| **429** | Too many requests — contribution daily limit | Retry next UTC day |
 | **500** | Internal server error | Retry later; log `msg` for support |
 | **304** | Not modified — media download (`If-None-Match`) | Use cached bytes (no JSON body) |
 | **206** | Partial content — media range download | Use returned byte range (no JSON body) |
@@ -2237,10 +2991,24 @@ Also subject to [JWT middleware errors](#cross-cutting-errors).
 | | **400** | `maximum number of tags reached`, `maximum tags per deck reached`, `maximum fact tags per deck reached` |
 | | **403** | `source deck is not importable`, `source deck has not been published`, `cannot import an imported deck`, `cannot import your own deck` |
 | | **404** | `source deck not found` |
+| | **409** | `deck already imported` |
 | | **500** | Other import failures |
 | `GET /api/decks/{id}/updates` | **400** | `updates are only available for imported decks` |
 | | **400** | `not an imported deck`, `source deck missing`, … (raw `err.Error()`) |
 | `POST /api/decks/{id}/sync` | **400** | `not an imported deck`, `invalid target version`, … (raw `err.Error()`) |
+| `POST /api/decks/{id}/contributions/…` (submit) | **400** | `overlay required: fact has no private overlay`, `overlay must differ from snapshot`, `fact_id must be in local_facts`, `add_tags or remove_tags is required`, `proposed_fields length must match pinned fields`, `message is required`, … |
+| | **403** | `Not authorized`, `contributions are only available on imported decks` |
+| | **404** | `deck not found`, `fact not found`, `source deck not found` |
+| | **429** | `daily contribution limit exceeded` |
+| `GET /api/decks/{id}/contributions` | **400** | `invalid type filter`, `invalid status filter` |
+| | **403** | `Not authorized`, `contribution inbox is only available on source decks` |
+| | **404** | `Deck not found` |
+| `POST …/contributions/{id}/accept` | **400** | `report cannot be accepted`, `proposed_entries required to accept`, … |
+| | **404** | `contribution not found` |
+| | **409** | `fact already exists`, … |
+| `PATCH …/contributions/{id}` | **400** | `invalid status` |
+| | **404** | `contribution not found` |
+| | **409** | `cannot reopen media-bearing contribution after cleanup` |
 
 ---
 
@@ -2248,7 +3016,6 @@ Also subject to [JWT middleware errors](#cross-cutting-errors).
 
 | Endpoint | Status | `msg` |
 | -------- | ------ | ----- |
-| `POST /api/decks/{id}/facts/{operation}` | **403** | `cannot modify facts on an imported deck` |
 | | **400** | `Facts array is required` |
 | | **400** | `Invalid operation. Supported: append, prepend, shuffle, spread.` |
 | | **400** | `Deck rate must be at least 1 to add facts` |
@@ -2263,11 +3030,9 @@ Also subject to [JWT middleware errors](#cross-cutting-errors).
 | | **400** | Tag name validation errors (same rules as `POST /api/tags`) |
 | | **404** | `tag not found` |
 | | **500** | `Error adding facts and cards`, `Error merging facts into deck` |
-| `PATCH /api/decks/{id}/facts/{factId}` | **403** | `cannot modify facts on an imported deck` |
 | | **400** | `at least one entry must have text, audio, image, video, or json` |
 | | **404** | `Fact not found` |
 | | **500** | `Error serializing fact data`, `Error rebuilding card template`, `Error retrieving cards`, `Error serializing card data`, `Error serializing deck data`, `Error updating fact` |
-| `DELETE /api/decks/{id}/facts/{factId}` | **403** | `cannot modify facts on an imported deck` |
 | | **404** | `Fact not found` |
 | | **500** | `Error removing fact tags`, `Error removing fact from deck`, `Error retrieving cards`, `Error serializing deck data`, `Error deleting fact` |
 | `GET /api/decks/{id}/facts`, `GET …/facts/{factId}` | **500** | `Error retrieving facts`, `Error retrieving fact tags`, `Error checking fact existence` |
@@ -2361,46 +3126,12 @@ Tag **name** validation (`POST /api/tags`, `PATCH /api/tags/{tagId}`, tag names 
 
 ---
 
-### Feedback (deck sharing)
-
-| Endpoint | Status | `msg` |
-| -------- | ------ | ----- |
-| `POST /api/decks/{importId}/feedback` | **400** | `fact_id is required` |
-| | **400** | `feedback is only available on imported decks` |
-| | **400** | `source deck is not published` |
-| | **400** | `invalid category` |
-| | **400** | `message is required when proposed_entries is omitted` |
-| | **400** | `message must be between 1 and 2000 characters` |
-| | **400** | `entry_index out of range` |
-| | **400** | `proposed_entries must have content` |
-| | **400** | `proposed_entries length must match snapshot fact` |
-| | **400** | `proposed_entries must differ from snapshot` |
-| | **400** | `fact not in pinned snapshot` |
-| | **403** | `Not authorized` |
-| | **404** | `deck not found`, `source deck not found`, `fact not found` |
-| | **429** | `daily feedback limit exceeded` (20 per source deck per UTC day) |
-| | **500** | `Error submitting feedback` |
-| `GET /api/decks/{sourceId}/feedback` | **400** | `feedback inbox is only available on source decks` |
-| | **403** | `Not authorized` |
-| | **404** | `Deck not found` |
-| | **500** | `Error listing feedback` |
-| `PATCH …/feedback/{feedbackId}` | **400** | `invalid status` |
-| | **403** | `Not authorized` |
-| | **404** | `feedback not found`, `Deck not found` |
-| | **500** | `Error updating feedback` |
-| `POST …/feedback/{feedbackId}/accept` | **400** | `proposed_entries required to accept` |
-| | **404** | `feedback not found`, `fact not found on source deck`, `Deck not found` |
-| | **403** | `Not authorized` |
-| | **500** | `Error accepting feedback` |
-
----
-
 ### Client handling notes
 
 1. **Parse errors:** Read `response.body` as JSON; use the `msg` field for user-visible text. Fall back to HTTP status text if the body is not JSON.
 2. **401:** Clear the stored JWT and return to login. The frontend `response_normalize_interceptor` treats **401** specially.
 3. **Retry:** Only **500** and transient network failures are reasonable retry candidates; **400**/**403**/**404**/**409** need user or data fixes.
-4. **Exact string matching:** Prefer matching on stable substrings (e.g. `cannot modify facts on an imported deck`) rather than every **500** message, which may include internal detail.
+4. **Exact string matching:** Prefer matching on stable substrings (e.g. `contributions are only available on imported decks`) rather than every **500** message, which may include internal detail.
 5. **Dynamic `msg` values:** Some errors embed IDs or indices (`fact 2: …`, `try delete fact id: abc123`). Treat the prefix pattern as the error kind.
 
 ---
@@ -2435,8 +3166,13 @@ Tag **name** validation (`POST /api/tags`, `PATCH /api/tags/{tagId}`, tag names 
 | `/api/decks/catalog/{id}`                     | GET         | `{ "data": { "id", "name", "description", "owner", "fields", "published_version", "fact_count", "deck_tag_names", "published_at" }, "meta": { "msg" } }` — one catalog row; **404** if not importable |
 | `/api/decks/import`                           | POST        | **201** — `{ "data": { "id", "source_deck_id", "source_version", "imported_at" }, "meta": { "msg" } }`                                                    |
 | `/api/decks/{id}/publish`                     | POST        | `{ "data": { "published_version", "visibility" }, "meta": { "msg": "published" } }`                                                                      |
-| `/api/decks/{id}/updates`                     | GET         | `{ "data": { "source_version", "latest_version", "added_facts", "removed_facts", "edited_facts", "media_changes" }, "meta": { "msg" } }`                   |
-| `/api/decks/{id}/sync`                        | POST        | `{ "data": { "source_version" }, "meta": { "msg": "synced" } }`                                                                                            |
+| `/api/decks/{id}/updates`                     | GET         | `{ "data": { "source_version", "latest_version", "added_facts", "removed_facts", "edited_facts", "media_changes", "card_template_changes", … }, "meta": { "msg" } }` — see [Get import updates](#get-import-updates-diff) |
+| `/api/decks/{id}/sync`                        | POST        | Body optional `target_version`, `decisions[]`; `{ "data": { "source_version" }, "meta": { "msg": "synced" } }` |
+| `/api/decks/{id}/contributions/facts/…` etc.  | POST        | **201** — `{ "data": { "contribution_id", "source_deck_id", "type", "status", … }, "meta": { "msg": "contribution submitted" } }` — see [Import overlays & contributions](#import-overlays--contributions) |
+| `/api/decks/{id}/contributions`               | GET         | Author inbox: `{ "data": { "contributions": [ … ] }, "meta": { "msg", "count", "total", "limit", "offset", "has_more" } }` |
+| `/api/decks/{id}/contributions/{cid}/accept`  | POST        | `{ "data": { contribution + "working_copy_updated", … }, "meta": { "msg": "contribution accepted" } }` |
+| `/api/decks/{id}/contributions/{cid}`         | PATCH       | `{ "data": { contribution }, "meta": { "msg": "contribution updated" } }` |
+| `/api/decks/{id}/contributions/{cid}/media/{aid}` | GET     | Binary media bytes (not JSON) |
 | `/api/tags`                                   | POST        | `{ "data": { "tag": { id, name, description } }, "meta": { "msg" } }` — **201**                                                                            |
 | `/api/tags`                                   | GET         | `{ "data": { "tags": [ { id, name, description, deck_count, fact_count, used_on } ] }, "meta": { "msg" } }` — optional `used_on=deck` or `used_on=fact&deck_id={id}` |
 | `/api/tags/{tagId}`                           | GET         | `{ "data": { "tag": { … } }, "meta": { "msg" } }`                                                                                                          |
@@ -2459,7 +3195,7 @@ Full JSON examples for each are in the sections above.
 
 ## Next Steps
 
-- Share decks with **[Deck sharing](#deck-sharing-overview)** (publish → import → review updates → sync)
+- Share decks with **[Deck sharing](#deck-sharing-overview)** (publish → import → overlays / contributions → review updates → sync)
 - Organize content with **[Tags](#4-tags)** (deck- and fact-level associations)
 - Keep reviewing cards by repeating the **Get Next Urgent Card** and **Review a Card** steps in [Cards](#5-cards)
 - **Offline sync** — sync data when back online (planned)

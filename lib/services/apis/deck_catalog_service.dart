@@ -146,19 +146,18 @@ class DeckCatalogService {
     return _toInt((res.data as Map)['source_version']) ?? 0;
   }
 
-  Future<void> submitFeedback({
+  Future<void> submitFactReport({
     required String importDeckId,
     required String factId,
     required String message,
-    String category = 'other',
   }) async {
     final res = await ApiService.post(
-      Api.deckFeedback,
-      pathParams: {'id': importDeckId},
-      body: {'fact_id': factId, 'category': category, 'message': message},
+      Api.deckFactReport,
+      pathParams: {'id': importDeckId, 'factId': factId},
+      body: {'message': message},
     );
     if (res == null || !res.isSuccess) {
-      throw Exception(res?.msg ?? 'submit_feedback_failed');
+      throw Exception(res?.msg ?? 'submit_report_failed');
     }
   }
 
