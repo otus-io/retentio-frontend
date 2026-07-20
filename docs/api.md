@@ -1601,6 +1601,7 @@ Applies the stored proposal to the author’s working copy and sets `status` to 
 {
   "data": {
     "id": "cont0001",
+    "source_deck_id": "srcdeck12345",
     "fact_id": "fact0001",
     "reporter": "bob",
     "import_deck_id": "impdeck12345",
