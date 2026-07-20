@@ -1222,16 +1222,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get apiFeedbackImportedOnly =>
-      'Feedback is only available on imported decks';
+      'Contributions are only available on imported decks';
 
   @override
   String get apiFeedbackSourceNotPublished => 'Source deck is not published';
-
-  @override
-  String get apiInvalidFeedbackCategory => 'Invalid feedback category';
-
-  @override
-  String get apiFeedbackMessageRequired => 'Message is required';
 
   @override
   String get apiFeedbackMessageLength => 'Message must be 1–2000 characters';
@@ -1261,7 +1255,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get apiFeedbackDailyLimit =>
-      'Daily feedback limit reached. Try again tomorrow.';
+      'Daily contribution limit reached. Try again tomorrow.';
 
   @override
   String get apiServerSubmitFeedback =>
@@ -1269,7 +1263,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get apiFeedbackInboxSourceOnly =>
-      'Feedback inbox is only available on source decks';
+      'Contribution inbox is only available on source decks';
 
   @override
   String get apiServerListFeedback =>
@@ -1279,7 +1273,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get apiInvalidFeedbackStatus => 'Invalid feedback status';
 
   @override
-  String get apiFeedbackNotFound => 'Feedback not found';
+  String get apiFeedbackNotFound => 'Contribution not found';
 
   @override
   String get apiServerUpdateFeedback =>
@@ -1291,6 +1285,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get apiFactNotOnSourceDeck => 'Fact not found on source deck';
+
+  @override
+  String get apiReportCannotBeAccepted => 'Report cannot be accepted';
 
   @override
   String get apiServerAcceptFeedback =>

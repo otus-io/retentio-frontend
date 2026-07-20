@@ -833,21 +833,13 @@
   "@apiFailedLoadMedia": {
     "description": "API error: apiFailedLoadMedia"
   },
-  "apiFeedbackImportedOnly": "仅导入的卡组可提交反馈",
+  "apiFeedbackImportedOnly": "仅导入的卡组可提交贡献",
   "@apiFeedbackImportedOnly": {
     "description": "API error: apiFeedbackImportedOnly"
   },
   "apiFeedbackSourceNotPublished": "源卡组尚未发布",
   "@apiFeedbackSourceNotPublished": {
     "description": "API error: apiFeedbackSourceNotPublished"
-  },
-  "apiInvalidFeedbackCategory": "反馈类别无效",
-  "@apiInvalidFeedbackCategory": {
-    "description": "API error: apiInvalidFeedbackCategory"
-  },
-  "apiFeedbackMessageRequired": "请填写反馈内容",
-  "@apiFeedbackMessageRequired": {
-    "description": "API error: apiFeedbackMessageRequired"
   },
   "apiFeedbackMessageLength": "反馈内容须在 1 到 2000 个字符之间",
   "@apiFeedbackMessageLength": {
@@ -881,7 +873,7 @@
   "@apiFeedbackFactNotFound": {
     "description": "API error: apiFeedbackFactNotFound"
   },
-  "apiFeedbackDailyLimit": "今日反馈次数已达上限，请明天再试",
+  "apiFeedbackDailyLimit": "今日贡献次数已达上限，请明天再试",
   "@apiFeedbackDailyLimit": {
     "description": "API error: apiFeedbackDailyLimit"
   },
@@ -889,7 +881,7 @@
   "@apiServerSubmitFeedback": {
     "description": "API error: apiServerSubmitFeedback"
   },
-  "apiFeedbackInboxSourceOnly": "仅源卡组可查看反馈收件箱",
+  "apiFeedbackInboxSourceOnly": "仅源卡组可查看贡献收件箱",
   "@apiFeedbackInboxSourceOnly": {
     "description": "API error: apiFeedbackInboxSourceOnly"
   },
@@ -901,7 +893,7 @@
   "@apiInvalidFeedbackStatus": {
     "description": "API error: apiInvalidFeedbackStatus"
   },
-  "apiFeedbackNotFound": "反馈不存在",
+  "apiFeedbackNotFound": "贡献不存在",
   "@apiFeedbackNotFound": {
     "description": "API error: apiFeedbackNotFound"
   },
@@ -916,6 +908,10 @@
   "apiFactNotOnSourceDeck": "源卡组中找不到该词条",
   "@apiFactNotOnSourceDeck": {
     "description": "API error: apiFactNotOnSourceDeck"
+  },
+  "apiReportCannotBeAccepted": "无法接受举报",
+  "@apiReportCannotBeAccepted": {
+    "description": "API error: apiReportCannotBeAccepted"
   },
   "apiServerAcceptFeedback": "无法接受反馈，请重试",
   "@apiServerAcceptFeedback": {

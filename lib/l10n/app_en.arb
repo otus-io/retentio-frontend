@@ -1555,21 +1555,13 @@
   "@apiFailedLoadMedia": {
     "description": "API error: apiFailedLoadMedia"
   },
-  "apiFeedbackImportedOnly": "Feedback is only available on imported decks",
+  "apiFeedbackImportedOnly": "Contributions are only available on imported decks",
   "@apiFeedbackImportedOnly": {
     "description": "API error: apiFeedbackImportedOnly"
   },
   "apiFeedbackSourceNotPublished": "Source deck is not published",
   "@apiFeedbackSourceNotPublished": {
     "description": "API error: apiFeedbackSourceNotPublished"
-  },
-  "apiInvalidFeedbackCategory": "Invalid feedback category",
-  "@apiInvalidFeedbackCategory": {
-    "description": "API error: apiInvalidFeedbackCategory"
-  },
-  "apiFeedbackMessageRequired": "Message is required",
-  "@apiFeedbackMessageRequired": {
-    "description": "API error: apiFeedbackMessageRequired"
   },
   "apiFeedbackMessageLength": "Message must be 1–2000 characters",
   "@apiFeedbackMessageLength": {
@@ -1603,7 +1595,7 @@
   "@apiFeedbackFactNotFound": {
     "description": "API error: apiFeedbackFactNotFound"
   },
-  "apiFeedbackDailyLimit": "Daily feedback limit reached. Try again tomorrow.",
+  "apiFeedbackDailyLimit": "Daily contribution limit reached. Try again tomorrow.",
   "@apiFeedbackDailyLimit": {
     "description": "API error: apiFeedbackDailyLimit"
   },
@@ -1611,7 +1603,7 @@
   "@apiServerSubmitFeedback": {
     "description": "API error: apiServerSubmitFeedback"
   },
-  "apiFeedbackInboxSourceOnly": "Feedback inbox is only available on source decks",
+  "apiFeedbackInboxSourceOnly": "Contribution inbox is only available on source decks",
   "@apiFeedbackInboxSourceOnly": {
     "description": "API error: apiFeedbackInboxSourceOnly"
   },
@@ -1623,7 +1615,7 @@
   "@apiInvalidFeedbackStatus": {
     "description": "API error: apiInvalidFeedbackStatus"
   },
-  "apiFeedbackNotFound": "Feedback not found",
+  "apiFeedbackNotFound": "Contribution not found",
   "@apiFeedbackNotFound": {
     "description": "API error: apiFeedbackNotFound"
   },
@@ -1638,6 +1630,10 @@
   "apiFactNotOnSourceDeck": "Fact not found on source deck",
   "@apiFactNotOnSourceDeck": {
     "description": "API error: apiFactNotOnSourceDeck"
+  },
+  "apiReportCannotBeAccepted": "Report cannot be accepted",
+  "@apiReportCannotBeAccepted": {
+    "description": "API error: apiReportCannotBeAccepted"
   },
   "apiServerAcceptFeedback": "Could not accept feedback. Please try again.",
   "@apiServerAcceptFeedback": {

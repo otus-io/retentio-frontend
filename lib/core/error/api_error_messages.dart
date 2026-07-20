@@ -263,7 +263,7 @@ class ApiErrorMessages {
     'proposed_entries required to accept': (loc) =>
         loc.apiProposedEntriesRequiredAccept,
     'fact not found on source deck': (loc) => loc.apiFactNotOnSourceDeck,
-    'report cannot be accepted': (loc) => loc.apiProposedEntriesRequiredAccept,
+    'report cannot be accepted': (loc) => loc.apiReportCannotBeAccepted,
     'Bad certificate': (loc) => loc.apiBadCertificate,
     'Bad response': (loc) => loc.apiBadResponse,
     'Request cancel': (loc) => loc.apiRequestCancel,
