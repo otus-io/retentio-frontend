@@ -1198,7 +1198,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get apiFactNotOnSourceDeck => '源卡组中找不到该词条';
 
   @override
-  String get apiReportCannotBeAccepted => '无法接受举报';
+  String get apiReportCannotBeAccepted => '无法接受贡献反馈';
 
   @override
   String get apiServerAcceptFeedback => '无法接受反馈，请重试';

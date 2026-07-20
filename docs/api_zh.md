@@ -1444,7 +1444,7 @@
 }
 ```
 
-##### 仅留言举报
+##### 仅留言贡献反馈
 
 **接口：** `POST /api/decks/{importId}/contributions/facts/{factId}/report`
 
@@ -1473,7 +1473,7 @@
 }
 ```
 
-举报会出现在作者收件箱，但**不可 accept**（`report cannot be accepted` → 用 PATCH resolve/dismiss）。
+贡献反馈会出现在作者收件箱，但**不可 accept**（`report cannot be accepted` → 用 PATCH resolve/dismiss）。
 
 **典型提交错误：**
 

@@ -909,7 +909,7 @@
   "@apiFactNotOnSourceDeck": {
     "description": "API error: apiFactNotOnSourceDeck"
   },
-  "apiReportCannotBeAccepted": "无法接受举报",
+  "apiReportCannotBeAccepted": "无法接受贡献反馈",
   "@apiReportCannotBeAccepted": {
     "description": "API error: apiReportCannotBeAccepted"
   },
