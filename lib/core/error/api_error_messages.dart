@@ -240,12 +240,9 @@ class ApiErrorMessages {
     'Media file not found': (loc) => loc.apiMediaFileNotFound,
     'Failed to list media': (loc) => loc.apiFailedListMedia,
     'Failed to load media': (loc) => loc.apiFailedLoadMedia,
-    'feedback is only available on imported decks': (loc) =>
+    'contributions are only available on imported decks': (loc) =>
         loc.apiFeedbackImportedOnly,
     'source deck is not published': (loc) => loc.apiFeedbackSourceNotPublished,
-    'invalid category': (loc) => loc.apiInvalidFeedbackCategory,
-    'message is required when proposed_entries is omitted': (loc) =>
-        loc.apiFeedbackMessageRequired,
     'message must be between 1 and 2000 characters': (loc) =>
         loc.apiFeedbackMessageLength,
     'entry_index out of range': (loc) => loc.apiEntryIndexOutOfRange,
@@ -258,18 +255,15 @@ class ApiErrorMessages {
     'fact not in pinned snapshot': (loc) => loc.apiFactNotInSnapshot,
     'deck not found': (loc) => loc.apiFeedbackDeckNotFound,
     'fact not found': (loc) => loc.apiFeedbackFactNotFound,
-    'daily feedback limit exceeded': (loc) => loc.apiFeedbackDailyLimit,
-    'Error submitting feedback': (loc) => loc.apiServerSubmitFeedback,
-    'feedback inbox is only available on source decks': (loc) =>
+    'daily contribution limit exceeded': (loc) => loc.apiFeedbackDailyLimit,
+    'contribution inbox is only available on source decks': (loc) =>
         loc.apiFeedbackInboxSourceOnly,
-    'Error listing feedback': (loc) => loc.apiServerListFeedback,
     'invalid status': (loc) => loc.apiInvalidFeedbackStatus,
-    'feedback not found': (loc) => loc.apiFeedbackNotFound,
-    'Error updating feedback': (loc) => loc.apiServerUpdateFeedback,
+    'contribution not found': (loc) => loc.apiFeedbackNotFound,
     'proposed_entries required to accept': (loc) =>
         loc.apiProposedEntriesRequiredAccept,
     'fact not found on source deck': (loc) => loc.apiFactNotOnSourceDeck,
-    'Error accepting feedback': (loc) => loc.apiServerAcceptFeedback,
+    'report cannot be accepted': (loc) => loc.apiReportCannotBeAccepted,
     'Bad certificate': (loc) => loc.apiBadCertificate,
     'Bad response': (loc) => loc.apiBadResponse,
     'Request cancel': (loc) => loc.apiRequestCancel,

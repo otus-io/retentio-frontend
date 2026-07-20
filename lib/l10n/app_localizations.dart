@@ -2309,7 +2309,7 @@ abstract class AppLocalizations {
   /// API error: apiFeedbackImportedOnly
   ///
   /// In en, this message translates to:
-  /// **'Feedback is only available on imported decks'**
+  /// **'Contributions are only available on imported decks'**
   String get apiFeedbackImportedOnly;
 
   /// API error: apiFeedbackSourceNotPublished
@@ -2317,18 +2317,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Source deck is not published'**
   String get apiFeedbackSourceNotPublished;
-
-  /// API error: apiInvalidFeedbackCategory
-  ///
-  /// In en, this message translates to:
-  /// **'Invalid feedback category'**
-  String get apiInvalidFeedbackCategory;
-
-  /// API error: apiFeedbackMessageRequired
-  ///
-  /// In en, this message translates to:
-  /// **'Message is required'**
-  String get apiFeedbackMessageRequired;
 
   /// API error: apiFeedbackMessageLength
   ///
@@ -2381,7 +2369,7 @@ abstract class AppLocalizations {
   /// API error: apiFeedbackDailyLimit
   ///
   /// In en, this message translates to:
-  /// **'Daily feedback limit reached. Try again tomorrow.'**
+  /// **'Daily contribution limit reached. Try again tomorrow.'**
   String get apiFeedbackDailyLimit;
 
   /// API error: apiServerSubmitFeedback
@@ -2393,7 +2381,7 @@ abstract class AppLocalizations {
   /// API error: apiFeedbackInboxSourceOnly
   ///
   /// In en, this message translates to:
-  /// **'Feedback inbox is only available on source decks'**
+  /// **'Contribution inbox is only available on source decks'**
   String get apiFeedbackInboxSourceOnly;
 
   /// API error: apiServerListFeedback
@@ -2411,7 +2399,7 @@ abstract class AppLocalizations {
   /// API error: apiFeedbackNotFound
   ///
   /// In en, this message translates to:
-  /// **'Feedback not found'**
+  /// **'Contribution not found'**
   String get apiFeedbackNotFound;
 
   /// API error: apiServerUpdateFeedback
@@ -2431,6 +2419,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fact not found on source deck'**
   String get apiFactNotOnSourceDeck;
+
+  /// API error: apiReportCannotBeAccepted
+  ///
+  /// In en, this message translates to:
+  /// **'Report cannot be accepted'**
+  String get apiReportCannotBeAccepted;
 
   /// API error: apiServerAcceptFeedback
   ///

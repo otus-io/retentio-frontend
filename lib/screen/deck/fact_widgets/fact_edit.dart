@@ -347,7 +347,7 @@ class _FactEditState extends ConsumerState<FactEdit>
     }
   }
 
-  Future<void> _submitFeedback() async {
+  Future<void> _submitFactReport() async {
     final loc = AppLocalizations.of(context)!;
     final controller = TextEditingController();
     var submitting = false;
@@ -364,7 +364,7 @@ class _FactEditState extends ConsumerState<FactEdit>
               }
               setDialogState(() => submitting = true);
               try {
-                await DeckCatalogService.of.submitFeedback(
+                await DeckCatalogService.of.submitFactReport(
                   importDeckId: widget.deck.id,
                   factId: widget.factId,
                   message: message,
@@ -538,7 +538,7 @@ class _FactEditState extends ConsumerState<FactEdit>
               if (widget.deck.isImported)
                 AppButton(
                   label: loc.feedbackSubmit,
-                  onPressed: _submitting ? null : _submitFeedback,
+                  onPressed: _submitting ? null : _submitFactReport,
                   variant: AppButtonVariant.secondary,
                   fullWidth: true,
                   leading: const Icon(LucideIcons.messageSquareWarning),

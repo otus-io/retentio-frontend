@@ -1141,16 +1141,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get apiFailedLoadMedia => '无法加载媒体，请重试';
 
   @override
-  String get apiFeedbackImportedOnly => '仅导入的卡组可提交反馈';
+  String get apiFeedbackImportedOnly => '仅导入的卡组可提交贡献';
 
   @override
   String get apiFeedbackSourceNotPublished => '源卡组尚未发布';
-
-  @override
-  String get apiInvalidFeedbackCategory => '反馈类别无效';
-
-  @override
-  String get apiFeedbackMessageRequired => '请填写反馈内容';
 
   @override
   String get apiFeedbackMessageLength => '反馈内容须在 1 到 2000 个字符之间';
@@ -1177,13 +1171,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get apiFeedbackFactNotFound => '词条不存在';
 
   @override
-  String get apiFeedbackDailyLimit => '今日反馈次数已达上限，请明天再试';
+  String get apiFeedbackDailyLimit => '今日贡献次数已达上限，请明天再试';
 
   @override
   String get apiServerSubmitFeedback => '无法提交反馈，请重试';
 
   @override
-  String get apiFeedbackInboxSourceOnly => '仅源卡组可查看反馈收件箱';
+  String get apiFeedbackInboxSourceOnly => '仅源卡组可查看贡献收件箱';
 
   @override
   String get apiServerListFeedback => '无法加载反馈，请重试';
@@ -1192,7 +1186,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get apiInvalidFeedbackStatus => '反馈状态无效';
 
   @override
-  String get apiFeedbackNotFound => '反馈不存在';
+  String get apiFeedbackNotFound => '贡献不存在';
 
   @override
   String get apiServerUpdateFeedback => '无法更新反馈，请重试';
@@ -1202,6 +1196,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get apiFactNotOnSourceDeck => '源卡组中找不到该词条';
+
+  @override
+  String get apiReportCannotBeAccepted => '无法接受举报';
 
   @override
   String get apiServerAcceptFeedback => '无法接受反馈，请重试';

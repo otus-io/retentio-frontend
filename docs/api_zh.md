@@ -32,6 +32,10 @@
   - [获取导入更新（差异）](#获取导入更新差异)
   - [同步导入卡组](#同步导入卡组)
   - [共享：卡组与词条扩展行为](#共享卡组与词条扩展行为)
+  - [导入 overlay 与贡献](#导入-overlay-与贡献)
+    - [私有 overlay 词条变更](#私有-overlay-词条变更)
+    - [提交贡献（导入者）](#提交贡献导入者)
+    - [作者贡献收件箱](#作者贡献收件箱)
 - [3. 词条](#3-词条)
   - [添加词条](#添加词条)
   - [获取所有词条](#获取所有词条)
@@ -106,17 +110,24 @@
 | `/api/decks/catalog`                          | GET    | **（共享）** 列出可导入的公开已发布源卡组。**无需登录。** 查询：`limit`、`offset`，可选 `query`（名称、描述、所有者、卡组标签名）。按最新发布时间排序。`POST /api/decks/import` 导入仍需 JWT。 |
 | `/api/decks/catalog/{id}`                     | GET    | **（共享）** 按源卡组 ID 获取一条公开已发布目录记录（字段与列表行相同）。**无需登录。** 不可导入时 **404**。 |
 | `/api/decks/{id}/publish`                     | POST   | **（共享）** 作者：将工作副本快照为下一 `published_version`。首次发布须 `visibility: "public"`。**200**。                                            |
-| `/api/decks/{id}/feedback`                    | POST   | **（共享）** 导入者：向源卡组作者提交词条反馈/修改建议。路径使用**导入**卡组 id。**201**；超过每日上限（每源卡组每天 20 条）→ **429**。              |
-| `/api/decks/{id}/feedback`                    | GET    | **（共享）** 作者：在**源**卡组 id 上查看反馈收件箱。查询：`limit`、`offset`，可选 `status`、`fact_id`。                                             |
-| `/api/decks/{id}/feedback/{feedbackId}`       | PATCH  | **（共享）** 作者：更新反馈 `status`（`open`、`resolved`、`dismissed`）。仅源卡组。                                                                 |
-| `/api/decks/{id}/feedback/{feedbackId}/accept` | POST | **（共享）** 作者：将 `proposed_entries` 应用到工作副本；状态设为 `accepted`。不自动发布。仅源卡组。                                                   |
-| `/api/decks/{id}/updates`                     | GET    | **（共享）** 导入者：对比钉住的 `source_version` 与源卡组最新发布版本。仅导入卡组。                                                                  |
-| `/api/decks/{id}/sync`                        | POST   | **（共享）** 导入者：接受较新快照（可选 `target_version`）。仅导入卡组。**200**。                                                                    |
-| `/api/decks/{id}/facts/{operation}`           | POST   | 添加词条：operation 为 append/prepend/shuffle/spread。请求体：facts（必填）、可选 template，以及每项词条可选 **`tags`** 或 **`tag_ids`**（同一条词条上互斥；`tags` 为名称、不存在则自动创建，`tag_ids` 为已有 ID）。列名在卡组上维护（`PATCH /api/decks/{id}` → `fields`），不在每条词条上。为已有词条添加一张卡请使用 POST `/api/decks/{id}/card`。导入卡组 → **403**。 |
+| `/api/decks/{id}/updates`                     | GET    | **（共享）** 导入者：对比钉住的 `source_version` 与源卡组最新发布（含 overlay / `aligned` / `card_template_changes`）。仅导入卡组。 |
+| `/api/decks/{id}/sync`                        | POST   | **（共享）** 导入者：推进钉住快照（可选 `target_version`，可选按词条 `decisions[]`）。仅导入卡组。**200**。 |
+| `/api/decks/{id}/contributions/facts/{factId}/edit` | POST | **（共享）** 导入者：将当前私有 overlay 提交为 `fact_edit`。**201**。见 [导入 overlay 与贡献](#导入-overlay-与贡献)。 |
+| `/api/decks/{id}/contributions/facts/{factId}/add` | POST | **（共享）** 导入者：将 `local_facts` 词条提交为 `fact_add`。**201**。 |
+| `/api/decks/{id}/contributions/facts/{factId}/tags` | POST | **（共享）** 导入者：提交词条标签增删为 `fact_tag_update`。**201**。 |
+| `/api/decks/{id}/contributions/facts/{factId}/templates` | POST | **（共享）** 导入者：提交卡片模板为 `template_add`。**201**。 |
+| `/api/decks/{id}/contributions/facts/{factId}/report` | POST | **（共享）** 导入者：仅留言的 `report`（不可 accept）。**201**。 |
+| `/api/decks/{id}/contributions/deck-tags`     | POST   | **（共享）** 导入者：提交卡组标签增删为 `deck_tag_update`。**201**。 |
+| `/api/decks/{id}/contributions/fields/rename` | POST   | **（共享）** 导入者：提交等长 `proposed_fields` 为 `field_rename`。**201**。 |
+| `/api/decks/{id}/contributions`               | GET    | **（共享）** 作者在**源**卡组上的贡献收件箱。查询：`status`、`type`、`reporter`、`fact_id`、`media_type`、`limit`、`offset`。 |
+| `/api/decks/{id}/contributions/{contributionId}` | PATCH | **（共享）** 作者：将状态设为 `open` / `resolved` / `dismissed`。 |
+| `/api/decks/{id}/contributions/{contributionId}/accept` | POST | **（共享）** 作者：接受进工作副本（之后仍需发布）。**200**。 |
+| `/api/decks/{id}/contributions/{contributionId}/media/{attachmentId}` | GET | **（共享）** 作者：下载不可变贡献附件字节。 |
+| `/api/decks/{id}/facts/{operation}`           | POST   | 添加词条：operation 为 append/prepend/shuffle/spread。请求体：facts（必填）、可选 template，以及每项词条可选 **`tags`** 或 **`tag_ids`**（同一条词条上互斥；`tags` 为名称、不存在则自动创建，`tag_ids` 为已有 ID）。列名在卡组上维护（`PATCH /api/decks/{id}` → `fields`），不在每条词条上。为已有词条添加一张卡请使用 POST `/api/decks/{id}/card`。**导入**卡组：写入私有 overlay + `local_facts`（不创建贡献）。 |
 | `/api/decks/{id}/facts`                       | GET    | 获取词条（分页）：默认 `limit` **50**、`offset` **0**；`limit` 最大 **200**。`meta` 含 `count`、`has_more`、`limit`、`offset`、`total`。 |
 | `/api/decks/{id}/facts/{factId}`              | GET    | 获取单个词条                                                                                                                                         |
-| `/api/decks/{id}/facts/{factId}`              | PATCH  | 仅更新词条 `entries`（列名在卡组上改）。导入卡组 → **403**。                                                                                         |
-| `/api/decks/{id}/facts/{factId}`              | DELETE | 删除词条。导入卡组 → **403**。                                                                                                                       |
+| `/api/decks/{id}/facts/{factId}`              | PATCH  | 仅更新词条 `entries`（列名在卡组上改）。**导入**卡组：仅写私有 overlay（不创建贡献）。                                                                                         |
+| `/api/decks/{id}/facts/{factId}`              | DELETE | 删除词条。**导入**卡组：软隐藏快照词条或删除仅本地词条（不创建贡献）。                                                                                                                       |
 | `/api/decks/{id}/card`                        | GET    | 获取最紧急卡片。可选查询：`tag_id`，仅在当前卡组中从带该标签的词条对应卡片里选取下一张。                                                           |
 | `/api/decks/{id}/card`                        | POST   | 为已有词条添加一张卡（如反向卡）。请求体：fact_id、template，可选 operation。                                                                        |
 | `/api/decks/{id}/card`                        | PATCH  | 更新卡片间隔或可见性（按 card_id）                                                                                                                   |
@@ -294,7 +305,7 @@
 4. 删除词条 → 删除该词条及卡组中所有引用它的卡片。
 5. 删除卡片 → 仅删该卡；词条及同词条的其他卡片保留。
 
-**导入卡组（[卡组共享](#卡组共享概述)）：** 词条**正文**只读（钉住快照）；卡组元数据大多来自快照——导入者仅可对导入卡组 **`PATCH` `rate`**。导入者仍拥有**独立的卡片集合**，卡片 `PATCH` / 隐藏 / 删除行为与自有卡组相同。导入卡组上的标签以导入者为键——见 [§4 标签](#4-标签)。
+**导入卡组（[卡组共享](#卡组共享概述)）：** 词条从钉住快照解析，可有私有 **overlay**；卡组元数据大多来自快照——导入者仅可对导入卡组 **`PATCH` `rate`**（名称/列结构跟随快照）。导入者仍拥有**独立的卡片集合**，卡片 `PATCH` / 隐藏 / 删除行为与自有卡组相同。导入卡组上的标签以导入者为键——见 [4. 标签](#4-标签)。
 
 ---
 
@@ -564,7 +575,7 @@
 | --------- | ---------------- |
 | **源卡组**，`published_version == 0` | 允许（**200**）。 |
 | **源卡组**，`published_version > 0` | **409** — `published decks cannot be deleted`。 |
-| **导入卡组** | 允许（**200**）。撤销本导入创建的 `user:{你}:readable_media_versions` 授权。 |
+| **导入卡组** | 允许（**200**）。 |
 
 **响应:**
 
@@ -593,7 +604,7 @@
 
 ## 卡组共享（概述）
 
-用户间卡组共享让**作者**发布卡组版本化快照，其他用户可**导入**个人学习副本。每次导入是导入者拥有的**新卡组**，拥有独立卡片与调度；**词条与内嵌媒体**为只读，通过钉住的快照版本解析。
+用户间卡组共享让**作者**发布卡组版本化快照，其他用户可**导入**个人学习副本。每次导入是导入者拥有的**新卡组**，拥有独立卡片与调度；词条经钉住快照解析，并可有私有 **overlay**。显式**贡献**将提议发给作者——见 [导入 overlay 与贡献](#导入-overlay-与贡献) 与 [import-local-overlays-contributions.md](import-local-overlays-contributions.md)。
 
 完整设计见 [deck-sharing-feature.md](deck-sharing-feature.md)。
 
@@ -824,6 +835,7 @@
 - `visibility` 为 **`public`**（有效可见性）。
 - 源卡组本身不是导入行（`cannot import an imported deck`）。
 - 导入者不是源卡组所有者（`cannot import your own deck`）。
+- 导入者尚未拥有该源卡组的导入副本（`deck already imported`）。
 
 **错误：**
 
@@ -831,6 +843,7 @@
 | ------ | ------------- |
 | **404** | `source deck not found` |
 | **403** | `source deck is not importable`、`source deck has not been published`、`cannot import an imported deck`、`cannot import your own deck` |
+| **409** | `deck already imported` |
 | **400** | 其他校验失败 |
 
 ---
@@ -846,9 +859,9 @@
 
 | 步骤 | 操作 |
 | ---- | ------ |
-| 1 | `GET …/updates` — 展示 `added_facts`、`removed_facts`、`edited_facts`、`media_changes`。 |
+| 1 | `GET …/updates` — 展示 `added_facts`、`removed_facts`、`edited_facts`、`media_changes`、`card_template_changes`（以及 overlay 的 `aligned` / `default_action`）。 |
 | 2 | 若 `source_version == latest_version`，则停止（已是最新；差异数组为空）。 |
-| 3 | 若导入者确认接受，则 `POST …/sync`，**请求体为空**或 `{ "target_version": 0 }`。 |
+| 3 | 若导入者确认接受，则 `POST …/sync`，**请求体为空**、`{ "target_version": 0 }`，和/或按词条 `decisions[]`（`accept` \| `keep`）。 |
 
 **无需将 GET 响应中的 `latest_version` 传入 sync。** 当 `target_version` 省略或为 `0` 时，服务端会将导入卡组推进到源卡组当前 `published_version`（与 updates 响应中的 `latest_version` 相同）。
 
@@ -864,20 +877,63 @@
 
 **请求：** 无请求体。
 
-**成功（200）：** 从导入卡组钉住的 `source_version` 到源卡组最新 `published_version` 的差异。
+**成功（200）：** 从导入卡组钉住的 `source_version` 到源卡组最新 `published_version` 的差异。包含新增/删除行的完整词条正文、overlay 元数据（`has_local_overlay`、`local`、`aligned` / `default_action`）以及 `card_template_changes`。
 
 ```json
 {
   "data": {
     "source_version": 3,
-    "latest_version": 5,
-    "added_facts": [{ "fact_id": "abcd1234" }],
-    "removed_facts": [{ "fact_id": "efgh5678" }],
+    "latest_version": 4,
+    "added_facts": [
+      {
+        "fact_id": "local001",
+        "fact": {
+          "id": "local001",
+          "entries": [
+            { "text": "Orange" },
+            { "text": "オレンジ" }
+          ]
+        },
+        "has_local_overlay": true,
+        "local": true,
+        "aligned": true
+      }
+    ],
+    "removed_facts": [
+      {
+        "fact_id": "fact0002",
+        "fact": {
+          "id": "fact0002",
+          "entries": [
+            { "text": "Banana" },
+            { "text": "バナナ" }
+          ]
+        },
+        "has_local_overlay": true,
+        "local": true,
+        "default_action": "keep"
+      }
+    ],
     "edited_facts": [
       {
-        "fact_id": "ijkl9012",
-        "before": { "id": "ijkl9012", "entries": [{ "text": "old" }, { "text": "old2" }] },
-        "after": { "id": "ijkl9012", "entries": [{ "text": "new" }, { "text": "old2" }] }
+        "fact_id": "fact0001",
+        "before": {
+          "id": "fact0001",
+          "entries": [
+            { "text": "Apple", "audio": "sourceaud1" },
+            { "text": "リンゴ" }
+          ]
+        },
+        "after": {
+          "id": "fact0001",
+          "entries": [
+            { "text": "Apple", "audio": "authaud001" },
+            { "text": "りんご" }
+          ]
+        },
+        "has_local_overlay": true,
+        "local": true,
+        "aligned": true
       }
     ],
     "media_changes": [
@@ -889,6 +945,13 @@
         "after_bytes": 23456
       }
     ],
+    "card_template_changes": [
+      {
+        "fact_id": "fact0001",
+        "added_templates": [[[1], [0]]],
+        "removed_templates": []
+      }
+    ],
     "change_summary": ""
   },
   "meta": {
@@ -898,6 +961,12 @@
 ```
 
 已是最新时：`source_version == latest_version`，差异数组为空。
+
+| 字段 | 含义 |
+| ----- | ------- |
+| `aligned` | overlay（或本地词条）已与发布目标一致 — 默认同步动作为 **accept**（清除 overlay / 从 `local_facts` 毕业）。 |
+| `default_action` | 带本地 overlay 的删除：通常为 `"keep"`，除非导入者选择 `accept`，否则保留私有副本。 |
+| `card_template_changes` | 钉住版本与最新版之间源卡组新增/移除的模板；同步**不会**因模板移除而删除导入者卡片。 |
 
 `edited_facts` 仅列出**版本化内容**在快照间不同的词条（非卡组内全部词条）。
 
@@ -921,21 +990,26 @@
 
 ```json
 {
-  "target_version": 5
+  "target_version": 4,
+  "decisions": [
+    { "fact_id": "fact0001", "action": "accept" },
+    { "fact_id": "fact0002", "action": "keep" }
+  ]
 }
 ```
 
 | 字段 | 行为 |
 | ----- | -------- |
-| 省略或为 `0` | 推进到源卡组当前 `published_version`。**预览 → sync 流程的默认方式** — 无需从 `GET …/updates` 传入 `latest_version`。 |
+| 省略或 `target_version: 0` | 推进到源卡组当前 `published_version`。**预览 → sync 流程的默认方式** — 无需从 `GET …/updates` 传入 `latest_version`。 |
 | `target_version` | 须满足 `source_version < target_version <= source.published_version`。仅用于落到某一中间发布版本，而非最新版。 |
+| `decisions[]` | 可选按词条 `action`：`"accept"` 或 `"keep"`。未列出的词条使用 updates 差异中的默认值（`aligned` → accept；带 overlay 的删除 → keep）。 |
 
 **成功（200）：**
 
 ```json
 {
   "data": {
-    "source_version": 5
+    "source_version": 4
   },
   "meta": {
     "msg": "synced"
@@ -943,7 +1017,7 @@
 }
 ```
 
-**服务端行为：** 提升钉住版本；按目标清单重建导入词条集；删除已移除词条的导入者卡片；为新词条添加卡片；更新 `user:{导入者}:readable_media_versions` 授权。同时将目标快照清单中的 **`name`**、**`fields`**、**`rate`** 写入导入卡组行（会覆盖导入者此前通过 PATCH 设置的 `rate`）。
+**服务端行为：** 提升钉住版本；按目标清单重建导入词条集；按 decisions 保留私有 overlay / `local_facts` / `hidden_facts`；仅当导入者对删除执行 **accept** 时才移除对应导入者卡片；为新接受的词条添加卡片。同时将目标快照清单中的 **`name`**、**`fields`**、**`rate`** 写入导入卡组行（会覆盖导入者此前通过 PATCH 设置的 `rate`）。模板移除不会删除导入者拥有的卡片。
 
 **错误：**
 
@@ -972,17 +1046,14 @@
 
 | 方法 | 路径 | 导入卡组 |
 | ------ | ---- | ------------- |
-| GET | `/api/decks/{id}/facts`、`…/facts/{factId}`、下一张卡 | 读取钉住版本的快照 `entries`。 |
-| POST / PATCH / DELETE | 词条相关路由 | **403** `cannot modify facts on an imported deck` |
+| GET | `/api/decks/{id}/facts`、`…/facts/{factId}`、下一张卡 | 钉住快照 `entries`，若有私有 overlay 则优先 overlay。 |
+| POST / PATCH / DELETE | 词条相关路由 | 私有 overlay / `local_facts` / 隐藏（不通知作者）。 |
 
-#### 反馈（导入者 → 作者）
+完整请求/响应示例见 [私有 overlay 词条变更](#私有-overlay-词条变更)。
 
-| 方法 | 路径 | 角色 |
-| ------ | ---- | --- |
-| POST | `/api/decks/{importDeckId}/feedback` | 导入卡组所有者。请求体：`fact_id`（必填），可选 `category`（`translation` \| `audio` \| `typo` \| `other`，默认 `other`），`message`（未提供 `proposed_entries` 时必填；1–2000 字符），可选 `entry_index`，可选 `proposed_entries`（与词条 PATCH `entries` 同形；须与快照不同）。**201** 返回 `feedback_id`、`source_deck_id`、`fact_id`、`status`。每源卡组每 UTC 日 20 条后 **429**。 |
-| GET | `/api/decks/{sourceDeckId}/feedback` | 仅源卡组所有者。可选查询：`status`、`fact_id`、`limit`、`offset`。 |
-| PATCH | `/api/decks/{sourceDeckId}/feedback/{feedbackId}` | 源卡组所有者。请求体：`{ "status": "resolved" \| "dismissed" \| "open" }`。 |
-| POST | `/api/decks/{sourceDeckId}/feedback/{feedbackId}/accept` | 源卡组所有者。反馈行须含 `proposed_entries`。更新作者**工作副本**；作者仍须 **POST /publish**，导入者 **POST /sync**。 |
+#### 贡献（导入者 → 作者）
+
+资源级贡献路由已取代已删除的 `/feedback` API。保存 overlay **不会**创建贡献 — 导入者必须调用显式提交路由。完整 API 与示例：[导入 overlay 与贡献](#导入-overlay-与贡献)。设计文档：[import-local-overlays-contributions.md](import-local-overlays-contributions.md)。
 
 #### 导入卡组上的卡片
 
@@ -990,14 +1061,702 @@
 
 #### 导入者的媒体
 
-- 当 `user:{username}:readable_media_versions` 中有 `(media_id, version)` 授权（成员格式 `mediaId@version`）时，可通过 `GET /api/media/{id}` 下载作者媒体。
+- 导入者可通过 `GET /api/media/{id}?v=<version>` 下载作者已发布的媒体。
 - 返回**版本化**二进制，非作者工作副本。
-- 同一 `media_id` 存在多条授权时，使用查询参数 **`?v=<version>`**（歧义时必填）。
+- 非所有者必须提供 `v`，且 `v` 必须为正整数。
+- 导入者可用 `POST /api/media` 且 `deck_id={importId}` 上传**自己的**媒体，用于私有 overlay / 贡献。
 - 导入者不能上传或删除他人工作副本媒体。
 
 #### 导入卡组上的标签
 
-标签关联以**导入者**为键（与作者独立）。若某标签操作隐含修改只读词条内容，可能仍受限；详见 [§4 标签](#4-标签)。
+标签关联以**导入者**为键（与作者独立）。详见 [4. 标签](#4-标签)。
+
+---
+
+### 导入 overlay 与贡献
+
+私有 **overlay** 允许导入者在导入卡组上编辑词条而不改动作者快照。**贡献**是另一步、显式的「发给作者」操作，走资源级路由。在**导入**卡组 id 上提交；在**源**卡组 id 上列出 / accept / 改状态 / 预览媒体。
+
+以下示例使用源卡组 `srcdeck12345`、导入卡组 `impdeck12345`、快照词条 `fact0001`。各路由需导入者或作者的 `Authorization: Bearer <token>`（视角色而定）。
+
+**规则：**
+
+- overlay 写入（POST/PATCH/DELETE 词条）从不创建或更新贡献。
+- 提交请求体不含 `type` — 服务端由路由推导内部 `type`。
+- 接受贡献仅更新作者**工作副本**；作者仍须 [发布](#发布卡组) 后，导入者才能通过 updates/sync 看到变更。
+- 每日配额：每个源卡组每个 UTC 日最多 **20 条新**贡献（刷新已有 open 去重目标不占配额）→ **429** `daily contribution limit exceeded`。
+
+| 内部 `type` | 提交路由（导入卡组 id） |
+| --------------- | ------------------------ |
+| `fact_edit` | `POST …/contributions/facts/{factId}/edit` |
+| `fact_add` | `POST …/contributions/facts/{factId}/add` |
+| `fact_tag_update` | `POST …/contributions/facts/{factId}/tags` |
+| `deck_tag_update` | `POST …/contributions/deck-tags` |
+| `template_add` | `POST …/contributions/facts/{factId}/templates` |
+| `field_rename` | `POST …/contributions/fields/rename` |
+| `report` | `POST …/contributions/facts/{factId}/report`（仅收件箱；不可 accept） |
+
+#### 私有 overlay 词条变更
+
+与 [3. 词条](#3-词条) 相同的词条接口；在导入卡组上仅写入私有状态。
+
+##### 添加私有词条
+
+**接口：** `POST /api/decks/{importId}/facts/{operation}`
+
+**调用方：** 导入卡组所有者。
+
+**请求：**
+
+```json
+{
+  "facts": [
+    {
+      "entries": [
+        { "text": "Orange" },
+        { "text": "オレンジ" }
+      ],
+      "tags": ["food"]
+    }
+  ],
+  "template": [
+    [[0], [1]],
+    [[1], [0]]
+  ]
+}
+```
+
+**成功（200）：**
+
+```json
+{
+  "data": {
+    "fact_length": 121
+  },
+  "meta": {
+    "msg": "Added 1 facts successfully"
+  }
+}
+```
+
+词条写入导入卡组的私有 overlay + `local_facts`。之后列出词条以获取生成的 ID。
+
+##### 更新私有 overlay
+
+**接口：** `PATCH /api/decks/{importId}/facts/{factId}`
+
+**请求：**
+
+```json
+{
+  "entries": [
+    { "text": "Apple", "audio": "impaud0001" },
+    { "text": "りんご" }
+  ]
+}
+```
+
+**成功（200）：**
+
+```json
+{
+  "data": {
+    "fact_id": "fact0001"
+  },
+  "meta": {
+    "msg": "Fact updated successfully"
+  }
+}
+```
+
+##### 删除或隐藏私有词条
+
+**接口：** `DELETE /api/decks/{importId}/facts/{factId}`
+
+**成功（200）：**
+
+```json
+{
+  "data": {
+    "fact_id": "fact0001"
+  },
+  "meta": {
+    "msg": "Fact deleted successfully"
+  }
+}
+```
+
+快照词条为私有软隐藏；仅本地词条从导入卡组移除。不通知作者，也不改动已提交的贡献。
+
+##### 列出 / 获取解析后的词条
+
+**接口：** `GET /api/decks/{importId}/facts?limit=50&offset=0`
+
+**成功（200）：** overlay → 快照解析；包含 `local_facts`；省略 `hidden_facts`。
+
+```json
+{
+  "data": {
+    "facts": [
+      {
+        "id": "fact0001",
+        "entries": [
+          { "text": "Apple", "audio": "impaud0001" },
+          { "text": "りんご" }
+        ],
+        "tags": []
+      },
+      {
+        "id": "local001",
+        "entries": [
+          { "text": "Orange" },
+          { "text": "オレンジ" }
+        ],
+        "tags": [
+          { "id": "tag00001", "name": "food", "description": "" }
+        ]
+      }
+    ]
+  },
+  "meta": {
+    "msg": "Facts retrieved successfully",
+    "count": 2,
+    "has_more": false,
+    "limit": 50,
+    "offset": 0,
+    "total": 2
+  }
+}
+```
+
+**接口：** `GET /api/decks/{importId}/facts/{factId}`
+
+```json
+{
+  "data": {
+    "fact": {
+      "id": "fact0001",
+      "entries": [
+        { "text": "Apple", "audio": "impaud0001" },
+        { "text": "りんご" }
+      ],
+      "tags": []
+    }
+  },
+  "meta": {
+    "msg": "Fact retrieved successfully"
+  }
+}
+```
+
+含 overlay 元数据的 updates/sync：[获取导入更新（差异）](#获取导入更新差异) 与 [同步导入卡组](#同步导入卡组)。
+
+#### 提交贡献（导入者）
+
+所有提交路由使用**导入**卡组 id，返回 **201**，信封形状相同（`contribution_id`、`source_deck_id`、`type`、`status`，可选 `fact_id`）。
+
+##### 词条编辑（当前 overlay）
+
+**接口：** `POST /api/decks/{importId}/contributions/facts/{factId}/edit`
+
+须已有且与钉住快照不同的私有 overlay。可选请求体：`entry_index`、`message`。服务端将当前 overlay 条目冻结为 `proposed_entries`（客户端无需重传条目）。
+
+**请求：**
+
+```json
+{
+  "entry_index": 0,
+  "message": "Replaced the incorrect pronunciation"
+}
+```
+
+**成功（201）：**
+
+```json
+{
+  "data": {
+    "contribution_id": "cont0001",
+    "source_deck_id": "srcdeck12345",
+    "fact_id": "fact0001",
+    "type": "fact_edit",
+    "status": "open"
+  },
+  "meta": {
+    "msg": "contribution submitted"
+  }
+}
+```
+
+先通过 `POST /api/media` 且 `deck_id={importId}` 上传私有音视频/图片，再把媒体 id 写入 overlay，然后提交。
+
+##### 词条新增（本地词条）
+
+**接口：** `POST /api/decks/{importId}/contributions/facts/{factId}/add`
+
+`{factId}` 必须在 `local_facts` 中。可选 `message`。
+
+**请求：**
+
+```json
+{
+  "message": "This common word is missing"
+}
+```
+
+**成功（201）：**
+
+```json
+{
+  "data": {
+    "contribution_id": "cont0006",
+    "source_deck_id": "srcdeck12345",
+    "fact_id": "newfact001",
+    "type": "fact_add",
+    "status": "open"
+  },
+  "meta": {
+    "msg": "contribution submitted"
+  }
+}
+```
+
+接受时作者收到**相同**的 `fact_id`（无重映射）。
+
+##### 卡组标签
+
+**接口：** `POST /api/decks/{importId}/contributions/deck-tags`
+
+**请求：**
+
+```json
+{
+  "add_tags": ["beginner", "travel"],
+  "remove_tags": ["advanced"],
+  "message": "These names better describe the deck"
+}
+```
+
+**成功（201）：**
+
+```json
+{
+  "data": {
+    "contribution_id": "cont0002",
+    "source_deck_id": "srcdeck12345",
+    "type": "deck_tag_update",
+    "status": "open"
+  },
+  "meta": {
+    "msg": "contribution submitted"
+  }
+}
+```
+
+##### 词条标签
+
+**接口：** `POST /api/decks/{importId}/contributions/facts/{factId}/tags`
+
+**请求：**
+
+```json
+{
+  "add_tags": ["noun", "food"],
+  "remove_tags": ["verb"],
+  "message": "Apple is a noun, not a verb"
+}
+```
+
+**成功（201）：**
+
+```json
+{
+  "data": {
+    "contribution_id": "cont0003",
+    "source_deck_id": "srcdeck12345",
+    "fact_id": "fact0001",
+    "type": "fact_tag_update",
+    "status": "open"
+  },
+  "meta": {
+    "msg": "contribution submitted"
+  }
+}
+```
+
+##### 卡片模板新增
+
+**接口：** `POST /api/decks/{importId}/contributions/facts/{factId}/templates`
+
+**请求：**
+
+```json
+{
+  "template": [[1], [0]],
+  "message": "A reverse card would be useful"
+}
+```
+
+**成功（201）：**
+
+```json
+{
+  "data": {
+    "contribution_id": "cont0004",
+    "source_deck_id": "srcdeck12345",
+    "fact_id": "fact0001",
+    "type": "template_add",
+    "status": "open"
+  },
+  "meta": {
+    "msg": "contribution submitted"
+  }
+}
+```
+
+##### 字段重命名
+
+**接口：** `POST /api/decks/{importId}/contributions/fields/rename`
+
+`proposed_fields` 须与钉住卡组 `fields` 等长且不同。
+
+**请求：**
+
+```json
+{
+  "proposed_fields": ["Word", "Translation"],
+  "message": "Use clearer field labels"
+}
+```
+
+**成功（201）：**
+
+```json
+{
+  "data": {
+    "contribution_id": "cont0005",
+    "source_deck_id": "srcdeck12345",
+    "type": "field_rename",
+    "status": "open"
+  },
+  "meta": {
+    "msg": "contribution submitted"
+  }
+}
+```
+
+##### 仅留言举报
+
+**接口：** `POST /api/decks/{importId}/contributions/facts/{factId}/report`
+
+**请求：**
+
+```json
+{
+  "message": "The explanation is misleading, but I do not have a replacement yet"
+}
+```
+
+**成功（201）：**
+
+```json
+{
+  "data": {
+    "contribution_id": "cont0007",
+    "source_deck_id": "srcdeck12345",
+    "fact_id": "fact0001",
+    "type": "report",
+    "status": "open"
+  },
+  "meta": {
+    "msg": "contribution submitted"
+  }
+}
+```
+
+举报会出现在作者收件箱，但**不可 accept**（`report cannot be accepted` → 用 PATCH resolve/dismiss）。
+
+**典型提交错误：**
+
+| 状态码 | 典型 `msg` |
+| ------ | ------------- |
+| **400** | `overlay required: fact has no private overlay`、`overlay must differ from snapshot`、`fact_id must be in local_facts`、`add_tags or remove_tags is required`、`proposed_fields length must match pinned fields`、`message is required` 等 |
+| **403** | `Not authorized`、`contributions are only available on imported decks` |
+| **404** | `deck not found`、`fact not found`、`source deck not found` |
+| **429** | `daily contribution limit exceeded` |
+
+#### 作者贡献收件箱
+
+所有作者路由使用**源**卡组 id（`srcdeck12345`）。
+
+##### 列出贡献
+
+**接口：** `GET /api/decks/{sourceId}/contributions`
+
+**调用方：** 源卡组所有者。
+
+**查询参数**（均可选；AND 组合）：
+
+| 参数 | 说明 |
+| --------- | ----------- |
+| `status` | `open`、`resolved`、`dismissed`、`accepted` |
+| `type` | `fact_edit`、`fact_add`、`fact_tag_update`、`deck_tag_update`、`template_add`、`field_rename`、`report` |
+| `reporter` | 精确用户名 |
+| `fact_id` | 精确词条 id |
+| `media_type` | 派生过滤（如 `audio`） |
+| `limit` / `offset` | 分页（默认/上限与其他列表路由相同） |
+
+**示例：** `GET /api/decks/srcdeck12345/contributions?status=open&type=fact_edit&media_type=audio&reporter=bob&fact_id=fact0001&limit=50&offset=0`
+
+**成功（200）：**
+
+```json
+{
+  "data": {
+    "contributions": [
+      {
+        "id": "cont0001",
+        "source_deck_id": "srcdeck12345",
+        "import_deck_id": "impdeck12345",
+        "fact_id": "fact0001",
+        "reporter": "bob",
+        "source_version": 3,
+        "type": "fact_edit",
+        "message": "Replaced the incorrect pronunciation",
+        "entry_index": 0,
+        "reported_fact": {
+          "id": "fact0001",
+          "entries": [
+            { "text": "Apple", "audio": "sourceaud1" },
+            { "text": "リンゴ" }
+          ]
+        },
+        "proposed_entries": [
+          { "text": "Apple", "audio": "impaud0001" },
+          { "text": "りんご" }
+        ],
+        "media_changes": [
+          { "type": "audio", "action": "edit", "entry_index": 0 }
+        ],
+        "media_attachments": [
+          {
+            "attachment_id": "attach01",
+            "source_media_id": "impaud0001",
+            "references": [{ "entry_index": 0, "field": "audio" }],
+            "filename": "apple.mp3",
+            "mime": "audio/mpeg",
+            "size": 51200,
+            "checksum": "sha256:abc123",
+            "preview_path": "/api/decks/srcdeck12345/contributions/cont0001/media/attach01"
+          }
+        ],
+        "status": "open",
+        "created_at": "2026-07-17T20:00:00Z",
+        "updated_at": "2026-07-17T20:00:00Z",
+        "edit": {
+          "deck_id": "srcdeck12345",
+          "fact_id": "fact0001",
+          "get_fact_path": "/api/decks/srcdeck12345/facts/fact0001",
+          "patch_fact_path": "/api/decks/srcdeck12345/facts/fact0001"
+        }
+      }
+    ]
+  },
+  "meta": {
+    "msg": "ok",
+    "count": 1,
+    "total": 1,
+    "limit": 50,
+    "offset": 0,
+    "has_more": false
+  }
+}
+```
+
+列表项字段随 `type` 变化（例如标签贡献含 `add_tags` / `remove_tags` / `reported_tags`；字段重命名含 `proposed_fields` / `reported_fields`）。
+
+##### 预览贡献媒体
+
+**接口：** `GET /api/decks/{sourceId}/contributions/{contributionId}/media/{attachmentId}`
+
+**调用方：** 源卡组所有者。
+
+返回**二进制**媒体（非 JSON）：
+
+```http
+HTTP/1.1 200 OK
+Content-Type: audio/mpeg
+Content-Length: 51200
+ETag: "sha256:abc123"
+
+<audio bytes>
+```
+
+##### 接受贡献
+
+**接口：** `POST /api/decks/{sourceId}/contributions/{contributionId}/accept`
+
+**调用方：** 源卡组所有者。**请求体：** 无。
+
+将已存提议应用到作者工作副本，并将 `status` 设为 `accepted`。作者仍须发布后导入者才能看到变更。
+
+**成功（200）— fact_edit 示例：**
+
+```json
+{
+  "data": {
+    "id": "cont0001",
+    "source_deck_id": "srcdeck12345",
+    "fact_id": "fact0001",
+    "reporter": "bob",
+    "import_deck_id": "impdeck12345",
+    "source_version": 3,
+    "type": "fact_edit",
+    "message": "Replaced the incorrect pronunciation",
+    "entry_index": 0,
+    "status": "accepted",
+    "reported_fact": {
+      "id": "fact0001",
+      "entries": [
+        { "text": "Apple", "audio": "sourceaud1" },
+        { "text": "リンゴ" }
+      ]
+    },
+    "proposed_entries": [
+      { "text": "Apple", "audio": "impaud0001" },
+      { "text": "りんご" }
+    ],
+    "media_attachments": [
+      {
+        "attachment_id": "attach01",
+        "source_media_id": "impaud0001",
+        "references": [{ "entry_index": 0, "field": "audio" }],
+        "filename": "apple.mp3",
+        "mime": "audio/mpeg",
+        "size": 51200,
+        "checksum": "sha256:abc123",
+        "available": false
+      }
+    ],
+    "accepted_media_mapping": {
+      "impaud0001": {
+        "author_media_id": "authaud001",
+        "checksum": "sha256:abc123"
+      }
+    },
+    "working_copy_updated": true,
+    "created_at": "2026-07-17T20:00:00Z",
+    "updated_at": "2026-07-17T20:05:00Z",
+    "accepted_at": "2026-07-17T20:05:00Z"
+  },
+  "meta": {
+    "msg": "contribution accepted"
+  }
+}
+```
+
+**成功（200）— deck_tag_update 示例：**
+
+```json
+{
+  "data": {
+    "id": "cont0002",
+    "source_deck_id": "srcdeck12345",
+    "import_deck_id": "impdeck12345",
+    "reporter": "bob",
+    "source_version": 3,
+    "type": "deck_tag_update",
+    "message": "These names better describe the deck",
+    "reported_tags": ["advanced", "vocabulary"],
+    "add_tags": ["beginner", "travel"],
+    "remove_tags": ["advanced"],
+    "status": "accepted",
+    "working_copy_updated": true,
+    "created_at": "2026-07-17T20:00:00Z",
+    "updated_at": "2026-07-17T20:05:00Z",
+    "accepted_at": "2026-07-17T20:05:00Z"
+  },
+  "meta": {
+    "msg": "contribution accepted"
+  }
+}
+```
+
+##### 解决或驳回（不接受）
+
+**接口：** `PATCH /api/decks/{sourceId}/contributions/{contributionId}`
+
+**请求：**
+
+```json
+{
+  "status": "dismissed"
+}
+```
+
+允许的状态：`open`、`resolved`、`dismissed`。含媒体的行在终态清理后不能回到 `open`（`cannot reopen media-bearing contribution after cleanup`）。
+
+**成功（200）：**
+
+```json
+{
+  "data": {
+    "id": "cont0001",
+    "source_deck_id": "srcdeck12345",
+    "import_deck_id": "impdeck12345",
+    "fact_id": "fact0001",
+    "reporter": "bob",
+    "source_version": 3,
+    "type": "fact_edit",
+    "message": "Replaced the incorrect pronunciation",
+    "entry_index": 0,
+    "reported_fact": {
+      "id": "fact0001",
+      "entries": [
+        { "text": "Apple", "audio": "sourceaud1" },
+        { "text": "リンゴ" }
+      ]
+    },
+    "proposed_entries": [
+      { "text": "Apple", "audio": "impaud0001" },
+      { "text": "りんご" }
+    ],
+    "media_attachments": [
+      {
+        "attachment_id": "attach01",
+        "source_media_id": "impaud0001",
+        "references": [{ "entry_index": 0, "field": "audio" }],
+        "filename": "apple.mp3",
+        "mime": "audio/mpeg",
+        "size": 51200,
+        "checksum": "sha256:abc123",
+        "available": false
+      }
+    ],
+    "status": "dismissed",
+    "created_at": "2026-07-17T20:00:00Z",
+    "updated_at": "2026-07-17T20:05:00Z",
+    "resolved_at": "2026-07-17T20:05:00Z",
+    "edit": {
+      "deck_id": "srcdeck12345",
+      "fact_id": "fact0001",
+      "get_fact_path": "/api/decks/srcdeck12345/facts/fact0001",
+      "patch_fact_path": "/api/decks/srcdeck12345/facts/fact0001"
+    }
+  },
+  "meta": {
+    "msg": "contribution updated"
+  }
+}
+```
+
+**典型作者收件箱错误：**
+
+| 状态码 | 典型 `msg` |
+| ------ | ------------- |
+| **400** | `invalid type filter`、`invalid status filter`、`invalid status`、`report cannot be accepted` 等 |
+| **403** | `Not authorized`、`contribution inbox is only available on source decks` |
+| **404** | `Deck not found`、`contribution not found` |
+| **409** | `cannot reopen media-bearing contribution after cleanup`、`fact already exists` 等 |
 
 ---
 
@@ -1007,7 +1766,7 @@
 
 **接口:** `POST /api/decks/{id}/facts/{operation}`
 
-> **导入卡组：** **403** `cannot modify facts on an imported deck`。请通过 [同步导入卡组](#同步导入卡组) 接受作者新内容。
+> **导入卡组：** 词条变更写入**私有 overlay**。作者新内容请 [同步导入卡组](#同步导入卡组)；提交贡献见 [导入 overlay 与贡献](#导入-overlay-与贡献)。
 
 **参数:**
 
@@ -1223,7 +1982,7 @@ Authorization: Bearer <token>
 
 **接口：** `PATCH /api/decks/{id}/facts/{factId}`
 
-> **导入卡组：** **403** `cannot modify facts on an imported deck`。请通过 [同步导入卡组](#同步导入卡组) 接受作者新内容，或使用 `POST …/feedback` 向作者提议修改。
+> **导入卡组：** 词条变更写入**私有 overlay**（不改作者快照）。作者新内容请 [同步导入卡组](#同步导入卡组)；向作者提议请提交**贡献**——见 [导入 overlay 与贡献](#导入-overlay-与贡献)。
 
 **参数：** `id`（卡组 ID）、`factId`（词条 ID，来自 GET 词条或添加词条）。
 
@@ -1248,7 +2007,7 @@ Authorization: Bearer <token>
 
 **接口：** `DELETE /api/decks/{id}/facts/{factId}`
 
-> **导入卡组：** **403** `cannot modify facts on an imported deck`。
+> **导入卡组：** 词条变更写入**私有 overlay**（见 [导入 overlay 与贡献](#导入-overlay-与贡献)）。
 
 **参数：** `id`（卡组 ID）、`factId`（词条 ID）。
 
@@ -1864,11 +2623,6 @@ Accept: application/json
 >
 > 滑块默认值是 `def_interval`（不是最小值与最大值的中点）。
 >
-> 将各边界四舍五入为整秒。若舍入后范围塌缩导致
-> `max_interval <= min_interval`，则将 `max_interval` 扩展为
-> `min_interval × 4.0`。将 `def_interval` 夹取到
-> `[min_interval, max_interval]` 内。
->
 > **第 4 步 — 提交前验证：**
 >
 > 前端必须验证所选的 `interval` 满足
@@ -2070,7 +2824,7 @@ Accept: application/json
 
 **接口：** `GET /api/media/{id}/meta`
 
-仅返回元数据（id、owner、filename、mime、size、checksum、created_at），不含文件体。
+仅返回元数据（id、owner、filename、mime、size、checksum、created_at），不含文件体。不提供 `v` 时仅所有者可读取工作副本元数据；提供正整数 **`?v=`** 时，任何已认证用户均可读取对应已发布版本的元数据。
 
 ### 下载媒体
 
@@ -2078,7 +2832,7 @@ Accept: application/json
 
 按 ID 返回用户拥有的媒体文件（二进制）。需在请求头中携带 `Authorization: Bearer <token>`。响应头包含 `Content-Type`、`Content-Length` 和 `ETag`（与 `checksum` 一致）。请求头中携带 `If-None-Match: <ETag>` 可在文件未变更时获得 `304 Not Modified`。**获取下一张卡片** 接口会在每个正面/背面词条对象的 `audio`、`image`、`video` 字段中给出完整 URL（如 `https://api.retentio.app:8443/api/media/{id}`）；使用该 URL 并携带相同认证头即可加载文件。
 
-**卡组共享（导入者）：** 若已导入卡组，当你的账号在 `user:{username}:readable_media_versions` 中有来自该快照的 `mediaId@version` 授权时，可下载作者媒体。服务端返回**版本化**字节。同一 `media_id` 存在多个可能版本时，请追加 **`?v=<version>`**（部分词条响应中的媒体 URL 已自动带 `?v=`）。
+**已发布媒体：** 任何已认证用户均可通过正整数 **`?v=<version>`** 下载不可变的已发布字节。不提供 `v` 时，仅媒体所有者可下载工作副本。导入卡组的卡片响应会自动在媒体 URL 中包含钉住的 `?v=`。
 
 ### 删除媒体
 
@@ -2124,7 +2878,7 @@ Accept: application/json
 | **409** | 冲突 — 资源重复或状态不允许 | 如用户名已占用、已发布卡组不可删、模板重复 |
 | **413** | 请求体过大 — 媒体上传超限 | 压缩或拆分文件 |
 | **415** | 不支持的媒体类型 | 使用支持的图片/音频/视频/JSON 格式 |
-| **429** | 请求过多 — 反馈每日上限 | 下一 UTC 日再试 |
+| **429** | 请求过多 — 贡献每日上限 | 下一 UTC 日再试 |
 | **500** | 服务器内部错误 | 稍后重试；记录 `msg` 便于排查 |
 | **304** | 未修改 — 媒体下载（`If-None-Match`） | 使用本地缓存（无 JSON body） |
 | **206** | 部分内容 — 媒体 Range 下载 | 使用返回的字节范围（无 JSON body） |
@@ -2239,10 +2993,24 @@ Accept: application/json
 | | **400** | `maximum number of tags reached`、`maximum tags per deck reached`、`maximum fact tags per deck reached` |
 | | **403** | `source deck is not importable`、`source deck has not been published`、`cannot import an imported deck`、`cannot import your own deck` |
 | | **404** | `source deck not found` |
+| | **409** | `deck already imported` |
 | | **500** | 其他导入失败 |
 | `GET /api/decks/{id}/updates` | **400** | `updates are only available for imported decks` |
 | | **400** | `not an imported deck`、`source deck missing`、…（原始 `err.Error()`） |
 | `POST /api/decks/{id}/sync` | **400** | `not an imported deck`、`invalid target version`、…（原始 `err.Error()`） |
+| `POST /api/decks/{id}/contributions/…`（提交） | **400** | `overlay required: fact has no private overlay`、`overlay must differ from snapshot`、`fact_id must be in local_facts`、`add_tags or remove_tags is required`、`proposed_fields length must match pinned fields`、`message is required` 等 |
+| | **403** | `Not authorized`、`contributions are only available on imported decks` |
+| | **404** | `deck not found`、`fact not found`、`source deck not found` |
+| | **429** | `daily contribution limit exceeded` |
+| `GET /api/decks/{id}/contributions` | **400** | `invalid type filter`、`invalid status filter` |
+| | **403** | `Not authorized`、`contribution inbox is only available on source decks` |
+| | **404** | `Deck not found` |
+| `POST …/contributions/{id}/accept` | **400** | `report cannot be accepted`、`proposed_entries required to accept` 等 |
+| | **404** | `contribution not found` |
+| | **409** | `fact already exists` 等 |
+| `PATCH …/contributions/{id}` | **400** | `invalid status` |
+| | **404** | `contribution not found` |
+| | **409** | `cannot reopen media-bearing contribution after cleanup` |
 
 ---
 
@@ -2250,7 +3018,6 @@ Accept: application/json
 
 | 接口 | 状态 | `msg` |
 | ---- | ---- | ----- |
-| `POST /api/decks/{id}/facts/{operation}` | **403** | `cannot modify facts on an imported deck` |
 | | **400** | `Facts array is required` |
 | | **400** | `Invalid operation. Supported: append, prepend, shuffle, spread.` |
 | | **400** | `Deck rate must be at least 1 to add facts` |
@@ -2265,11 +3032,9 @@ Accept: application/json
 | | **400** | 标签名校验错误（规则同 `POST /api/tags`） |
 | | **404** | `tag not found` |
 | | **500** | `Error adding facts and cards`、`Error merging facts into deck` |
-| `PATCH /api/decks/{id}/facts/{factId}` | **403** | `cannot modify facts on an imported deck` |
 | | **400** | `at least one entry must have text, audio, image, video, or json` |
 | | **404** | `Fact not found` |
 | | **500** | `Error serializing fact data`、`Error rebuilding card template`、`Error retrieving cards`、`Error serializing card data`、`Error serializing deck data`、`Error updating fact` |
-| `DELETE /api/decks/{id}/facts/{factId}` | **403** | `cannot modify facts on an imported deck` |
 | | **404** | `Fact not found` |
 | | **500** | `Error removing fact tags`、`Error removing fact from deck`、`Error retrieving cards`、`Error serializing deck data`、`Error deleting fact` |
 | `GET /api/decks/{id}/facts`、`GET …/facts/{factId}` | **500** | `Error retrieving facts`、`Error retrieving fact tags`、`Error checking fact existence` |
@@ -2363,46 +3128,12 @@ Accept: application/json
 
 ---
 
-### 反馈（卡组共享）
-
-| 接口 | 状态 | `msg` |
-| ---- | ---- | ----- |
-| `POST /api/decks/{importId}/feedback` | **400** | `fact_id is required` |
-| | **400** | `feedback is only available on imported decks` |
-| | **400** | `source deck is not published` |
-| | **400** | `invalid category` |
-| | **400** | `message is required when proposed_entries is omitted` |
-| | **400** | `message must be between 1 and 2000 characters` |
-| | **400** | `entry_index out of range` |
-| | **400** | `proposed_entries must have content` |
-| | **400** | `proposed_entries length must match snapshot fact` |
-| | **400** | `proposed_entries must differ from snapshot` |
-| | **400** | `fact not in pinned snapshot` |
-| | **403** | `Not authorized` |
-| | **404** | `deck not found`、`source deck not found`、`fact not found` |
-| | **429** | `daily feedback limit exceeded`（每来源卡组每 UTC 日 20 条） |
-| | **500** | `Error submitting feedback` |
-| `GET /api/decks/{sourceId}/feedback` | **400** | `feedback inbox is only available on source decks` |
-| | **403** | `Not authorized` |
-| | **404** | `Deck not found` |
-| | **500** | `Error listing feedback` |
-| `PATCH …/feedback/{feedbackId}` | **400** | `invalid status` |
-| | **403** | `Not authorized` |
-| | **404** | `feedback not found`、`Deck not found` |
-| | **500** | `Error updating feedback` |
-| `POST …/feedback/{feedbackId}/accept` | **400** | `proposed_entries required to accept` |
-| | **404** | `feedback not found`、`fact not found on source deck`、`Deck not found` |
-| | **403** | `Not authorized` |
-| | **500** | `Error accepting feedback` |
-
----
-
 ### 客户端处理说明
 
 1. **解析错误：** 将 `response.body` 解析为 JSON，用 `msg` 作为用户可见文案；若 body 非 JSON，回退到 HTTP 状态文本。
 2. **401：** 清除本地 JWT 并返回登录。前端 `response_normalize_interceptor` 对 **401** 有特殊处理。
 3. **重试：** 仅 **500** 与 transient 网络错误适合重试；**400**/**403**/**404**/**409** 需用户或数据侧修正。
-4. **字符串匹配：** 优先匹配稳定子串（如 `cannot modify facts on an imported deck`），勿依赖每条 **500** 的完整文案（可能含内部细节）。
+4. **字符串匹配：** 优先匹配稳定子串（如 `contributions are only available on imported decks`），勿依赖每条 **500** 的完整文案（可能含内部细节）。
 5. **动态 `msg`：** 部分错误嵌入 ID 或索引（如 `fact 2: …`、`try delete fact id: abc123`）。按前缀模式识别错误类型即可。
 
 ---
@@ -2437,8 +3168,13 @@ Accept: application/json
 | `/api/decks/catalog/{id}`                     | GET         | `{ "data": { "id", "name", "description", "owner", "fields", "published_version", "fact_count", "deck_tag_names", "published_at" }, "meta": { "msg" } }` — 单条目录记录；不可导入时 **404** |
 | `/api/decks/import`                           | POST        | **201** — `{ "data": { "id", "source_deck_id", "source_version", "imported_at" }, "meta": { "msg" } }`                                               |
 | `/api/decks/{id}/publish`                     | POST        | `{ "data": { "published_version", "visibility" }, "meta": { "msg": "published" } }`                                                                 |
-| `/api/decks/{id}/updates`                     | GET         | `{ "data": { "source_version", "latest_version", "added_facts", "removed_facts", "edited_facts", "media_changes" }, "meta": { "msg" } }`           |
-| `/api/decks/{id}/sync`                        | POST        | `{ "data": { "source_version" }, "meta": { "msg": "synced" } }`                                                                                    |
+| `/api/decks/{id}/updates`                     | GET         | `{ "data": { "source_version", "latest_version", "added_facts", "removed_facts", "edited_facts", "media_changes", "card_template_changes", … }, "meta": { "msg" } }` — 见 [获取导入更新（差异）](#获取导入更新差异) |
+| `/api/decks/{id}/sync`                        | POST        | 请求体可选 `target_version`、`decisions[]`；`{ "data": { "source_version" }, "meta": { "msg": "synced" } }` |
+| `/api/decks/{id}/contributions/facts/…` 等    | POST        | **201** — `{ "data": { "contribution_id", "source_deck_id", "type", "status", … }, "meta": { "msg": "contribution submitted" } }` — 见 [导入 overlay 与贡献](#导入-overlay-与贡献) |
+| `/api/decks/{id}/contributions`               | GET         | 作者收件箱：`{ "data": { "contributions": [ … ] }, "meta": { "msg", "count", "total", "limit", "offset", "has_more" } }` |
+| `/api/decks/{id}/contributions/{cid}/accept`  | POST        | `{ "data": { contribution + "working_copy_updated", … }, "meta": { "msg": "contribution accepted" } }` |
+| `/api/decks/{id}/contributions/{cid}`         | PATCH       | `{ "data": { contribution }, "meta": { "msg": "contribution updated" } }` |
+| `/api/decks/{id}/contributions/{cid}/media/{aid}` | GET     | 二进制媒体字节（非 JSON） |
 | `/api/tags`                                   | POST        | `{ "data": { "tag": { id, name, description } }, "meta": { "msg" } }` — **201**                                                                    |
 | `/api/tags`                                   | GET         | `{ "data": { "tags": [ { id, name, description, deck_count, fact_count, used_on } ] }, "meta": { "msg" } }` — 可选 `used_on=deck` 或 `used_on=fact&deck_id={id}` |
 | `/api/tags/{tagId}`                           | GET         | `{ "data": { "tag": { … } }, "meta": { "msg" } }`                                                                                                    |
@@ -2461,7 +3197,7 @@ Accept: application/json
 
 ## 后续步骤
 
-- 通过 **[卡组共享](#卡组共享概述)** 分享卡组（发布 → 导入 → 查看更新 → 同步）
+- 通过 **[卡组共享](#卡组共享概述)** 分享卡组（发布 → 导入 → overlay / 贡献 → 查看更新 → 同步）
 - 使用 **[标签](#4-标签)** 在卡组与词条维度整理内容
 - 在 [卡片](#5-卡片) 中重复 **获取下一张最紧急卡片** 与 **复习卡片** 步骤以持续复习
 - **离线同步** — 恢复联网后同步数据（规划中）
