@@ -135,7 +135,7 @@
 | `/api/decks/{id}/cards/{cardId}`              | DELETE | 删除单张卡片（词条及其他卡片不变）                                                                                                                   |
 | `/api/decks/{id}/reschedule`                  | POST   | **未挂载** — 当前服务端未注册该路由；**404**（通常无 JSON `{ "msg" }` body）。见 [假期模式（平移复习计划）](#假期模式平移复习计划)。 |
 | `/api/tags`                                   | POST   | 创建标签（`name`、可选 `description`）。成功时 **201**。                                                                                             |
-| `/api/tags`                                   | GET    | 列出当前用户全部标签。每条含 `deck_count`、`fact_count`、`used_on`。可选查询：`used_on=deck`（用户范围）或 `used_on=fact&deck_id={id}`（词条选择器，须带卡组）。 |
+| `/api/tags`                                   | GET    | 列出当前用户全部标签。每条含 `deck_count`、`fact_count`、`used_on`。可选查询：`used_on=deck`（卡组选择器，含未使用）、`used_on=deck&deck_id={id}`（仅该卡组已关联）、`used_on=fact&deck_id={id}`（该卡组词条选择器，含未使用）。不带 `deck_id` 的 `used_on=fact` → **400**。 |
 | `/api/tags/{tagId}`                           | GET    | 获取单个标签                                                                                                                                         |
 | `/api/tags/{tagId}`                           | PATCH  | 部分更新标签 `name` / `description`                                                                                                                  |
 | `/api/tags/{tagId}`                           | DELETE | 删除标签及其所有卡组/词条关联                                                                                                                        |
@@ -1444,7 +1444,7 @@
 }
 ```
 
-##### 仅留言贡献反馈
+##### 仅留言举报
 
 **接口：** `POST /api/decks/{importId}/contributions/facts/{factId}/report`
 
@@ -1473,7 +1473,7 @@
 }
 ```
 
-贡献反馈会出现在作者收件箱，但**不可 accept**（`report cannot be accepted` → 用 PATCH resolve/dismiss）。
+举报会出现在作者收件箱，但**不可 accept**（`report cannot be accepted` → 用 PATCH resolve/dismiss）。
 
 **典型提交错误：**
 
@@ -2123,30 +2123,18 @@ Authorization: Bearer <token>
 
 ### 按卡组或词条筛选标签（选择器）
 
-可选查询参数 **`used_on`**，用于卡组/词条表单的标签搜索，不改变标签实体模型。
+在 `GET /api/tags` 上使用可选 **`used_on`** / **`deck_id`** 收窄列表；标签仍是每用户一份共享库。省略 `used_on` 返回全部标签（标签管理）。
 
-| 请求 | 用途 |
-|------|------|
-| `GET /api/tags` | 标签管理页 — 全部标签 |
-| `GET /api/tags?used_on=deck` | 卡组选择器（用户范围：任意卡组 + 未使用） |
-| `GET /api/tags?used_on=deck&deck_id={id}` | 卡组选择器（限定单个卡组，可选） |
-| `GET /api/tags?used_on=fact&deck_id={id}` | 词条选择器（**必须带 deck_id**）— 该卡组内词条的标签 + 未使用 |
+| Endpoint | Role | Unused? |
+|----------|------|---------|
+| `?used_on=deck` | 卡组**选择器**（用户范围） | Yes |
+| `?used_on=deck&deck_id={id}` | **已挂在该卡组**的标签（清单） | No |
+| `?used_on=fact&deck_id={id}` | 词条**选择器**（该卡组） | Yes |
+| `?used_on=fact` | — | N/A (**400**) |
 
-`used_on=fact` 时 **`deck_id` 必填**；省略则返回 **400**。`used_on=deck` 不带 `deck_id` 仍为用户范围（向后兼容）。
-
-**筛选规则：**
-
-| `used_on` | 包含条件 |
-|-----------|----------|
-| *（省略）* | 全部 |
-| `deck` | `deck_count > 0`，或尚未关联（`deck_count` 与 `fact_count` 均为 0） |
-| `fact` | 标签在该卡组（`deck_id` 必填）的词条上，或尚未关联 |
-
-- 仅卡组使用的标签：出现在 `?used_on=deck`，不出现在 `?used_on=fact`。
+- 仅卡组使用的标签：出现在 `?used_on=deck`，不出现在 `?used_on=fact&deck_id=…`。
 - 仅词条使用的标签：出现在对应卡组的 `?used_on=fact&deck_id={id}`，不出现在 `?used_on=deck`。
-- 新建但未关联的标签：在两种筛选中都会出现，直到首次关联。
-
-无效值（如 `?used_on=invalid`）→ **400**：`{ "msg": "invalid used_on filter" }`
+- 无效 `used_on`（如 `invalid`）→ **400** `{ "msg": "invalid used_on filter" }`。
 
 **示例（卡组选择器）：**
 
@@ -2156,7 +2144,7 @@ Authorization: Bearer <token>
 Accept: application/json
 ```
 
-**列出某一卡组或词条上的标签**仍用专用接口：
+**单个卡组 / 词条上的精确关联：**
 
 | 目的 | 接口 |
 |------|------|
@@ -3176,7 +3164,7 @@ Accept: application/json
 | `/api/decks/{id}/contributions/{cid}`         | PATCH       | `{ "data": { contribution }, "meta": { "msg": "contribution updated" } }` |
 | `/api/decks/{id}/contributions/{cid}/media/{aid}` | GET     | 二进制媒体字节（非 JSON） |
 | `/api/tags`                                   | POST        | `{ "data": { "tag": { id, name, description } }, "meta": { "msg" } }` — **201**                                                                    |
-| `/api/tags`                                   | GET         | `{ "data": { "tags": [ { id, name, description, deck_count, fact_count, used_on } ] }, "meta": { "msg" } }` — 可选 `used_on=deck` 或 `used_on=fact&deck_id={id}` |
+| `/api/tags`                                   | GET         | `{ "data": { "tags": [ { id, name, description, deck_count, fact_count, used_on } ] }, "meta": { "msg" } }` — 可选 `used_on=deck`（含未使用）、`used_on=deck&deck_id`（仅该卡组）、`used_on=fact&deck_id`（词条选择器含未使用）；单独 `used_on=fact` → **400** |
 | `/api/tags/{tagId}`                           | GET         | `{ "data": { "tag": { … } }, "meta": { "msg" } }`                                                                                                    |
 | `/api/tags/{tagId}`                           | PATCH       | `{ "data": { "tag": { … } }, "meta": { "msg" } }`                                                                                                    |
 | `/api/tags/{tagId}`                           | DELETE      | `{ "data": { "decks_untagged" }, "meta": { "msg" } }`                                                                                                |

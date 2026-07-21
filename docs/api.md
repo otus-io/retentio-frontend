@@ -135,7 +135,7 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/api/decks/{id}/cards/{cardId}`              | DELETE | Delete a single card (fact and other cards unchanged)                                                                                                                                           |
 | `/api/decks/{id}/reschedule`                  | POST   | **Not wired** — route not registered on the current server; **404** (typically no JSON `{ "msg" }` body). See [Reschedule deck](#reschedule-deck). |
 | `/api/tags`                                   | POST   | Create a tag (`name`, optional `description`). **201** on success.                                                                                                                              |
-| `/api/tags`                                   | GET    | List all tags for the current user. Each tag includes `deck_count`, `fact_count`, `used_on`. Optional query: `used_on=deck` (user-wide) or `used_on=fact&deck_id={id}` (deck-scoped fact picker).             |
+| `/api/tags`                                   | GET    | List all tags for the current user. Each tag includes `deck_count`, `fact_count`, `used_on`. Optional query: `used_on=deck` (deck picker, + unused), `used_on=deck&deck_id={id}` (tags on that deck only), or `used_on=fact&deck_id={id}` (fact picker for that deck, + unused). `used_on=fact` without `deck_id` → **400**. |
 | `/api/tags/{tagId}`                           | GET    | Get one tag                                                                                                                                                                                     |
 | `/api/tags/{tagId}`                           | PATCH  | Update tag `name` and/or `description` (partial)                                                                                                                                                |
 | `/api/tags/{tagId}`                           | DELETE | Delete tag and all deck/fact associations                                                                                                                                                       |
@@ -2117,34 +2117,18 @@ Each list item includes **usage metadata** (additive; older clients can ignore t
 
 ### List tags for deck or fact pickers
 
-Use the optional **`used_on`** query parameter when building a tag search/autocomplete for **decks** or **facts**. Tags are still one shared library per user; this filter only narrows the list for UI.
+Use optional **`used_on`** / **`deck_id`** on `GET /api/tags` to narrow lists for UI. Tags remain one shared library per user. Omit `used_on` to list every tag (tag management).
 
-| Request | Purpose |
-|---------|---------|
-| `GET /api/tags` | Tag management — show all tags |
-| `GET /api/tags?used_on=deck` | Deck picker (user-wide: any deck + unused) |
-| `GET /api/tags?used_on=deck&deck_id={id}` | Deck picker scoped to one deck (optional) |
-| `GET /api/tags?used_on=fact&deck_id={id}` | Fact picker (**deck_id required**) — tags on facts in that deck + unused |
+| Endpoint | Role | Unused? |
+|----------|------|---------|
+| `?used_on=deck` | Deck **picker** (user-wide) | Yes |
+| `?used_on=deck&deck_id={id}` | Tags **on this deck** (inventory) | No |
+| `?used_on=fact&deck_id={id}` | Fact **picker** (this deck) | Yes |
+| `?used_on=fact` | — | N/A (**400**) |
 
-`deck_id` is **required** when `used_on=fact`. Omitting `deck_id` with `used_on=fact` returns **400**. `used_on=deck` without `deck_id` remains user-wide (backward compatible).
-
-**Filter rules:**
-
-| `used_on` | Tag is included when… |
-|-----------|------------------------|
-| *(omitted)* | Always (no filter) |
-| `deck` | `deck_count > 0`, **or** the tag is unused (`deck_count === 0` and `fact_count === 0`) |
-| `fact` | Tag is on a fact in the given deck (`deck_id` required), **or** the tag is unused |
-
-- **Deck-only** tags appear in `?used_on=deck` but not `?used_on=fact`.
-- **Fact-only** tags appear in `?used_on=fact&deck_id={id}` for the deck where those facts live, not in user-wide lists (`used_on=fact` without `deck_id` is rejected).
-- **Unused** tags (created via `POST /api/tags` but not yet linked) appear in **both** filters until first association.
-
-**Invalid filter** — e.g. `GET /api/tags?used_on=invalid` → **400**:
-
-```json
-{ "msg": "invalid used_on filter" }
-```
+- **Deck-only** tags appear in `?used_on=deck` but not `?used_on=fact&deck_id=…`.
+- **Fact-only** tags appear in `?used_on=fact&deck_id={id}` for that deck, not in `?used_on=deck`.
+- Invalid `used_on` (e.g. `invalid`) → **400** `{ "msg": "invalid used_on filter" }`.
 
 **Example (deck picker):**
 
@@ -2154,7 +2138,7 @@ Authorization: Bearer <token>
 Accept: application/json
 ```
 
-**Listing tags on a specific deck or fact** still uses scoped routes (no `used_on` query):
+**Per-entity lists** (exact associations on one deck or one fact):
 
 | Goal | Endpoint |
 |------|----------|
@@ -3175,7 +3159,7 @@ Tag **name** validation (`POST /api/tags`, `PATCH /api/tags/{tagId}`, tag names 
 | `/api/decks/{id}/contributions/{cid}`         | PATCH       | `{ "data": { contribution }, "meta": { "msg": "contribution updated" } }` |
 | `/api/decks/{id}/contributions/{cid}/media/{aid}` | GET     | Binary media bytes (not JSON) |
 | `/api/tags`                                   | POST        | `{ "data": { "tag": { id, name, description } }, "meta": { "msg" } }` — **201**                                                                            |
-| `/api/tags`                                   | GET         | `{ "data": { "tags": [ { id, name, description, deck_count, fact_count, used_on } ] }, "meta": { "msg" } }` — optional `used_on=deck` or `used_on=fact&deck_id={id}` |
+| `/api/tags`                                   | GET         | `{ "data": { "tags": [ { id, name, description, deck_count, fact_count, used_on } ] }, "meta": { "msg" } }` — optional `used_on=deck` (+ unused), `used_on=deck&deck_id` (on deck only), `used_on=fact&deck_id` (fact picker + unused); `used_on=fact` alone → **400** |
 | `/api/tags/{tagId}`                           | GET         | `{ "data": { "tag": { … } }, "meta": { "msg" } }`                                                                                                          |
 | `/api/tags/{tagId}`                           | PATCH       | `{ "data": { "tag": { … } }, "meta": { "msg" } }`                                                                                                          |
 | `/api/tags/{tagId}`                           | DELETE      | `{ "data": { "decks_untagged" }, "meta": { "msg" } }`                                                                                                      |
