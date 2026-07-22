@@ -135,7 +135,7 @@
 | `/api/decks/{id}/cards/{cardId}`              | DELETE | 删除单张卡片（词条及其他卡片不变）                                                                                                                   |
 | `/api/decks/{id}/reschedule`                  | POST   | **未挂载** — 当前服务端未注册该路由；**404**（通常无 JSON `{ "msg" }` body）。见 [假期模式（平移复习计划）](#假期模式平移复习计划)。 |
 | `/api/tags`                                   | POST   | 创建标签（`name`、可选 `description`）。成功时 **201**。                                                                                             |
-| `/api/tags`                                   | GET    | 列出当前用户全部标签。每条含 `deck_count`、`fact_count`、`used_on`。可选查询：`used_on=deck`（卡组选择器，含未使用）、`used_on=deck&deck_id={id}`（仅该卡组已关联）、`used_on=fact&deck_id={id}`（该卡组词条选择器，含未使用）。不带 `deck_id` 的 `used_on=fact` → **400**。 |
+| `/api/tags`                                   | GET    | 列出当前用户全部标签。每条含 `deck_count`、`fact_count`、`used_on`。可选查询：`used_on=deck`（卡组选择器，含未使用）、`used_on=deck&deck_id={id}`（仅该卡组已关联）、`used_on=fact&deck_id={id}`（词条选择器；可选 `unused=exclude` / `unused=only`）。不带 `deck_id` 的 `used_on=fact` → **400**。 |
 | `/api/tags/{tagId}`                           | GET    | 获取单个标签                                                                                                                                         |
 | `/api/tags/{tagId}`                           | PATCH  | 部分更新标签 `name` / `description`                                                                                                                  |
 | `/api/tags/{tagId}`                           | DELETE | 删除标签及其所有卡组/词条关联                                                                                                                        |
@@ -2123,18 +2123,20 @@ Authorization: Bearer <token>
 
 ### 按卡组或词条筛选标签（选择器）
 
-在 `GET /api/tags` 上使用可选 **`used_on`** / **`deck_id`** 收窄列表；标签仍是每用户一份共享库。省略 `used_on` 返回全部标签（标签管理）。
+在 `GET /api/tags` 上使用可选 **`used_on`** / **`deck_id`** / **`unused`** 收窄列表；标签仍是每用户一份共享库。省略 `used_on` 返回全部标签（标签管理）。
 
 | Endpoint | Role | Unused? |
 |----------|------|---------|
 | `?used_on=deck` | 卡组**选择器**（用户范围） | Yes |
 | `?used_on=deck&deck_id={id}` | **已挂在该卡组**的标签（清单） | No |
-| `?used_on=fact&deck_id={id}` | 词条**选择器**（该卡组） | Yes |
+| `?used_on=fact&deck_id={id}` | 词条**选择器**（该卡组） | Yes（默认） |
+| `?used_on=fact&deck_id={id}&unused=exclude` | 仅该卡组词条上已使用的标签 | No |
+| `?used_on=fact&deck_id={id}&unused=only` | 仅全局未使用标签 | Only unused |
 | `?used_on=fact` | — | N/A (**400**) |
 
 - 仅卡组使用的标签：出现在 `?used_on=deck`，不出现在 `?used_on=fact&deck_id=…`。
 - 仅词条使用的标签：出现在对应卡组的 `?used_on=fact&deck_id={id}`，不出现在 `?used_on=deck`。
-- 无效 `used_on`（如 `invalid`）→ **400** `{ "msg": "invalid used_on filter" }`。
+- **`unused`** 仅在 `used_on=fact` 且带 `deck_id` 时有效。无效 `used_on` / `unused` → **400**（`invalid used_on filter` / `invalid unused filter`）。误用 `unused` → **400** `unused is only valid with used_on=fact and deck_id`。
 
 **示例（卡组选择器）：**
 
@@ -2736,8 +2738,7 @@ Accept: application/json
         "hidden": true,
         "created_at": 1709000000
       }
-    ],
-    "orphaned_hidden_cards": 0
+    ]
   },
   "meta": { "msg": "Card stats retrieved successfully" }
 }
@@ -3045,6 +3046,8 @@ Accept: application/json
 | | **409** | `tag name already exists` |
 | | **500** | `Error checking tags`、`Error checking tag name`、`Error generating tag id`、`Error creating tag`、`Error serializing tag`、`Error saving tag` |
 | `GET /api/tags` | **400** | `invalid used_on filter` |
+| | **400** | `invalid unused filter` |
+| | **400** | `unused is only valid with used_on=fact and deck_id` |
 | | **400** | `used_on is required when deck_id is set` |
 | | **400** | `deck_id is required when used_on is fact` |
 | | **500** | `Error retrieving tags` |
@@ -3149,7 +3152,7 @@ Accept: application/json
 | `/api/decks/{id}/facts/{factId}`              | DELETE      | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                       |
 | `/api/decks/{id}/card`                        | GET         | 可选查询 `tag_id`。形状不变：`{ "data": { "card": { id, fact_id, template, …, front[], back[] }, "urgency" }, "meta": { "msg", … } }`                |
 | `/api/decks/{id}/card`                        | PATCH       | 间隔：`{ "data": { "last_review", "due_date", "new_interval" }, "meta": { "msg" } }`；可见性：`{ "data": { "hidden_status" }, "meta": { "msg" } }` |
-| `/api/decks/{id}/cards`                       | GET         | 可选查询 `tag_id`。形状不变：`{ "data": { "total_cards", "hidden_count", "hidden_facts", "orphaned_hidden_cards" }, "meta": { "msg" } }`              |
+| `/api/decks/{id}/cards`                       | GET         | 可选查询 `tag_id`。形状不变：`{ "data": { "total_cards", "hidden_count", "hidden_facts" }, "meta": { "msg" } }`              |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE      | `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                                       |
 | `/api/decks/{id}/reschedule`                  | POST        | **未挂载** — **404**（通常无 JSON `{ "msg" }` body）。见 [假期模式（平移复习计划）](#假期模式平移复习计划)。 |
 | `/api/decks/catalog`                          | GET         | `{ "data": { "decks": [ … ] }, "meta": { "msg", "count", "total", "limit", "offset", "has_more" } }` — 默认 `limit` 50、`offset` 0；可选 `query` |
@@ -3164,7 +3167,7 @@ Accept: application/json
 | `/api/decks/{id}/contributions/{cid}`         | PATCH       | `{ "data": { contribution }, "meta": { "msg": "contribution updated" } }` |
 | `/api/decks/{id}/contributions/{cid}/media/{aid}` | GET     | 二进制媒体字节（非 JSON） |
 | `/api/tags`                                   | POST        | `{ "data": { "tag": { id, name, description } }, "meta": { "msg" } }` — **201**                                                                    |
-| `/api/tags`                                   | GET         | `{ "data": { "tags": [ { id, name, description, deck_count, fact_count, used_on } ] }, "meta": { "msg" } }` — 可选 `used_on=deck`（含未使用）、`used_on=deck&deck_id`（仅该卡组）、`used_on=fact&deck_id`（词条选择器含未使用）；单独 `used_on=fact` → **400** |
+| `/api/tags`                                   | GET         | `{ "data": { "tags": [ { id, name, description, deck_count, fact_count, used_on } ] }, "meta": { "msg" } }` — 可选 `used_on=deck`（含未使用）、`used_on=deck&deck_id`（仅该卡组）、`used_on=fact&deck_id`（可选 `unused=exclude`/`only`）；单独 `used_on=fact` → **400** |
 | `/api/tags/{tagId}`                           | GET         | `{ "data": { "tag": { … } }, "meta": { "msg" } }`                                                                                                    |
 | `/api/tags/{tagId}`                           | PATCH       | `{ "data": { "tag": { … } }, "meta": { "msg" } }`                                                                                                    |
 | `/api/tags/{tagId}`                           | DELETE      | `{ "data": { "decks_untagged" }, "meta": { "msg" } }`                                                                                                |

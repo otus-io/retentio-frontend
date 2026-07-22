@@ -135,7 +135,7 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/api/decks/{id}/cards/{cardId}`              | DELETE | Delete a single card (fact and other cards unchanged)                                                                                                                                           |
 | `/api/decks/{id}/reschedule`                  | POST   | **Not wired** — route not registered on the current server; **404** (typically no JSON `{ "msg" }` body). See [Reschedule deck](#reschedule-deck). |
 | `/api/tags`                                   | POST   | Create a tag (`name`, optional `description`). **201** on success.                                                                                                                              |
-| `/api/tags`                                   | GET    | List all tags for the current user. Each tag includes `deck_count`, `fact_count`, `used_on`. Optional query: `used_on=deck` (deck picker, + unused), `used_on=deck&deck_id={id}` (tags on that deck only), or `used_on=fact&deck_id={id}` (fact picker for that deck, + unused). `used_on=fact` without `deck_id` → **400**. |
+| `/api/tags`                                   | GET    | List all tags for the current user. Each tag includes `deck_count`, `fact_count`, `used_on`. Optional query: `used_on=deck` (deck picker, + unused), `used_on=deck&deck_id={id}` (tags on that deck only), or `used_on=fact&deck_id={id}` (fact picker; optional `unused=exclude` / `unused=only`). `used_on=fact` without `deck_id` → **400**. |
 | `/api/tags/{tagId}`                           | GET    | Get one tag                                                                                                                                                                                     |
 | `/api/tags/{tagId}`                           | PATCH  | Update tag `name` and/or `description` (partial)                                                                                                                                                |
 | `/api/tags/{tagId}`                           | DELETE | Delete tag and all deck/fact associations                                                                                                                                                       |
@@ -2117,18 +2117,20 @@ Each list item includes **usage metadata** (additive; older clients can ignore t
 
 ### List tags for deck or fact pickers
 
-Use optional **`used_on`** / **`deck_id`** on `GET /api/tags` to narrow lists for UI. Tags remain one shared library per user. Omit `used_on` to list every tag (tag management).
+Use optional **`used_on`** / **`deck_id`** / **`unused`** on `GET /api/tags` to narrow lists for UI. Tags remain one shared library per user. Omit `used_on` to list every tag (tag management).
 
 | Endpoint | Role | Unused? |
 |----------|------|---------|
 | `?used_on=deck` | Deck **picker** (user-wide) | Yes |
 | `?used_on=deck&deck_id={id}` | Tags **on this deck** (inventory) | No |
-| `?used_on=fact&deck_id={id}` | Fact **picker** (this deck) | Yes |
+| `?used_on=fact&deck_id={id}` | Fact **picker** (this deck) | Yes (default) |
+| `?used_on=fact&deck_id={id}&unused=exclude` | Tags on facts in this deck only | No |
+| `?used_on=fact&deck_id={id}&unused=only` | Globally unused only | Only unused |
 | `?used_on=fact` | — | N/A (**400**) |
 
 - **Deck-only** tags appear in `?used_on=deck` but not `?used_on=fact&deck_id=…`.
 - **Fact-only** tags appear in `?used_on=fact&deck_id={id}` for that deck, not in `?used_on=deck`.
-- Invalid `used_on` (e.g. `invalid`) → **400** `{ "msg": "invalid used_on filter" }`.
+- **`unused`** is only valid with `used_on=fact` and `deck_id`. Invalid `used_on` / `unused` → **400** (`invalid used_on filter` / `invalid unused filter`). Misplaced `unused` → **400** `unused is only valid with used_on=fact and deck_id`.
 
 **Example (deck picker):**
 
@@ -2732,8 +2734,7 @@ Example: `GET /api/decks/{id}/cards?tag_id=Kt8QmNz2`
         "hidden": true,
         "created_at": 1709000000
       }
-    ],
-    "orphaned_hidden_cards": 0
+    ]
   },
   "meta": { "msg": "Card stats retrieved successfully" }
 }
@@ -3040,6 +3041,8 @@ Tag **name** validation (`POST /api/tags`, `PATCH /api/tags/{tagId}`, tag names 
 | | **409** | `tag name already exists` |
 | | **500** | `Error checking tags`, `Error checking tag name`, `Error generating tag id`, `Error creating tag`, `Error serializing tag`, `Error saving tag` |
 | `GET /api/tags` | **400** | `invalid used_on filter` |
+| | **400** | `invalid unused filter` |
+| | **400** | `unused is only valid with used_on=fact and deck_id` |
 | | **400** | `used_on is required when deck_id is set` |
 | | **400** | `deck_id is required when used_on is fact` |
 | | **500** | `Error retrieving tags` |
@@ -3144,7 +3147,7 @@ Tag **name** validation (`POST /api/tags`, `PATCH /api/tags/{tagId}`, tag names 
 | `/api/decks/{id}/facts/{factId}`              | DELETE      | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks/{id}/card`                        | GET         | Optional query `tag_id`. Response shape unchanged: `{ "data": { "card": { id, fact_id, template, …, front[], back[] }, "urgency" }, "meta": { "msg", … } }` |
 | `/api/decks/{id}/card`                        | PATCH       | Interval: `{ "data": { "last_review", "due_date", "new_interval" }, "meta": { "msg" } }`; visibility: `{ "data": { "hidden_status" }, "meta": { "msg" } }` |
-| `/api/decks/{id}/cards`                       | GET         | Optional query `tag_id`. Response shape unchanged: `{ "data": { "total_cards", "hidden_count", "hidden_facts", "orphaned_hidden_cards" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/cards`                       | GET         | Optional query `tag_id`. Response shape unchanged: `{ "data": { "total_cards", "hidden_count", "hidden_facts" }, "meta": { "msg" } }` |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE      | `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks/{id}/reschedule`                  | POST        | **Not wired** — **404** (typically no JSON `{ "msg" }` body). See [Reschedule deck](#reschedule-deck). |
 | `/api/decks/catalog`                          | GET         | `{ "data": { "decks": [ … ] }, "meta": { "msg", "count", "total", "limit", "offset", "has_more" } }` — defaults `limit` 50, `offset` 0; optional `query` |
@@ -3159,7 +3162,7 @@ Tag **name** validation (`POST /api/tags`, `PATCH /api/tags/{tagId}`, tag names 
 | `/api/decks/{id}/contributions/{cid}`         | PATCH       | `{ "data": { contribution }, "meta": { "msg": "contribution updated" } }` |
 | `/api/decks/{id}/contributions/{cid}/media/{aid}` | GET     | Binary media bytes (not JSON) |
 | `/api/tags`                                   | POST        | `{ "data": { "tag": { id, name, description } }, "meta": { "msg" } }` — **201**                                                                            |
-| `/api/tags`                                   | GET         | `{ "data": { "tags": [ { id, name, description, deck_count, fact_count, used_on } ] }, "meta": { "msg" } }` — optional `used_on=deck` (+ unused), `used_on=deck&deck_id` (on deck only), `used_on=fact&deck_id` (fact picker + unused); `used_on=fact` alone → **400** |
+| `/api/tags`                                   | GET         | `{ "data": { "tags": [ { id, name, description, deck_count, fact_count, used_on } ] }, "meta": { "msg" } }` — optional `used_on=deck` (+ unused), `used_on=deck&deck_id` (on deck only), `used_on=fact&deck_id` (+ optional `unused=exclude`/`only`); `used_on=fact` alone → **400** |
 | `/api/tags/{tagId}`                           | GET         | `{ "data": { "tag": { … } }, "meta": { "msg" } }`                                                                                                          |
 | `/api/tags/{tagId}`                           | PATCH       | `{ "data": { "tag": { … } }, "meta": { "msg" } }`                                                                                                          |
 | `/api/tags/{tagId}`                           | DELETE      | `{ "data": { "decks_untagged" }, "meta": { "msg" } }`                                                                                                      |
