@@ -98,9 +98,24 @@ class _PendingContributionsOutboxSheetState
     return item.factId ?? '—';
   }
 
+  /// Kinds with a working outbox submit path. Others stay visible but not selectable.
+  bool _isSubmittable(PendingContributionKind kind) {
+    return switch (kind) {
+      PendingContributionKind.edit ||
+      PendingContributionKind.add ||
+      PendingContributionKind.factTags ||
+      PendingContributionKind.deckTags => true,
+      PendingContributionKind.template ||
+      PendingContributionKind.fieldRename ||
+      PendingContributionKind.report => false,
+    };
+  }
+
   Future<void> _sendSelected() async {
     final loc = AppLocalizations.of(context)!;
-    final items = _pending.where((p) => _selected.contains(p.id)).toList();
+    final items = _pending
+        .where((p) => _selected.contains(p.id) && _isSubmittable(p.kind))
+        .toList();
     if (items.isEmpty) return;
     setState(() {
       _submitting = true;
@@ -113,10 +128,14 @@ class _PendingContributionsOutboxSheetState
 
     for (final item in items) {
       try {
-        await _submitOne(item, message.isEmpty ? null : message);
+        final contributionId = await _submitOne(
+          item,
+          message.isEmpty ? null : message,
+        );
         await PendingContributionsStore.of.markAsSent(
           widget.importDeckId,
           item.id,
+          contributionId: contributionId,
           message: message.isEmpty ? null : message,
         );
         sentCount += 1;
@@ -141,7 +160,10 @@ class _PendingContributionsOutboxSheetState
     });
   }
 
-  Future<void> _submitOne(PendingContributionItem item, String? message) async {
+  Future<String?> _submitOne(
+    PendingContributionItem item,
+    String? message,
+  ) async {
     final deckId = widget.importDeckId;
     switch (item.kind) {
       case PendingContributionKind.edit:
@@ -149,7 +171,7 @@ class _PendingContributionsOutboxSheetState
         if (factId == null || factId.isEmpty) {
           throw Exception('missing fact id');
         }
-        await DeckCatalogService.of.submitFactEditContribution(
+        return DeckCatalogService.of.submitFactEditContribution(
           importDeckId: deckId,
           factId: factId,
           message: message,
@@ -159,7 +181,7 @@ class _PendingContributionsOutboxSheetState
         if (factId == null || factId.isEmpty) {
           throw Exception('missing fact id');
         }
-        await DeckCatalogService.of.submitFactAddContribution(
+        return DeckCatalogService.of.submitFactAddContribution(
           importDeckId: deckId,
           factId: factId,
           message: message,
@@ -169,7 +191,7 @@ class _PendingContributionsOutboxSheetState
         if (factId == null || factId.isEmpty) {
           throw Exception('missing fact id');
         }
-        await DeckCatalogService.of.submitFactTagsContribution(
+        return DeckCatalogService.of.submitFactTagsContribution(
           importDeckId: deckId,
           factId: factId,
           addTags: item.addTags,
@@ -177,7 +199,7 @@ class _PendingContributionsOutboxSheetState
           message: message,
         );
       case PendingContributionKind.deckTags:
-        await DeckCatalogService.of.submitDeckTagsContribution(
+        return DeckCatalogService.of.submitDeckTagsContribution(
           importDeckId: deckId,
           addTags: item.addTags,
           removeTags: item.removeTags,
@@ -269,7 +291,7 @@ class _PendingContributionsOutboxSheetState
         if (_error != null) ...[
           const SizedBox(height: 8),
           Text(
-            ApiErrorMessages.resolve(_error, loc),
+            ApiErrorMessages.resolve(_error!, loc),
             style: theme.textTheme.bodySmall?.copyWith(color: scheme.error),
           ),
         ],
@@ -352,38 +374,42 @@ class _PendingContributionsOutboxSheetState
       );
     }
 
+    final submittable = _pending.where((p) => _isSubmittable(p.kind)).toList();
     final allSelected =
-        _pending.isNotEmpty && _selected.length == _pending.length;
+        submittable.isNotEmpty &&
+        submittable.every((p) => _selected.contains(p.id));
 
     return ListView(
       shrinkWrap: true,
       children: [
-        CheckboxListTile(
-          dense: true,
-          contentPadding: EdgeInsets.zero,
-          value: allSelected,
-          title: Text(loc.pendingSelectAll(_pending.length)),
-          onChanged: _submitting
-              ? null
-              : (_) {
-                  setState(() {
-                    if (allSelected) {
-                      _selected.clear();
-                    } else {
-                      _selected
-                        ..clear()
-                        ..addAll(_pending.map((e) => e.id));
-                    }
-                  });
-                },
-        ),
+        if (submittable.isNotEmpty)
+          CheckboxListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            value: allSelected,
+            title: Text(loc.pendingSelectAll(submittable.length)),
+            onChanged: _submitting
+                ? null
+                : (_) {
+                    setState(() {
+                      if (allSelected) {
+                        _selected.clear();
+                      } else {
+                        _selected
+                          ..clear()
+                          ..addAll(submittable.map((e) => e.id));
+                      }
+                    });
+                  },
+          ),
         ..._pending.map((item) {
-          final checked = _selected.contains(item.id);
+          final canSubmit = _isSubmittable(item.kind);
+          final checked = canSubmit && _selected.contains(item.id);
           return CheckboxListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
             value: checked,
-            onChanged: _submitting
+            onChanged: _submitting || !canSubmit
                 ? null
                 : (_) {
                     setState(() {
@@ -394,14 +420,24 @@ class _PendingContributionsOutboxSheetState
                       }
                     });
                   },
-            title: Text(_kindLabel(loc, item.kind)),
+            title: Text(
+              _kindLabel(loc, item.kind),
+              style: canSubmit
+                  ? null
+                  : theme.textTheme.titleMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+            ),
             subtitle: Text(
               [
+                if (!canSubmit) loc.pendingNotSubmittable,
                 if (item.factId != null && item.factId!.isNotEmpty)
                   item.factId!,
                 _rowPreview(item),
               ].join('\n'),
-              style: theme.textTheme.bodySmall,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: canSubmit ? null : scheme.onSurfaceVariant,
+              ),
             ),
           );
         }),

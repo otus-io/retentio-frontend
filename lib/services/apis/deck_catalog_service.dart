@@ -124,12 +124,12 @@ class DeckCatalogService {
     return _toInt((res.data as Map)['source_version']) ?? 0;
   }
 
-  Future<void> submitFactReport({
+  Future<String?> submitFactReport({
     required String importDeckId,
     required String factId,
     required String message,
-  }) async {
-    await _submitContribution(
+  }) {
+    return _submitContribution(
       Api.deckFactReport,
       pathParams: {'id': importDeckId, 'factId': factId},
       body: {'message': message},
@@ -137,12 +137,12 @@ class DeckCatalogService {
   }
 
   /// Freezes current private overlay as a `fact_edit` contribution.
-  Future<void> submitFactEditContribution({
+  Future<String?> submitFactEditContribution({
     required String importDeckId,
     required String factId,
     String? message,
     int? entryIndex,
-  }) async {
+  }) {
     final body = <String, dynamic>{};
     if (message != null && message.trim().isNotEmpty) {
       body['message'] = message.trim();
@@ -150,7 +150,7 @@ class DeckCatalogService {
     if (entryIndex != null) {
       body['entry_index'] = entryIndex;
     }
-    await _submitContribution(
+    return _submitContribution(
       Api.deckFactEditContribution,
       pathParams: {'id': importDeckId, 'factId': factId},
       body: body,
@@ -158,30 +158,30 @@ class DeckCatalogService {
   }
 
   /// Submits a `local_facts` row as `fact_add`.
-  Future<void> submitFactAddContribution({
+  Future<String?> submitFactAddContribution({
     required String importDeckId,
     required String factId,
     String? message,
-  }) async {
+  }) {
     final body = <String, dynamic>{};
     if (message != null && message.trim().isNotEmpty) {
       body['message'] = message.trim();
     }
-    await _submitContribution(
+    return _submitContribution(
       Api.deckFactAddContribution,
       pathParams: {'id': importDeckId, 'factId': factId},
       body: body,
     );
   }
 
-  Future<void> submitFactTagsContribution({
+  Future<String?> submitFactTagsContribution({
     required String importDeckId,
     required String factId,
     List<String>? addTags,
     List<String>? removeTags,
     String? message,
-  }) async {
-    await _submitContribution(
+  }) {
+    return _submitContribution(
       Api.deckFactTagsContribution,
       pathParams: {'id': importDeckId, 'factId': factId},
       body: _tagContributionBody(
@@ -192,13 +192,13 @@ class DeckCatalogService {
     );
   }
 
-  Future<void> submitDeckTagsContribution({
+  Future<String?> submitDeckTagsContribution({
     required String importDeckId,
     List<String>? addTags,
     List<String>? removeTags,
     String? message,
-  }) async {
-    await _submitContribution(
+  }) {
+    return _submitContribution(
       Api.deckTagsContribution,
       pathParams: {'id': importDeckId},
       body: _tagContributionBody(
@@ -284,7 +284,8 @@ class DeckCatalogService {
     return DeckContribution.fromJson(Map<String, dynamic>.from(raw));
   }
 
-  Future<void> _submitContribution(
+  /// Returns the new `contribution_id` when the API includes it in `data`.
+  Future<String?> _submitContribution(
     String path, {
     required Map<String, String> pathParams,
     required Map<String, dynamic> body,
@@ -293,6 +294,12 @@ class DeckCatalogService {
     if (res == null || !res.isSuccess) {
       throw Exception(res?.msg ?? 'submit_contribution_failed');
     }
+    final data = res.data;
+    if (data is Map) {
+      final id = data['contribution_id']?.toString().trim() ?? '';
+      if (id.isNotEmpty) return id;
+    }
+    return null;
   }
 
   Map<String, dynamic> _tagContributionBody({

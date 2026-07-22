@@ -1107,6 +1107,7 @@
   "contributionsResolve": "标为已解决",
   "contributionsAccepted": "已接受贡献",
   "contributionsUpdated": "贡献状态已更新",
+  "contributionsLoadMore": "加载更多",
   "contributionsBefore": "修改前",
   "@contributionsBefore": {
     "description": "Label for baseline fact content in author contribution review"
@@ -1193,5 +1194,6 @@
   "pendingKindFactTags": "词条标签",
   "pendingKindTemplate": "模板",
   "pendingKindFieldRename": "列名重命名",
-  "pendingKindReport": "报告"
+  "pendingKindReport": "报告",
+  "pendingNotSubmittable": "暂无法从发件箱发送"
 }

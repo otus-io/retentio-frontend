@@ -1465,6 +1465,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contributionsUpdated => 'Contribution updated';
 
   @override
+  String get contributionsLoadMore => 'Load more';
+
+  @override
   String get contributionsBefore => 'Before';
 
   @override
@@ -1585,4 +1588,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pendingKindReport => 'Report';
+
+  @override
+  String get pendingNotSubmittable => 'Can\'t send from outbox yet';
 }

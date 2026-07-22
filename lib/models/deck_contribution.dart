@@ -162,8 +162,12 @@ class DeckContribution {
     final audioAttachments = mediaAttachments
         .where((a) => a.isAudio && a.previewPath.isNotEmpty)
         .toList();
+    // Single-attachment heuristic only when it is not mapped to a different entry.
     if (audioAttachments.length == 1) {
-      return audioAttachments.first.previewPath;
+      final only = audioAttachments.first;
+      if (only.entryIndexes.isEmpty || only.entryIndexes.contains(entryIndex)) {
+        return only.previewPath;
+      }
     }
 
     final mediaId = proposedMediaId ?? '';

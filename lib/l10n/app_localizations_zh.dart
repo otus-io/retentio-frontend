@@ -1373,6 +1373,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contributionsUpdated => '贡献状态已更新';
 
   @override
+  String get contributionsLoadMore => '加载更多';
+
+  @override
   String get contributionsBefore => '修改前';
 
   @override
@@ -1490,4 +1493,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pendingKindReport => '报告';
+
+  @override
+  String get pendingNotSubmittable => '暂无法从发件箱发送';
 }

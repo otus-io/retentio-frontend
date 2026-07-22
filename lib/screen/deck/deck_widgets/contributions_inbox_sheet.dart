@@ -25,7 +25,11 @@ class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
   List<DeckContribution>? _items;
   String? _error;
   bool _loading = true;
+  bool _loadingMore = false;
+  bool _hasMore = false;
   String? _busyId;
+
+  static const _pageSize = 50;
 
   @override
   void initState() {
@@ -33,23 +37,43 @@ class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  Future<void> _load({bool append = false}) async {
+    if (append) {
+      if (_loadingMore || !_hasMore) return;
+      setState(() => _loadingMore = true);
+    } else {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
+      final offset = append ? (_items?.length ?? 0) : 0;
       final page = await DeckCatalogService.of.listContributions(
         widget.sourceDeckId,
         status: 'open',
+        limit: _pageSize,
+        offset: offset,
       );
       if (!mounted) return;
-      setState(() => _items = page.contributions);
+      setState(() {
+        if (append) {
+          _items = [...?_items, ...page.contributions];
+        } else {
+          _items = page.contributions;
+        }
+        _hasMore = page.hasMore;
+      });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = rawApiErrorMessage(e));
+      if (!append) setState(() => _error = rawApiErrorMessage(e));
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _loadingMore = false;
+        });
+      }
     }
   }
 
@@ -141,9 +165,18 @@ class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
 
     return ListView.separated(
       shrinkWrap: true,
-      itemCount: items.length,
+      itemCount: items.length + (_hasMore ? 1 : 0),
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (_, i) {
+        if (i >= items.length) {
+          return AppButton(
+            label: loc.contributionsLoadMore,
+            size: AppButtonSize.sm,
+            variant: AppButtonVariant.secondary,
+            isLoading: _loadingMore,
+            onPressed: _loadingMore ? null : () => _load(append: true),
+          );
+        }
         final c = items[i];
         final busy = _busyId == c.id;
         final canAccept = c.type != 'report';

@@ -226,6 +226,11 @@ class PendingContributionsStore {
     await _writePending(deckId, []);
   }
 
+  /// Moves a pending row into sent history.
+  ///
+  /// Not atomic across SharedPreferences keys: read pending → remove pending →
+  /// write sent are separate writes. If the process dies between remove and
+  /// write-sent, the staged item can be lost.
   Future<void> markAsSent(
     String deckId,
     String pendingId, {

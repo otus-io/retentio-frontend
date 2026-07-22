@@ -86,5 +86,41 @@ void main() {
         '/api/decks/srcdeck12345/contributions/cont0001/media/impaud0001',
       );
     });
+
+    test('afterAudioUrl single-attachment fallback respects entry index', () {
+      final c = DeckContribution.fromJson({
+        'id': 'cont0001',
+        'type': 'fact_edit',
+        'status': 'open',
+        'source_deck_id': 'srcdeck12345',
+        'proposed_entries': [
+          {'text': 'Apple', 'audio': 'impaud0001'},
+          {'text': 'Orange', 'audio': 'impaud0002'},
+        ],
+        'media_attachments': [
+          {
+            'attachment_id': 'attach01',
+            'source_media_id': 'impaud0001',
+            'mime': 'audio/mpeg',
+            'filename': 'apple.mp3',
+            'preview_path':
+                '/api/decks/srcdeck12345/contributions/cont0001/media/attach01',
+            'references': [
+              {'entry_index': 0, 'field': 'audio'},
+            ],
+          },
+        ],
+      });
+
+      expect(
+        c.afterAudioUrl(0),
+        '/api/decks/srcdeck12345/contributions/cont0001/media/attach01',
+      );
+      // Sole attachment maps to entry 0 — must not leak to entry 1.
+      expect(
+        c.afterAudioUrl(1),
+        '/api/decks/srcdeck12345/contributions/cont0001/media/impaud0002',
+      );
+    });
   });
 }

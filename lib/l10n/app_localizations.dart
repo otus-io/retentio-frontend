@@ -2726,6 +2726,12 @@ abstract class AppLocalizations {
   /// **'Contribution updated'**
   String get contributionsUpdated;
 
+  /// No description provided for @contributionsLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get contributionsLoadMore;
+
   /// Label for baseline fact content in author contribution review
   ///
   /// In en, this message translates to:
@@ -2923,6 +2929,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Report'**
   String get pendingKindReport;
+
+  /// No description provided for @pendingNotSubmittable.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t send from outbox yet'**
+  String get pendingNotSubmittable;
 }
 
 class _AppLocalizationsDelegate

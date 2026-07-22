@@ -1829,6 +1829,7 @@
   "contributionsResolve": "Resolve",
   "contributionsAccepted": "Contribution accepted",
   "contributionsUpdated": "Contribution updated",
+  "contributionsLoadMore": "Load more",
   "contributionsBefore": "Before",
   "@contributionsBefore": {
     "description": "Label for baseline fact content in author contribution review"
@@ -1915,5 +1916,6 @@
   "pendingKindFactTags": "Fact tags",
   "pendingKindTemplate": "Template",
   "pendingKindFieldRename": "Field rename",
-  "pendingKindReport": "Report"
+  "pendingKindReport": "Report",
+  "pendingNotSubmittable": "Can't send from outbox yet"
 }
