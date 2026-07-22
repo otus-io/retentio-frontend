@@ -369,15 +369,8 @@ class _FactEditState extends ConsumerState<FactEdit>
     );
 
     if (toAdd.isNotEmpty || toRemove.isNotEmpty) {
-      String nameFor(String id) {
-        for (final t in _selectedTags) {
-          if (t.id == id) return t.name;
-        }
-        for (final t in allTags) {
-          if (t.id == id) return t.name;
-        }
-        return id;
-      }
+      String nameFor(String id) =>
+          Tag.nameForId(id, selected: _selectedTags, managerTags: allTags);
 
       await store.upsert(
         deckId: widget.deck.id,
@@ -431,16 +424,21 @@ class _FactEditState extends ConsumerState<FactEdit>
 
   Future<void> _submitFactTagsContribution() async {
     final loc = AppLocalizations.of(context)!;
-    final toAdd = _selectedTagIds.difference(_originalTagIds).map((id) {
-      final match = _selectedTags.where((t) => t.id == id);
-      return match.isEmpty ? id : match.first.name;
-    }).toList();
-    final toRemove = _originalTagIds.difference(_selectedTagIds).map((id) {
-      // Prefer current manager names; fall back to id if unknown.
-      final all = context.read<TagManagerCubit>().state.tags;
-      final match = all.where((t) => t.id == id);
-      return match.isEmpty ? id : match.first.name;
-    }).toList();
+    final allTags = context.read<TagManagerCubit>().state.tags;
+    final toAdd = _selectedTagIds
+        .difference(_originalTagIds)
+        .map(
+          (id) =>
+              Tag.nameForId(id, selected: _selectedTags, managerTags: allTags),
+        )
+        .toList();
+    final toRemove = _originalTagIds
+        .difference(_selectedTagIds)
+        .map(
+          (id) =>
+              Tag.nameForId(id, selected: _selectedTags, managerTags: allTags),
+        )
+        .toList();
     if (toAdd.isEmpty && toRemove.isEmpty) {
       _snack(loc.contributeNoTagChanges);
       return;

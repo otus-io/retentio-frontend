@@ -87,6 +87,23 @@ void main() {
       );
     });
 
+    test('fromJson tolerates null optional payloads with safe defaults', () {
+      final c = DeckContribution.fromJson({
+        'id': 'cont0001',
+        'type': 'fact_edit',
+        'status': 'open',
+        'reported_fact': null,
+        'proposed_entries': null,
+        'media_attachments': null,
+        'source_version': null,
+      });
+
+      expect(c.reportedFact, isNull);
+      expect(c.proposedEntries, isEmpty);
+      expect(c.mediaAttachments, isEmpty);
+      expect(c.sourceVersion, 0);
+    });
+
     test('afterAudioUrl single-attachment fallback respects entry index', () {
       final c = DeckContribution.fromJson({
         'id': 'cont0001',

@@ -28,6 +28,21 @@ class Tag {
 
   factory Tag.fromJson(Map<String, dynamic> json) => _$TagFromJson(json);
   Map<String, dynamic> toJson() => _$TagToJson(this);
+
+  /// Display name for [id]: [selected] first, then [managerTags], else the id.
+  static String nameForId(
+    String id, {
+    required Iterable<Tag> selected,
+    required Iterable<Tag> managerTags,
+  }) {
+    for (final t in selected) {
+      if (t.id == id) return t.name;
+    }
+    for (final t in managerTags) {
+      if (t.id == id) return t.name;
+    }
+    return id;
+  }
 }
 
 /// Row from `GET /api/tags/{tagId}/facts`.

@@ -264,7 +264,8 @@ class _FactAddState extends ConsumerState<FactAdd>
         try {
           idsBefore = (await CardService.listFactIds(widget.deck.id)).toSet();
         } catch (_) {
-          idsBefore = {};
+          // Unknown baseline — skip staging (idsBefore != null guard below).
+          idsBefore = null;
         }
       }
 

@@ -212,6 +212,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
   Future<void> _syncTags(String deckId) async {
     final toAdd = _selectedTagIds.difference(_originalTagIds);
     final toRemove = _originalTagIds.difference(_selectedTagIds);
+    final allTags = context.read<TagManagerCubit>().state.tags;
     await Future.wait([
       ...toAdd.map((id) => TagService.of.addTagToDeck(deckId, id)),
       ...toRemove.map((id) => TagService.of.removeTagFromDeck(deckId, id)),
@@ -219,16 +220,8 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
     final isImported = widget.deck?.isImported == true;
     if (!isImported || (toAdd.isEmpty && toRemove.isEmpty)) return;
 
-    String nameFor(String id) {
-      for (final t in _selectedTags) {
-        if (t.id == id) return t.name;
-      }
-      final all = context.read<TagManagerCubit>().state.tags;
-      for (final t in all) {
-        if (t.id == id) return t.name;
-      }
-      return id;
-    }
+    String nameFor(String id) =>
+        Tag.nameForId(id, selected: _selectedTags, managerTags: allTags);
 
     await PendingContributionsStore.of.upsert(
       deckId: deckId,

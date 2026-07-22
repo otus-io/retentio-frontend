@@ -72,6 +72,20 @@ void main() {
       expect(tag.usedOn, ['deck', 'fact']);
     });
 
+    test('fromJson tolerates null usage fields with defaults', () {
+      final tag = Tag.fromJson({
+        'id': 'tag-1',
+        'name': 'Flutter',
+        'description': 'desc',
+        'deck_count': null,
+        'fact_count': null,
+        'used_on': null,
+      });
+      expect(tag.deckCount, 0);
+      expect(tag.factCount, 0);
+      expect(tag.usedOn, isEmpty);
+    });
+
     test('TagFactRef.fromJson parses deck_id and fact_id', () {
       final ref = TagFactRef.fromJson({
         'deck_id': 'dk7xm2n9pq4w',
@@ -79,6 +93,12 @@ void main() {
       });
       expect(ref.deckId, 'dk7xm2n9pq4w');
       expect(ref.factId, 'f4k2m9x1');
+    });
+
+    test('TagFactRef.fromJson tolerates null deck_id and fact_id', () {
+      final ref = TagFactRef.fromJson({'deck_id': null, 'fact_id': null});
+      expect(ref.deckId, '');
+      expect(ref.factId, '');
     });
 
     test('toJson includes all three keys even when empty', () {

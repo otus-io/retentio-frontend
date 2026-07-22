@@ -42,15 +42,16 @@ class _TagFactsScreenState extends State<TagFactsScreen> {
     });
     try {
       final refs = await TagService.of.getTagFacts(widget.tag.id);
-      final rows = <_TagFactRow>[];
-      for (final ref in refs) {
-        try {
-          final fact = await CardService.getFact(ref.deckId, ref.factId);
-          rows.add(_TagFactRow(ref: ref, fact: fact));
-        } catch (e) {
-          rows.add(_TagFactRow(ref: ref, loadError: rawApiErrorMessage(e)));
-        }
-      }
+      final rows = await Future.wait(
+        refs.map((ref) async {
+          try {
+            final fact = await CardService.getFact(ref.deckId, ref.factId);
+            return _TagFactRow(ref: ref, fact: fact);
+          } catch (e) {
+            return _TagFactRow(ref: ref, loadError: rawApiErrorMessage(e));
+          }
+        }),
+      );
       if (mounted) setState(() => _rows = rows);
     } catch (e) {
       if (mounted) setState(() => _error = rawApiErrorMessage(e));

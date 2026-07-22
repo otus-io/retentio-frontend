@@ -73,6 +73,26 @@ void main() {
       expect(result.addedFacts.first.fact?.entries.first.text, 'Orange');
     });
 
+    test('fromJson tolerates null versions and update arrays', () {
+      final result = DeckUpdatesResult.fromJson({
+        'source_version': null,
+        'latest_version': null,
+        'added_facts': null,
+        'removed_facts': null,
+        'edited_facts': null,
+        'media_changes': null,
+        'card_template_changes': null,
+      });
+
+      expect(result.sourceVersion, 0);
+      expect(result.latestVersion, 0);
+      expect(result.addedFacts, isEmpty);
+      expect(result.removedFacts, isEmpty);
+      expect(result.editedFacts, isEmpty);
+      expect(result.mediaChanges, isEmpty);
+      expect(result.cardTemplateChanges, isEmpty);
+    });
+
     test('defaultDecisions matches overlay defaults', () {
       final result = DeckUpdatesResult.fromJson({
         'source_version': 1,

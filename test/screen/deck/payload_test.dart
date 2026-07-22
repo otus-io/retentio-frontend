@@ -98,6 +98,17 @@ void main() {
       expect(first.containsKey('tags'), isFalse);
     });
 
+    test('buildFactBody omits tags key when tagNames is empty', () {
+      final b = AddFactPayload.buildFactBody(
+        entries: [
+          {'text': 'a'},
+        ],
+        tagNames: const [],
+      );
+      final first = (b['facts'] as List).first as Map;
+      expect(first.containsKey('tags'), isFalse);
+    });
+
     test('buildFactBody includes tag_ids when provided', () {
       final b = AddFactPayload.buildFactBody(
         entries: [
