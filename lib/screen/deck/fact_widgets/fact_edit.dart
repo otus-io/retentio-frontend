@@ -8,11 +8,13 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
+import 'package:retentio/features/contributions/pending_contributions_store.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/features/tags/widgets/tag_chip.dart';
 import 'package:retentio/features/tags/widgets/tag_picker_sheet.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/tag.dart';
+import 'package:retentio/screen/deck/deck_widgets/pending_contributions_outbox_sheet.dart';
 import 'package:retentio/screen/deck/fact_add_composer/entry_row.dart';
 import 'package:retentio/screen/deck/fact_add_composer/fact_edit_logic.dart';
 import 'package:retentio/screen/deck/fact_add_composer/media_handling_coordinator.dart';
@@ -340,6 +342,9 @@ class _FactEditState extends ConsumerState<FactEdit>
       }
       // Sync tags (fire-and-forget, non-blocking on UI).
       unawaited(_syncTags());
+      if (widget.deck.isImported) {
+        await _stageImportedPending(entries);
+      }
       await widget.onSaved();
       if (mounted) context.pop();
     } finally {
@@ -347,7 +352,130 @@ class _FactEditState extends ConsumerState<FactEdit>
     }
   }
 
+  Future<void> _stageImportedPending(List<FactEntry> entries) async {
+    final store = PendingContributionsStore.of;
+    final preview = PendingContributionsStore.previewFromEntryTexts(
+      entries.map((e) => e.text),
+    );
+    final allTags = context.read<TagManagerCubit>().state.tags;
+    final toAdd = _selectedTagIds.difference(_originalTagIds);
+    final toRemove = _originalTagIds.difference(_selectedTagIds);
+
+    await store.upsert(
+      deckId: widget.deck.id,
+      kind: PendingContributionKind.edit,
+      factId: widget.factId,
+      preview: preview,
+    );
+
+    if (toAdd.isNotEmpty || toRemove.isNotEmpty) {
+      String nameFor(String id) {
+        for (final t in _selectedTags) {
+          if (t.id == id) return t.name;
+        }
+        for (final t in allTags) {
+          if (t.id == id) return t.name;
+        }
+        return id;
+      }
+
+      await store.upsert(
+        deckId: widget.deck.id,
+        kind: PendingContributionKind.factTags,
+        factId: widget.factId,
+        addTags: toAdd.map(nameFor).toList(),
+        removeTags: toRemove.map(nameFor).toList(),
+        preview: preview,
+      );
+    }
+    if (mounted) showPendingStagedToast(context);
+  }
+
   Future<void> _submitFactReport() async {
+    await _submitContributionDialog(
+      title: AppLocalizations.of(context)!.feedbackSubmit,
+      hint: AppLocalizations.of(context)!.feedbackMessageHint,
+      requireMessage: true,
+      successMessage: AppLocalizations.of(context)!.feedbackSubmitSuccess,
+      submit: (message) => DeckCatalogService.of.submitFactReport(
+        importDeckId: widget.deck.id,
+        factId: widget.factId,
+        message: message,
+      ),
+    );
+  }
+
+  Future<void> _submitFactEditContribution() async {
+    final loc = AppLocalizations.of(context)!;
+    await _submitContributionDialog(
+      title: loc.contributeFactEdit,
+      hint: loc.contributeOptionalMessageHint,
+      requireMessage: false,
+      successMessage: loc.contributeFactEditSuccess,
+      submit: (message) async {
+        await DeckCatalogService.of.submitFactEditContribution(
+          importDeckId: widget.deck.id,
+          factId: widget.factId,
+          message: message.isEmpty ? null : message,
+        );
+        await PendingContributionsStore.of.remove(
+          widget.deck.id,
+          PendingContributionsStore.of.itemId(
+            PendingContributionKind.edit,
+            factId: widget.factId,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _submitFactTagsContribution() async {
+    final loc = AppLocalizations.of(context)!;
+    final toAdd = _selectedTagIds.difference(_originalTagIds).map((id) {
+      final match = _selectedTags.where((t) => t.id == id);
+      return match.isEmpty ? id : match.first.name;
+    }).toList();
+    final toRemove = _originalTagIds.difference(_selectedTagIds).map((id) {
+      // Prefer current manager names; fall back to id if unknown.
+      final all = context.read<TagManagerCubit>().state.tags;
+      final match = all.where((t) => t.id == id);
+      return match.isEmpty ? id : match.first.name;
+    }).toList();
+    if (toAdd.isEmpty && toRemove.isEmpty) {
+      _snack(loc.contributeNoTagChanges);
+      return;
+    }
+    await _submitContributionDialog(
+      title: loc.contributeFactTags,
+      hint: loc.contributeOptionalMessageHint,
+      requireMessage: false,
+      successMessage: loc.contributeFactTagsSuccess,
+      submit: (message) async {
+        await DeckCatalogService.of.submitFactTagsContribution(
+          importDeckId: widget.deck.id,
+          factId: widget.factId,
+          addTags: toAdd.isEmpty ? null : toAdd,
+          removeTags: toRemove.isEmpty ? null : toRemove,
+          message: message.isEmpty ? null : message,
+        );
+        await PendingContributionsStore.of.remove(
+          widget.deck.id,
+          PendingContributionsStore.of.itemId(
+            PendingContributionKind.factTags,
+            factId: widget.factId,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _submitContributionDialog({
+    required String title,
+    required String hint,
+    required bool requireMessage,
+    required String successMessage,
+    required Future<void> Function(String message) submit,
+  }) async {
     final loc = AppLocalizations.of(context)!;
     final controller = TextEditingController();
     var submitting = false;
@@ -358,22 +486,18 @@ class _FactEditState extends ConsumerState<FactEdit>
           builder: (_, setDialogState) {
             Future<void> onSubmit() async {
               final message = controller.text.trim();
-              if (message.isEmpty) {
+              if (requireMessage && message.isEmpty) {
                 _snack(loc.feedbackMessageRequired);
                 return;
               }
               setDialogState(() => submitting = true);
               try {
-                await DeckCatalogService.of.submitFactReport(
-                  importDeckId: widget.deck.id,
-                  factId: widget.factId,
-                  message: message,
-                );
+                await submit(message);
                 if (!mounted) return;
                 if (dialogContext.mounted) {
                   Navigator.of(dialogContext).pop();
                 }
-                AppToast.success(context, loc.feedbackSubmitSuccess);
+                AppToast.success(context, successMessage);
               } catch (e) {
                 if (!mounted) return;
                 AppToast.error(
@@ -388,10 +512,10 @@ class _FactEditState extends ConsumerState<FactEdit>
             }
 
             return AlertDialog(
-              title: Text(loc.feedbackSubmit),
+              title: Text(title),
               content: AppInput(
                 controller: controller,
-                hint: loc.feedbackMessageHint,
+                hint: hint,
                 maxLines: 4,
                 minLines: 4,
                 maxLength: 2000,
@@ -405,7 +529,7 @@ class _FactEditState extends ConsumerState<FactEdit>
                       : () => Navigator.of(dialogContext).pop(),
                 ),
                 AppButton(
-                  label: loc.feedbackSubmit,
+                  label: title,
                   variant: AppButtonVariant.primary,
                   isLoading: submitting,
                   onPressed: submitting ? null : onSubmit,
@@ -535,14 +659,29 @@ class _FactEditState extends ConsumerState<FactEdit>
                 isLoading: _submitting,
                 leading: const Icon(LucideIcons.save),
               ),
-              if (widget.deck.isImported)
+              if (widget.deck.isImported) ...[
+                AppButton(
+                  label: loc.contributeFactEdit,
+                  onPressed: _submitting ? null : _submitFactEditContribution,
+                  variant: AppButtonVariant.secondary,
+                  fullWidth: true,
+                  leading: const Icon(LucideIcons.send),
+                ),
+                AppButton(
+                  label: loc.contributeFactTags,
+                  onPressed: _submitting ? null : _submitFactTagsContribution,
+                  variant: AppButtonVariant.secondary,
+                  fullWidth: true,
+                  leading: const Icon(LucideIcons.tags),
+                ),
                 AppButton(
                   label: loc.feedbackSubmit,
                   onPressed: _submitting ? null : _submitFactReport,
-                  variant: AppButtonVariant.secondary,
+                  variant: AppButtonVariant.ghost,
                   fullWidth: true,
                   leading: const Icon(LucideIcons.messageSquareWarning),
                 ),
+              ],
             ],
           ),
         ),

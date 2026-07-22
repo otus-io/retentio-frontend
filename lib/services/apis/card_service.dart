@@ -126,6 +126,33 @@ class CardService {
     return res;
   }
 
+  /// Loads fact ids for a deck (paged). Used to detect newly added facts.
+  static Future<List<String>> listFactIds(String deckId) async {
+    final ids = <String>[];
+    var offset = 0;
+    const limit = 200;
+    while (true) {
+      final res = await ApiService.get(
+        Api.facts,
+        pathParams: {'id': deckId},
+        queryParams: {'limit': limit, 'offset': offset},
+      );
+      final data = res?.data;
+      if (data is! Map || data['facts'] is! List) break;
+      final facts = data['facts'] as List;
+      if (facts.isEmpty) break;
+      for (final row in facts) {
+        if (row is Map && row['id'] != null) {
+          ids.add(row['id'].toString());
+        }
+      }
+      if (facts.length < limit) break;
+      offset += facts.length;
+      if (offset > 10000) break;
+    }
+    return ids;
+  }
+
   /// Adds one or more facts (`facts`, optional `template` per API contract).
   static Future<ApiResponse?> addFacts(
     String deckId,

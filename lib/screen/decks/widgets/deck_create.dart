@@ -5,6 +5,7 @@ import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/constants.dart';
 import 'package:retentio/extensions/context_extension.dart';
+import 'package:retentio/features/contributions/pending_contributions_store.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/features/tags/widgets/tag_chip.dart';
 import 'package:retentio/features/tags/widgets/tag_picker_sheet.dart';
@@ -12,6 +13,7 @@ import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/mixins/delayed_init_mixin.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/models/tag.dart';
+import 'package:retentio/screen/deck/deck_widgets/pending_contributions_outbox_sheet.dart';
 import 'package:retentio/screen/decks/bloc/deck_create_cubit.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/decks/deck_text_styles.dart';
@@ -214,6 +216,27 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
       ...toAdd.map((id) => TagService.of.addTagToDeck(deckId, id)),
       ...toRemove.map((id) => TagService.of.removeTagFromDeck(deckId, id)),
     ]);
+    final isImported = widget.deck?.isImported == true;
+    if (!isImported || (toAdd.isEmpty && toRemove.isEmpty)) return;
+
+    String nameFor(String id) {
+      for (final t in _selectedTags) {
+        if (t.id == id) return t.name;
+      }
+      final all = context.read<TagManagerCubit>().state.tags;
+      for (final t in all) {
+        if (t.id == id) return t.name;
+      }
+      return id;
+    }
+
+    await PendingContributionsStore.of.upsert(
+      deckId: deckId,
+      kind: PendingContributionKind.deckTags,
+      addTags: toAdd.map(nameFor).toList(),
+      removeTags: toRemove.map(nameFor).toList(),
+    );
+    if (mounted) showPendingStagedToast(context);
   }
 
   @override

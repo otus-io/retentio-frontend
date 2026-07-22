@@ -5,7 +5,16 @@ import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/fact.dart';
 import 'package:retentio/models/tag.dart';
+import 'package:retentio/services/apis/card_service.dart';
 import 'package:retentio/services/apis/tag_service.dart';
+
+class _TagFactRow {
+  const _TagFactRow({required this.ref, this.fact, this.loadError});
+
+  final TagFactRef ref;
+  final Fact? fact;
+  final String? loadError;
+}
 
 class TagFactsScreen extends StatefulWidget {
   const TagFactsScreen({super.key, required this.tag});
@@ -17,7 +26,7 @@ class TagFactsScreen extends StatefulWidget {
 }
 
 class _TagFactsScreenState extends State<TagFactsScreen> {
-  List<Fact>? _facts;
+  List<_TagFactRow>? _rows;
   String? _error;
 
   @override
@@ -28,12 +37,21 @@ class _TagFactsScreenState extends State<TagFactsScreen> {
 
   Future<void> _load() async {
     setState(() {
-      _facts = null;
+      _rows = null;
       _error = null;
     });
     try {
-      final facts = await TagService.of.getTagFacts(widget.tag.id);
-      if (mounted) setState(() => _facts = facts);
+      final refs = await TagService.of.getTagFacts(widget.tag.id);
+      final rows = <_TagFactRow>[];
+      for (final ref in refs) {
+        try {
+          final fact = await CardService.getFact(ref.deckId, ref.factId);
+          rows.add(_TagFactRow(ref: ref, fact: fact));
+        } catch (e) {
+          rows.add(_TagFactRow(ref: ref, loadError: rawApiErrorMessage(e)));
+        }
+      }
+      if (mounted) setState(() => _rows = rows);
     } catch (e) {
       if (mounted) setState(() => _error = rawApiErrorMessage(e));
     }
@@ -67,7 +85,7 @@ class _TagFactsScreenState extends State<TagFactsScreen> {
   }
 
   Widget _buildBody(AppLocalizations loc, ThemeData theme, ColorScheme scheme) {
-    if (_facts == null && _error == null) {
+    if (_rows == null && _error == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -88,8 +106,8 @@ class _TagFactsScreenState extends State<TagFactsScreen> {
       );
     }
 
-    final facts = _facts!;
-    if (facts.isEmpty) {
+    final rows = _rows!;
+    if (rows.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -115,27 +133,27 @@ class _TagFactsScreenState extends State<TagFactsScreen> {
       onRefresh: _load,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        itemCount: facts.length,
+        itemCount: rows.length,
         separatorBuilder: (_, _) => const SizedBox(height: 8),
-        itemBuilder: (_, i) => _FactCard(fact: facts[i]),
+        itemBuilder: (_, i) => _FactRefCard(row: rows[i]),
       ),
     );
   }
 }
 
-class _FactCard extends StatelessWidget {
-  const _FactCard({required this.fact});
+class _FactRefCard extends StatelessWidget {
+  const _FactRefCard({required this.row});
 
-  final Fact fact;
+  final _TagFactRow row;
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-
-    // Show fields as labels if available, otherwise fall back to indices.
-    final entries = fact.entries;
-    final fields = fact.fields;
+    final fact = row.fact;
+    final entries = fact?.entries ?? const <FactEntry>[];
+    final fields = fact?.fields ?? const <String>[];
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -147,36 +165,52 @@ class _FactCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: 6,
-        children: List.generate(entries.length, (i) {
-          final entry = entries[i];
-          final label = (i < fields.length && fields[i].isNotEmpty)
-              ? fields[i]
-              : null;
-          final text = entry.text;
-          if (text.isEmpty) return const SizedBox.shrink();
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (label != null) ...[
-                Text(
-                  label,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: scheme.onSurface.withValues(alpha: 0.5),
+        children: [
+          Text(
+            loc.tagFactRefLabel(row.ref.deckId, row.ref.factId),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: scheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ),
+          if (row.loadError != null)
+            Text(
+              ApiErrorMessages.resolve(row.loadError, loc),
+              style: theme.textTheme.bodySmall?.copyWith(color: scheme.error),
+            )
+          else if (entries.isEmpty)
+            Text('—', style: theme.textTheme.bodySmall)
+          else
+            ...List.generate(entries.length, (i) {
+              final entry = entries[i];
+              final label = (i < fields.length && fields[i].isNotEmpty)
+                  ? fields[i]
+                  : null;
+              final text = entry.text;
+              if (text.isEmpty) return const SizedBox.shrink();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (label != null) ...[
+                    Text(
+                      label,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: scheme.onSurface.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                  ],
+                  Text(
+                    text,
+                    style: i == 0
+                        ? theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          )
+                        : theme.textTheme.bodySmall,
                   ),
-                ),
-                const SizedBox(height: 2),
-              ],
-              Text(
-                text,
-                style: i == 0
-                    ? theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      )
-                    : theme.textTheme.bodySmall,
-              ),
-            ],
-          );
-        }),
+                ],
+              );
+            }),
+        ],
       ),
     );
   }

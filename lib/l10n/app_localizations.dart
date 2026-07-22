@@ -2569,6 +2569,360 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This fact has no entries'**
   String get factEditNoEntries;
+
+  /// No description provided for @deckUpdatesAddedSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Added facts ({count})'**
+  String deckUpdatesAddedSection(int count);
+
+  /// No description provided for @deckUpdatesRemovedSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed facts ({count})'**
+  String deckUpdatesRemovedSection(int count);
+
+  /// No description provided for @deckUpdatesEditedSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited facts ({count})'**
+  String deckUpdatesEditedSection(int count);
+
+  /// No description provided for @deckUpdatesMediaSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Media changes ({count})'**
+  String deckUpdatesMediaSection(int count);
+
+  /// No description provided for @deckUpdatesTemplatesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Card template changes ({count})'**
+  String deckUpdatesTemplatesSection(int count);
+
+  /// Accept author publish for this fact on sync
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get deckUpdatesAccept;
+
+  /// Keep private overlay when syncing
+  ///
+  /// In en, this message translates to:
+  /// **'Keep local'**
+  String get deckUpdatesKeepLocal;
+
+  /// No description provided for @deckUpdatesAligned.
+  ///
+  /// In en, this message translates to:
+  /// **'aligned'**
+  String get deckUpdatesAligned;
+
+  /// No description provided for @deckUpdatesLocalOverlay.
+  ///
+  /// In en, this message translates to:
+  /// **'local overlay'**
+  String get deckUpdatesLocalOverlay;
+
+  /// No description provided for @deckUpdatesKeepHint.
+  ///
+  /// In en, this message translates to:
+  /// **'has local overlay (default keep)'**
+  String get deckUpdatesKeepHint;
+
+  /// No description provided for @deckUpdatesAcceptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'default accept'**
+  String get deckUpdatesAcceptHint;
+
+  /// No description provided for @deckUpdatesBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Before'**
+  String get deckUpdatesBefore;
+
+  /// No description provided for @deckUpdatesAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'After'**
+  String get deckUpdatesAfter;
+
+  /// Submit private overlay as fact_edit contribution
+  ///
+  /// In en, this message translates to:
+  /// **'Submit edit to author'**
+  String get contributeFactEdit;
+
+  /// No description provided for @contributeFactEditSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit submitted to author'**
+  String get contributeFactEditSuccess;
+
+  /// Submit fact tag add/remove as contribution
+  ///
+  /// In en, this message translates to:
+  /// **'Submit tag changes'**
+  String get contributeFactTags;
+
+  /// No description provided for @contributeFactTagsSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag changes submitted'**
+  String get contributeFactTagsSuccess;
+
+  /// No description provided for @contributeNoTagChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Change tags before submitting'**
+  String get contributeNoTagChanges;
+
+  /// No description provided for @contributeOptionalMessageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional message for the author'**
+  String get contributeOptionalMessageHint;
+
+  /// Author inbox menu for source decks
+  ///
+  /// In en, this message translates to:
+  /// **'Contributions'**
+  String get contributionsInbox;
+
+  /// No description provided for @contributionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No open contributions'**
+  String get contributionsEmpty;
+
+  /// No description provided for @contributionsAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get contributionsAccept;
+
+  /// No description provided for @contributionsDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get contributionsDismiss;
+
+  /// No description provided for @contributionsResolve.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve'**
+  String get contributionsResolve;
+
+  /// No description provided for @contributionsAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Contribution accepted'**
+  String get contributionsAccepted;
+
+  /// No description provided for @contributionsUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Contribution updated'**
+  String get contributionsUpdated;
+
+  /// Label for baseline fact content in author contribution review
+  ///
+  /// In en, this message translates to:
+  /// **'Before'**
+  String get contributionsBefore;
+
+  /// Label for proposed fact content in author contribution review
+  ///
+  /// In en, this message translates to:
+  /// **'After'**
+  String get contributionsAfter;
+
+  /// No description provided for @contributionsProposed.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed'**
+  String get contributionsProposed;
+
+  /// No description provided for @contributionsReported.
+  ///
+  /// In en, this message translates to:
+  /// **'Reported'**
+  String get contributionsReported;
+
+  /// No description provided for @contributionsFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Fields'**
+  String get contributionsFields;
+
+  /// No description provided for @contributionsTags.
+  ///
+  /// In en, this message translates to:
+  /// **'Tags'**
+  String get contributionsTags;
+
+  /// Label next to audio player for baseline contribution audio
+  ///
+  /// In en, this message translates to:
+  /// **'Play original'**
+  String get contributionsPlayBefore;
+
+  /// Label next to audio player for proposed contribution audio
+  ///
+  /// In en, this message translates to:
+  /// **'Play proposed'**
+  String get contributionsPlayAfter;
+
+  /// No description provided for @tagUsageCounts.
+  ///
+  /// In en, this message translates to:
+  /// **'{decks} decks · {facts} facts'**
+  String tagUsageCounts(int decks, int facts);
+
+  /// No description provided for @tagFactRefLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Deck {deckId} · Fact {factId}'**
+  String tagFactRefLabel(String deckId, String factId);
+
+  /// Importer outbox menu for pending local changes to send
+  ///
+  /// In en, this message translates to:
+  /// **'Unsent contributions'**
+  String get pendingOutbox;
+
+  /// No description provided for @pendingOutboxHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Local changes ready to send to the author, plus what you already sent from this device.'**
+  String get pendingOutboxHint;
+
+  /// No description provided for @pendingTabPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending ({count})'**
+  String pendingTabPending(int count);
+
+  /// No description provided for @pendingTabSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent ({count})'**
+  String pendingTabSent(int count);
+
+  /// No description provided for @pendingEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing pending. Edit or add facts on this imported deck — they show up here until you send them.'**
+  String get pendingEmpty;
+
+  /// No description provided for @pendingSentEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No sent contributions stored on this device yet.'**
+  String get pendingSentEmpty;
+
+  /// No description provided for @pendingSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all ({count})'**
+  String pendingSelectAll(int count);
+
+  /// No description provided for @pendingSendSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Send selected'**
+  String get pendingSendSelected;
+
+  /// No description provided for @pendingSendSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Send selected ({count})'**
+  String pendingSendSelectedCount(int count);
+
+  /// No description provided for @pendingDismissSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss selected'**
+  String get pendingDismissSelected;
+
+  /// No description provided for @pendingClearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get pendingClearAll;
+
+  /// No description provided for @pendingStaged.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to unsent contributions'**
+  String get pendingStaged;
+
+  /// No description provided for @pendingSendSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent {count} contribution(s)'**
+  String pendingSendSuccess(int count);
+
+  /// No description provided for @pendingSendPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent {sent}; {failed} failed'**
+  String pendingSendPartial(int sent, int failed);
+
+  /// No description provided for @pendingDismissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismissed {count} item(s)'**
+  String pendingDismissed(int count);
+
+  /// No description provided for @pendingCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleared {count} pending item(s)'**
+  String pendingCleared(int count);
+
+  /// No description provided for @pendingKindEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Fact edit'**
+  String get pendingKindEdit;
+
+  /// No description provided for @pendingKindAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'New fact'**
+  String get pendingKindAdd;
+
+  /// No description provided for @pendingKindDeckTags.
+  ///
+  /// In en, this message translates to:
+  /// **'Deck tags'**
+  String get pendingKindDeckTags;
+
+  /// No description provided for @pendingKindFactTags.
+  ///
+  /// In en, this message translates to:
+  /// **'Fact tags'**
+  String get pendingKindFactTags;
+
+  /// No description provided for @pendingKindTemplate.
+  ///
+  /// In en, this message translates to:
+  /// **'Template'**
+  String get pendingKindTemplate;
+
+  /// No description provided for @pendingKindFieldRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Field rename'**
+  String get pendingKindFieldRename;
+
+  /// No description provided for @pendingKindReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get pendingKindReport;
 }
 
 class _AppLocalizationsDelegate

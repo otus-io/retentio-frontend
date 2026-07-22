@@ -1772,5 +1772,148 @@
   "factEditNoEntries": "This fact has no entries",
   "@factEditNoEntries": {
     "description": "Shown when fact edit opens an invalid empty fact"
-  }
+  },
+  "deckUpdatesAddedSection": "Added facts ({count})",
+  "@deckUpdatesAddedSection": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "deckUpdatesRemovedSection": "Removed facts ({count})",
+  "@deckUpdatesRemovedSection": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "deckUpdatesEditedSection": "Edited facts ({count})",
+  "@deckUpdatesEditedSection": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "deckUpdatesMediaSection": "Media changes ({count})",
+  "@deckUpdatesMediaSection": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "deckUpdatesTemplatesSection": "Card template changes ({count})",
+  "@deckUpdatesTemplatesSection": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "deckUpdatesAccept": "Accept",
+  "@deckUpdatesAccept": {
+    "description": "Accept author publish for this fact on sync"
+  },
+  "deckUpdatesKeepLocal": "Keep local",
+  "@deckUpdatesKeepLocal": {
+    "description": "Keep private overlay when syncing"
+  },
+  "deckUpdatesAligned": "aligned",
+  "deckUpdatesLocalOverlay": "local overlay",
+  "deckUpdatesKeepHint": "has local overlay (default keep)",
+  "deckUpdatesAcceptHint": "default accept",
+  "deckUpdatesBefore": "Before",
+  "deckUpdatesAfter": "After",
+  "contributeFactEdit": "Submit edit to author",
+  "@contributeFactEdit": {
+    "description": "Submit private overlay as fact_edit contribution"
+  },
+  "contributeFactEditSuccess": "Edit submitted to author",
+  "contributeFactTags": "Submit tag changes",
+  "@contributeFactTags": {
+    "description": "Submit fact tag add/remove as contribution"
+  },
+  "contributeFactTagsSuccess": "Tag changes submitted",
+  "contributeNoTagChanges": "Change tags before submitting",
+  "contributeOptionalMessageHint": "Optional message for the author",
+  "contributionsInbox": "Contributions",
+  "@contributionsInbox": {
+    "description": "Author inbox menu for source decks"
+  },
+  "contributionsEmpty": "No open contributions",
+  "contributionsAccept": "Accept",
+  "contributionsDismiss": "Dismiss",
+  "contributionsResolve": "Resolve",
+  "contributionsAccepted": "Contribution accepted",
+  "contributionsUpdated": "Contribution updated",
+  "contributionsBefore": "Before",
+  "@contributionsBefore": {
+    "description": "Label for baseline fact content in author contribution review"
+  },
+  "contributionsAfter": "After",
+  "@contributionsAfter": {
+    "description": "Label for proposed fact content in author contribution review"
+  },
+  "contributionsProposed": "Proposed",
+  "contributionsReported": "Reported",
+  "contributionsFields": "Fields",
+  "contributionsTags": "Tags",
+  "contributionsPlayBefore": "Play original",
+  "@contributionsPlayBefore": {
+    "description": "Label next to audio player for baseline contribution audio"
+  },
+  "contributionsPlayAfter": "Play proposed",
+  "@contributionsPlayAfter": {
+    "description": "Label next to audio player for proposed contribution audio"
+  },
+  "tagUsageCounts": "{decks} decks · {facts} facts",
+  "@tagUsageCounts": {
+    "placeholders": {
+      "decks": { "type": "int" },
+      "facts": { "type": "int" }
+    }
+  },
+  "tagFactRefLabel": "Deck {deckId} · Fact {factId}",
+  "@tagFactRefLabel": {
+    "placeholders": {
+      "deckId": { "type": "String" },
+      "factId": { "type": "String" }
+    }
+  },
+  "pendingOutbox": "Unsent contributions",
+  "@pendingOutbox": {
+    "description": "Importer outbox menu for pending local changes to send"
+  },
+  "pendingOutboxHint": "Local changes ready to send to the author, plus what you already sent from this device.",
+  "pendingTabPending": "Pending ({count})",
+  "@pendingTabPending": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "pendingTabSent": "Sent ({count})",
+  "@pendingTabSent": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "pendingEmpty": "Nothing pending. Edit or add facts on this imported deck — they show up here until you send them.",
+  "pendingSentEmpty": "No sent contributions stored on this device yet.",
+  "pendingSelectAll": "Select all ({count})",
+  "@pendingSelectAll": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "pendingSendSelected": "Send selected",
+  "pendingSendSelectedCount": "Send selected ({count})",
+  "@pendingSendSelectedCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "pendingDismissSelected": "Dismiss selected",
+  "pendingClearAll": "Clear all",
+  "pendingStaged": "Saved to unsent contributions",
+  "pendingSendSuccess": "Sent {count} contribution(s)",
+  "@pendingSendSuccess": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "pendingSendPartial": "Sent {sent}; {failed} failed",
+  "@pendingSendPartial": {
+    "placeholders": {
+      "sent": { "type": "int" },
+      "failed": { "type": "int" }
+    }
+  },
+  "pendingDismissed": "Dismissed {count} item(s)",
+  "@pendingDismissed": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "pendingCleared": "Cleared {count} pending item(s)",
+  "@pendingCleared": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "pendingKindEdit": "Fact edit",
+  "pendingKindAdd": "New fact",
+  "pendingKindDeckTags": "Deck tags",
+  "pendingKindFactTags": "Fact tags",
+  "pendingKindTemplate": "Template",
+  "pendingKindFieldRename": "Field rename",
+  "pendingKindReport": "Report"
 }

@@ -18,9 +18,13 @@ class AddFactPayload {
   static Map<String, dynamic> buildFactBody({
     required List<Map<String, dynamic>> entries,
     List<String>? tagNames,
+    List<String>? tagIds,
   }) {
     final fact = <String, dynamic>{'entries': entries};
-    if (tagNames != null && tagNames.isNotEmpty) {
+    // Prefer existing tag IDs (TagPicker). Names auto-create; do not send both.
+    if (tagIds != null && tagIds.isNotEmpty) {
+      fact['tag_ids'] = tagIds;
+    } else if (tagNames != null && tagNames.isNotEmpty) {
       fact['tags'] = tagNames;
     }
     return {

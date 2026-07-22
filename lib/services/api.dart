@@ -43,6 +43,29 @@ class Api {
   static const String deckImport = '/api/decks/import';
   static const String deckUpdates = '/api/decks/{id}/updates';
   static const String deckSync = '/api/decks/{id}/sync';
+
+  // Import contributions (submit on import deck id)
   static const String deckFactReport =
       '/api/decks/{id}/contributions/facts/{factId}/report';
+  static const String deckFactEditContribution =
+      '/api/decks/{id}/contributions/facts/{factId}/edit';
+  static const String deckFactAddContribution =
+      '/api/decks/{id}/contributions/facts/{factId}/add';
+  static const String deckFactTagsContribution =
+      '/api/decks/{id}/contributions/facts/{factId}/tags';
+  static const String deckTagsContribution =
+      '/api/decks/{id}/contributions/deck-tags';
+  static const String deckFieldRenameContribution =
+      '/api/decks/{id}/contributions/fields/rename';
+  static const String deckFactTemplateContribution =
+      '/api/decks/{id}/contributions/facts/{factId}/templates';
+
+  // Author contribution inbox (source deck id)
+  static const String deckContributions = '/api/decks/{id}/contributions';
+  static const String deckContribution =
+      '/api/decks/{id}/contributions/{contributionId}';
+  static const String deckContributionAccept =
+      '/api/decks/{id}/contributions/{contributionId}/accept';
+  static const String deckContributionMedia =
+      '/api/decks/{id}/contributions/{contributionId}/media/{attachmentId}';
 }

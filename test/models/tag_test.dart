@@ -58,6 +58,29 @@ void main() {
       expect(json['description'], original['description']);
     });
 
+    test('fromJson parses usage fields from list response', () {
+      final tag = Tag.fromJson({
+        'id': 'tag-1',
+        'name': 'Flutter',
+        'description': 'desc',
+        'deck_count': 2,
+        'fact_count': 5,
+        'used_on': ['deck', 'fact'],
+      });
+      expect(tag.deckCount, 2);
+      expect(tag.factCount, 5);
+      expect(tag.usedOn, ['deck', 'fact']);
+    });
+
+    test('TagFactRef.fromJson parses deck_id and fact_id', () {
+      final ref = TagFactRef.fromJson({
+        'deck_id': 'dk7xm2n9pq4w',
+        'fact_id': 'f4k2m9x1',
+      });
+      expect(ref.deckId, 'dk7xm2n9pq4w');
+      expect(ref.factId, 'f4k2m9x1');
+    });
+
     test('toJson includes all three keys even when empty', () {
       const tag = Tag(id: '', name: '', description: '');
       final json = tag.toJson();
