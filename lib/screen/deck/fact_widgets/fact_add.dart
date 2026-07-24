@@ -5,12 +5,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/error/api_error_messages.dart';
+import 'package:retentio/features/contributions/pending_contributions_store.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/features/tags/widgets/tag_chip.dart';
 import 'package:retentio/features/tags/widgets/tag_picker_sheet.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/models/tag.dart';
+import 'package:retentio/screen/deck/deck_widgets/pending_contributions_outbox_sheet.dart';
 import 'package:retentio/screen/deck/fact_add_composer/entry_row.dart';
 import 'package:retentio/screen/deck/fact_add_composer/media_handling_coordinator.dart';
 import 'package:retentio/screen/deck/fact_add_composer/payload.dart';
@@ -251,14 +253,45 @@ class _FactAddState extends ConsumerState<FactAdd>
           ),
         );
       }
-      final tagNames = _selectedTags.map((t) => t.name).toList();
+      final tagIds = _selectedTagIds.toList();
       final body = AddFactPayload.buildFactBody(
         entries: entries,
-        tagNames: tagNames.isNotEmpty ? tagNames : null,
+        tagIds: tagIds.isNotEmpty ? tagIds : null,
       );
+
+      Set<String>? idsBefore;
+      if (widget.deck.isImported) {
+        try {
+          idsBefore = (await CardService.listFactIds(widget.deck.id)).toSet();
+        } catch (_) {
+          // Unknown baseline — skip staging (idsBefore != null guard below).
+          idsBefore = null;
+        }
+      }
+
       final res = await CardService.addFacts(widget.deck.id, 'append', body);
       if (!mounted) return;
       if (res?.isSuccess == true) {
+        if (widget.deck.isImported && idsBefore != null) {
+          try {
+            final idsAfter = await CardService.listFactIds(widget.deck.id);
+            final preview = PendingContributionsStore.previewFromEntryTexts(
+              entries.map((e) => e['text']?.toString() ?? ''),
+            );
+            for (final id in idsAfter) {
+              if (idsBefore.contains(id)) continue;
+              await PendingContributionsStore.of.upsert(
+                deckId: widget.deck.id,
+                kind: PendingContributionKind.add,
+                factId: id,
+                preview: preview,
+              );
+            }
+            if (mounted) showPendingStagedToast(context);
+          } catch (_) {
+            /* staging is best-effort */
+          }
+        }
         await ref.read(deckListProvider.notifier).onRefresh();
         final refreshStudy = widget.onStudyQueueRefresh;
         if (refreshStudy != null) {

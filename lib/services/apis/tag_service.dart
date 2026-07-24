@@ -1,5 +1,4 @@
 import 'package:retentio/models/api_response.dart';
-import 'package:retentio/models/fact.dart';
 import 'package:retentio/models/tag.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/index.dart';
@@ -22,7 +21,12 @@ class TagService {
   /// 列出标签，可按场景过滤
   /// [usedOn]: 'fact' | 'deck' | null（全量）
   /// [deckId]: used_on=fact 时必传
-  Future<List<Tag>> getTags({String? usedOn, String? deckId}) async {
+  /// [unused]: only with used_on=fact — `exclude` | `only` (omit = facts-in-deck + globally unused)
+  Future<List<Tag>> getTags({
+    String? usedOn,
+    String? deckId,
+    String? unused,
+  }) async {
     if (usedOn == 'fact' && (deckId == null || deckId.trim().isEmpty)) {
       throw ArgumentError.value(
         deckId,
@@ -31,7 +35,11 @@ class TagService {
       );
     }
     try {
-      final query = <String, dynamic>{'used_on': ?usedOn, 'deck_id': ?deckId};
+      final query = <String, dynamic>{
+        'used_on': ?usedOn,
+        'deck_id': ?deckId,
+        'unused': ?unused,
+      };
       final res = await ApiService.get(
         Api.tags,
         queryParams: query.isEmpty ? null : query,
@@ -173,8 +181,8 @@ class TagService {
 
   // ── Tag -> Facts ──────────────────────────────────────────
 
-  /// 获取某个标签下的所有词条
-  Future<List<Fact>> getTagFacts(String tagId) async {
+  /// Cross-deck `{deck_id, fact_id}` pairs for facts with this tag.
+  Future<List<TagFactRef>> getTagFacts(String tagId) async {
     try {
       final res = await ApiService.get(
         Api.tagFacts,
@@ -183,7 +191,8 @@ class TagService {
       final data = res?.data;
       if (data is Map && data['facts'] is List) {
         return (data['facts'] as List)
-            .map((e) => Fact.fromJson(e as Map<String, dynamic>))
+            .whereType<Map>()
+            .map((e) => TagFactRef.fromJson(Map<String, dynamic>.from(e)))
             .toList();
       }
       return [];

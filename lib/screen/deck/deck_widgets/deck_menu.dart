@@ -22,6 +22,8 @@ import 'package:retentio/widgets/common_bottom_sheet.dart';
 
 import 'deck_font_sheet.dart';
 import 'import_updates_sheet.dart';
+import 'contributions_inbox_sheet.dart';
+import 'pending_contributions_outbox_sheet.dart';
 
 class DeckMenu extends StatelessWidget {
   static const _kMenuWidth = 200.0;
@@ -173,7 +175,7 @@ class DeckMenu extends StatelessWidget {
               onPressedBackgroundColor: scheme.surfaceContainerHighest,
             ),
           ),
-          if (!deck.isImported)
+          if (!deck.isImported) ...[
             PullDownMenuItem(
               title: loc.publishDeck,
               onTap: () async {
@@ -194,7 +196,56 @@ class DeckMenu extends StatelessWidget {
                 onPressedBackgroundColor: scheme.surfaceContainerHighest,
               ),
             ),
-          if (deck.isImported)
+            PullDownMenuItem(
+              title: loc.contributionsInbox,
+              onTap: () async {
+                await _showSheetAfterMenuDismissed(
+                  context,
+                  showSheet: () {
+                    showCommonBottomSheet<void>(
+                      context: context,
+                      title: loc.contributionsInbox,
+                      initialChildSize: 0.7,
+                      minChildSize: 0.4,
+                      maxChildSize: 0.95,
+                      child: ContributionsInboxSheet(sourceDeckId: deck.id),
+                    );
+                  },
+                );
+              },
+              icon: LucideIcons.inbox,
+              itemTheme: PullDownMenuItemTheme(
+                textStyle: menuItemStyle(scheme.onSurface),
+                onPressedBackgroundColor: scheme.surfaceContainerHighest,
+              ),
+            ),
+          ],
+          if (deck.isImported) ...[
+            PullDownMenuItem(
+              title: loc.pendingOutbox,
+              onTap: () async {
+                await _showSheetAfterMenuDismissed(
+                  context,
+                  showSheet: () {
+                    showCommonBottomSheet<void>(
+                      context: context,
+                      title: loc.pendingOutbox,
+                      initialChildSize: 0.75,
+                      minChildSize: 0.45,
+                      maxChildSize: 0.95,
+                      child: PendingContributionsOutboxSheet(
+                        importDeckId: deck.id,
+                      ),
+                    );
+                  },
+                );
+              },
+              icon: LucideIcons.mail,
+              itemTheme: PullDownMenuItemTheme(
+                textStyle: menuItemStyle(scheme.onSurface),
+                onPressedBackgroundColor: scheme.surfaceContainerHighest,
+              ),
+            ),
             PullDownMenuItem(
               title: loc.deckCheckUpdates,
               onTap: () async {
@@ -204,9 +255,9 @@ class DeckMenu extends StatelessWidget {
                     showCommonBottomSheet<void>(
                       context: context,
                       title: loc.deckCheckUpdates,
-                      initialChildSize: 0.5,
-                      minChildSize: 0.35,
-                      maxChildSize: 0.7,
+                      initialChildSize: 0.75,
+                      minChildSize: 0.45,
+                      maxChildSize: 0.95,
                       child: ImportUpdatesSheet(
                         deckId: deck.id,
                         onSynced: () =>
@@ -222,6 +273,7 @@ class DeckMenu extends StatelessWidget {
                 onPressedBackgroundColor: scheme.surfaceContainerHighest,
               ),
             ),
+          ],
           const PullDownMenuDivider.large(),
           PullDownMenuItem(
             title: loc.deleteDeck,

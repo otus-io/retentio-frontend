@@ -1050,5 +1050,150 @@
   "factEditNoEntries": "该词条没有可编辑内容",
   "@factEditNoEntries": {
     "description": "Shown when fact edit opens an invalid empty fact"
-  }
+  },
+  "deckUpdatesAddedSection": "新增词条（{count}）",
+  "@deckUpdatesAddedSection": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "deckUpdatesRemovedSection": "删除词条（{count}）",
+  "@deckUpdatesRemovedSection": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "deckUpdatesEditedSection": "修改词条（{count}）",
+  "@deckUpdatesEditedSection": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "deckUpdatesMediaSection": "媒体变更（{count}）",
+  "@deckUpdatesMediaSection": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "deckUpdatesTemplatesSection": "卡片模板变更（{count}）",
+  "@deckUpdatesTemplatesSection": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "deckUpdatesAccept": "接受",
+  "@deckUpdatesAccept": {
+    "description": "Accept author publish for this fact on sync"
+  },
+  "deckUpdatesKeepLocal": "保留本地",
+  "@deckUpdatesKeepLocal": {
+    "description": "Keep private overlay when syncing"
+  },
+  "deckUpdatesAligned": "已对齐",
+  "deckUpdatesLocalOverlay": "本地 overlay",
+  "deckUpdatesKeepHint": "有本地 overlay（默认保留）",
+  "deckUpdatesAcceptHint": "默认接受",
+  "deckUpdatesBefore": "之前",
+  "deckUpdatesAfter": "之后",
+  "contributeFactEdit": "向作者提交修改",
+  "@contributeFactEdit": {
+    "description": "Submit private overlay as fact_edit contribution"
+  },
+  "contributeFactEditSuccess": "修改已提交给作者",
+  "contributeFactTags": "提交标签变更",
+  "@contributeFactTags": {
+    "description": "Submit fact tag add/remove as contribution"
+  },
+  "contributeFactTagsSuccess": "标签变更已提交",
+  "contributeNoTagChanges": "请先修改标签再提交",
+  "contributeOptionalMessageHint": "给作者的可选留言",
+  "contributionsInbox": "贡献收件箱",
+  "@contributionsInbox": {
+    "description": "Author inbox menu for source decks"
+  },
+  "contributionsEmpty": "暂无待处理贡献",
+  "contributionsAccept": "接受",
+  "contributionsDismiss": "忽略",
+  "contributionsResolve": "标为已解决",
+  "contributionsAccepted": "已接受贡献",
+  "contributionsUpdated": "贡献状态已更新",
+  "contributionsLoadMore": "加载更多",
+  "contributionsBefore": "修改前",
+  "@contributionsBefore": {
+    "description": "Label for baseline fact content in author contribution review"
+  },
+  "contributionsAfter": "修改后",
+  "@contributionsAfter": {
+    "description": "Label for proposed fact content in author contribution review"
+  },
+  "contributionsProposed": "提议内容",
+  "contributionsReported": "报告内容",
+  "contributionsFields": "列名",
+  "contributionsTags": "标签",
+  "contributionsPlayBefore": "播放原文",
+  "@contributionsPlayBefore": {
+    "description": "Label next to audio player for baseline contribution audio"
+  },
+  "contributionsPlayAfter": "播放提议",
+  "@contributionsPlayAfter": {
+    "description": "Label next to audio player for proposed contribution audio"
+  },
+  "tagUsageCounts": "{decks} 个卡组 · {facts} 个词条",
+  "@tagUsageCounts": {
+    "placeholders": {
+      "decks": { "type": "int" },
+      "facts": { "type": "int" }
+    }
+  },
+  "tagFactRefLabel": "卡组 {deckId} · 词条 {factId}",
+  "@tagFactRefLabel": {
+    "placeholders": {
+      "deckId": { "type": "String" },
+      "factId": { "type": "String" }
+    }
+  },
+  "pendingOutbox": "未发送贡献",
+  "@pendingOutbox": {
+    "description": "Importer outbox menu for pending local changes to send"
+  },
+  "pendingOutboxHint": "可发给作者的本地修改，以及本设备已发送记录。",
+  "pendingTabPending": "待发送（{count}）",
+  "@pendingTabPending": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "pendingTabSent": "已发送（{count}）",
+  "@pendingTabSent": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "pendingEmpty": "暂无待发送项。在导入卡组中编辑或添加词条后会出现在这里。",
+  "pendingSentEmpty": "本设备尚无已发送记录。",
+  "pendingSelectAll": "全选（{count}）",
+  "@pendingSelectAll": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "pendingSendSelected": "发送所选",
+  "pendingSendSelectedCount": "发送所选（{count}）",
+  "@pendingSendSelectedCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "pendingDismissSelected": "忽略所选",
+  "pendingClearAll": "清空全部",
+  "pendingStaged": "已加入未发送贡献",
+  "pendingSendSuccess": "已发送 {count} 条贡献",
+  "@pendingSendSuccess": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "pendingSendPartial": "已发送 {sent} 条；{failed} 条失败",
+  "@pendingSendPartial": {
+    "placeholders": {
+      "sent": { "type": "int" },
+      "failed": { "type": "int" }
+    }
+  },
+  "pendingDismissed": "已忽略 {count} 项",
+  "@pendingDismissed": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "pendingCleared": "已清空 {count} 项待发送",
+  "@pendingCleared": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "pendingKindEdit": "词条修改",
+  "pendingKindAdd": "新增词条",
+  "pendingKindDeckTags": "卡组标签",
+  "pendingKindFactTags": "词条标签",
+  "pendingKindTemplate": "模板",
+  "pendingKindFieldRename": "列名重命名",
+  "pendingKindReport": "报告",
+  "pendingNotSubmittable": "暂无法从发件箱发送"
 }

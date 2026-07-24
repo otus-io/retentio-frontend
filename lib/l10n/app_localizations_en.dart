@@ -1375,4 +1375,220 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get factEditNoEntries => 'This fact has no entries';
+
+  @override
+  String deckUpdatesAddedSection(int count) {
+    return 'Added facts ($count)';
+  }
+
+  @override
+  String deckUpdatesRemovedSection(int count) {
+    return 'Removed facts ($count)';
+  }
+
+  @override
+  String deckUpdatesEditedSection(int count) {
+    return 'Edited facts ($count)';
+  }
+
+  @override
+  String deckUpdatesMediaSection(int count) {
+    return 'Media changes ($count)';
+  }
+
+  @override
+  String deckUpdatesTemplatesSection(int count) {
+    return 'Card template changes ($count)';
+  }
+
+  @override
+  String get deckUpdatesAccept => 'Accept';
+
+  @override
+  String get deckUpdatesKeepLocal => 'Keep local';
+
+  @override
+  String get deckUpdatesAligned => 'aligned';
+
+  @override
+  String get deckUpdatesLocalOverlay => 'local overlay';
+
+  @override
+  String get deckUpdatesKeepHint => 'has local overlay (default keep)';
+
+  @override
+  String get deckUpdatesAcceptHint => 'default accept';
+
+  @override
+  String get deckUpdatesBefore => 'Before';
+
+  @override
+  String get deckUpdatesAfter => 'After';
+
+  @override
+  String get contributeFactEdit => 'Submit edit to author';
+
+  @override
+  String get contributeFactEditSuccess => 'Edit submitted to author';
+
+  @override
+  String get contributeFactTags => 'Submit tag changes';
+
+  @override
+  String get contributeFactTagsSuccess => 'Tag changes submitted';
+
+  @override
+  String get contributeNoTagChanges => 'Change tags before submitting';
+
+  @override
+  String get contributeOptionalMessageHint => 'Optional message for the author';
+
+  @override
+  String get contributionsInbox => 'Contributions';
+
+  @override
+  String get contributionsEmpty => 'No open contributions';
+
+  @override
+  String get contributionsAccept => 'Accept';
+
+  @override
+  String get contributionsDismiss => 'Dismiss';
+
+  @override
+  String get contributionsResolve => 'Resolve';
+
+  @override
+  String get contributionsAccepted => 'Contribution accepted';
+
+  @override
+  String get contributionsUpdated => 'Contribution updated';
+
+  @override
+  String get contributionsLoadMore => 'Load more';
+
+  @override
+  String get contributionsBefore => 'Before';
+
+  @override
+  String get contributionsAfter => 'After';
+
+  @override
+  String get contributionsProposed => 'Proposed';
+
+  @override
+  String get contributionsReported => 'Reported';
+
+  @override
+  String get contributionsFields => 'Fields';
+
+  @override
+  String get contributionsTags => 'Tags';
+
+  @override
+  String get contributionsPlayBefore => 'Play original';
+
+  @override
+  String get contributionsPlayAfter => 'Play proposed';
+
+  @override
+  String tagUsageCounts(int decks, int facts) {
+    return '$decks decks · $facts facts';
+  }
+
+  @override
+  String tagFactRefLabel(String deckId, String factId) {
+    return 'Deck $deckId · Fact $factId';
+  }
+
+  @override
+  String get pendingOutbox => 'Unsent contributions';
+
+  @override
+  String get pendingOutboxHint =>
+      'Local changes ready to send to the author, plus what you already sent from this device.';
+
+  @override
+  String pendingTabPending(int count) {
+    return 'Pending ($count)';
+  }
+
+  @override
+  String pendingTabSent(int count) {
+    return 'Sent ($count)';
+  }
+
+  @override
+  String get pendingEmpty =>
+      'Nothing pending. Edit or add facts on this imported deck — they show up here until you send them.';
+
+  @override
+  String get pendingSentEmpty =>
+      'No sent contributions stored on this device yet.';
+
+  @override
+  String pendingSelectAll(int count) {
+    return 'Select all ($count)';
+  }
+
+  @override
+  String get pendingSendSelected => 'Send selected';
+
+  @override
+  String pendingSendSelectedCount(int count) {
+    return 'Send selected ($count)';
+  }
+
+  @override
+  String get pendingDismissSelected => 'Dismiss selected';
+
+  @override
+  String get pendingClearAll => 'Clear all';
+
+  @override
+  String get pendingStaged => 'Saved to unsent contributions';
+
+  @override
+  String pendingSendSuccess(int count) {
+    return 'Sent $count contribution(s)';
+  }
+
+  @override
+  String pendingSendPartial(int sent, int failed) {
+    return 'Sent $sent; $failed failed';
+  }
+
+  @override
+  String pendingDismissed(int count) {
+    return 'Dismissed $count item(s)';
+  }
+
+  @override
+  String pendingCleared(int count) {
+    return 'Cleared $count pending item(s)';
+  }
+
+  @override
+  String get pendingKindEdit => 'Fact edit';
+
+  @override
+  String get pendingKindAdd => 'New fact';
+
+  @override
+  String get pendingKindDeckTags => 'Deck tags';
+
+  @override
+  String get pendingKindFactTags => 'Fact tags';
+
+  @override
+  String get pendingKindTemplate => 'Template';
+
+  @override
+  String get pendingKindFieldRename => 'Field rename';
+
+  @override
+  String get pendingKindReport => 'Report';
+
+  @override
+  String get pendingNotSubmittable => 'Can\'t send from outbox yet';
 }
