@@ -31,8 +31,9 @@ void main() {
       expect(AppRoutes.discoveryDetail.path, '/discovery/:id');
     });
 
-    test('auth-exempt includes reset and verify', () {
-      expect(AppRoutes.isAuthExemptPath('/'), isTrue);
+    test('auth-exempt includes login, reset, and verify but not main', () {
+      expect(AppRoutes.isAuthExemptPath('/login'), isTrue);
+      expect(AppRoutes.isAuthExemptPath('/'), isFalse);
       expect(AppRoutes.isAuthExemptPath('/discovery/deck-123'), isTrue);
       expect(AppRoutes.isAuthExemptPath('/reset-password'), isTrue);
       expect(AppRoutes.isAuthExemptPath('/verify-email'), isTrue);

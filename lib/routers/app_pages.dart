@@ -43,7 +43,7 @@ class AppPages {
   static const initial = AppRoutes.login;
   static final GoRouter routes = GoRouter(
     navigatorKey: navigatorKey,
-    initialLocation: AppRoutes.main.path,
+    initialLocation: AppRoutes.login.path,
     routes: [
       GoRoute(
         path: AppRoutes.login.path,

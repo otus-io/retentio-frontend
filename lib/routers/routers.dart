@@ -18,7 +18,6 @@ enum AppRoutes {
     '/register',
     '/reset-password',
     '/verify-email',
-    '/',
   };
 
   /// Normalizes paths to keep routing checks compatible with trailing slash input.
