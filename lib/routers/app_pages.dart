@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:retentio/screen/login/login_screen.dart';
 import 'package:retentio/screen/register/register_screen.dart';
+import 'package:retentio/screen/reset_password/reset_password_screen.dart';
+import 'package:retentio/screen/verify_email/verify_email_screen.dart';
 import 'package:retentio/core/di/app_service_locator.dart';
 import 'package:retentio/core/navigation/router_refresh_bridge.dart';
 import 'package:retentio/features/discovery/presentation/discovery_detail_screen.dart';
@@ -50,6 +52,16 @@ class AppPages {
       GoRoute(
         path: AppRoutes.register.path,
         builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.resetPassword.path,
+        builder: (context, state) =>
+            ResetPasswordScreen(token: state.uri.queryParameters['token']),
+      ),
+      GoRoute(
+        path: AppRoutes.verifyEmail.path,
+        builder: (context, state) =>
+            VerifyEmailScreen(token: state.uri.queryParameters['token']),
       ),
       GoRoute(
         path: AppRoutes.main.path,

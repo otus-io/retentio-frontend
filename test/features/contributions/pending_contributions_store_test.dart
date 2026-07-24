@@ -48,7 +48,9 @@ void main() {
     test('previewFromEntryTexts truncates long text', () {
       final short = PendingContributionsStore.previewFromEntryTexts(['hi']);
       expect(short, 'hi');
-      final long = PendingContributionsStore.previewFromEntryTexts(['a' * 100]);
+      final long = PendingContributionsStore.previewFromEntryTexts([
+        List.filled(100, 'a').join(),
+      ]);
       expect(long!.endsWith('…'), isTrue);
       expect(long.length, lessThanOrEqualTo(80));
     });

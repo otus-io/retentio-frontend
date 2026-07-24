@@ -64,7 +64,7 @@
   "@resetPassword": {
     "description": "Reset password button text"
   },
-  "resetPasswordSent": "Reset Password Sent",
+  "resetPasswordSent": "If an account exists, a reset link has been sent.",
   "@resetPasswordSent": {
     "description": "Confirmation message that password reset email was sent"
   },
@@ -1917,5 +1917,77 @@
   "pendingKindTemplate": "Template",
   "pendingKindFieldRename": "Field rename",
   "pendingKindReport": "Report",
-  "pendingNotSubmittable": "Can't send from outbox yet"
+  "pendingNotSubmittable": "Can't send from outbox yet",
+  "forgotPasswordHint": "Enter your account email and we will send a reset link.",
+  "@forgotPasswordHint": {
+    "description": "Forgot password sheet subtitle"
+  },
+  "resetPasswordTitle": "Set a new password",
+  "@resetPasswordTitle": {
+    "description": "Reset password screen title"
+  },
+  "resetPasswordHint": "Choose a new password for your account.",
+  "@resetPasswordHint": {
+    "description": "Reset password screen subtitle"
+  },
+  "resetPasswordSuccess": "Password reset successfully. You can log in now.",
+  "@resetPasswordSuccess": {
+    "description": "Shown after successful password reset"
+  },
+  "resetPasswordMissingToken": "Reset link is missing or invalid.",
+  "@resetPasswordMissingToken": {
+    "description": "Reset screen opened without a token"
+  },
+  "newPassword": "New password",
+  "@newPassword": {
+    "description": "New password field label"
+  },
+  "verifyEmailTitle": "Verify email",
+  "@verifyEmailTitle": {
+    "description": "Verify email screen title"
+  },
+  "verifyEmailSuccess": "Email verified successfully.",
+  "@verifyEmailSuccess": {
+    "description": "Shown after successful email verification"
+  },
+  "verifyEmailMissingToken": "Verification link is missing or invalid.",
+  "@verifyEmailMissingToken": {
+    "description": "Verify screen opened without a token"
+  },
+  "verifyEmailInProgress": "Verifying your email…",
+  "@verifyEmailInProgress": {
+    "description": "Shown while verifying email token"
+  },
+  "registerSuccessCheckEmail": "Account created. Check your email to verify your address.",
+  "@registerSuccessCheckEmail": {
+    "description": "Register success with soft verification hint"
+  },
+  "emailNotVerified": "Your email is not verified yet. You can still use the app.",
+  "@emailNotVerified": {
+    "description": "Profile banner when email_verified is false"
+  },
+  "resendVerification": "Resend verification email",
+  "@resendVerification": {
+    "description": "Button to resend verification email"
+  },
+  "verificationEmailSent": "If the email is unverified, a verification link has been sent.",
+  "@verificationEmailSent": {
+    "description": "Anti-enumeration confirmation after resend verification"
+  },
+  "authVerifyTokenInvalid": "Verification link is invalid or expired",
+  "@authVerifyTokenInvalid": {
+    "description": "Invalid or expired email verification token"
+  },
+  "apiTokenRequired": "Token is required",
+  "@apiTokenRequired": {
+    "description": "API error: Token is required"
+  },
+  "apiServerValidateVerifyToken": "Could not validate verification token. Please try again.",
+  "@apiServerValidateVerifyToken": {
+    "description": "API error validating verification token"
+  },
+  "apiServerVerifyEmail": "Could not verify email. Please try again.",
+  "@apiServerVerifyEmail": {
+    "description": "API error verifying email"
+  }
 }

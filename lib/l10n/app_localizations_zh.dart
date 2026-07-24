@@ -57,7 +57,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get resetPassword => '重置密码';
 
   @override
-  String get resetPasswordSent => '重置密码邮件已发送';
+  String get resetPasswordSent => '若账户存在，重置链接已发送。';
 
   @override
   String get home => '首页';
@@ -1496,4 +1496,58 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pendingNotSubmittable => '暂无法从发件箱发送';
+
+  @override
+  String get forgotPasswordHint => '输入账户邮箱，我们将发送重置链接。';
+
+  @override
+  String get resetPasswordTitle => '设置新密码';
+
+  @override
+  String get resetPasswordHint => '为你的账户选择一个新密码。';
+
+  @override
+  String get resetPasswordSuccess => '密码已重置，请登录。';
+
+  @override
+  String get resetPasswordMissingToken => '重置链接缺失或无效。';
+
+  @override
+  String get newPassword => '新密码';
+
+  @override
+  String get verifyEmailTitle => '验证邮箱';
+
+  @override
+  String get verifyEmailSuccess => '邮箱验证成功。';
+
+  @override
+  String get verifyEmailMissingToken => '验证链接缺失或无效。';
+
+  @override
+  String get verifyEmailInProgress => '正在验证邮箱…';
+
+  @override
+  String get registerSuccessCheckEmail => '注册成功。请查收邮件以验证邮箱。';
+
+  @override
+  String get emailNotVerified => '邮箱尚未验证，你仍可正常使用应用。';
+
+  @override
+  String get resendVerification => '重新发送验证邮件';
+
+  @override
+  String get verificationEmailSent => '若该邮箱未验证，验证链接已发送。';
+
+  @override
+  String get authVerifyTokenInvalid => '验证链接无效或已过期';
+
+  @override
+  String get apiTokenRequired => '需要令牌';
+
+  @override
+  String get apiServerValidateVerifyToken => '无法验证令牌，请重试';
+
+  @override
+  String get apiServerVerifyEmail => '无法验证邮箱，请重试';
 }

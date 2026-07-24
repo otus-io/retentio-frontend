@@ -197,7 +197,7 @@ abstract class AppLocalizations {
   /// Confirmation message that password reset email was sent
   ///
   /// In en, this message translates to:
-  /// **'Reset Password Sent'**
+  /// **'If an account exists, a reset link has been sent.'**
   String get resetPasswordSent;
 
   /// Home tab label in bottom navigation
@@ -2935,6 +2935,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Can\'t send from outbox yet'**
   String get pendingNotSubmittable;
+
+  /// Forgot password sheet subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your account email and we will send a reset link.'**
+  String get forgotPasswordHint;
+
+  /// Reset password screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Set a new password'**
+  String get resetPasswordTitle;
+
+  /// Reset password screen subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a new password for your account.'**
+  String get resetPasswordHint;
+
+  /// Shown after successful password reset
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset successfully. You can log in now.'**
+  String get resetPasswordSuccess;
+
+  /// Reset screen opened without a token
+  ///
+  /// In en, this message translates to:
+  /// **'Reset link is missing or invalid.'**
+  String get resetPasswordMissingToken;
+
+  /// New password field label
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get newPassword;
+
+  /// Verify email screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Verify email'**
+  String get verifyEmailTitle;
+
+  /// Shown after successful email verification
+  ///
+  /// In en, this message translates to:
+  /// **'Email verified successfully.'**
+  String get verifyEmailSuccess;
+
+  /// Verify screen opened without a token
+  ///
+  /// In en, this message translates to:
+  /// **'Verification link is missing or invalid.'**
+  String get verifyEmailMissingToken;
+
+  /// Shown while verifying email token
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying your email…'**
+  String get verifyEmailInProgress;
+
+  /// Register success with soft verification hint
+  ///
+  /// In en, this message translates to:
+  /// **'Account created. Check your email to verify your address.'**
+  String get registerSuccessCheckEmail;
+
+  /// Profile banner when email_verified is false
+  ///
+  /// In en, this message translates to:
+  /// **'Your email is not verified yet. You can still use the app.'**
+  String get emailNotVerified;
+
+  /// Button to resend verification email
+  ///
+  /// In en, this message translates to:
+  /// **'Resend verification email'**
+  String get resendVerification;
+
+  /// Anti-enumeration confirmation after resend verification
+  ///
+  /// In en, this message translates to:
+  /// **'If the email is unverified, a verification link has been sent.'**
+  String get verificationEmailSent;
+
+  /// Invalid or expired email verification token
+  ///
+  /// In en, this message translates to:
+  /// **'Verification link is invalid or expired'**
+  String get authVerifyTokenInvalid;
+
+  /// API error: Token is required
+  ///
+  /// In en, this message translates to:
+  /// **'Token is required'**
+  String get apiTokenRequired;
+
+  /// API error validating verification token
+  ///
+  /// In en, this message translates to:
+  /// **'Could not validate verification token. Please try again.'**
+  String get apiServerValidateVerifyToken;
+
+  /// API error verifying email
+  ///
+  /// In en, this message translates to:
+  /// **'Could not verify email. Please try again.'**
+  String get apiServerVerifyEmail;
 }
 
 class _AppLocalizationsDelegate

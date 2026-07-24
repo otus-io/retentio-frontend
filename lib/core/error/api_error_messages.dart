@@ -81,6 +81,14 @@ class ApiErrorMessages {
     'Token and new password are required': (loc) => loc.apiResetFieldsRequired,
     'Error validating reset token': (loc) => loc.apiServerValidateResetToken,
     'Error resetting password': (loc) => loc.apiServerResetPassword,
+    'Token is required': (loc) => loc.apiTokenRequired,
+    'Invalid or expired verification token': (loc) =>
+        loc.authVerifyTokenInvalid,
+    'User not found for verification token': (loc) =>
+        loc.authVerifyTokenInvalid,
+    'Error validating verification token': (loc) =>
+        loc.apiServerValidateVerifyToken,
+    'Error verifying email': (loc) => loc.apiServerVerifyEmail,
     'Error retrieving user profile': (loc) => loc.apiServerRetrieveProfile,
     'Deck name is required': (loc) => loc.apiDeckNameRequired,
     'fields must contain at least one column name': (loc) =>

@@ -57,7 +57,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resetPassword => 'Reset Password';
 
   @override
-  String get resetPasswordSent => 'Reset Password Sent';
+  String get resetPasswordSent =>
+      'If an account exists, a reset link has been sent.';
 
   @override
   String get home => 'Home';
@@ -1591,4 +1592,67 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pendingNotSubmittable => 'Can\'t send from outbox yet';
+
+  @override
+  String get forgotPasswordHint =>
+      'Enter your account email and we will send a reset link.';
+
+  @override
+  String get resetPasswordTitle => 'Set a new password';
+
+  @override
+  String get resetPasswordHint => 'Choose a new password for your account.';
+
+  @override
+  String get resetPasswordSuccess =>
+      'Password reset successfully. You can log in now.';
+
+  @override
+  String get resetPasswordMissingToken => 'Reset link is missing or invalid.';
+
+  @override
+  String get newPassword => 'New password';
+
+  @override
+  String get verifyEmailTitle => 'Verify email';
+
+  @override
+  String get verifyEmailSuccess => 'Email verified successfully.';
+
+  @override
+  String get verifyEmailMissingToken =>
+      'Verification link is missing or invalid.';
+
+  @override
+  String get verifyEmailInProgress => 'Verifying your email…';
+
+  @override
+  String get registerSuccessCheckEmail =>
+      'Account created. Check your email to verify your address.';
+
+  @override
+  String get emailNotVerified =>
+      'Your email is not verified yet. You can still use the app.';
+
+  @override
+  String get resendVerification => 'Resend verification email';
+
+  @override
+  String get verificationEmailSent =>
+      'If the email is unverified, a verification link has been sent.';
+
+  @override
+  String get authVerifyTokenInvalid =>
+      'Verification link is invalid or expired';
+
+  @override
+  String get apiTokenRequired => 'Token is required';
+
+  @override
+  String get apiServerValidateVerifyToken =>
+      'Could not validate verification token. Please try again.';
+
+  @override
+  String get apiServerVerifyEmail =>
+      'Could not verify email. Please try again.';
 }
