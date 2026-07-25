@@ -130,12 +130,13 @@ class AuthService {
     await _dispatchAuthEventAndAwait(const AuthLogoutRequested());
   }
 
-  /// Request password reset; server returns reset_token (e.g. for email flow).
+  /// Request password reset email (anti-enumeration; always 200 when email ok).
+  /// In development without Resend, may include `reset_token` in data.
   static Future<ApiResponse?> forgotPassword({required String email}) async {
     return ApiService.post(Api.forgotPassword, body: {'email': email});
   }
 
-  /// Reset password using token from forgot-password.
+  /// Reset password using token from email link or forgot-password response.
   static Future<ApiResponse?> resetPassword({
     required String token,
     required String newPassword,
@@ -144,5 +145,17 @@ class AuthService {
       Api.resetPassword,
       body: {'token': token, 'new_password': newPassword},
     );
+  }
+
+  /// Confirm email using token from verification link.
+  static Future<ApiResponse?> verifyEmail({required String token}) async {
+    return ApiService.post(Api.verifyEmail, body: {'token': token});
+  }
+
+  /// Resend verification email (anti-enumeration; always 200 when email ok).
+  static Future<ApiResponse?> resendVerification({
+    required String email,
+  }) async {
+    return ApiService.post(Api.resendVerification, body: {'email': email});
   }
 }

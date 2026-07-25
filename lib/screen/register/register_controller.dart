@@ -35,7 +35,7 @@ class RegisterController {
       if (!context.mounted) return;
 
       if (result?.isSuccess == true) {
-        showSnack(context, '${loc.registerSuccess}: $username');
+        showSnack(context, loc.registerSuccessCheckEmail);
         onSuccess();
       } else {
         showSnack(context, ApiErrorMessages.resolve(result?.msg, loc));

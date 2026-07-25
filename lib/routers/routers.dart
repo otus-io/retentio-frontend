@@ -4,6 +4,8 @@ enum AppRoutes {
   login('/login'),
   main('/'),
   register('/register'),
+  resetPassword('/reset-password'),
+  verifyEmail('/verify-email'),
   study('/study'),
   discoveryDetail('/discovery/:id');
 
@@ -11,7 +13,12 @@ enum AppRoutes {
   const AppRoutes(this.path);
 
   /// Routes that can be visited without authentication.
-  static const Set<String> authExemptPaths = {'/login', '/register', '/'};
+  static const Set<String> authExemptPaths = {
+    '/login',
+    '/register',
+    '/reset-password',
+    '/verify-email',
+  };
 
   /// Normalizes paths to keep routing checks compatible with trailing slash input.
   static String normalizePath(String path) {

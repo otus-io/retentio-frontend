@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:retentio/core/error/api_error_messages.dart';
+import 'package:retentio/core/error/raw_api_error_message.dart';
+import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/profile/bloc/profile_cubit.dart';
+import 'package:retentio/services/apis/auth_service.dart';
 import 'package:retentio/theme/theme_tokens.dart';
+import 'package:retentio/utils/util.dart';
+import 'package:retentio/widgets/app_button.dart';
 
 const _kHeaderHorizontalMargin = AppThemeTokens.spaceLg;
 const _kHeaderTopMargin = 8.0;
@@ -13,12 +19,40 @@ const _kAvatarToTextSpacing = 12.0;
 const _kNameToEmailSpacing = 2.0;
 const _kEmailAlpha = 0.76;
 
-class ProfileUserHeader extends StatelessWidget {
+class ProfileUserHeader extends StatefulWidget {
   const ProfileUserHeader({super.key});
+
+  @override
+  State<ProfileUserHeader> createState() => _ProfileUserHeaderState();
+}
+
+class _ProfileUserHeaderState extends State<ProfileUserHeader> {
+  bool _resending = false;
+
+  Future<void> _resend(String email) async {
+    final loc = AppLocalizations.of(context)!;
+    if (email.isEmpty) return;
+    setState(() => _resending = true);
+    try {
+      final result = await AuthService.resendVerification(email: email);
+      if (!mounted) return;
+      if (result?.isSuccess == true) {
+        showSnack(context, loc.verificationEmailSent);
+      } else {
+        showSnack(context, ApiErrorMessages.resolve(result?.msg, loc));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      showSnack(context, ApiErrorMessages.resolve(rawApiErrorMessage(e), loc));
+    } finally {
+      if (mounted) setState(() => _resending = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = context.select((ProfileCubit cubit) => cubit.state.user);
+    final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
@@ -38,51 +72,77 @@ class ProfileUserHeader extends StatelessWidget {
           width: AppThemeTokens.borderWidthHairline,
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            width: _kAvatarSize,
-            height: _kAvatarSize,
-            decoration: BoxDecoration(
-              color: scheme.primary.withValues(alpha: _kAvatarBackgroundAlpha),
-              borderRadius: AppThemeTokens.borderRadiusXl,
-              border: Border.all(
-                color: scheme.primary.withValues(alpha: _kAvatarBorderAlpha),
-                width: AppThemeTokens.borderWidthHairline,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                user.username.isEmpty ? '' : user.username[0].toUpperCase(),
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: scheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: _kAvatarToTextSpacing),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  user.username,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: scheme.onSurface,
-                    fontWeight: FontWeight.w600,
+          Row(
+            children: [
+              Container(
+                width: _kAvatarSize,
+                height: _kAvatarSize,
+                decoration: BoxDecoration(
+                  color: scheme.primary.withValues(
+                    alpha: _kAvatarBackgroundAlpha,
+                  ),
+                  borderRadius: AppThemeTokens.borderRadiusXl,
+                  border: Border.all(
+                    color: scheme.primary.withValues(
+                      alpha: _kAvatarBorderAlpha,
+                    ),
+                    width: AppThemeTokens.borderWidthHairline,
                   ),
                 ),
-                const SizedBox(height: _kNameToEmailSpacing),
-                Text(
-                  user.email,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurface.withValues(alpha: _kEmailAlpha),
+                child: Center(
+                  child: Text(
+                    user.username.isEmpty ? '' : user.username[0].toUpperCase(),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: scheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: _kAvatarToTextSpacing),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user.username,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: scheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: _kNameToEmailSpacing),
+                    Text(
+                      user.email,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurface.withValues(alpha: _kEmailAlpha),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
+          if (!user.emailVerified && user.email.isNotEmpty) ...[
+            const SizedBox(height: AppThemeTokens.spaceMd),
+            Text(
+              loc.emailNotVerified,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onSurface.withValues(alpha: 0.72),
+              ),
+            ),
+            const SizedBox(height: AppThemeTokens.spaceSm),
+            AppButton(
+              label: loc.resendVerification,
+              variant: AppButtonVariant.secondary,
+              isLoading: _resending,
+              fullWidth: true,
+              onPressed: _resending ? null : () => _resend(user.email),
+            ),
+          ],
         ],
       ),
     );

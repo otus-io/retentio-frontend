@@ -9,9 +9,7 @@ void main() {
   group('ForgotPassword Widget', () {
     testWidgets('renders without errors', (tester) async {
       await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(
-          const Scaffold(body: ForgotPassword()),
-        ),
+        buildTestableWidget(const Scaffold(body: ForgotPassword())),
       );
       await tester.pumpAndSettle();
 
@@ -20,9 +18,7 @@ void main() {
 
     testWidgets('displays forgot password title', (tester) async {
       await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(
-          const Scaffold(body: ForgotPassword()),
-        ),
+        buildTestableWidget(const Scaffold(body: ForgotPassword())),
       );
       await tester.pumpAndSettle();
 
@@ -31,9 +27,7 @@ void main() {
 
     testWidgets('displays email text field', (tester) async {
       await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(
-          const Scaffold(body: ForgotPassword()),
-        ),
+        buildTestableWidget(const Scaffold(body: ForgotPassword())),
       );
       await tester.pumpAndSettle();
 
@@ -43,9 +37,7 @@ void main() {
 
     testWidgets('displays reset password button', (tester) async {
       await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(
-          const Scaffold(body: ForgotPassword()),
-        ),
+        buildTestableWidget(const Scaffold(body: ForgotPassword())),
       );
       await tester.pumpAndSettle();
 
@@ -57,24 +49,22 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(
-          const Scaffold(body: ForgotPassword()),
-        ),
+        buildTestableWidget(const Scaffold(body: ForgotPassword())),
       );
       await tester.pumpAndSettle();
 
-      // Tap reset password without entering email
       await tester.tap(find.byType(AppButton));
       await tester.pump();
 
       expect(find.text('Please fill all fields'), findsOneWidget);
+
+      // Allow showSnack dismiss timer to complete.
+      await tester.pump(const Duration(seconds: 2));
     });
 
     testWidgets('can enter email text', (tester) async {
       await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(
-          const Scaffold(body: ForgotPassword()),
-        ),
+        buildTestableWidget(const Scaffold(body: ForgotPassword())),
       );
       await tester.pumpAndSettle();
 
@@ -86,9 +76,7 @@ void main() {
 
     testWidgets('email field has email keyboard type', (tester) async {
       await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(
-          const Scaffold(body: ForgotPassword()),
-        ),
+        buildTestableWidget(const Scaffold(body: ForgotPassword())),
       );
       await tester.pumpAndSettle();
 

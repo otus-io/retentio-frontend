@@ -57,7 +57,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resetPassword => 'Reset Password';
 
   @override
-  String get resetPasswordSent => 'Reset Password Sent';
+  String get resetPasswordSent =>
+      'If an account exists, a reset link has been sent.';
 
   @override
   String get home => 'Home';
@@ -1375,4 +1376,301 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get factEditNoEntries => 'This fact has no entries';
+
+  @override
+  String deckUpdatesAddedSection(int count) {
+    return 'Added facts ($count)';
+  }
+
+  @override
+  String deckUpdatesRemovedSection(int count) {
+    return 'Removed facts ($count)';
+  }
+
+  @override
+  String deckUpdatesEditedSection(int count) {
+    return 'Edited facts ($count)';
+  }
+
+  @override
+  String deckUpdatesMediaSection(int count) {
+    return 'Media changes ($count)';
+  }
+
+  @override
+  String deckUpdatesTemplatesSection(int count) {
+    return 'Card template changes ($count)';
+  }
+
+  @override
+  String get deckUpdatesAccept => 'Accept';
+
+  @override
+  String get deckUpdatesKeepLocal => 'Keep local';
+
+  @override
+  String get deckUpdatesAligned => 'aligned';
+
+  @override
+  String get deckUpdatesLocalOverlay => 'local overlay';
+
+  @override
+  String get deckUpdatesKeepHint => 'has local overlay (default keep)';
+
+  @override
+  String get deckUpdatesAcceptHint => 'default accept';
+
+  @override
+  String get deckUpdatesBefore => 'Before';
+
+  @override
+  String get deckUpdatesAfter => 'After';
+
+  @override
+  String get contributeFactEdit => 'Submit edit to author';
+
+  @override
+  String get contributeFactEditSuccess => 'Edit submitted to author';
+
+  @override
+  String get contributeFactTags => 'Submit tag changes';
+
+  @override
+  String get contributeFactTagsSuccess => 'Tag changes submitted';
+
+  @override
+  String get contributeNoTagChanges => 'Change tags before submitting';
+
+  @override
+  String get contributeOptionalMessageHint => 'Optional message for the author';
+
+  @override
+  String get contributionsInbox => 'Contributions';
+
+  @override
+  String get contributionsEmpty => 'No open contributions';
+
+  @override
+  String get contributionsAccept => 'Accept';
+
+  @override
+  String get contributionsDismiss => 'Dismiss';
+
+  @override
+  String get contributionsResolve => 'Resolve';
+
+  @override
+  String get contributionsAccepted => 'Contribution accepted';
+
+  @override
+  String get contributionsUpdated => 'Contribution updated';
+
+  @override
+  String get contributionsLoadMore => 'Load more';
+
+  @override
+  String get contributionsBefore => 'Before';
+
+  @override
+  String get contributionsAfter => 'After';
+
+  @override
+  String get contributionsProposed => 'Proposed';
+
+  @override
+  String get contributionsReported => 'Reported';
+
+  @override
+  String get contributionsFields => 'Fields';
+
+  @override
+  String get contributionsTags => 'Tags';
+
+  @override
+  String get contributionsPlayBefore => 'Play original';
+
+  @override
+  String get contributionsPlayAfter => 'Play proposed';
+
+  @override
+  String tagUsageCounts(int decks, int facts) {
+    return '$decks decks · $facts facts';
+  }
+
+  @override
+  String tagFactRefLabel(String deckId, String factId) {
+    return 'Deck $deckId · Fact $factId';
+  }
+
+  @override
+  String get pendingOutbox => 'Unsent contributions';
+
+  @override
+  String get pendingOutboxHint =>
+      'Local changes ready to send to the author, plus what you already sent from this device.';
+
+  @override
+  String pendingTabPending(int count) {
+    return 'Pending ($count)';
+  }
+
+  @override
+  String pendingTabSent(int count) {
+    return 'Sent ($count)';
+  }
+
+  @override
+  String get pendingEmpty =>
+      'Nothing pending. Edit or add facts on this imported deck — they show up here until you send them.';
+
+  @override
+  String get pendingSentEmpty =>
+      'No sent contributions stored on this device yet.';
+
+  @override
+  String pendingSelectAll(int count) {
+    return 'Select all ($count)';
+  }
+
+  @override
+  String get pendingSendSelected => 'Send selected';
+
+  @override
+  String pendingSendSelectedCount(int count) {
+    return 'Send selected ($count)';
+  }
+
+  @override
+  String get pendingDismissSelected => 'Dismiss selected';
+
+  @override
+  String get pendingClearAll => 'Clear all';
+
+  @override
+  String get pendingStaged => 'Saved to unsent contributions';
+
+  @override
+  String pendingSendSuccess(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Sent $count contributions',
+      one: 'Sent 1 contribution',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pendingSendPartial(int sent, int failed) {
+    return 'Sent $sent; $failed failed';
+  }
+
+  @override
+  String pendingDismissed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Dismissed $count items',
+      one: 'Dismissed 1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pendingCleared(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Cleared $count pending items',
+      one: 'Cleared 1 pending item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pendingKindEdit => 'Fact edit';
+
+  @override
+  String get pendingKindAdd => 'New fact';
+
+  @override
+  String get pendingKindDeckTags => 'Deck tags';
+
+  @override
+  String get pendingKindFactTags => 'Fact tags';
+
+  @override
+  String get pendingKindTemplate => 'Template';
+
+  @override
+  String get pendingKindFieldRename => 'Field rename';
+
+  @override
+  String get pendingKindReport => 'Report';
+
+  @override
+  String get pendingNotSubmittable => 'Can\'t send from outbox yet';
+
+  @override
+  String get forgotPasswordHint =>
+      'Enter your account email and we will send a reset link.';
+
+  @override
+  String get resetPasswordTitle => 'Set a new password';
+
+  @override
+  String get resetPasswordHint => 'Choose a new password for your account.';
+
+  @override
+  String get resetPasswordSuccess =>
+      'Password reset successfully. You can log in now.';
+
+  @override
+  String get resetPasswordMissingToken => 'Reset link is missing or invalid.';
+
+  @override
+  String get newPassword => 'New password';
+
+  @override
+  String get verifyEmailTitle => 'Verify email';
+
+  @override
+  String get verifyEmailSuccess => 'Email verified successfully.';
+
+  @override
+  String get verifyEmailMissingToken =>
+      'Verification link is missing or invalid.';
+
+  @override
+  String get verifyEmailInProgress => 'Verifying your email…';
+
+  @override
+  String get registerSuccessCheckEmail =>
+      'Account created. Check your email to verify your address.';
+
+  @override
+  String get emailNotVerified =>
+      'Your email is not verified yet. You can still use the app.';
+
+  @override
+  String get resendVerification => 'Resend verification email';
+
+  @override
+  String get verificationEmailSent =>
+      'If the email is unverified, a verification link has been sent.';
+
+  @override
+  String get authVerifyTokenInvalid =>
+      'Verification link is invalid or expired';
+
+  @override
+  String get apiTokenRequired => 'Token is required';
+
+  @override
+  String get apiServerValidateVerifyToken =>
+      'Could not validate verification token. Please try again.';
+
+  @override
+  String get apiServerVerifyEmail =>
+      'Could not verify email. Please try again.';
 }

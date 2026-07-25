@@ -14,7 +14,7 @@ typedef GetDeckDetailFn = Future<Deck> Function(String deckId);
 typedef GetCardsCountFn = Future<int?> Function(String deckId, {String? tagId});
 
 Future<List<Tag>> _defaultLoadDeckTags({required String deckId}) =>
-    TagService.of.getTags(usedOn: 'fact', deckId: deckId);
+    TagService.of.getTags(usedOn: 'fact', deckId: deckId, unused: 'exclude');
 
 /// Adapter repository that bridges DeckStudy domain to existing legacy services.
 /// Keeps old provider stack untouched while enabling feature-level BLoC wiring.

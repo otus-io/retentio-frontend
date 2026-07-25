@@ -57,7 +57,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get resetPassword => '重置密码';
 
   @override
-  String get resetPasswordSent => '重置密码邮件已发送';
+  String get resetPasswordSent => '若账户存在，重置链接已发送。';
 
   @override
   String get home => '首页';
@@ -1283,4 +1283,289 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get factEditNoEntries => '该词条没有可编辑内容';
+
+  @override
+  String deckUpdatesAddedSection(int count) {
+    return '新增词条（$count）';
+  }
+
+  @override
+  String deckUpdatesRemovedSection(int count) {
+    return '删除词条（$count）';
+  }
+
+  @override
+  String deckUpdatesEditedSection(int count) {
+    return '修改词条（$count）';
+  }
+
+  @override
+  String deckUpdatesMediaSection(int count) {
+    return '媒体变更（$count）';
+  }
+
+  @override
+  String deckUpdatesTemplatesSection(int count) {
+    return '卡片模板变更（$count）';
+  }
+
+  @override
+  String get deckUpdatesAccept => '接受';
+
+  @override
+  String get deckUpdatesKeepLocal => '保留本地';
+
+  @override
+  String get deckUpdatesAligned => '已对齐';
+
+  @override
+  String get deckUpdatesLocalOverlay => '本地 overlay';
+
+  @override
+  String get deckUpdatesKeepHint => '有本地 overlay（默认保留）';
+
+  @override
+  String get deckUpdatesAcceptHint => '默认接受';
+
+  @override
+  String get deckUpdatesBefore => '之前';
+
+  @override
+  String get deckUpdatesAfter => '之后';
+
+  @override
+  String get contributeFactEdit => '向作者提交修改';
+
+  @override
+  String get contributeFactEditSuccess => '修改已提交给作者';
+
+  @override
+  String get contributeFactTags => '提交标签变更';
+
+  @override
+  String get contributeFactTagsSuccess => '标签变更已提交';
+
+  @override
+  String get contributeNoTagChanges => '请先修改标签再提交';
+
+  @override
+  String get contributeOptionalMessageHint => '给作者的可选留言';
+
+  @override
+  String get contributionsInbox => '贡献收件箱';
+
+  @override
+  String get contributionsEmpty => '暂无待处理贡献';
+
+  @override
+  String get contributionsAccept => '接受';
+
+  @override
+  String get contributionsDismiss => '忽略';
+
+  @override
+  String get contributionsResolve => '标为已解决';
+
+  @override
+  String get contributionsAccepted => '已接受贡献';
+
+  @override
+  String get contributionsUpdated => '贡献状态已更新';
+
+  @override
+  String get contributionsLoadMore => '加载更多';
+
+  @override
+  String get contributionsBefore => '修改前';
+
+  @override
+  String get contributionsAfter => '修改后';
+
+  @override
+  String get contributionsProposed => '提议内容';
+
+  @override
+  String get contributionsReported => '报告内容';
+
+  @override
+  String get contributionsFields => '列名';
+
+  @override
+  String get contributionsTags => '标签';
+
+  @override
+  String get contributionsPlayBefore => '播放原文';
+
+  @override
+  String get contributionsPlayAfter => '播放提议';
+
+  @override
+  String tagUsageCounts(int decks, int facts) {
+    return '$decks 个卡组 · $facts 个词条';
+  }
+
+  @override
+  String tagFactRefLabel(String deckId, String factId) {
+    return '卡组 $deckId · 词条 $factId';
+  }
+
+  @override
+  String get pendingOutbox => '未发送贡献';
+
+  @override
+  String get pendingOutboxHint => '可发给作者的本地修改，以及本设备已发送记录。';
+
+  @override
+  String pendingTabPending(int count) {
+    return '待发送（$count）';
+  }
+
+  @override
+  String pendingTabSent(int count) {
+    return '已发送（$count）';
+  }
+
+  @override
+  String get pendingEmpty => '暂无待发送项。在导入卡组中编辑或添加词条后会出现在这里。';
+
+  @override
+  String get pendingSentEmpty => '本设备尚无已发送记录。';
+
+  @override
+  String pendingSelectAll(int count) {
+    return '全选（$count）';
+  }
+
+  @override
+  String get pendingSendSelected => '发送所选';
+
+  @override
+  String pendingSendSelectedCount(int count) {
+    return '发送所选（$count）';
+  }
+
+  @override
+  String get pendingDismissSelected => '忽略所选';
+
+  @override
+  String get pendingClearAll => '清空全部';
+
+  @override
+  String get pendingStaged => '已加入未发送贡献';
+
+  @override
+  String pendingSendSuccess(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已发送 $count 条贡献',
+      one: '已发送 1 条贡献',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pendingSendPartial(int sent, int failed) {
+    return '已发送 $sent 条；$failed 条失败';
+  }
+
+  @override
+  String pendingDismissed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已忽略 $count 项',
+      one: '已忽略 1 项',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pendingCleared(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已清空 $count 项待发送',
+      one: '已清空 1 项待发送',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pendingKindEdit => '词条修改';
+
+  @override
+  String get pendingKindAdd => '新增词条';
+
+  @override
+  String get pendingKindDeckTags => '卡组标签';
+
+  @override
+  String get pendingKindFactTags => '词条标签';
+
+  @override
+  String get pendingKindTemplate => '模板';
+
+  @override
+  String get pendingKindFieldRename => '列名重命名';
+
+  @override
+  String get pendingKindReport => '报告';
+
+  @override
+  String get pendingNotSubmittable => '暂无法从发件箱发送';
+
+  @override
+  String get forgotPasswordHint => '输入账户邮箱，我们将发送重置链接。';
+
+  @override
+  String get resetPasswordTitle => '设置新密码';
+
+  @override
+  String get resetPasswordHint => '为你的账户选择一个新密码。';
+
+  @override
+  String get resetPasswordSuccess => '密码已重置，请登录。';
+
+  @override
+  String get resetPasswordMissingToken => '重置链接缺失或无效。';
+
+  @override
+  String get newPassword => '新密码';
+
+  @override
+  String get verifyEmailTitle => '验证邮箱';
+
+  @override
+  String get verifyEmailSuccess => '邮箱验证成功。';
+
+  @override
+  String get verifyEmailMissingToken => '验证链接缺失或无效。';
+
+  @override
+  String get verifyEmailInProgress => '正在验证邮箱…';
+
+  @override
+  String get registerSuccessCheckEmail => '注册成功。请查收邮件以验证邮箱。';
+
+  @override
+  String get emailNotVerified => '邮箱尚未验证，你仍可正常使用应用。';
+
+  @override
+  String get resendVerification => '重新发送验证邮件';
+
+  @override
+  String get verificationEmailSent => '若该邮箱未验证，验证链接已发送。';
+
+  @override
+  String get authVerifyTokenInvalid => '验证链接无效或已过期';
+
+  @override
+  String get apiTokenRequired => '需要令牌';
+
+  @override
+  String get apiServerValidateVerifyToken => '无法验证令牌，请重试';
+
+  @override
+  String get apiServerVerifyEmail => '无法验证邮箱，请重试';
 }

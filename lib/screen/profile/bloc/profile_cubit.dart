@@ -71,8 +71,8 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
     if (res?.isSuccess == true) {
       final raw = res?.data;
-      final user = raw is Map<String, dynamic>
-          ? User.fromJson(raw)
+      final user = raw is Map
+          ? User.fromJson(Map<String, dynamic>.from(raw))
           : User.empty();
       if (_disposed || currentEpoch != _requestEpoch) {
         return;

@@ -13,13 +13,13 @@ final localeProvider = NotifierProvider<LocaleNotifier, Locale>(
 class LocaleNotifier extends Notifier<Locale> {
   /// 构建并初始化本地化状态。
   /// 在构建时会调用 [_load] 方法从持久化存储中加载语言代码，
-  /// 如果没有找到则默认返回中文（'zh'）作为初始语言环境。
+  /// 如果没有找到则默认返回英文（'en'）作为初始语言环境。
   ///
   /// 返回值：当前的应用语言环境（Locale 对象）。
   @override
   Locale build() {
     _load();
-    return Locale('zh');
+    return Locale('en');
   }
 
   /// 从 SharedPreferences 中异步加载已保存的语言代码。

@@ -1,8 +1,8 @@
-"""Generate the Rete app icon: blue graduation-cap outline on a soft squircle.
+"""Generate the Rete app icon: blue graduation-cap outline on a tight-corner square.
 
-Recreates the reference mark (pastel diagonal gradient rounded square + centered
-line-art mortarboard). Writes SVG by default; also PNG when Pillow is available
-(or via rsvg-convert if installed).
+Recreates the reference mark (pastel diagonal gradient + tightly cropped corners
++ centered line-art mortarboard). Writes SVG by default; also PNG when Pillow is
+available (or via rsvg-convert if installed).
 
 Deps:  pip install pillow  (optional, for PNG)
 Run:   python3 generate_app_icon.py [output.svg|output.png]
@@ -20,15 +20,18 @@ DEFAULT_PNG = os.path.join(HERE, "rete_app_icon.png")
 
 # Canvas (iOS / Play Store master size)
 SIZE = 1024
-# Squircle corner radius ~22% of side (app-icon feel)
-RADIUS = 224
+# Tight corner crop ~10% of side (sharper than iOS squircle)
+RADIUS = 102
 
-# Soft diagonal fill (top-left lavender -> bottom-right mint), sampled from ref
-GRAD_TL = (230, 233, 247)  # #E6E9F7
-GRAD_BR = (220, 240, 236)  # #DCF0EC
+# Soft fill — match webapp dark --background (#0a0a0a)
+GRAD_TL = (10, 10, 10)  # #0A0A0A
+GRAD_BR = (10, 10, 10)  # #0A0A0A
 # Cap stroke (sampled blue from reference)
 STROKE = (85, 114, 238)  # #5572EE
-STROKE_W = 42  # px at SIZE=1024
+# Diamond half-width as fraction of canvas (~78% full width; tight margins)
+CAP_SCALE = 0.39
+# Stroke scales with cap so line weight stays proportional
+STROKE_W = 86  # px at SIZE=1024
 
 
 def _hex(rgb: tuple[int, int, int]) -> str:
@@ -101,9 +104,9 @@ def _tassel_d(pts) -> str:
 
 def compose_svg(size: int = SIZE) -> str:
     cx = cy = size / 2
-    # Cap half-width ~19% of canvas -> full width ~38%
-    scale = size * 0.19
-    cy -= size * 0.015  # optical vertical center
+    scale = size * CAP_SCALE
+    # Cap is heavier below the diamond (base + tassel); shift up to center
+    cy -= size * 0.055
     diamond, bl, br, bb, tassel = _cap_geometry(cx, cy, scale)
     stroke = _hex(STROKE)
     sw = STROKE_W * (size / SIZE)
@@ -183,8 +186,8 @@ def write_png(path: str, size: int = SIZE) -> None:
     img.putalpha(mask)
 
     cx = cy = size / 2
-    scale = size * 0.19
-    cy -= size * 0.015
+    scale = size * CAP_SCALE
+    cy -= size * 0.055
     diamond, bl, br, bb, tassel = _cap_geometry(cx, cy, scale)
     sw = max(1, int(STROKE_W * (size / SIZE)))
     overlay = Image.new("RGBA", (size, size), (0, 0, 0, 0))

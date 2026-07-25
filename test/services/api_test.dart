@@ -9,6 +9,8 @@ void main() {
       expect(Api.logout, '/auth/logout');
       expect(Api.forgotPassword, '/auth/forgot-password');
       expect(Api.resetPassword, '/auth/reset-password');
+      expect(Api.verifyEmail, '/auth/verify-email');
+      expect(Api.resendVerification, '/auth/resend-verification');
     });
 
     test('deck and profile paths', () {

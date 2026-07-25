@@ -357,6 +357,13 @@ class _TagCard extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+                  const SizedBox(height: 2),
+                  Text(
+                    loc.tagUsageCounts(tag.deckCount, tag.factCount),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ),
                   if (tag.description.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
