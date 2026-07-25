@@ -1891,7 +1891,7 @@
   "pendingDismissSelected": "Dismiss selected",
   "pendingClearAll": "Clear all",
   "pendingStaged": "Saved to unsent contributions",
-  "pendingSendSuccess": "Sent {count} contribution(s)",
+  "pendingSendSuccess": "{count, plural, =1{Sent 1 contribution} other{Sent {count} contributions}}",
   "@pendingSendSuccess": {
     "placeholders": { "count": { "type": "int" } }
   },
@@ -1902,11 +1902,11 @@
       "failed": { "type": "int" }
     }
   },
-  "pendingDismissed": "Dismissed {count} item(s)",
+  "pendingDismissed": "{count, plural, =1{Dismissed 1 item} other{Dismissed {count} items}}",
   "@pendingDismissed": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "pendingCleared": "Cleared {count} pending item(s)",
+  "pendingCleared": "{count, plural, =1{Cleared 1 pending item} other{Cleared {count} pending items}}",
   "@pendingCleared": {
     "placeholders": { "count": { "type": "int" } }
   },

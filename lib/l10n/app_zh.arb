@@ -1169,7 +1169,7 @@
   "pendingDismissSelected": "忽略所选",
   "pendingClearAll": "清空全部",
   "pendingStaged": "已加入未发送贡献",
-  "pendingSendSuccess": "已发送 {count} 条贡献",
+  "pendingSendSuccess": "{count, plural, =1{已发送 1 条贡献} other{已发送 {count} 条贡献}}",
   "@pendingSendSuccess": {
     "placeholders": { "count": { "type": "int" } }
   },
@@ -1180,11 +1180,11 @@
       "failed": { "type": "int" }
     }
   },
-  "pendingDismissed": "已忽略 {count} 项",
+  "pendingDismissed": "{count, plural, =1{已忽略 1 项} other{已忽略 {count} 项}}",
   "@pendingDismissed": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "pendingCleared": "已清空 {count} 项待发送",
+  "pendingCleared": "{count, plural, =1{已清空 1 项待发送} other{已清空 {count} 项待发送}}",
   "@pendingCleared": {
     "placeholders": { "count": { "type": "int" } }
   },

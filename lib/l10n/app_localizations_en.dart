@@ -1551,7 +1551,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String pendingSendSuccess(int count) {
-    return 'Sent $count contribution(s)';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Sent $count contributions',
+      one: 'Sent 1 contribution',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1561,12 +1567,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String pendingDismissed(int count) {
-    return 'Dismissed $count item(s)';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Dismissed $count items',
+      one: 'Dismissed 1 item',
+    );
+    return '$_temp0';
   }
 
   @override
   String pendingCleared(int count) {
-    return 'Cleared $count pending item(s)';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Cleared $count pending items',
+      one: 'Cleared 1 pending item',
+    );
+    return '$_temp0';
   }
 
   @override

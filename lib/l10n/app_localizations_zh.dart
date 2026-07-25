@@ -1455,7 +1455,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String pendingSendSuccess(int count) {
-    return '已发送 $count 条贡献';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已发送 $count 条贡献',
+      one: '已发送 1 条贡献',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1465,12 +1471,24 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String pendingDismissed(int count) {
-    return '已忽略 $count 项';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已忽略 $count 项',
+      one: '已忽略 1 项',
+    );
+    return '$_temp0';
   }
 
   @override
   String pendingCleared(int count) {
-    return '已清空 $count 项待发送';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已清空 $count 项待发送',
+      one: '已清空 1 项待发送',
+    );
+    return '$_temp0';
   }
 
   @override

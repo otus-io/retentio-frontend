@@ -2867,7 +2867,7 @@ abstract class AppLocalizations {
   /// No description provided for @pendingSendSuccess.
   ///
   /// In en, this message translates to:
-  /// **'Sent {count} contribution(s)'**
+  /// **'{count, plural, =1{Sent 1 contribution} other{Sent {count} contributions}}'**
   String pendingSendSuccess(int count);
 
   /// No description provided for @pendingSendPartial.
@@ -2879,13 +2879,13 @@ abstract class AppLocalizations {
   /// No description provided for @pendingDismissed.
   ///
   /// In en, this message translates to:
-  /// **'Dismissed {count} item(s)'**
+  /// **'{count, plural, =1{Dismissed 1 item} other{Dismissed {count} items}}'**
   String pendingDismissed(int count);
 
   /// No description provided for @pendingCleared.
   ///
   /// In en, this message translates to:
-  /// **'Cleared {count} pending item(s)'**
+  /// **'{count, plural, =1{Cleared 1 pending item} other{Cleared {count} pending items}}'**
   String pendingCleared(int count);
 
   /// No description provided for @pendingKindEdit.

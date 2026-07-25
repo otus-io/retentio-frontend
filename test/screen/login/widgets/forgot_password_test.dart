@@ -2,19 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/screen/login/widgets/forgot_password.dart';
 import 'package:retentio/widgets/app_button.dart';
-import 'package:retentio/widgets/app_toast.dart';
 
 import '../../../helpers/test_wrapper.dart';
 
 void main() {
-  tearDown(AppToast.dismiss);
-
   group('ForgotPassword Widget', () {
     testWidgets('renders without errors', (tester) async {
       await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(
-          const Scaffold(body: ForgotPassword()),
-        ),
+        buildTestableWidget(const Scaffold(body: ForgotPassword())),
       );
       await tester.pumpAndSettle();
 
@@ -23,9 +18,7 @@ void main() {
 
     testWidgets('displays forgot password title', (tester) async {
       await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(
-          const Scaffold(body: ForgotPassword()),
-        ),
+        buildTestableWidget(const Scaffold(body: ForgotPassword())),
       );
       await tester.pumpAndSettle();
 
@@ -34,9 +27,7 @@ void main() {
 
     testWidgets('displays email text field', (tester) async {
       await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(
-          const Scaffold(body: ForgotPassword()),
-        ),
+        buildTestableWidget(const Scaffold(body: ForgotPassword())),
       );
       await tester.pumpAndSettle();
 
@@ -46,9 +37,7 @@ void main() {
 
     testWidgets('displays reset password button', (tester) async {
       await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(
-          const Scaffold(body: ForgotPassword()),
-        ),
+        buildTestableWidget(const Scaffold(body: ForgotPassword())),
       );
       await tester.pumpAndSettle();
 
@@ -56,11 +45,11 @@ void main() {
       expect(find.byType(AppButton), findsOneWidget);
     });
 
-    testWidgets('shows toast when submitting with empty email', (tester) async {
+    testWidgets('shows snackbar when submitting with empty email', (
+      tester,
+    ) async {
       await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(
-          const Scaffold(body: ForgotPassword()),
-        ),
+        buildTestableWidget(const Scaffold(body: ForgotPassword())),
       );
       await tester.pumpAndSettle();
 
@@ -69,16 +58,13 @@ void main() {
 
       expect(find.text('Please fill all fields'), findsOneWidget);
 
-      // AppToast schedules a 2s dismiss timer.
+      // Allow showSnack dismiss timer to complete.
       await tester.pump(const Duration(seconds: 2));
-      await tester.pump();
     });
 
     testWidgets('can enter email text', (tester) async {
       await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(
-          const Scaffold(body: ForgotPassword()),
-        ),
+        buildTestableWidget(const Scaffold(body: ForgotPassword())),
       );
       await tester.pumpAndSettle();
 
@@ -90,9 +76,7 @@ void main() {
 
     testWidgets('email field has email keyboard type', (tester) async {
       await tester.pumpWidget(
-        buildTestableWidgetWithoutProvider(
-          const Scaffold(body: ForgotPassword()),
-        ),
+        buildTestableWidget(const Scaffold(body: ForgotPassword())),
       );
       await tester.pumpAndSettle();
 

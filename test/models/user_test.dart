@@ -30,6 +30,32 @@ void main() {
           'username': 'testuser',
         });
         expect(user.emailVerified, isFalse);
+
+        final nullVerified = User.fromJson({
+          'email': 'user@example.com',
+          'username': 'testuser',
+          'email_verified': null,
+        });
+        expect(nullVerified.emailVerified, isFalse);
+      });
+
+      test('parses email_verified from bool int and string', () {
+        bool verified(Object? value) => User.fromJson({
+          'email': 'user@example.com',
+          'username': 'testuser',
+          'email_verified': value,
+        }).emailVerified;
+
+        expect(verified(true), isTrue);
+        expect(verified(false), isFalse);
+        expect(verified(1), isTrue);
+        expect(verified(0), isFalse);
+        expect(verified('true'), isTrue);
+        expect(verified('false'), isFalse);
+        expect(verified('1'), isTrue);
+        expect(verified('0'), isFalse);
+        expect(verified('yes'), isTrue);
+        expect(verified('no'), isFalse);
       });
     });
 

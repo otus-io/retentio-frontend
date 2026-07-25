@@ -69,7 +69,9 @@ class ResetPasswordScreen extends HookWidget {
           ApiErrorMessages.resolve(rawApiErrorMessage(e), loc),
         );
       } finally {
-        isLoading.value = false;
+        if (context.mounted) {
+          isLoading.value = false;
+        }
       }
     }
 

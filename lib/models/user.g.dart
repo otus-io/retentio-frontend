@@ -9,7 +9,9 @@ part of 'user.dart';
 User _$UserFromJson(Map<String, dynamic> json) => User(
   email: json['email'] as String? ?? '',
   username: json['username'] as String? ?? '',
-  emailVerified: json['email_verified'] as bool? ?? false,
+  emailVerified: json['email_verified'] == null
+      ? false
+      : _emailVerifiedFromJson(json['email_verified']),
 );
 
 Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
