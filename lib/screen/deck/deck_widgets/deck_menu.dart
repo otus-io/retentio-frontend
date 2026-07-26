@@ -279,6 +279,10 @@ class DeckMenu extends StatelessWidget {
           PullDownMenuItem(
             title: loc.deleteDeck,
             onTap: () async {
+              if (deck.isPublishedSource) {
+                AppToast.error(context, loc.errorPublishedDeckCannotDelete);
+                return;
+              }
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (dialogContext) => AlertDialog(

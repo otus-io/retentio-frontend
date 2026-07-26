@@ -237,6 +237,33 @@ void main() {
         expect(deck.maxInterval, 86400);
       });
 
+      test('parses published version and published state', () {
+        final deck = Deck.fromJson({
+          'id': 'd',
+          'name': 'n',
+          'stats': <String, dynamic>{},
+          'owner': 'o',
+          'fields': [],
+          'published_version': 2,
+        });
+        expect(deck.publishedVersion, 2);
+        expect(deck.isPublished, isTrue);
+      });
+
+      test('does not treat imported decks as published source decks', () {
+        final deck = Deck.fromJson({
+          'id': 'd',
+          'name': 'n',
+          'stats': <String, dynamic>{},
+          'owner': 'o',
+          'fields': [],
+          'source_deck_id': 'source-1',
+          'published_version': 2,
+        });
+        expect(deck.isImported, isTrue);
+        expect(deck.isPublished, isFalse);
+      });
+
       test('toJson includes intervals and nested stats', () {
         final deck = Deck(
           id: 'id1',
@@ -259,6 +286,7 @@ void main() {
           minInterval: 1,
           defInterval: 2,
           maxInterval: 3,
+          publishedVersion: 0,
         );
         final json = deck.toJson();
         expect(json['min_interval'], 1);
