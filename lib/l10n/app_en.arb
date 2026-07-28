@@ -362,6 +362,16 @@
   "@deleteDeck": {
     "description": "Menu item to delete deck"
   },
+  "deleteDeckConfirm": "\"{deckName}\" and all of its cards and facts will be permanently deleted.",
+  "@deleteDeckConfirm": {
+    "description": "Confirmation message before deleting a deck",
+    "placeholders": {
+      "deckName": {
+        "type": "String",
+        "example": "Spanish A1"
+      }
+    }
+  },
   "noCardsInThisDeck": "No cards in this deck",
   "@noCardsInThisDeck": {
     "description": "Message when deck has no cards"

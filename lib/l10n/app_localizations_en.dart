@@ -277,6 +277,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteDeck => 'Delete Deck';
 
   @override
+  String deleteDeckConfirm(String deckName) {
+    return '\"$deckName\" and all of its cards and facts will be permanently deleted.';
+  }
+
+  @override
   String get noCardsInThisDeck => 'No cards in this deck';
 
   @override

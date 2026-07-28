@@ -15,6 +15,7 @@ import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_cont
 import 'package:retentio/screen/deck/fact_widgets/fact_add.dart';
 import 'package:retentio/screen/decks/widgets/deck_create.dart';
 import 'package:retentio/theme/theme_tokens.dart';
+import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_icon_button.dart';
 import 'package:retentio/screen/decks/widgets/publish_deck_sheet.dart';
 import 'package:retentio/widgets/app_toast.dart';
@@ -278,6 +279,26 @@ class DeckMenu extends StatelessWidget {
           PullDownMenuItem(
             title: loc.deleteDeck,
             onTap: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  title: Text(loc.deleteDeck),
+                  content: Text(loc.deleteDeckConfirm(deck.name)),
+                  actions: [
+                    AppButton(
+                      label: loc.cancel,
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      variant: AppButtonVariant.ghost,
+                    ),
+                    AppButton(
+                      label: loc.deleteDeck,
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      variant: AppButtonVariant.danger,
+                    ),
+                  ],
+                ),
+              );
+              if (confirmed != true || !context.mounted) return;
               try {
                 await context.read<DeckListCubit>().deleteDeck(deck);
               } catch (e) {

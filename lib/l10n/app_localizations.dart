@@ -614,6 +614,12 @@ abstract class AppLocalizations {
   /// **'Delete Deck'**
   String get deleteDeck;
 
+  /// Confirmation message before deleting a deck
+  ///
+  /// In en, this message translates to:
+  /// **'\"{deckName}\" and all of its cards and facts will be permanently deleted.'**
+  String deleteDeckConfirm(String deckName);
+
   /// Message when deck has no cards
   ///
   /// In en, this message translates to:

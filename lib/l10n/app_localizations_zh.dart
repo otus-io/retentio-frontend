@@ -273,6 +273,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deleteDeck => '删除卡组';
 
   @override
+  String deleteDeckConfirm(String deckName) {
+    return '「$deckName」及其所有卡片和词条将被永久删除。';
+  }
+
+  @override
   String get noCardsInThisDeck => '这个卡组中没有卡片';
 
   @override

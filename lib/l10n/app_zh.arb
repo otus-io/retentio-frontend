@@ -86,6 +86,7 @@
   "deleteCardConfirm": "只会删除这一张卡片；对应的词条及其他卡片仍会保留。",
   "deleteCardFailed": "无法删除卡片",
   "deleteDeck": "删除卡组",
+  "deleteDeckConfirm": "「{deckName}」及其所有卡片和词条将被永久删除。",
   "noCardsInThisDeck": "这个卡组中没有卡片",
   "save": "保存",
   "newCardEveryMinutes": "每{interval}分钟引入一张新卡片",
