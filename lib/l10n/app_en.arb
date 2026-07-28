@@ -1797,16 +1797,24 @@
   "@deckUpdatesAccept": {
     "description": "Accept author publish for this fact on sync"
   },
-  "deckUpdatesKeepLocal": "Keep local",
+  "deckUpdatesKeepLocal": "Reject",
   "@deckUpdatesKeepLocal": {
-    "description": "Keep private overlay when syncing"
+    "description": "Reject author publish and keep private overlay when syncing"
   },
   "deckUpdatesAligned": "aligned",
   "deckUpdatesLocalOverlay": "local overlay",
-  "deckUpdatesKeepHint": "has local overlay (default keep)",
+  "deckUpdatesKeepHint": "has local overlay",
   "deckUpdatesAcceptHint": "default accept",
-  "deckUpdatesBefore": "Before",
-  "deckUpdatesAfter": "After",
+  "deckUpdatesBefore": "Before update",
+  "deckUpdatesAfter": "After update",
+  "deckUpdatesReviewChanges": "Review changes",
+  "@deckUpdatesReviewChanges": {
+    "description": "Expand per-fact update review list"
+  },
+  "deckUpdatesHideReview": "Hide review",
+  "@deckUpdatesHideReview": {
+    "description": "Collapse per-fact update review list"
+  },
   "contributeFactEdit": "Submit edit to author",
   "@contributeFactEdit": {
     "description": "Submit private overlay as fact_edit contribution"

@@ -1406,7 +1406,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deckUpdatesAccept => 'Accept';
 
   @override
-  String get deckUpdatesKeepLocal => 'Keep local';
+  String get deckUpdatesKeepLocal => 'Reject';
 
   @override
   String get deckUpdatesAligned => 'aligned';
@@ -1415,16 +1415,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deckUpdatesLocalOverlay => 'local overlay';
 
   @override
-  String get deckUpdatesKeepHint => 'has local overlay (default keep)';
+  String get deckUpdatesKeepHint => 'has local overlay';
 
   @override
   String get deckUpdatesAcceptHint => 'default accept';
 
   @override
-  String get deckUpdatesBefore => 'Before';
+  String get deckUpdatesBefore => 'Before update';
 
   @override
-  String get deckUpdatesAfter => 'After';
+  String get deckUpdatesAfter => 'After update';
+
+  @override
+  String get deckUpdatesReviewChanges => 'Review changes';
+
+  @override
+  String get deckUpdatesHideReview => 'Hide review';
 
   @override
   String get contributeFactEdit => 'Submit edit to author';

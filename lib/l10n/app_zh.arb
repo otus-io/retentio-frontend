@@ -1075,16 +1075,18 @@
   "@deckUpdatesAccept": {
     "description": "Accept author publish for this fact on sync"
   },
-  "deckUpdatesKeepLocal": "保留本地",
+  "deckUpdatesKeepLocal": "拒绝",
   "@deckUpdatesKeepLocal": {
-    "description": "Keep private overlay when syncing"
+    "description": "Reject author publish and keep private overlay when syncing"
   },
   "deckUpdatesAligned": "已对齐",
   "deckUpdatesLocalOverlay": "本地 overlay",
-  "deckUpdatesKeepHint": "有本地 overlay（默认保留）",
+  "deckUpdatesKeepHint": "有本地 overlay",
   "deckUpdatesAcceptHint": "默认接受",
-  "deckUpdatesBefore": "之前",
-  "deckUpdatesAfter": "之后",
+  "deckUpdatesBefore": "更新前",
+  "deckUpdatesAfter": "更新后",
+  "deckUpdatesReviewChanges": "查看变更",
+  "deckUpdatesHideReview": "收起变更",
   "contributeFactEdit": "向作者提交修改",
   "@contributeFactEdit": {
     "description": "Submit private overlay as fact_edit contribution"

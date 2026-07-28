@@ -93,7 +93,31 @@ void main() {
       expect(result.cardTemplateChanges, isEmpty);
     });
 
-    test('defaultDecisions matches overlay defaults', () {
+    test('fromJson parses media version maps', () {
+      final result = DeckUpdatesResult.fromJson({
+        'source_version': 1,
+        'latest_version': 2,
+        'before_media_versions': {'aud1': 1},
+        'after_media_versions': {'aud1': 2, 'aud2': 1},
+      });
+
+      expect(result.beforeMediaVersions, {'aud1': 1});
+      expect(result.afterMediaVersions, {'aud1': 2, 'aud2': 1});
+    });
+
+    test('mediaPlayUrl appends published version for media ids', () {
+      expect(
+        DeckUpdatesResult.mediaPlayUrl('aud1', {'aud1': 3}),
+        '/api/media/aud1?v=3',
+      );
+      expect(
+        DeckUpdatesResult.mediaPlayUrl('/api/media/aud1?v=1', {}),
+        '/api/media/aud1?v=1',
+      );
+      expect(DeckUpdatesResult.mediaPlayUrl('', {'aud1': 1}), isNull);
+    });
+
+    test('defaultDecisions prefers accept for all facts', () {
       final result = DeckUpdatesResult.fromJson({
         'source_version': 1,
         'latest_version': 2,
@@ -114,10 +138,27 @@ void main() {
       });
 
       final decisions = result.defaultDecisions();
-      expect(decisions['r1'], SyncFactDecisionAction.keep);
+      expect(decisions['r1'], SyncFactDecisionAction.accept);
       expect(decisions['r2'], SyncFactDecisionAction.accept);
       expect(decisions['e1'], SyncFactDecisionAction.accept);
-      expect(decisions['e2'], SyncFactDecisionAction.keep);
+      expect(decisions['e2'], SyncFactDecisionAction.accept);
+    });
+    test('DeckUpdatesSummary fromJson parses id lists', () {
+      final summary = DeckUpdatesSummary.fromJson({
+        'source_version': 1,
+        'latest_version': 3,
+        'added_fact_ids': ['a1'],
+        'removed_fact_ids': ['r1'],
+        'edited_fact_ids': ['e1', 'e2'],
+        'media_change_count': 12,
+        'card_template_change_count': 1,
+      });
+      expect(summary.sourceVersion, 1);
+      expect(summary.latestVersion, 3);
+      expect(summary.addedFactIds, ['a1']);
+      expect(summary.editedFactIds, ['e1', 'e2']);
+      expect(summary.mediaChangeCount, 12);
+      expect(summary.hasUpdates, isTrue);
     });
   });
 }

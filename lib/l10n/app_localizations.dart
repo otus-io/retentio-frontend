@@ -2606,10 +2606,10 @@ abstract class AppLocalizations {
   /// **'Accept'**
   String get deckUpdatesAccept;
 
-  /// Keep private overlay when syncing
+  /// Reject author publish and keep private overlay when syncing
   ///
   /// In en, this message translates to:
-  /// **'Keep local'**
+  /// **'Reject'**
   String get deckUpdatesKeepLocal;
 
   /// No description provided for @deckUpdatesAligned.
@@ -2627,7 +2627,7 @@ abstract class AppLocalizations {
   /// No description provided for @deckUpdatesKeepHint.
   ///
   /// In en, this message translates to:
-  /// **'has local overlay (default keep)'**
+  /// **'has local overlay'**
   String get deckUpdatesKeepHint;
 
   /// No description provided for @deckUpdatesAcceptHint.
@@ -2639,14 +2639,26 @@ abstract class AppLocalizations {
   /// No description provided for @deckUpdatesBefore.
   ///
   /// In en, this message translates to:
-  /// **'Before'**
+  /// **'Before update'**
   String get deckUpdatesBefore;
 
   /// No description provided for @deckUpdatesAfter.
   ///
   /// In en, this message translates to:
-  /// **'After'**
+  /// **'After update'**
   String get deckUpdatesAfter;
+
+  /// Expand per-fact update review list
+  ///
+  /// In en, this message translates to:
+  /// **'Review changes'**
+  String get deckUpdatesReviewChanges;
+
+  /// Collapse per-fact update review list
+  ///
+  /// In en, this message translates to:
+  /// **'Hide review'**
+  String get deckUpdatesHideReview;
 
   /// Submit private overlay as fact_edit contribution
   ///

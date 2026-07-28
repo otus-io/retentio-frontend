@@ -101,6 +101,36 @@ class DeckCatalogService {
     );
   }
 
+  Future<DeckUpdatesSummary> getDeckUpdatesSummary(String deckId) async {
+    final res = await ApiService.get(
+      Api.deckUpdates,
+      pathParams: {'id': deckId},
+      queryParams: {'summary': '1'},
+    );
+    if (res == null || !res.isSuccess || res.data is! Map) {
+      throw Exception(res?.msg ?? 'updates_failed');
+    }
+    return DeckUpdatesSummary.fromJson(
+      Map<String, dynamic>.from(res.data as Map),
+    );
+  }
+
+  Future<DeckUpdateFactDetail> getDeckUpdateFact({
+    required String deckId,
+    required String factId,
+  }) async {
+    final res = await ApiService.get(
+      Api.deckUpdateFact,
+      pathParams: {'id': deckId, 'factId': factId},
+    );
+    if (res == null || !res.isSuccess || res.data is! Map) {
+      throw Exception(res?.msg ?? 'update_fact_failed');
+    }
+    return DeckUpdateFactDetail.fromJson(
+      Map<String, dynamic>.from(res.data as Map),
+    );
+  }
+
   Future<int> syncDeck(
     String deckId, {
     int? targetVersion,

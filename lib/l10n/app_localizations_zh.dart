@@ -1313,7 +1313,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deckUpdatesAccept => '接受';
 
   @override
-  String get deckUpdatesKeepLocal => '保留本地';
+  String get deckUpdatesKeepLocal => '拒绝';
 
   @override
   String get deckUpdatesAligned => '已对齐';
@@ -1322,16 +1322,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deckUpdatesLocalOverlay => '本地 overlay';
 
   @override
-  String get deckUpdatesKeepHint => '有本地 overlay（默认保留）';
+  String get deckUpdatesKeepHint => '有本地 overlay';
 
   @override
   String get deckUpdatesAcceptHint => '默认接受';
 
   @override
-  String get deckUpdatesBefore => '之前';
+  String get deckUpdatesBefore => '更新前';
 
   @override
-  String get deckUpdatesAfter => '之后';
+  String get deckUpdatesAfter => '更新后';
+
+  @override
+  String get deckUpdatesReviewChanges => '查看变更';
+
+  @override
+  String get deckUpdatesHideReview => '收起变更';
 
   @override
   String get contributeFactEdit => '向作者提交修改';
