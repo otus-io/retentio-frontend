@@ -1,3 +1,4 @@
+import 'package:retentio/models/publish_preview.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/index.dart';
 
@@ -35,5 +36,21 @@ class DeckPublishService {
       if (v is num) version = v.toInt();
     }
     return DeckPublishResult(publishedVersion: version);
+  }
+
+  /// Author: working copy vs last publish. Pass [detail] for id/preview rows.
+  Future<PublishPreview> getPublishPreview(
+    String deckId, {
+    bool detail = false,
+  }) async {
+    final res = await ApiService.get(
+      Api.deckPublishPreview,
+      pathParams: {'id': deckId},
+      queryParams: detail ? {'detail': '1'} : null,
+    );
+    if (res == null || !res.isSuccess || res.data is! Map) {
+      throw Exception(res?.msg ?? 'Unknown error');
+    }
+    return PublishPreview.fromJson(Map<String, dynamic>.from(res.data as Map));
   }
 }

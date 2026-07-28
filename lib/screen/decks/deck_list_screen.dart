@@ -5,6 +5,7 @@ import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/decks/bloc/deck_create_cubit.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
+import 'package:retentio/screen/decks/bloc/deck_sharing_status_cubit.dart';
 import 'package:retentio/screen/decks/deck_text_styles.dart';
 import 'package:retentio/screen/decks/widgets/deck_create.dart';
 import 'package:retentio/screen/decks/widgets/deck_screen_body.dart';
@@ -24,19 +25,35 @@ class DeckListScreen extends StatefulWidget {
   State<DeckListScreen> createState() => _DeckListScreenState();
 }
 
-class _DeckListScreenState extends State<DeckListScreen> {
+class _DeckListScreenState extends State<DeckListScreen>
+    with WidgetsBindingObserver {
   late final DeckListCubit _deckListCubit;
+  late final DeckSharingStatusCubit _sharingStatusCubit;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _deckListCubit = DeckListCubit();
+    _sharingStatusCubit = DeckSharingStatusCubit();
+    _sharingStatusCubit.startPolling();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _sharingStatusCubit.close();
     _deckListCubit.close();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _sharingStatusCubit.startPolling();
+    } else if (state == AppLifecycleState.paused) {
+      _sharingStatusCubit.stopPolling();
+    }
   }
 
   void _openCreateSheet(BuildContext context, AppLocalizations loc) {
@@ -71,53 +88,65 @@ class _DeckListScreenState extends State<DeckListScreen> {
 
     return Stack(
       children: [
-        BlocProvider<DeckListCubit>.value(
-          value: _deckListCubit,
-          child: Scaffold(
-            appBar: AppBar(
-              title: Text(loc.decks),
-              scrolledUnderElevation: 0,
-              actions: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: AppIconButton(
-                    icon: LucideIcons.tag,
-                    tooltip: loc.tags,
-                    constraints: const BoxConstraints(
-                      minWidth: 40,
-                      minHeight: 40,
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<DeckListCubit>.value(value: _deckListCubit),
+            BlocProvider<DeckSharingStatusCubit>.value(
+              value: _sharingStatusCubit,
+            ),
+          ],
+          child: BlocListener<DeckListCubit, DeckListState>(
+            listenWhen: (prev, next) => prev.decks != next.decks,
+            listener: (context, state) {
+              _sharingStatusCubit.setDecks(state.decks);
+              _sharingStatusCubit.refresh();
+            },
+            child: Scaffold(
+              appBar: AppBar(
+                title: Text(loc.decks),
+                scrolledUnderElevation: 0,
+                actions: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: AppIconButton(
+                      icon: LucideIcons.tag,
+                      tooltip: loc.tags,
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
+                      ),
+                      padding: const EdgeInsets.all(AppThemeTokens.spaceSm),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const TagsScreen(),
+                        ),
+                      ),
                     ),
-                    padding: const EdgeInsets.all(AppThemeTokens.spaceSm),
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const TagsScreen(),
+                  ),
+                ],
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(30),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        _kDeckListHorizontalPadding,
+                        0,
+                        _kDeckListHorizontalPadding,
+                        10,
+                      ),
+                      child: Text(
+                        Localizations.localeOf(context).languageCode == 'zh'
+                            ? '你的学习卡组'
+                            : 'Your study collections',
+                        style: DeckTextStyles.pageSubtitle(theme),
                       ),
                     ),
                   ),
                 ),
-              ],
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(30),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      _kDeckListHorizontalPadding,
-                      0,
-                      _kDeckListHorizontalPadding,
-                      10,
-                    ),
-                    child: Text(
-                      Localizations.localeOf(context).languageCode == 'zh'
-                          ? '你的学习卡组'
-                          : 'Your study collections',
-                      style: DeckTextStyles.pageSubtitle(theme),
-                    ),
-                  ),
-                ),
               ),
+              body: const DeckScreenBody(),
             ),
-            body: const DeckScreenBody(),
           ),
         ),
         DraggableFab(

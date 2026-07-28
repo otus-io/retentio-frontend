@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/screen/deck/deck_widgets/import_updates_sheet.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
+import 'package:retentio/screen/decks/bloc/deck_sharing_status_cubit.dart';
 import 'package:retentio/screen/decks/deck_text_styles.dart';
+import 'package:retentio/screen/decks/widgets/badged_app_icon_button.dart';
 import 'package:retentio/screen/decks/widgets/publish_deck_sheet.dart';
 import 'package:retentio/theme/theme_tokens.dart';
-import 'package:retentio/widgets/app_icon_button.dart';
 import 'package:retentio/widgets/common_bottom_sheet.dart';
 
 import '../../../routers/routers.dart';
@@ -29,6 +31,10 @@ class DeckListCard extends StatelessWidget {
         : progressPercent > 0
         ? '${progressPercent.toStringAsFixed(2)}%'
         : '${progressPercent.toStringAsFixed(0)}%';
+
+    final showBadge = context.select<DeckSharingStatusCubit, bool>(
+      (c) => c.state.shouldFlash(deck.id),
+    );
 
     return InkWell(
       onTap: () {
@@ -73,31 +79,59 @@ class DeckListCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 if (!deck.isImported)
-                  AppIconButton(
+                  BadgedAppIconButton(
                     icon: LucideIcons.share2,
-                    tooltip: loc.publishDeck,
-                    variant: AppIconButtonVariant.subtle,
-                    size: 18,
-                    constraints: const BoxConstraints(
-                      minWidth: 36,
-                      minHeight: 36,
-                    ),
+                    tooltip: deck.isPublishedSource
+                        ? loc.publishDeckUpdate
+                        : loc.publishDeck,
+                    showBadge: showBadge,
                     onPressed: () {
                       showCommonBottomSheet<void>(
                         context: context,
-                        title: loc.publishDeck,
-                        child: PublishDeckSheet(deck: deck),
+                        title: deck.isPublishedSource
+                            ? loc.publishDeckUpdate
+                            : loc.publishDeck,
+                        child: PublishDeckSheet(
+                          deck: deck,
+                          onPublished: () {
+                            context.read<DeckSharingStatusCubit>().clear(
+                              deck.id,
+                            );
+                            context.read<DeckListCubit>().onRefresh();
+                          },
+                        ),
+                      );
+                    },
+                  )
+                else
+                  BadgedAppIconButton(
+                    icon: LucideIcons.refreshCw,
+                    tooltip: loc.deckCheckUpdates,
+                    showBadge: showBadge,
+                    onPressed: () {
+                      showCommonBottomSheet<void>(
+                        context: context,
+                        title: loc.deckCheckUpdates,
+                        initialChildSize: 0.75,
+                        minChildSize: 0.45,
+                        maxChildSize: 0.95,
+                        child: ImportUpdatesSheet(
+                          deckId: deck.id,
+                          onSynced: () async {
+                            context.read<DeckSharingStatusCubit>().clear(
+                              deck.id,
+                            );
+                            await context.read<DeckListCubit>().onRefresh();
+                            if (context.mounted) {
+                              await context
+                                  .read<DeckSharingStatusCubit>()
+                                  .refresh();
+                            }
+                          },
+                        ),
                       );
                     },
                   ),
-                const SizedBox(width: 4),
-                Text(
-                  '${deck.totalCards} ${loc.cards}',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: scheme.onSurface.withValues(alpha: 0.4),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
               ],
             ),
             const SizedBox(height: 10),

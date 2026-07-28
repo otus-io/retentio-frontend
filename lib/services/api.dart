@@ -42,6 +42,7 @@ class Api {
   static const String deckCatalog = '/api/decks/catalog';
   static const String deckCatalogById = '/api/decks/catalog/{id}';
   static const String deckPublish = '/api/decks/{id}/publish';
+  static const String deckPublishPreview = '/api/decks/{id}/publish-preview';
   static const String deckImport = '/api/decks/import';
   static const String deckUpdates = '/api/decks/{id}/updates';
   static const String deckUpdateFact = '/api/decks/{id}/updates/facts/{factId}';

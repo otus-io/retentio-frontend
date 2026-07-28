@@ -71,6 +71,9 @@ class Deck {
     @JsonKey(defaultValue: 0) required this.defInterval,
     @JsonKey(defaultValue: 0) required this.maxInterval,
     this.sourceDeckId = '',
+    this.sourceVersion = 0,
+    this.publishedVersion = 0,
+    this.visibility = '',
     this.createdAt,
     this.updatedAt,
   });
@@ -88,10 +91,25 @@ class Deck {
 
   /// Set when this deck is an import copy of a published source deck.
   final String sourceDeckId;
+
+  /// Import decks: pinned snapshot version. Source decks: unused (0).
+  @JsonKey(defaultValue: 0)
+  final int sourceVersion;
+
+  /// Source decks: latest published snapshot version (`0` = never published).
+  @JsonKey(defaultValue: 0)
+  final int publishedVersion;
+
+  /// Source decks: `private` or `public`.
+  @JsonKey(defaultValue: '')
+  final String visibility;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
   bool get isImported => sourceDeckId.isNotEmpty;
+
+  /// Source deck that has at least one published snapshot.
+  bool get isPublishedSource => !isImported && publishedVersion > 0;
 
   Deck copyWith({required String name}) => Deck(
     id: id,
@@ -104,6 +122,9 @@ class Deck {
     defInterval: defInterval,
     maxInterval: maxInterval,
     sourceDeckId: sourceDeckId,
+    sourceVersion: sourceVersion,
+    publishedVersion: publishedVersion,
+    visibility: visibility,
     createdAt: createdAt,
     updatedAt: updatedAt,
   );
