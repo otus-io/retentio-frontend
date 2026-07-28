@@ -338,6 +338,12 @@ abstract class AppLocalizations {
   /// **'Due'**
   String get dueCards;
 
+  /// Study-session due-clearing progress label under the progress bar
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s due'**
+  String get todaysDue;
+
   /// Learned cards label
   ///
   /// In en, this message translates to:

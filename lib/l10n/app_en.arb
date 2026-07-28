@@ -166,6 +166,10 @@
   "@dueCards": {
     "description": "Due cards label"
   },
+  "todaysDue": "Today's due",
+  "@todaysDue": {
+    "description": "Study-session due-clearing progress label under the progress bar"
+  },
   "learned": "Learned",
   "@learned": {
     "description": "Learned cards label"

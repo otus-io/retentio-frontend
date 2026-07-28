@@ -10,6 +10,7 @@ import 'package:retentio/screen/deck/card_widgets/card_flip.dart';
 import 'package:retentio/screen/deck/card_widgets/card_side_content.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_study_tag_filter_bar.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
+import 'package:retentio/screen/decks/deck_text_styles.dart';
 import 'package:retentio/theme/theme_tokens.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_toast.dart';
@@ -100,6 +101,12 @@ class DeckViewBody extends StatelessWidget {
             final dueProgress = dueTarget <= 0
                 ? 1.0
                 : (clearedDue / dueTarget).clamp(0.0, 1.0);
+            final dueProgressPercent = dueProgress * 100;
+            final dueProgressPercentLabel = dueProgressPercent >= 1
+                ? '${dueProgressPercent.toStringAsFixed(0)}%'
+                : dueProgressPercent > 0
+                ? '${dueProgressPercent.toStringAsFixed(2)}%'
+                : '${dueProgressPercent.toStringAsFixed(0)}%';
 
             if (cardDetail == null) {
               final messageBody = state.activeTagId != null
@@ -161,37 +168,36 @@ class DeckViewBody extends StatelessWidget {
                 if (state.deckTags.isNotEmpty) buildTagFilterBar(),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
-                  child: SizedBox(
-                    height: 28,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Positioned.fill(
-                          child: ClipRRect(
-                            borderRadius: AppThemeTokens.borderRadiusPill,
-                            child: LinearProgressIndicator(
-                              value: dueProgress,
-                              minHeight: 28,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                scheme.primary,
-                              ),
-                              backgroundColor: scheme.outline.withValues(
-                                alpha: 0.18,
-                              ),
-                            ),
+                  child: Column(
+                    children: [
+                      ClipRRect(
+                        borderRadius: AppThemeTokens.borderRadiusPill,
+                        child: LinearProgressIndicator(
+                          value: dueProgress,
+                          minHeight: 6,
+                          backgroundColor: scheme.outline.withValues(
+                            alpha: 0.28,
+                          ),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            scheme.primary,
                           ),
                         ),
-                        Text(
-                          '$clearedDue / $dueTarget',
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: dueProgress >= 0.5
-                                ? scheme.onPrimary
-                                : scheme.primary,
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            loc.todaysDue,
+                            style: DeckTextStyles.progressLabel(theme),
                           ),
-                        ),
-                      ],
-                    ),
+                          Text(
+                            '$clearedDue/$dueTarget ($dueProgressPercentLabel)',
+                            style: DeckTextStyles.progressValue(theme),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
                 Expanded(

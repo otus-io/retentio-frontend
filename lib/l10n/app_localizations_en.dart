@@ -132,6 +132,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dueCards => 'Due';
 
   @override
+  String get todaysDue => 'Today\'s due';
+
+  @override
   String get learned => 'Learned';
 
   @override

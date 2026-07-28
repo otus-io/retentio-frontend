@@ -355,7 +355,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('0 / 5'), findsOneWidget);
+      expect(find.text("Today's due"), findsOneWidget);
+      expect(find.text('0/5 (0%)'), findsOneWidget);
       final indicator = tester.widget<LinearProgressIndicator>(
         find.byType(LinearProgressIndicator),
       );
@@ -397,7 +398,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('0 / 4'), findsOneWidget);
+        expect(find.text('0/4 (0%)'), findsOneWidget);
         expect(
           tester
               .widget<LinearProgressIndicator>(
@@ -412,7 +413,7 @@ void main() {
         await tester.tap(find.text('Next'));
         await tester.pumpAndSettle();
 
-        expect(find.text('3 / 4'), findsOneWidget);
+        expect(find.text('3/4 (75%)'), findsOneWidget);
         expect(
           tester
               .widget<LinearProgressIndicator>(
@@ -462,7 +463,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('0 / 5'), findsOneWidget);
+        expect(find.text('0/5 (0%)'), findsOneWidget);
 
         await tester.tap(find.text('Show Answer'));
         await tester.pumpAndSettle();
@@ -470,7 +471,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // liveDue 5→2 → 3 cleared (liveCleared beats cardsStudied=1).
-        expect(find.text('3 / 5'), findsOneWidget);
+        expect(find.text('3/5 (60%)'), findsOneWidget);
 
         await tester.tap(find.text('Show Answer'));
         await tester.pumpAndSettle();
@@ -479,8 +480,8 @@ void main() {
 
         // liveDue spiked to 7 (> target). Without a review-count floor the bar
         // would show 0/5; floor keeps progress from cardsStudied=2.
-        expect(find.text('0 / 5'), findsNothing);
-        expect(find.text('2 / 5'), findsOneWidget);
+        expect(find.text('0/5 (0%)'), findsNothing);
+        expect(find.text('2/5 (40%)'), findsOneWidget);
         expect(
           tester
               .widget<LinearProgressIndicator>(
@@ -533,8 +534,8 @@ void main() {
       await _selectStudyTagFilter(tester, 'Grammar');
       await tester.pumpAndSettle();
 
-      expect(find.text('0 / 3'), findsOneWidget);
-      expect(find.text('0 / 2387'), findsNothing);
+      expect(find.text('0/3 (0%)'), findsOneWidget);
+      expect(find.text('0/2387 (0%)'), findsNothing);
     });
 
     testWidgets(
