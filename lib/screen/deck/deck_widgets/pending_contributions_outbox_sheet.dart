@@ -206,7 +206,7 @@ class _PendingContributionsOutboxSheetState
           message: message,
         );
       case PendingContributionKind.report:
-        throw Exception('reports are sent from fact edit');
+        throw Exception('reports are sent from card menu');
       case PendingContributionKind.template:
       case PendingContributionKind.fieldRename:
         throw Exception('unsupported pending kind');

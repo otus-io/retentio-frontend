@@ -2570,6 +2570,66 @@ abstract class AppLocalizations {
   /// **'Feedback submitted'**
   String get feedbackSubmitSuccess;
 
+  /// Card menu action to report a problem on an imported fact
+  ///
+  /// In en, this message translates to:
+  /// **'Report issue'**
+  String get reportIssue;
+
+  /// Label for report issue category dropdown
+  ///
+  /// In en, this message translates to:
+  /// **'Issue type'**
+  String get reportIssueCategory;
+
+  /// Report issue category: audio
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get reportIssueAudio;
+
+  /// Report issue category: content
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get reportIssueContent;
+
+  /// Report issue category: free-text other
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get reportIssueOther;
+
+  /// Hint for optional details when a preset category is selected
+  ///
+  /// In en, this message translates to:
+  /// **'Add details (optional)'**
+  String get reportIssueDetailsHint;
+
+  /// Hint for required details when Other is selected
+  ///
+  /// In en, this message translates to:
+  /// **'Describe the issue'**
+  String get reportIssueOtherHint;
+
+  /// Validation when Other is selected without details
+  ///
+  /// In en, this message translates to:
+  /// **'Please describe the issue'**
+  String get reportIssueDetailsRequired;
+
+  /// Primary button on report issue dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get reportIssueSubmit;
+
+  /// Toast after report issue submission succeeds
+  ///
+  /// In en, this message translates to:
+  /// **'Issue reported'**
+  String get reportIssueSuccess;
+
   /// Shown when fact edit opens an invalid empty fact
   ///
   /// In en, this message translates to:

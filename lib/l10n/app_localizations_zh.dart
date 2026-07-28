@@ -1285,6 +1285,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get feedbackSubmitSuccess => '反馈已提交';
 
   @override
+  String get reportIssue => '报告问题';
+
+  @override
+  String get reportIssueCategory => '问题类型';
+
+  @override
+  String get reportIssueAudio => '音频';
+
+  @override
+  String get reportIssueContent => '内容';
+
+  @override
+  String get reportIssueOther => '其他';
+
+  @override
+  String get reportIssueDetailsHint => '补充说明（可选）';
+
+  @override
+  String get reportIssueOtherHint => '请描述问题';
+
+  @override
+  String get reportIssueDetailsRequired => '请描述问题';
+
+  @override
+  String get reportIssueSubmit => '提交';
+
+  @override
+  String get reportIssueSuccess => '问题已报告';
+
+  @override
   String get factEditNoEntries => '该词条没有可编辑内容';
 
   @override

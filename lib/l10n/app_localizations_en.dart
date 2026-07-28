@@ -1378,6 +1378,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feedbackSubmitSuccess => 'Feedback submitted';
 
   @override
+  String get reportIssue => 'Report issue';
+
+  @override
+  String get reportIssueCategory => 'Issue type';
+
+  @override
+  String get reportIssueAudio => 'Audio';
+
+  @override
+  String get reportIssueContent => 'Content';
+
+  @override
+  String get reportIssueOther => 'Other';
+
+  @override
+  String get reportIssueDetailsHint => 'Add details (optional)';
+
+  @override
+  String get reportIssueOtherHint => 'Describe the issue';
+
+  @override
+  String get reportIssueDetailsRequired => 'Please describe the issue';
+
+  @override
+  String get reportIssueSubmit => 'Submit';
+
+  @override
+  String get reportIssueSuccess => 'Issue reported';
+
+  @override
   String get factEditNoEntries => 'This fact has no entries';
 
   @override

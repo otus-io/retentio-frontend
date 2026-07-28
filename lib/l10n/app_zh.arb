@@ -1048,6 +1048,46 @@
   "@feedbackSubmitSuccess": {
     "description": "Toast after feedback submission succeeds"
   },
+  "reportIssue": "报告问题",
+  "@reportIssue": {
+    "description": "Card menu action to report a problem on an imported fact"
+  },
+  "reportIssueCategory": "问题类型",
+  "@reportIssueCategory": {
+    "description": "Label for report issue category dropdown"
+  },
+  "reportIssueAudio": "音频",
+  "@reportIssueAudio": {
+    "description": "Report issue category: audio"
+  },
+  "reportIssueContent": "内容",
+  "@reportIssueContent": {
+    "description": "Report issue category: content"
+  },
+  "reportIssueOther": "其他",
+  "@reportIssueOther": {
+    "description": "Report issue category: free-text other"
+  },
+  "reportIssueDetailsHint": "补充说明（可选）",
+  "@reportIssueDetailsHint": {
+    "description": "Hint for optional details when a preset category is selected"
+  },
+  "reportIssueOtherHint": "请描述问题",
+  "@reportIssueOtherHint": {
+    "description": "Hint for required details when Other is selected"
+  },
+  "reportIssueDetailsRequired": "请描述问题",
+  "@reportIssueDetailsRequired": {
+    "description": "Validation when Other is selected without details"
+  },
+  "reportIssueSubmit": "提交",
+  "@reportIssueSubmit": {
+    "description": "Primary button on report issue dialog"
+  },
+  "reportIssueSuccess": "问题已报告",
+  "@reportIssueSuccess": {
+    "description": "Toast after report issue submission succeeds"
+  },
   "factEditNoEntries": "该词条没有可编辑内容",
   "@factEditNoEntries": {
     "description": "Shown when fact edit opens an invalid empty fact"
