@@ -58,6 +58,8 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
           cardsStudied: 0,
           resetCardDetail: true,
           clearRefreshedCardsCount: true,
+          clearRefreshedDueCardsCount: true,
+          clearSessionDueTarget: true,
         ),
       );
       await _loadCard(resetProgress: false);
@@ -76,6 +78,8 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
           isLoading: true,
           resetCardDetail: true,
           clearRefreshedCardsCount: true,
+          clearRefreshedDueCardsCount: true,
+          clearSessionDueTarget: true,
         ),
       );
       await _loadCard(resetProgress: false);
@@ -196,6 +200,13 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
           refreshedCardsCount: state.activeTagId != null
               ? (result.refreshedCardsCount ?? state.refreshedCardsCount)
               : result.refreshedCardsCount,
+          refreshedDueCardsCount:
+              result.refreshedDueCardsCount ?? state.refreshedDueCardsCount,
+          // Option A: freeze due target at first known value for this session.
+          sessionDueTarget:
+              state.sessionDueTarget ??
+              result.refreshedDueCardsCount ??
+              state.refreshedDueCardsCount,
           minInterval: interval.minInterval,
           maxInterval: interval.maxInterval,
           selectedInterval: interval.midInterval,
@@ -215,6 +226,12 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
         refreshedCardsCount: state.activeTagId != null
             ? (result.refreshedCardsCount ?? state.refreshedCardsCount)
             : result.refreshedCardsCount,
+        refreshedDueCardsCount:
+            result.refreshedDueCardsCount ?? state.refreshedDueCardsCount,
+        sessionDueTarget:
+            state.sessionDueTarget ??
+            result.refreshedDueCardsCount ??
+            state.refreshedDueCardsCount,
         minInterval: 0,
         maxInterval: 0,
         selectedInterval: 0,

@@ -85,6 +85,13 @@ class DeckViewBody extends StatelessWidget {
                 state.refreshedCardsCount ?? deck.stats.cardsCount;
             final cardsStudied = state.cardsStudied;
             final cardDetail = state.cardDetail;
+            final liveDue = state.refreshedDueCardsCount ?? deck.stats.dueCards;
+            final dueTarget = state.sessionDueTarget ?? liveDue;
+            final remainingForBar = liveDue < dueTarget ? liveDue : dueTarget;
+            final clearedDue = dueTarget - remainingForBar;
+            final dueProgress = dueTarget <= 0
+                ? 1.0
+                : (clearedDue / dueTarget).clamp(0.0, 1.0);
 
             if (cardDetail == null) {
               final messageBody = state.activeTagId != null
@@ -140,56 +147,43 @@ class DeckViewBody extends StatelessWidget {
               );
             }
 
-            final currentCardNumber = totalCardsInSession > 0
-                ? (cardsStudied + 1).clamp(1, totalCardsInSession)
-                : cardsStudied + 1;
-            final currentProgress = totalCardsInSession > 0
-                ? currentCardNumber / totalCardsInSession
-                : 0.0;
-            final progressPercent = currentProgress * 100;
-            final progressPercentLabel = progressPercent >= 1
-                ? '${progressPercent.toStringAsFixed(0)}%'
-                : progressPercent > 0
-                ? '${progressPercent.toStringAsFixed(2)}%'
-                : '${progressPercent.toStringAsFixed(0)}%';
-
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (state.deckTags.isNotEmpty) buildTagFilterBar(),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
-                  child: Column(
-                    spacing: 6,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            '$currentCardNumber / $totalCardsInSession',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: scheme.primary,
-                              fontWeight: FontWeight.w600,
+                  child: SizedBox(
+                    height: 28,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Positioned.fill(
+                          child: ClipRRect(
+                            borderRadius: AppThemeTokens.borderRadiusPill,
+                            child: LinearProgressIndicator(
+                              value: dueProgress,
+                              minHeight: 28,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                scheme.primary,
+                              ),
+                              backgroundColor: scheme.outline.withValues(
+                                alpha: 0.18,
+                              ),
                             ),
                           ),
-                          const Spacer(),
-                          Text(
-                            progressPercentLabel,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: scheme.onSurface.withValues(alpha: 0.45),
-                            ),
-                          ),
-                        ],
-                      ),
-                      LinearProgressIndicator(
-                        value: currentProgress,
-                        minHeight: 4,
-                        borderRadius: AppThemeTokens.borderRadiusPill,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          scheme.primary,
                         ),
-                        backgroundColor: scheme.outline.withValues(alpha: 0.18),
-                      ),
-                    ],
+                        Text(
+                          '$clearedDue / $dueTarget',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: dueProgress >= 0.5
+                                ? scheme.onPrimary
+                                : scheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Expanded(

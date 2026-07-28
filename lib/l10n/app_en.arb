@@ -166,6 +166,10 @@
   "@dueCards": {
     "description": "Due cards label"
   },
+  "sessionReviews": "Reviews",
+  "@sessionReviews": {
+    "description": "Session review-action count on study progress header (same card can count more than once)"
+  },
   "learned": "Learned",
   "@learned": {
     "description": "Learned cards label"

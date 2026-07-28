@@ -5,31 +5,85 @@ import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/index.dart';
 import 'package:retentio/utils/log.dart';
 
+class DeckCardsStats {
+  const DeckCardsStats({this.totalCards, this.dueCards});
+
+  final int? totalCards;
+  final int? dueCards;
+}
+
+/// Parses GET `/api/decks/{id}/cards` payload (`data` object).
+/// Current API: `{ "stats": { "cards_count", "due_cards", ... }, "cards": [...] }`.
+DeckCardsStats? parseDeckCardsStatsData(dynamic data, {int? nowSec}) {
+  if (data is! Map) return null;
+  final map = Map<String, dynamic>.from(data);
+
+  int? totalCards;
+  int? dueCards;
+
+  final statsRaw = map['stats'];
+  if (statsRaw is Map) {
+    final stats = Map<String, dynamic>.from(statsRaw);
+    totalCards = _readInt(stats['cards_count']);
+    dueCards = _readInt(stats['due_cards']);
+  }
+
+  // Legacy top-level fields (older API docs / clients).
+  totalCards ??= _readInt(map['total_cards']);
+  dueCards ??= _readInt(map['due_cards']);
+
+  // Fallback: derive from cards list when stats omit counts.
+  final cardsRaw = map['cards'];
+  if (cardsRaw is List) {
+    totalCards ??= cardsRaw.length;
+    if (dueCards == null) {
+      final now = nowSec ?? DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      var due = 0;
+      for (final item in cardsRaw) {
+        if (item is! Map) continue;
+        final card = Map<String, dynamic>.from(item);
+        if (card['hidden'] == true) continue;
+        final dueDate = _readInt(card['due_date']) ?? 0;
+        if (dueDate > 0 && dueDate <= now) due++;
+      }
+      dueCards = due;
+    }
+  }
+
+  if (totalCards == null && dueCards == null) return null;
+  return DeckCardsStats(totalCards: totalCards, dueCards: dueCards);
+}
+
+int? _readInt(dynamic value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return null;
+}
+
 class CardService {
   /// 获取卡组卡片统计，可选 [tagId] 限定到带该标签的词条对应卡片。
-  static Future<int?> getCardsCount(String deckId, {String? tagId}) async {
+  static Future<DeckCardsStats?> getCardsStats(
+    String deckId, {
+    String? tagId,
+  }) async {
     try {
       final res = await ApiService.get(
         Api.cards,
         pathParams: {'id': deckId},
         queryParams: tagId != null ? {'tag_id': tagId} : null,
       );
-      final data = res?.data;
-      if (data is! Map) return null;
-
-      final totalCards = data['total_cards'];
-      if (totalCards is num) return totalCards.toInt();
-
-      final stats = data['stats'];
-      if (stats is Map) {
-        final cardsCount = stats['cards_count'];
-        if (cardsCount is num) return cardsCount.toInt();
-      }
-      return null;
+      return parseDeckCardsStatsData(res?.data);
     } catch (e) {
       logger.e(e);
       return null;
     }
+  }
+
+  /// 获取卡组卡片总数，可选 [tagId] 限定到带该标签的词条对应卡片。
+  static Future<int?> getCardsCount(String deckId, {String? tagId}) async {
+    final stats = await getCardsStats(deckId, tagId: tagId);
+    return stats?.totalCards;
   }
 
   /// 获取下一张需要学习的卡片，可选 tagId 筛选

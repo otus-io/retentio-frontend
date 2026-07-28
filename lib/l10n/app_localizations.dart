@@ -338,6 +338,12 @@ abstract class AppLocalizations {
   /// **'Due'**
   String get dueCards;
 
+  /// Session review-action count on study progress header (same card can count more than once)
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews'**
+  String get sessionReviews;
+
   /// Learned cards label
   ///
   /// In en, this message translates to:

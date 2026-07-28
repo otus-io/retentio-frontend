@@ -16,6 +16,8 @@ class DeckStudyState extends Equatable {
     this.selectedInterval = 0,
     this.isHide = false,
     this.refreshedCardsCount,
+    this.refreshedDueCardsCount,
+    this.sessionDueTarget,
     this.minInterval = 0,
     this.maxInterval = 0,
     this.errorMessage,
@@ -31,6 +33,12 @@ class DeckStudyState extends Equatable {
   final double selectedInterval;
   final bool isHide;
   final int? refreshedCardsCount;
+
+  /// Live due count (deck-wide or tag-scoped).
+  final int? refreshedDueCardsCount;
+
+  /// Frozen due count at session/filter start for progress-bar target (option A).
+  final int? sessionDueTarget;
   final double minInterval;
   final double maxInterval;
   final String? errorMessage;
@@ -50,6 +58,10 @@ class DeckStudyState extends Equatable {
     bool? isHide,
     int? refreshedCardsCount,
     bool clearRefreshedCardsCount = false,
+    int? refreshedDueCardsCount,
+    bool clearRefreshedDueCardsCount = false,
+    int? sessionDueTarget,
+    bool clearSessionDueTarget = false,
     double? minInterval,
     double? maxInterval,
     String? errorMessage,
@@ -68,6 +80,12 @@ class DeckStudyState extends Equatable {
       refreshedCardsCount: clearRefreshedCardsCount
           ? null
           : (refreshedCardsCount ?? this.refreshedCardsCount),
+      refreshedDueCardsCount: clearRefreshedDueCardsCount
+          ? null
+          : (refreshedDueCardsCount ?? this.refreshedDueCardsCount),
+      sessionDueTarget: clearSessionDueTarget
+          ? null
+          : (sessionDueTarget ?? this.sessionDueTarget),
       minInterval: minInterval ?? this.minInterval,
       maxInterval: maxInterval ?? this.maxInterval,
       errorMessage: clearErrorMessage
@@ -88,6 +106,8 @@ class DeckStudyState extends Equatable {
     selectedInterval,
     isHide,
     refreshedCardsCount,
+    refreshedDueCardsCount,
+    sessionDueTarget,
     minInterval,
     maxInterval,
     errorMessage,
