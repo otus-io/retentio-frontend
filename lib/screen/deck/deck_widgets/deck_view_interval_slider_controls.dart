@@ -7,6 +7,7 @@ import 'package:retentio/features/deck_study/deck_study.dart';
 import 'package:retentio/extensions/widget_extension.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/deck/bloc/deck_study_flip_card_controller_cubit.dart';
+import 'package:retentio/screen/deck/card_widgets/card_flip_controller.dart';
 import 'package:retentio/screen/deck/formatters/review_interval_label.dart';
 import 'package:retentio/widgets/app_button.dart';
 
@@ -151,7 +152,7 @@ class DeckViewIntervalSliderControls extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final loc = AppLocalizations.of(context)!;
-    dynamic flipController;
+    CardFlipController? flipController;
     try {
       flipController = context.read<DeckStudyFlipCardControllerCubit>().state;
     } catch (_) {
@@ -160,6 +161,13 @@ class DeckViewIntervalSliderControls extends StatelessWidget {
 
     return BlocBuilder<DeckStudyBloc, DeckStudyState>(
       builder: (context, state) {
+        // Flutter Slider asserts min < max; study state can emit equal bounds
+        // (e.g. empty session → 0/0).
+        final minInterval = state.minInterval;
+        final maxInterval = state.maxInterval > minInterval
+            ? state.maxInterval
+            : minInterval + 1;
+
         Widget buildPanel(bool isFront) {
           return Container(
             padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
@@ -211,11 +219,11 @@ class DeckViewIntervalSliderControls extends StatelessWidget {
                           ),
                           child: Slider(
                             value: state.selectedInterval.clamp(
-                              state.minInterval,
-                              state.maxInterval,
+                              minInterval,
+                              maxInterval,
                             ),
-                            min: state.minInterval,
-                            max: state.maxInterval,
+                            min: minInterval,
+                            max: maxInterval,
                             divisions: 100,
                             label: formatReviewIntervalLabel(
                               state.selectedInterval,
@@ -259,10 +267,11 @@ class DeckViewIntervalSliderControls extends StatelessWidget {
           return buildPanel(false);
         }
 
+        final controller = flipController;
         return AnimatedBuilder(
-          animation: flipController,
+          animation: controller,
           builder: (context, _) {
-            return buildPanel(flipController.isFront);
+            return buildPanel(controller.isFront);
           },
         );
       },

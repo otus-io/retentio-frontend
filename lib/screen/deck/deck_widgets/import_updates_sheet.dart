@@ -130,8 +130,11 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
       if (!mounted) return;
       setState(() {
         _details[factId] = detail;
+        // Only apply API default when the user hasn't overridden the summary
+        // seed (accept). Otherwise a late response clobbers their choice.
         if (detail.kind == DeckUpdateFactKind.removed &&
-            detail.defaultAction == 'keep') {
+            detail.defaultAction == 'keep' &&
+            _decisions[factId] == SyncFactDecisionAction.accept) {
           _decisions[factId] = SyncFactDecisionAction.keep;
         }
       });
@@ -258,6 +261,16 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
                       style: theme.textTheme.labelLarge,
                     ),
                   ),
+                if (summary.cardTemplateChangeCount > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      loc.deckUpdatesTemplatesSection(
+                        summary.cardTemplateChangeCount,
+                      ),
+                      style: theme.textTheme.labelLarge,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -288,7 +301,6 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
   }
 
   Widget _factTile(String factId) {
-    final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final expanded = _expandedFacts.contains(factId);
@@ -340,8 +352,6 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
                 },
               ),
             ],
-            if (expanded && detail == null && !loading)
-              Text(loc.discoveryRetry, style: theme.textTheme.bodySmall),
           ],
         ),
       ),

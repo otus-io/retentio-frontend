@@ -2612,37 +2612,37 @@ abstract class AppLocalizations {
   /// **'Reject'**
   String get deckUpdatesKeepLocal;
 
-  /// No description provided for @deckUpdatesAligned.
+  /// Hint that a fact update is already aligned with local overlay
   ///
   /// In en, this message translates to:
   /// **'aligned'**
   String get deckUpdatesAligned;
 
-  /// No description provided for @deckUpdatesLocalOverlay.
+  /// Hint that the fact has a private local overlay
   ///
   /// In en, this message translates to:
   /// **'local overlay'**
   String get deckUpdatesLocalOverlay;
 
-  /// No description provided for @deckUpdatesKeepHint.
+  /// Hint under Keep Local for facts with a private overlay
   ///
   /// In en, this message translates to:
   /// **'has local overlay'**
   String get deckUpdatesKeepHint;
 
-  /// No description provided for @deckUpdatesAcceptHint.
+  /// Hint under Accept for the default sync decision
   ///
   /// In en, this message translates to:
   /// **'default accept'**
   String get deckUpdatesAcceptHint;
 
-  /// No description provided for @deckUpdatesBefore.
+  /// Label for fact content before the author update
   ///
   /// In en, this message translates to:
   /// **'Before update'**
   String get deckUpdatesBefore;
 
-  /// No description provided for @deckUpdatesAfter.
+  /// Label for fact content after the author update
   ///
   /// In en, this message translates to:
   /// **'After update'**

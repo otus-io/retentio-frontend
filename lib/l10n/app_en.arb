@@ -1802,11 +1802,29 @@
     "description": "Reject author publish and keep private overlay when syncing"
   },
   "deckUpdatesAligned": "aligned",
+  "@deckUpdatesAligned": {
+    "description": "Hint that a fact update is already aligned with local overlay"
+  },
   "deckUpdatesLocalOverlay": "local overlay",
+  "@deckUpdatesLocalOverlay": {
+    "description": "Hint that the fact has a private local overlay"
+  },
   "deckUpdatesKeepHint": "has local overlay",
+  "@deckUpdatesKeepHint": {
+    "description": "Hint under Keep Local for facts with a private overlay"
+  },
   "deckUpdatesAcceptHint": "default accept",
+  "@deckUpdatesAcceptHint": {
+    "description": "Hint under Accept for the default sync decision"
+  },
   "deckUpdatesBefore": "Before update",
+  "@deckUpdatesBefore": {
+    "description": "Label for fact content before the author update"
+  },
   "deckUpdatesAfter": "After update",
+  "@deckUpdatesAfter": {
+    "description": "Label for fact content after the author update"
+  },
   "deckUpdatesReviewChanges": "Review changes",
   "@deckUpdatesReviewChanges": {
     "description": "Expand per-fact update review list"

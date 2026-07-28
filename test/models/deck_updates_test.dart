@@ -161,4 +161,92 @@ void main() {
       expect(summary.hasUpdates, isTrue);
     });
   });
+
+  group('DeckUpdateFactDetail', () {
+    test('fromJson maps kind, versions, flags, and facts', () {
+      final detail = DeckUpdateFactDetail.fromJson({
+        'fact_id': 'fact0001',
+        'kind': 'edited',
+        'source_version': 2,
+        'latest_version': 5,
+        'has_local_overlay': true,
+        'local': false,
+        'aligned': true,
+        'default_action': 'accept',
+        'before': {
+          'id': 'fact0001',
+          'entries': [
+            {'text': 'Old'},
+          ],
+        },
+        'after': {
+          'id': 'fact0001',
+          'entries': [
+            {'text': 'New'},
+          ],
+        },
+        'before_media_versions': {'aud1': 1},
+        'after_media_versions': {'aud1': 2, 'aud2': 0},
+      });
+
+      expect(detail.factId, 'fact0001');
+      expect(detail.kind, DeckUpdateFactKind.edited);
+      expect(detail.sourceVersion, 2);
+      expect(detail.latestVersion, 5);
+      expect(detail.hasLocalOverlay, isTrue);
+      expect(detail.local, isFalse);
+      expect(detail.aligned, isTrue);
+      expect(detail.defaultAction, 'accept');
+      expect(detail.before?.entries.first.text, 'Old');
+      expect(detail.after?.entries.first.text, 'New');
+      expect(detail.beforeMediaVersions, {'aud1': 1});
+      expect(detail.afterMediaVersions, {'aud1': 2});
+    });
+
+    test('fromJson maps removed keep default and added fact', () {
+      final removed = DeckUpdateFactDetail.fromJson({
+        'fact_id': 'r1',
+        'kind': 'removed',
+        'default_action': 'keep',
+        'local': true,
+        'fact': {
+          'id': 'r1',
+          'entries': [
+            {'text': 'Gone'},
+          ],
+        },
+      });
+      expect(removed.kind, DeckUpdateFactKind.removed);
+      expect(removed.defaultAction, 'keep');
+      expect(removed.local, isTrue);
+      expect(removed.fact?.entries.first.text, 'Gone');
+
+      final added = DeckUpdateFactDetail.fromJson({
+        'fact_id': 'a1',
+        'kind': 'added',
+        'fact': {
+          'id': 'a1',
+          'entries': [
+            {'text': 'New'},
+          ],
+        },
+      });
+      expect(added.kind, DeckUpdateFactKind.added);
+      expect(added.fact?.entries.first.text, 'New');
+    });
+
+    test('fromJson defaults unknown kind to edited and tolerates nulls', () {
+      final detail = DeckUpdateFactDetail.fromJson({
+        'kind': 'unknown',
+        'before_media_versions': null,
+        'after_media_versions': 'bad',
+      });
+      expect(detail.kind, DeckUpdateFactKind.edited);
+      expect(detail.factId, '');
+      expect(detail.sourceVersion, 0);
+      expect(detail.latestVersion, 0);
+      expect(detail.beforeMediaVersions, isEmpty);
+      expect(detail.afterMediaVersions, isEmpty);
+    });
+  });
 }

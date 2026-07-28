@@ -1080,11 +1080,29 @@
     "description": "Reject author publish and keep private overlay when syncing"
   },
   "deckUpdatesAligned": "已对齐",
+  "@deckUpdatesAligned": {
+    "description": "Hint that a fact update is already aligned with local overlay"
+  },
   "deckUpdatesLocalOverlay": "本地 overlay",
+  "@deckUpdatesLocalOverlay": {
+    "description": "Hint that the fact has a private local overlay"
+  },
   "deckUpdatesKeepHint": "有本地 overlay",
+  "@deckUpdatesKeepHint": {
+    "description": "Hint under Keep Local for facts with a private overlay"
+  },
   "deckUpdatesAcceptHint": "默认接受",
+  "@deckUpdatesAcceptHint": {
+    "description": "Hint under Accept for the default sync decision"
+  },
   "deckUpdatesBefore": "更新前",
+  "@deckUpdatesBefore": {
+    "description": "Label for fact content before the author update"
+  },
   "deckUpdatesAfter": "更新后",
+  "@deckUpdatesAfter": {
+    "description": "Label for fact content after the author update"
+  },
   "deckUpdatesReviewChanges": "查看变更",
   "deckUpdatesHideReview": "收起变更",
   "contributeFactEdit": "向作者提交修改",
