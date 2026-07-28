@@ -132,9 +132,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dueCards => 'Due';
 
   @override
-  String get sessionReviews => 'Reviews';
-
-  @override
   String get learned => 'Learned';
 
   @override

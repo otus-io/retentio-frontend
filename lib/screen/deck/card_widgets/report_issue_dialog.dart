@@ -17,16 +17,24 @@ Future<void> showReportIssueDialog({
 }) {
   return showDialog<void>(
     context: context,
-    builder: (dialogContext) =>
-        _ReportIssueDialog(importDeckId: importDeckId, factId: factId),
+    builder: (dialogContext) => _ReportIssueDialog(
+      importDeckId: importDeckId,
+      factId: factId,
+      pageContext: context,
+    ),
   );
 }
 
 class _ReportIssueDialog extends StatefulWidget {
-  const _ReportIssueDialog({required this.importDeckId, required this.factId});
+  const _ReportIssueDialog({
+    required this.importDeckId,
+    required this.factId,
+    required this.pageContext,
+  });
 
   final String importDeckId;
   final String factId;
+  final BuildContext pageContext;
 
   @override
   State<_ReportIssueDialog> createState() => _ReportIssueDialogState();
@@ -78,7 +86,10 @@ class _ReportIssueDialogState extends State<_ReportIssueDialog> {
       );
       if (!mounted) return;
       Navigator.of(context).pop();
-      AppToast.success(context, loc.reportIssueSuccess);
+      final pageContext = widget.pageContext;
+      if (pageContext.mounted) {
+        AppToast.success(pageContext, loc.reportIssueSuccess);
+      }
     } catch (e) {
       if (!mounted) return;
       AppToast.error(
@@ -95,55 +106,58 @@ class _ReportIssueDialogState extends State<_ReportIssueDialog> {
     final loc = AppLocalizations.of(context)!;
     final detailsRequired = _kind == ReportIssueKind.other;
 
-    return AlertDialog(
-      title: Text(loc.reportIssue),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DropdownButtonFormField<ReportIssueKind>(
-            initialValue: _kind,
-            decoration: InputDecoration(labelText: loc.reportIssueCategory),
-            items: [
-              for (final kind in ReportIssueKind.values)
-                DropdownMenuItem(
-                  value: kind,
-                  child: Text(_kindLabel(loc, kind)),
-                ),
-            ],
-            onChanged: _submitting
-                ? null
-                : (value) {
-                    if (value == null) return;
-                    setState(() => _kind = value);
-                  },
+    return PopScope(
+      canPop: !_submitting,
+      child: AlertDialog(
+        title: Text(loc.reportIssue),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DropdownButtonFormField<ReportIssueKind>(
+              initialValue: _kind,
+              decoration: InputDecoration(labelText: loc.reportIssueCategory),
+              items: [
+                for (final kind in ReportIssueKind.values)
+                  DropdownMenuItem(
+                    value: kind,
+                    child: Text(_kindLabel(loc, kind)),
+                  ),
+              ],
+              onChanged: _submitting
+                  ? null
+                  : (value) {
+                      if (value == null) return;
+                      setState(() => _kind = value);
+                    },
+            ),
+            const SizedBox(height: 12),
+            AppInput(
+              controller: _detailsController,
+              hint: detailsRequired
+                  ? loc.reportIssueOtherHint
+                  : loc.reportIssueDetailsHint,
+              maxLines: 4,
+              minLines: 3,
+              maxLength: 200,
+              enabled: !_submitting,
+            ),
+          ],
+        ),
+        actions: [
+          AppButton(
+            label: loc.cancel,
+            variant: AppButtonVariant.ghost,
+            onPressed: _submitting ? null : () => Navigator.of(context).pop(),
           ),
-          const SizedBox(height: 12),
-          AppInput(
-            controller: _detailsController,
-            hint: detailsRequired
-                ? loc.reportIssueOtherHint
-                : loc.reportIssueDetailsHint,
-            maxLines: 4,
-            minLines: 3,
-            maxLength: 200,
-            enabled: !_submitting,
+          AppButton(
+            label: loc.reportIssueSubmit,
+            variant: AppButtonVariant.primary,
+            isLoading: _submitting,
+            onPressed: _submitting ? null : _onSubmit,
           ),
         ],
       ),
-      actions: [
-        AppButton(
-          label: loc.cancel,
-          variant: AppButtonVariant.ghost,
-          onPressed: _submitting ? null : () => Navigator.of(context).pop(),
-        ),
-        AppButton(
-          label: loc.reportIssueSubmit,
-          variant: AppButtonVariant.primary,
-          isLoading: _submitting,
-          onPressed: _submitting ? null : _onSubmit,
-        ),
-      ],
     );
   }
 }

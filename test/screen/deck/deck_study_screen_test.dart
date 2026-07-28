@@ -424,6 +424,74 @@ void main() {
       },
     );
 
+    testWidgets(
+      'due progress bar does not reset when live due spikes above target',
+      (tester) async {
+        await setupTestEnvironment();
+        final deck = sampleDeck(cardsCount: 10);
+        final harness = FakeDeckStudyBlocHarness(
+          deckId: deck.id,
+          loadResults: [
+            DeckStudyLoadResult(
+              cardDetail: sampleCardDetail(),
+              refreshedDueCardsCount: 5,
+            ),
+            DeckStudyLoadResult(
+              cardDetail: sampleCardDetail(),
+              refreshedDueCardsCount: 2,
+            ),
+            DeckStudyLoadResult(
+              cardDetail: sampleCardDetail(),
+              refreshedDueCardsCount: 7,
+            ),
+          ],
+        );
+        addTearDown(() async {
+          await harness.dispose();
+          tearDownTestEnvironment();
+        });
+
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            DeckViewScreen(deck: deck),
+            overrides: [
+              currentDeckProvider.overrideWithValue(deck),
+              deckStudyBlocProvider.overrideWithValue(harness.bloc),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('0 / 5'), findsOneWidget);
+
+        await tester.tap(find.text('Show Answer'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Next'));
+        await tester.pumpAndSettle();
+
+        // liveDue 5→2 → 3 cleared (liveCleared beats cardsStudied=1).
+        expect(find.text('3 / 5'), findsOneWidget);
+
+        await tester.tap(find.text('Show Answer'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Next'));
+        await tester.pumpAndSettle();
+
+        // liveDue spiked to 7 (> target). Without a review-count floor the bar
+        // would show 0/5; floor keeps progress from cardsStudied=2.
+        expect(find.text('0 / 5'), findsNothing);
+        expect(find.text('2 / 5'), findsOneWidget);
+        expect(
+          tester
+              .widget<LinearProgressIndicator>(
+                find.byType(LinearProgressIndicator),
+              )
+              .value,
+          closeTo(0.4, 0.000001),
+        );
+      },
+    );
+
     testWidgets('uses tag-scoped live due for progress when filter is active', (
       tester,
     ) async {

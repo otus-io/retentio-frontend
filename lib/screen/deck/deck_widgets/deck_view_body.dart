@@ -87,8 +87,16 @@ class DeckViewBody extends StatelessWidget {
             final cardDetail = state.cardDetail;
             final liveDue = state.refreshedDueCardsCount ?? deck.stats.dueCards;
             final dueTarget = state.sessionDueTarget ?? liveDue;
-            final remainingForBar = liveDue < dueTarget ? liveDue : dueTarget;
-            final clearedDue = dueTarget - remainingForBar;
+            // Live cleared toward the frozen target. When new cards fall due and
+            // liveDue jumps above dueTarget, liveCleared collapses to 0 — keep
+            // session review count as a floor so the bar does not reset.
+            final liveCleared = liveDue < dueTarget ? dueTarget - liveDue : 0;
+            final reviewFloor = cardsStudied < dueTarget
+                ? cardsStudied
+                : dueTarget;
+            final clearedDue = liveCleared > reviewFloor
+                ? liveCleared
+                : reviewFloor;
             final dueProgress = dueTarget <= 0
                 ? 1.0
                 : (clearedDue / dueTarget).clamp(0.0, 1.0);

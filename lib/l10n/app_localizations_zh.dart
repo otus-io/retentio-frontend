@@ -131,9 +131,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dueCards => '待复习';
 
   @override
-  String get sessionReviews => '复习次数';
-
-  @override
   String get learned => '已学习';
 
   @override
