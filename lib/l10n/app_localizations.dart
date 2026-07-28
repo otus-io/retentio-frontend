@@ -2606,7 +2606,7 @@ abstract class AppLocalizations {
   /// **'Accept'**
   String get deckUpdatesAccept;
 
-  /// Reject author publish and keep private overlay when syncing
+  /// Reject the author publish for this fact and keep the local overlay when syncing
   ///
   /// In en, this message translates to:
   /// **'Reject'**

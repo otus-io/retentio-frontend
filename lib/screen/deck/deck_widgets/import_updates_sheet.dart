@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/l10n/app_localizations.dart';
@@ -29,6 +30,7 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
   final Map<String, DeckUpdateFactDetail> _details = {};
   final Set<String> _loadingFacts = {};
   final Set<String> _expandedFacts = {};
+  final Map<String, int> _factLoadTokens = {};
   String? _error;
   bool _loading = true;
   bool _syncing = false;
@@ -60,6 +62,7 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
         };
         _details.clear();
         _expandedFacts.clear();
+        _factLoadTokens.clear();
         _reviewOpen = false;
       });
     } catch (e) {
@@ -96,6 +99,7 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
         _decisions = {};
         _details.clear();
         _expandedFacts.clear();
+        _factLoadTokens.clear();
         _reviewOpen = false;
       });
       AppToast.success(context, loc.deckSyncSuccess);
@@ -114,20 +118,34 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
 
   Future<void> _toggleFact(String factId) async {
     if (_expandedFacts.contains(factId)) {
+      // Expanded without detail (failed load): retry instead of collapsing.
+      if (!_details.containsKey(factId) && !_loadingFacts.contains(factId)) {
+        await _loadFactDetail(factId);
+        return;
+      }
       setState(() => _expandedFacts.remove(factId));
       return;
     }
     setState(() => _expandedFacts.add(factId));
+    await _loadFactDetail(factId);
+  }
+
+  Future<void> _loadFactDetail(String factId) async {
     if (_details.containsKey(factId) || _loadingFacts.contains(factId)) {
       return;
     }
-    setState(() => _loadingFacts.add(factId));
+    final token = (_factLoadTokens[factId] ?? 0) + 1;
+    setState(() {
+      _factLoadTokens[factId] = token;
+      _loadingFacts.add(factId);
+    });
     try {
       final detail = await DeckCatalogService.of.getDeckUpdateFact(
         deckId: widget.deckId,
         factId: factId,
       );
       if (!mounted) return;
+      if (_factLoadTokens[factId] != token) return;
       setState(() {
         _details[factId] = detail;
         // Only apply API default when the user hasn't overridden the summary
@@ -140,7 +158,8 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _expandedFacts.remove(factId));
+      // Ignore stale failures so a newer expand/retry is not collapsed.
+      if (_factLoadTokens[factId] != token) return;
       AppToast.error(
         context,
         ApiErrorMessages.resolve(
@@ -149,7 +168,7 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
         ),
       );
     } finally {
-      if (mounted) {
+      if (mounted && _factLoadTokens[factId] == token) {
         setState(() => _loadingFacts.remove(factId));
       }
     }
@@ -182,98 +201,14 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
       return AppButton(label: loc.discoveryRetry, onPressed: _loadSummary);
     }
 
-    final reviewableIds = <String>[
-      ...summary.editedFactIds,
-      ...summary.removedFactIds,
-      ...summary.addedFactIds,
-    ];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          loc.deckUpdatesVersion(summary.sourceVersion, summary.latestVersion),
-          style: theme.textTheme.titleSmall,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          loc.deckUpdatesCounts(
-            summary.addedFactIds.length,
-            summary.editedFactIds.length,
-            summary.removedFactIds.length,
-            summary.mediaChangeCount,
-          ),
-          style: theme.textTheme.bodyMedium,
-        ),
-        if (summary.changeSummary.isNotEmpty) ...[
-          const SizedBox(height: 6),
-          Text(summary.changeSummary, style: theme.textTheme.bodySmall),
-        ],
-        if (summary.hasContentChanges && reviewableIds.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          AppButton(
-            label: _reviewOpen
-                ? loc.deckUpdatesHideReview
-                : loc.deckUpdatesReviewChanges,
-            variant: AppButtonVariant.secondary,
-            size: AppButtonSize.sm,
-            onPressed: () => setState(() => _reviewOpen = !_reviewOpen),
-          ),
-        ],
+        ..._buildHeader(context, summary),
         if (_reviewOpen) ...[
           const SizedBox(height: 12),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 360),
-            child: ListView(
-              shrinkWrap: true,
-              children: [
-                if (summary.editedFactIds.isNotEmpty) ...[
-                  _sectionTitle(
-                    context,
-                    loc.deckUpdatesEditedSection(summary.editedFactIds.length),
-                  ),
-                  ...summary.editedFactIds.map(_factTile),
-                ],
-                if (summary.removedFactIds.isNotEmpty) ...[
-                  _sectionTitle(
-                    context,
-                    loc.deckUpdatesRemovedSection(
-                      summary.removedFactIds.length,
-                    ),
-                    color: theme.colorScheme.error,
-                  ),
-                  ...summary.removedFactIds.map(_factTile),
-                ],
-                if (summary.addedFactIds.isNotEmpty) ...[
-                  _sectionTitle(
-                    context,
-                    loc.deckUpdatesAddedSection(summary.addedFactIds.length),
-                    color: theme.colorScheme.primary,
-                  ),
-                  ...summary.addedFactIds.map(_factTile),
-                ],
-                if (summary.mediaChangeCount > 0)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      loc.deckUpdatesMediaSection(summary.mediaChangeCount),
-                      style: theme.textTheme.labelLarge,
-                    ),
-                  ),
-                if (summary.cardTemplateChangeCount > 0)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      loc.deckUpdatesTemplatesSection(
-                        summary.cardTemplateChangeCount,
-                      ),
-                      style: theme.textTheme.labelLarge,
-                    ),
-                  ),
-              ],
-            ),
-          ),
+          _buildReviewList(context, summary),
         ],
         const SizedBox(height: 18),
         AppButton(
@@ -283,6 +218,103 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
           fullWidth: true,
         ),
       ],
+    );
+  }
+
+  List<Widget> _buildHeader(BuildContext context, DeckUpdatesSummary summary) {
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final reviewableIds = <String>[
+      ...summary.editedFactIds,
+      ...summary.removedFactIds,
+      ...summary.addedFactIds,
+    ];
+
+    return [
+      Text(
+        loc.deckUpdatesVersion(summary.sourceVersion, summary.latestVersion),
+        style: theme.textTheme.titleSmall,
+      ),
+      const SizedBox(height: 8),
+      Text(
+        loc.deckUpdatesCounts(
+          summary.addedFactIds.length,
+          summary.editedFactIds.length,
+          summary.removedFactIds.length,
+          summary.mediaChangeCount,
+        ),
+        style: theme.textTheme.bodyMedium,
+      ),
+      if (summary.changeSummary.isNotEmpty) ...[
+        const SizedBox(height: 6),
+        Text(summary.changeSummary, style: theme.textTheme.bodySmall),
+      ],
+      if (summary.hasContentChanges && reviewableIds.isNotEmpty) ...[
+        const SizedBox(height: 12),
+        AppButton(
+          label: _reviewOpen
+              ? loc.deckUpdatesHideReview
+              : loc.deckUpdatesReviewChanges,
+          variant: AppButtonVariant.secondary,
+          size: AppButtonSize.sm,
+          onPressed: () => setState(() => _reviewOpen = !_reviewOpen),
+        ),
+      ],
+    ];
+  }
+
+  Widget _buildReviewList(BuildContext context, DeckUpdatesSummary summary) {
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 360),
+      child: ListView(
+        shrinkWrap: true,
+        children: [
+          if (summary.editedFactIds.isNotEmpty) ...[
+            _sectionTitle(
+              context,
+              loc.deckUpdatesEditedSection(summary.editedFactIds.length),
+            ),
+            ...summary.editedFactIds.map(_factTile),
+          ],
+          if (summary.removedFactIds.isNotEmpty) ...[
+            _sectionTitle(
+              context,
+              loc.deckUpdatesRemovedSection(summary.removedFactIds.length),
+              color: theme.colorScheme.error,
+            ),
+            ...summary.removedFactIds.map(_factTile),
+          ],
+          if (summary.addedFactIds.isNotEmpty) ...[
+            _sectionTitle(
+              context,
+              loc.deckUpdatesAddedSection(summary.addedFactIds.length),
+              color: theme.colorScheme.primary,
+            ),
+            ...summary.addedFactIds.map(_factTile),
+          ],
+          if (summary.mediaChangeCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                loc.deckUpdatesMediaSection(summary.mediaChangeCount),
+                style: theme.textTheme.labelLarge,
+              ),
+            ),
+          if (summary.cardTemplateChangeCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                loc.deckUpdatesTemplatesSection(
+                  summary.cardTemplateChangeCount,
+                ),
+                style: theme.textTheme.labelLarge,
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -301,6 +333,7 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
   }
 
   Widget _factTile(String factId) {
+    final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final expanded = _expandedFacts.contains(factId);
@@ -335,7 +368,9 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
                     )
                   else
                     Icon(
-                      expanded ? Icons.expand_less : Icons.expand_more,
+                      expanded
+                          ? LucideIcons.chevronUp
+                          : LucideIcons.chevronDown,
                       size: 20,
                       color: scheme.onSurfaceVariant,
                     ),
@@ -350,6 +385,15 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
                 onDecisionChanged: (action) {
                   setState(() => _decisions[factId] = action);
                 },
+              ),
+            ],
+            if (expanded && detail == null && !loading) ...[
+              const SizedBox(height: 8),
+              AppButton(
+                label: loc.discoveryRetry,
+                size: AppButtonSize.sm,
+                variant: AppButtonVariant.secondary,
+                onPressed: () => _toggleFact(factId),
               ),
             ],
           ],
@@ -372,26 +416,40 @@ class _FactDetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildHints(context),
+        _buildFactVersions(context),
+        if (detail.kind == DeckUpdateFactKind.edited ||
+            detail.kind == DeckUpdateFactKind.removed)
+          _buildDecisionRow(context),
+      ],
+    );
+  }
+
+  Widget _buildHints(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
     final hints = <String>[
       if (detail.aligned) loc.deckUpdatesAligned,
       if (detail.hasLocalOverlay) loc.deckUpdatesLocalOverlay,
     ];
+    if (hints.isEmpty) return const SizedBox.shrink();
+    return Text(
+      hints.join(' · '),
+      style: theme.textTheme.labelSmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (hints.isNotEmpty)
-          Text(
-            hints.join(' · '),
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-        if (detail.kind == DeckUpdateFactKind.edited) ...[
+  Widget _buildFactVersions(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    if (detail.kind == DeckUpdateFactKind.edited) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           _FactEntriesAudioLine(
             label: loc.deckUpdatesBefore,
             fact: detail.before,
@@ -403,48 +461,49 @@ class _FactDetailBody extends StatelessWidget {
             fact: detail.after,
             mediaVersions: detail.afterMediaVersions,
           ),
-        ] else
-          _FactEntriesAudioLine(
-            label: detail.kind == DeckUpdateFactKind.added
-                ? loc.deckUpdatesAfter
-                : loc.deckUpdatesBefore,
-            fact: detail.fact,
-            mediaVersions: detail.kind == DeckUpdateFactKind.added
-                ? detail.afterMediaVersions
-                : detail.beforeMediaVersions,
+        ],
+      );
+    }
+    return _FactEntriesAudioLine(
+      label: detail.kind == DeckUpdateFactKind.added
+          ? loc.deckUpdatesAfter
+          : loc.deckUpdatesBefore,
+      fact: detail.fact,
+      mediaVersions: detail.kind == DeckUpdateFactKind.added
+          ? detail.afterMediaVersions
+          : detail.beforeMediaVersions,
+    );
+  }
+
+  Widget _buildDecisionRow(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: AppButton(
+              label: loc.deckUpdatesAccept,
+              size: AppButtonSize.sm,
+              variant: decision == SyncFactDecisionAction.accept
+                  ? AppButtonVariant.primary
+                  : AppButtonVariant.secondary,
+              onPressed: () => onDecisionChanged(SyncFactDecisionAction.accept),
+            ),
           ),
-        if (detail.kind == DeckUpdateFactKind.edited ||
-            detail.kind == DeckUpdateFactKind.removed) ...[
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: AppButton(
-                  label: loc.deckUpdatesAccept,
-                  size: AppButtonSize.sm,
-                  variant: decision == SyncFactDecisionAction.accept
-                      ? AppButtonVariant.primary
-                      : AppButtonVariant.secondary,
-                  onPressed: () =>
-                      onDecisionChanged(SyncFactDecisionAction.accept),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: AppButton(
-                  label: loc.deckUpdatesKeepLocal,
-                  size: AppButtonSize.sm,
-                  variant: decision == SyncFactDecisionAction.keep
-                      ? AppButtonVariant.primary
-                      : AppButtonVariant.secondary,
-                  onPressed: () =>
-                      onDecisionChanged(SyncFactDecisionAction.keep),
-                ),
-              ),
-            ],
+          const SizedBox(width: 8),
+          Expanded(
+            child: AppButton(
+              label: loc.deckUpdatesKeepLocal,
+              size: AppButtonSize.sm,
+              variant: decision == SyncFactDecisionAction.keep
+                  ? AppButtonVariant.primary
+                  : AppButtonVariant.secondary,
+              onPressed: () => onDecisionChanged(SyncFactDecisionAction.keep),
+            ),
           ),
         ],
-      ],
+      ),
     );
   }
 }
@@ -530,7 +589,7 @@ class _LazyCardAudioState extends State<_LazyCardAudio> {
       iconSize: 22,
       color: widget.color,
       onPressed: () => setState(() => _activated = true),
-      icon: const Icon(Icons.play_arrow),
+      icon: const Icon(LucideIcons.play),
     );
   }
 }

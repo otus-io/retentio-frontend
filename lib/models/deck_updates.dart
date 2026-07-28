@@ -1,5 +1,24 @@
 import 'package:retentio/models/fact.dart';
 
+int? _toInt(dynamic v) {
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v);
+  return null;
+}
+
+Map<String, int> _parseVersions(dynamic raw) {
+  if (raw is! Map) return const {};
+  final out = <String, int>{};
+  for (final e in raw.entries) {
+    final n = _toInt(e.value);
+    if (n != null && n > 0) {
+      out[e.key.toString()] = n;
+    }
+  }
+  return out;
+}
+
 /// One added/removed fact row from `GET …/updates`.
 class DeckUpdateFactRef {
   const DeckUpdateFactRef({
@@ -176,31 +195,12 @@ class DeckUpdatesResult {
           .toList();
     }
 
-    int? toInt(dynamic v) {
-      if (v is int) return v;
-      if (v is num) return v.toInt();
-      if (v is String) return int.tryParse(v);
-      return null;
-    }
-
-    Map<String, int> parseVersions(dynamic raw) {
-      if (raw is! Map) return const {};
-      final out = <String, int>{};
-      for (final e in raw.entries) {
-        final n = toInt(e.value);
-        if (n != null && n > 0) {
-          out[e.key.toString()] = n;
-        }
-      }
-      return out;
-    }
-
-    final beforeMediaVersions = parseVersions(data['before_media_versions']);
-    final afterMediaVersions = parseVersions(data['after_media_versions']);
+    final beforeMediaVersions = _parseVersions(data['before_media_versions']);
+    final afterMediaVersions = _parseVersions(data['after_media_versions']);
 
     return DeckUpdatesResult(
-      sourceVersion: toInt(data['source_version']) ?? 0,
-      latestVersion: toInt(data['latest_version']) ?? 0,
+      sourceVersion: _toInt(data['source_version']) ?? 0,
+      latestVersion: _toInt(data['latest_version']) ?? 0,
       addedFacts: parseList(data['added_facts'], DeckUpdateFactRef.fromJson),
       removedFacts: parseList(
         data['removed_facts'],
@@ -268,26 +268,19 @@ class DeckUpdatesSummary {
   bool get hasUpdates => latestVersion > sourceVersion || hasContentChanges;
 
   factory DeckUpdatesSummary.fromJson(Map<String, dynamic> data) {
-    int? toInt(dynamic v) {
-      if (v is int) return v;
-      if (v is num) return v.toInt();
-      if (v is String) return int.tryParse(v);
-      return null;
-    }
-
     List<String> ids(dynamic raw) {
       if (raw is! List) return const [];
       return raw.map((e) => e.toString()).where((s) => s.isNotEmpty).toList();
     }
 
     return DeckUpdatesSummary(
-      sourceVersion: toInt(data['source_version']) ?? 0,
-      latestVersion: toInt(data['latest_version']) ?? 0,
+      sourceVersion: _toInt(data['source_version']) ?? 0,
+      latestVersion: _toInt(data['latest_version']) ?? 0,
       addedFactIds: ids(data['added_fact_ids']),
       removedFactIds: ids(data['removed_fact_ids']),
       editedFactIds: ids(data['edited_fact_ids']),
-      mediaChangeCount: toInt(data['media_change_count']) ?? 0,
-      cardTemplateChangeCount: toInt(data['card_template_change_count']) ?? 0,
+      mediaChangeCount: _toInt(data['media_change_count']) ?? 0,
+      cardTemplateChangeCount: _toInt(data['card_template_change_count']) ?? 0,
       changeSummary: data['change_summary']?.toString() ?? '',
     );
   }
@@ -328,45 +321,34 @@ class DeckUpdateFactDetail {
   final Map<String, int> afterMediaVersions;
 
   factory DeckUpdateFactDetail.fromJson(Map<String, dynamic> data) {
-    int? toInt(dynamic v) {
-      if (v is int) return v;
-      if (v is num) return v.toInt();
-      if (v is String) return int.tryParse(v);
-      return null;
-    }
-
     Fact? parseFact(dynamic raw) {
       if (raw is! Map) return null;
       return Fact.fromJson(Map<String, dynamic>.from(raw));
     }
 
-    Map<String, int> parseVersions(dynamic raw) {
-      if (raw is! Map) return const {};
-      final out = <String, int>{};
-      for (final e in raw.entries) {
-        final n = toInt(e.value);
-        if (n != null && n > 0) {
-          out[e.key.toString()] = n;
-        }
-      }
-      return out;
-    }
-
-    DeckUpdateFactKind kind;
-    switch (data['kind']?.toString()) {
+    final kindRaw = data['kind']?.toString().trim() ?? '';
+    final DeckUpdateFactKind kind;
+    switch (kindRaw) {
       case 'added':
         kind = DeckUpdateFactKind.added;
       case 'removed':
         kind = DeckUpdateFactKind.removed;
-      default:
+      case 'edited':
+      case '':
         kind = DeckUpdateFactKind.edited;
+      default:
+        throw ArgumentError.value(
+          data['kind'],
+          'kind',
+          'DeckUpdateFactDetail.fromJson: unrecognized kind',
+        );
     }
 
     return DeckUpdateFactDetail(
       factId: data['fact_id']?.toString() ?? '',
       kind: kind,
-      sourceVersion: toInt(data['source_version']) ?? 0,
-      latestVersion: toInt(data['latest_version']) ?? 0,
+      sourceVersion: _toInt(data['source_version']) ?? 0,
+      latestVersion: _toInt(data['latest_version']) ?? 0,
       fact: parseFact(data['fact']),
       before: parseFact(data['before']),
       after: parseFact(data['after']),
@@ -374,8 +356,8 @@ class DeckUpdateFactDetail {
       local: data['local'] == true,
       aligned: data['aligned'] == true,
       defaultAction: data['default_action']?.toString(),
-      beforeMediaVersions: parseVersions(data['before_media_versions']),
-      afterMediaVersions: parseVersions(data['after_media_versions']),
+      beforeMediaVersions: _parseVersions(data['before_media_versions']),
+      afterMediaVersions: _parseVersions(data['after_media_versions']),
     );
   }
 }

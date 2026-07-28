@@ -93,7 +93,7 @@ class DeckCatalogService {
       pathParams: {'id': deckId},
     );
     if (res == null || !res.isSuccess || res.data is! Map) {
-      throw Exception(res?.msg ?? 'updates_failed');
+      throw Exception(res?.msg ?? 'Unknown error');
     }
 
     return DeckUpdatesResult.fromJson(
@@ -108,7 +108,7 @@ class DeckCatalogService {
       queryParams: {'summary': '1'},
     );
     if (res == null || !res.isSuccess || res.data is! Map) {
-      throw Exception(res?.msg ?? 'updates_failed');
+      throw Exception(res?.msg ?? 'Unknown error');
     }
     return DeckUpdatesSummary.fromJson(
       Map<String, dynamic>.from(res.data as Map),
@@ -124,7 +124,7 @@ class DeckCatalogService {
       pathParams: {'id': deckId, 'factId': factId},
     );
     if (res == null || !res.isSuccess || res.data is! Map) {
-      throw Exception(res?.msg ?? 'update_fact_failed');
+      throw Exception(res?.msg ?? 'Unknown error');
     }
     return DeckUpdateFactDetail.fromJson(
       Map<String, dynamic>.from(res.data as Map),
@@ -149,7 +149,7 @@ class DeckCatalogService {
       body: body,
     );
     if (res == null || !res.isSuccess || res.data is! Map) {
-      throw Exception(res?.msg ?? 'sync_failed');
+      throw Exception(res?.msg ?? 'Unknown error');
     }
     return _toInt((res.data as Map)['source_version']) ?? 0;
   }

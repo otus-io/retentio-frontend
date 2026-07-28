@@ -69,21 +69,40 @@ void requestDeckStudyTagFilterChanged(BuildContext context, String? tagId) {
   _readDeckStudyBloc(context).add(DeckStudyTagFilterChanged(tagId));
 }
 
+/// Preferred size for the interval-label thumb at [textScaleFactor].
+@visibleForTesting
+Size intervalLabelThumbPreferredSize(double textScaleFactor) {
+  return _IntervalLabelThumbShape(
+    textScaleFactor: textScaleFactor,
+  ).getPreferredSize(true, true);
+}
+
 /// Thumb with always-visible interval pill; preferred size includes the pill
 /// so users can drag from the label as well as the circle.
 class _IntervalLabelThumbShape extends SliderComponentShape {
-  const _IntervalLabelThumbShape();
+  const _IntervalLabelThumbShape({this.textScaleFactor = 1.0});
+
+  final double textScaleFactor;
 
   static const double thumbRadius = 7;
   static const double labelHeight = 22;
   static const double labelGap = 6;
   static const double labelHorizontalPadding = 8;
 
+  /// Matches paint pill height when approximating from text scale alone.
+  static double pillHeightForScale(double textScaleFactor) {
+    // paint uses max(labelHeight, labelPainter.height + 6). Approximate the
+    // unscaled label text height; labelHeight itself is the pill floor.
+    const baseTextHeight = 12.0;
+    return math.max(labelHeight, baseTextHeight * textScaleFactor + 6.0);
+  }
+
   @override
   Size getPreferredSize(bool isEnabled, bool isDiscrete) {
-    // Hit target is centered on the track thumb; make it tall enough that the
-    // label above the thumb stays inside the drag region.
-    final halfHeight = thumbRadius + labelGap + labelHeight;
+    // Hit target is centered on the track thumb; include scaled pill height so
+    // large accessibility text stays inside the slider drag/overflow region.
+    final halfHeight =
+        thumbRadius + labelGap + pillHeightForScale(textScaleFactor);
     return Size(64, halfHeight * 2);
   }
 
@@ -109,38 +128,69 @@ class _IntervalLabelThumbShape extends SliderComponentShape {
     ).evaluate(enableAnimation)!;
 
     if (labelPainter != null) {
-      labelPainter.layout();
-      final pillW = math.max(
-        36.0,
-        labelPainter.width + labelHorizontalPadding * 2,
+      _paintLabelPill(
+        canvas: canvas,
+        center: center,
+        labelPainter: labelPainter,
+        thumbColor: thumbColor,
+        sizeWithOverflow: sizeWithOverflow,
       );
-      final pillH = math.max(labelHeight, labelPainter.height + 6.0);
-      final pillCenter = Offset(
-        center.dx,
-        center.dy - thumbRadius - labelGap - pillH / 2,
-      );
-      final pillRect = RRect.fromRectAndRadius(
-        Rect.fromCenter(center: pillCenter, width: pillW, height: pillH),
-        const Radius.circular(11),
-      );
-      canvas.drawRRect(pillRect, Paint()..color = thumbColor);
-
-      // Small pointer toward the thumb.
-      final tip = Path()
-        ..moveTo(center.dx - 5, pillCenter.dy + pillH / 2 - 0.5)
-        ..lineTo(center.dx + 5, pillCenter.dy + pillH / 2 - 0.5)
-        ..lineTo(center.dx, pillCenter.dy + pillH / 2 + 5)
-        ..close();
-      canvas.drawPath(tip, Paint()..color = thumbColor);
-
-      final textOffset = Offset(
-        pillCenter.dx - labelPainter.width / 2,
-        pillCenter.dy - labelPainter.height / 2,
-      );
-      labelPainter.paint(canvas, textOffset);
     }
 
     canvas.drawCircle(center, thumbRadius, Paint()..color = thumbColor);
+  }
+
+  void _paintLabelPill({
+    required Canvas canvas,
+    required Offset center,
+    required TextPainter labelPainter,
+    required Color thumbColor,
+    required Size sizeWithOverflow,
+  }) {
+    labelPainter.layout();
+    final pillW = math.max(
+      36.0,
+      labelPainter.width + labelHorizontalPadding * 2,
+    );
+    final pillH = math.max(labelHeight, labelPainter.height + 6.0);
+    var pillCenter = Offset(
+      center.dx,
+      center.dy - thumbRadius - labelGap - pillH / 2,
+    );
+
+    // Keep the pill inside the allocated overflow bounds (same idea as Material
+    // value indicators) so large text is not clipped horizontally.
+    if (!sizeWithOverflow.isEmpty && pillW < sizeWithOverflow.width) {
+      const edgePadding = 8.0;
+      final left = pillCenter.dx - pillW / 2;
+      final right = pillCenter.dx + pillW / 2;
+      final shift = math.max(
+        edgePadding - left,
+        math.min(0.0, sizeWithOverflow.width - edgePadding - right),
+      );
+      pillCenter = Offset(pillCenter.dx + shift, pillCenter.dy);
+    }
+
+    final pillRect = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: pillCenter, width: pillW, height: pillH),
+      const Radius.circular(11),
+    );
+    canvas.drawRRect(pillRect, Paint()..color = thumbColor);
+
+    final tip = Path()
+      ..moveTo(center.dx - 5, pillCenter.dy + pillH / 2 - 0.5)
+      ..lineTo(center.dx + 5, pillCenter.dy + pillH / 2 - 0.5)
+      ..lineTo(center.dx, pillCenter.dy + pillH / 2 + 5)
+      ..close();
+    canvas.drawPath(tip, Paint()..color = thumbColor);
+
+    labelPainter.paint(
+      canvas,
+      Offset(
+        pillCenter.dx - labelPainter.width / 2,
+        pillCenter.dy - labelPainter.height / 2,
+      ),
+    );
   }
 }
 
@@ -194,7 +244,11 @@ class DeckViewIntervalSliderControls extends StatelessWidget {
                         SliderTheme(
                           data: SliderTheme.of(context).copyWith(
                             trackHeight: 3,
-                            thumbShape: const _IntervalLabelThumbShape(),
+                            thumbShape: _IntervalLabelThumbShape(
+                              textScaleFactor: MediaQuery.textScalerOf(
+                                context,
+                              ).scale(1),
+                            ),
                             overlayShape: const RoundSliderOverlayShape(
                               overlayRadius: 18,
                             ),

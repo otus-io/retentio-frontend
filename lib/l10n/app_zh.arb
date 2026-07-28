@@ -1077,7 +1077,7 @@
   },
   "deckUpdatesKeepLocal": "拒绝",
   "@deckUpdatesKeepLocal": {
-    "description": "Reject author publish and keep private overlay when syncing"
+    "description": "Reject the author publish for this fact and keep the local overlay when syncing"
   },
   "deckUpdatesAligned": "已对齐",
   "@deckUpdatesAligned": {

@@ -235,9 +235,22 @@ void main() {
       expect(added.fact?.entries.first.text, 'New');
     });
 
-    test('fromJson defaults unknown kind to edited and tolerates nulls', () {
+    test('fromJson maps removed with null fact and media defaults', () {
       final detail = DeckUpdateFactDetail.fromJson({
-        'kind': 'unknown',
+        'fact_id': 'r-null',
+        'kind': 'removed',
+        'fact': null,
+        'before_media_versions': null,
+        'after_media_versions': null,
+      });
+      expect(detail.kind, DeckUpdateFactKind.removed);
+      expect(detail.fact, isNull);
+      expect(detail.beforeMediaVersions, isEmpty);
+    });
+
+    test('fromJson defaults empty kind to edited and tolerates nulls', () {
+      final detail = DeckUpdateFactDetail.fromJson({
+        'kind': '',
         'before_media_versions': null,
         'after_media_versions': 'bad',
       });
@@ -247,6 +260,13 @@ void main() {
       expect(detail.latestVersion, 0);
       expect(detail.beforeMediaVersions, isEmpty);
       expect(detail.afterMediaVersions, isEmpty);
+    });
+
+    test('fromJson throws on unrecognized non-empty kind', () {
+      expect(
+        () => DeckUpdateFactDetail.fromJson({'kind': 'unknown'}),
+        throwsArgumentError,
+      );
     });
   });
 }
