@@ -62,6 +62,7 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
         };
         _details.clear();
         _expandedFacts.clear();
+        _loadingFacts.clear();
         _factLoadTokens.clear();
         _reviewOpen = false;
       });
@@ -99,6 +100,7 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
         _decisions = {};
         _details.clear();
         _expandedFacts.clear();
+        _loadingFacts.clear();
         _factLoadTokens.clear();
         _reviewOpen = false;
       });
