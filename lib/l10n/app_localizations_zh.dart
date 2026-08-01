@@ -131,6 +131,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dueCards => '待复习';
 
   @override
+  String get todaysDue => '今日待复习';
+
+  @override
   String get learned => '已学习';
 
   @override
@@ -268,6 +271,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get deleteDeck => '删除卡组';
+
+  @override
+  String deleteDeckConfirm(String deckName) {
+    return '「$deckName」及其所有卡片和词条将被永久删除。';
+  }
 
   @override
   String get noCardsInThisDeck => '这个卡组中没有卡片';
@@ -1282,6 +1290,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get feedbackSubmitSuccess => '反馈已提交';
 
   @override
+  String get reportIssue => '报告问题';
+
+  @override
+  String get reportIssueCategory => '问题类型';
+
+  @override
+  String get reportIssueAudio => '音频';
+
+  @override
+  String get reportIssueContent => '内容';
+
+  @override
+  String get reportIssueOther => '其他';
+
+  @override
+  String get reportIssueDetailsHint => '补充说明（可选）';
+
+  @override
+  String get reportIssueOtherHint => '请描述问题';
+
+  @override
+  String get reportIssueDetailsRequired => '请描述问题';
+
+  @override
+  String get reportIssueSubmit => '提交';
+
+  @override
+  String get reportIssueSuccess => '问题已报告';
+
+  @override
   String get factEditNoEntries => '该词条没有可编辑内容';
 
   @override
@@ -1313,7 +1351,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deckUpdatesAccept => '接受';
 
   @override
-  String get deckUpdatesKeepLocal => '保留本地';
+  String get deckUpdatesKeepLocal => '拒绝';
 
   @override
   String get deckUpdatesAligned => '已对齐';
@@ -1322,16 +1360,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deckUpdatesLocalOverlay => '本地 overlay';
 
   @override
-  String get deckUpdatesKeepHint => '有本地 overlay（默认保留）';
+  String get deckUpdatesKeepHint => '有本地 overlay';
 
   @override
   String get deckUpdatesAcceptHint => '默认接受';
 
   @override
-  String get deckUpdatesBefore => '之前';
+  String get deckUpdatesBefore => '更新前';
 
   @override
-  String get deckUpdatesAfter => '之后';
+  String get deckUpdatesAfter => '更新后';
+
+  @override
+  String get deckUpdatesReviewChanges => '查看变更';
+
+  @override
+  String get deckUpdatesHideReview => '收起变更';
 
   @override
   String get contributeFactEdit => '向作者提交修改';

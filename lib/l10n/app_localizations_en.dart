@@ -132,6 +132,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dueCards => 'Due';
 
   @override
+  String get todaysDue => 'Today\'s due';
+
+  @override
   String get learned => 'Learned';
 
   @override
@@ -272,6 +275,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteDeck => 'Delete Deck';
+
+  @override
+  String deleteDeckConfirm(String deckName) {
+    return '\"$deckName\" and all of its cards and facts will be permanently deleted.';
+  }
 
   @override
   String get noCardsInThisDeck => 'No cards in this deck';
@@ -1375,6 +1383,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feedbackSubmitSuccess => 'Feedback submitted';
 
   @override
+  String get reportIssue => 'Report issue';
+
+  @override
+  String get reportIssueCategory => 'Issue type';
+
+  @override
+  String get reportIssueAudio => 'Audio';
+
+  @override
+  String get reportIssueContent => 'Content';
+
+  @override
+  String get reportIssueOther => 'Other';
+
+  @override
+  String get reportIssueDetailsHint => 'Add details (optional)';
+
+  @override
+  String get reportIssueOtherHint => 'Describe the issue';
+
+  @override
+  String get reportIssueDetailsRequired => 'Please describe the issue';
+
+  @override
+  String get reportIssueSubmit => 'Submit';
+
+  @override
+  String get reportIssueSuccess => 'Issue reported';
+
+  @override
   String get factEditNoEntries => 'This fact has no entries';
 
   @override
@@ -1406,7 +1444,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deckUpdatesAccept => 'Accept';
 
   @override
-  String get deckUpdatesKeepLocal => 'Keep local';
+  String get deckUpdatesKeepLocal => 'Reject';
 
   @override
   String get deckUpdatesAligned => 'aligned';
@@ -1415,16 +1453,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deckUpdatesLocalOverlay => 'local overlay';
 
   @override
-  String get deckUpdatesKeepHint => 'has local overlay (default keep)';
+  String get deckUpdatesKeepHint => 'has local overlay';
 
   @override
   String get deckUpdatesAcceptHint => 'default accept';
 
   @override
-  String get deckUpdatesBefore => 'Before';
+  String get deckUpdatesBefore => 'Before update';
 
   @override
-  String get deckUpdatesAfter => 'After';
+  String get deckUpdatesAfter => 'After update';
+
+  @override
+  String get deckUpdatesReviewChanges => 'Review changes';
+
+  @override
+  String get deckUpdatesHideReview => 'Hide review';
 
   @override
   String get contributeFactEdit => 'Submit edit to author';

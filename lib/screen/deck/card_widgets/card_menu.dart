@@ -5,8 +5,9 @@ import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 import 'package:retentio/l10n/app_localizations.dart';
-import 'package:retentio/screen/deck/bloc/deck_study_context_cubit.dart';
+import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/deck/bloc/deck_study_flip_card_controller_cubit.dart';
+import 'package:retentio/screen/deck/card_widgets/report_issue_dialog.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_edit.dart';
 import 'package:retentio/widgets/app_button.dart';
@@ -19,9 +20,10 @@ class CardMenu extends StatelessWidget {
   static const _kMenuRadius = 12.0;
   static const _kMenuShadowAlpha = 0.12;
 
-  const CardMenu({super.key, required this.color});
+  const CardMenu({super.key, required this.color, required this.deck});
 
   final Color color;
+  final Deck deck;
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +67,6 @@ class CardMenu extends StatelessWidget {
             PullDownMenuItem(
               title: loc.editFact,
               onTap: () {
-                final deck = context.read<DeckStudyContextCubit>().state.deck;
                 final card = context
                     .read<DeckStudyBloc>()
                     .state
@@ -94,6 +95,29 @@ class CardMenu extends StatelessWidget {
                 textStyle: menuItemStyle(scheme.onSurface),
               ),
             ),
+            if (deck.isImported)
+              PullDownMenuItem(
+                title: loc.reportIssue,
+                onTap: () async {
+                  final card = context
+                      .read<DeckStudyBloc>()
+                      .state
+                      .cardDetail
+                      ?.card;
+                  if (card == null) return;
+                  await Future<void>.delayed(const Duration(milliseconds: 10));
+                  if (!context.mounted) return;
+                  await showReportIssueDialog(
+                    context: context,
+                    importDeckId: deck.id,
+                    factId: card.factId,
+                  );
+                },
+                icon: LucideIcons.flag,
+                itemTheme: PullDownMenuItemTheme(
+                  textStyle: menuItemStyle(scheme.onSurface),
+                ),
+              ),
             PullDownMenuItem(
               title: loc.deleteCard,
               onTap: () async {

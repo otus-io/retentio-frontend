@@ -1,5 +1,24 @@
 import 'package:retentio/models/fact.dart';
 
+int? _toInt(dynamic v) {
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v);
+  return null;
+}
+
+Map<String, int> _parseVersions(dynamic raw) {
+  if (raw is! Map) return const {};
+  final out = <String, int>{};
+  for (final e in raw.entries) {
+    final n = _toInt(e.value);
+    if (n != null && n > 0) {
+      out[e.key.toString()] = n;
+    }
+  }
+  return out;
+}
+
 /// One added/removed fact row from `GET …/updates`.
 class DeckUpdateFactRef {
   const DeckUpdateFactRef({
@@ -124,6 +143,8 @@ class DeckUpdatesResult {
     this.editedFacts = const [],
     this.mediaChanges = const [],
     this.cardTemplateChanges = const [],
+    this.beforeMediaVersions = const {},
+    this.afterMediaVersions = const {},
   });
 
   final int sourceVersion;
@@ -133,6 +154,28 @@ class DeckUpdatesResult {
   final List<DeckUpdateEditedFact> editedFacts;
   final List<DeckUpdateMediaChange> mediaChanges;
   final List<DeckUpdateCardTemplateChange> cardTemplateChanges;
+
+  /// Media id → published version at [sourceVersion] (for before / removed playback).
+  final Map<String, int> beforeMediaVersions;
+
+  /// Media id → published version at [latestVersion] (for after / added playback).
+  final Map<String, int> afterMediaVersions;
+
+  /// Playable URL for a fact entry audio id (or absolute/relative URL).
+  static String? mediaPlayUrl(String idOrUrl, Map<String, int> versions) {
+    final v = idOrUrl.trim();
+    if (v.isEmpty) return null;
+    if (v.startsWith('http://') ||
+        v.startsWith('https://') ||
+        v.startsWith('/')) {
+      return v;
+    }
+    final ver = versions[v];
+    if (ver != null && ver > 0) {
+      return '/api/media/$v?v=$ver';
+    }
+    return '/api/media/$v';
+  }
 
   bool get hasContentChanges =>
       addedFacts.isNotEmpty ||
@@ -152,16 +195,12 @@ class DeckUpdatesResult {
           .toList();
     }
 
-    int? toInt(dynamic v) {
-      if (v is int) return v;
-      if (v is num) return v.toInt();
-      if (v is String) return int.tryParse(v);
-      return null;
-    }
+    final beforeMediaVersions = _parseVersions(data['before_media_versions']);
+    final afterMediaVersions = _parseVersions(data['after_media_versions']);
 
     return DeckUpdatesResult(
-      sourceVersion: toInt(data['source_version']) ?? 0,
-      latestVersion: toInt(data['latest_version']) ?? 0,
+      sourceVersion: _toInt(data['source_version']) ?? 0,
+      latestVersion: _toInt(data['latest_version']) ?? 0,
       addedFacts: parseList(data['added_facts'], DeckUpdateFactRef.fromJson),
       removedFacts: parseList(
         data['removed_facts'],
@@ -179,29 +218,146 @@ class DeckUpdatesResult {
         data['card_template_changes'],
         DeckUpdateCardTemplateChange.fromJson,
       ),
+      beforeMediaVersions: beforeMediaVersions,
+      afterMediaVersions: afterMediaVersions,
     );
   }
 
-  /// Defaults matching web-test / backend: removed → keep if overlay else accept;
-  /// edited → accept if aligned else keep.
+  /// Author publish is preferred: every removed/edited fact defaults to accept.
   Map<String, SyncFactDecisionAction> defaultDecisions() {
     final out = <String, SyncFactDecisionAction>{};
     for (final f in removedFacts) {
-      if (f.defaultAction == 'keep') {
-        out[f.factId] = SyncFactDecisionAction.keep;
-      } else if (f.defaultAction == 'accept') {
-        out[f.factId] = SyncFactDecisionAction.accept;
-      } else {
-        out[f.factId] = (f.hasLocalOverlay || f.local)
-            ? SyncFactDecisionAction.keep
-            : SyncFactDecisionAction.accept;
-      }
+      out[f.factId] = SyncFactDecisionAction.accept;
     }
     for (final f in editedFacts) {
-      out[f.factId] = f.aligned
-          ? SyncFactDecisionAction.accept
-          : SyncFactDecisionAction.keep;
+      out[f.factId] = SyncFactDecisionAction.accept;
     }
     return out;
+  }
+}
+
+/// Lightweight `GET …/updates?summary=1` payload (ids/counts only).
+class DeckUpdatesSummary {
+  const DeckUpdatesSummary({
+    required this.sourceVersion,
+    required this.latestVersion,
+    this.addedFactIds = const [],
+    this.removedFactIds = const [],
+    this.editedFactIds = const [],
+    this.mediaChangeCount = 0,
+    this.cardTemplateChangeCount = 0,
+    this.changeSummary = '',
+  });
+
+  final int sourceVersion;
+  final int latestVersion;
+  final List<String> addedFactIds;
+  final List<String> removedFactIds;
+  final List<String> editedFactIds;
+  final int mediaChangeCount;
+  final int cardTemplateChangeCount;
+  final String changeSummary;
+
+  bool get hasContentChanges =>
+      addedFactIds.isNotEmpty ||
+      removedFactIds.isNotEmpty ||
+      editedFactIds.isNotEmpty ||
+      mediaChangeCount > 0 ||
+      cardTemplateChangeCount > 0;
+
+  bool get hasUpdates => latestVersion > sourceVersion || hasContentChanges;
+
+  factory DeckUpdatesSummary.fromJson(Map<String, dynamic> data) {
+    List<String> ids(dynamic raw) {
+      if (raw is! List) return const [];
+      return raw.map((e) => e.toString()).where((s) => s.isNotEmpty).toList();
+    }
+
+    return DeckUpdatesSummary(
+      sourceVersion: _toInt(data['source_version']) ?? 0,
+      latestVersion: _toInt(data['latest_version']) ?? 0,
+      addedFactIds: ids(data['added_fact_ids']),
+      removedFactIds: ids(data['removed_fact_ids']),
+      editedFactIds: ids(data['edited_fact_ids']),
+      mediaChangeCount: _toInt(data['media_change_count']) ?? 0,
+      cardTemplateChangeCount: _toInt(data['card_template_change_count']) ?? 0,
+      changeSummary: data['change_summary']?.toString() ?? '',
+    );
+  }
+}
+
+enum DeckUpdateFactKind { added, removed, edited }
+
+/// `GET …/updates/facts/{factId}` payload.
+class DeckUpdateFactDetail {
+  const DeckUpdateFactDetail({
+    required this.factId,
+    required this.kind,
+    required this.sourceVersion,
+    required this.latestVersion,
+    this.fact,
+    this.before,
+    this.after,
+    this.hasLocalOverlay = false,
+    this.local = false,
+    this.aligned = false,
+    this.defaultAction,
+    this.beforeMediaVersions = const {},
+    this.afterMediaVersions = const {},
+  });
+
+  final String factId;
+  final DeckUpdateFactKind kind;
+  final int sourceVersion;
+  final int latestVersion;
+  final Fact? fact;
+  final Fact? before;
+  final Fact? after;
+  final bool hasLocalOverlay;
+  final bool local;
+  final bool aligned;
+  final String? defaultAction;
+  final Map<String, int> beforeMediaVersions;
+  final Map<String, int> afterMediaVersions;
+
+  factory DeckUpdateFactDetail.fromJson(Map<String, dynamic> data) {
+    Fact? parseFact(dynamic raw) {
+      if (raw is! Map) return null;
+      return Fact.fromJson(Map<String, dynamic>.from(raw));
+    }
+
+    final kindRaw = data['kind']?.toString().trim() ?? '';
+    final DeckUpdateFactKind kind;
+    switch (kindRaw) {
+      case 'added':
+        kind = DeckUpdateFactKind.added;
+      case 'removed':
+        kind = DeckUpdateFactKind.removed;
+      case 'edited':
+      case '':
+        kind = DeckUpdateFactKind.edited;
+      default:
+        throw ArgumentError.value(
+          data['kind'],
+          'kind',
+          'DeckUpdateFactDetail.fromJson: unrecognized kind',
+        );
+    }
+
+    return DeckUpdateFactDetail(
+      factId: data['fact_id']?.toString() ?? '',
+      kind: kind,
+      sourceVersion: _toInt(data['source_version']) ?? 0,
+      latestVersion: _toInt(data['latest_version']) ?? 0,
+      fact: parseFact(data['fact']),
+      before: parseFact(data['before']),
+      after: parseFact(data['after']),
+      hasLocalOverlay: data['has_local_overlay'] == true,
+      local: data['local'] == true,
+      aligned: data['aligned'] == true,
+      defaultAction: data['default_action']?.toString(),
+      beforeMediaVersions: _parseVersions(data['before_media_versions']),
+      afterMediaVersions: _parseVersions(data['after_media_versions']),
+    );
   }
 }

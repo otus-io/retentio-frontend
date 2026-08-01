@@ -263,7 +263,6 @@ void main() {
             .selected,
         isTrue,
       );
-      expect(find.text('1 / 5'), findsOneWidget);
     });
 
     testWidgets('selecting All still works when search has no matches', (
@@ -328,93 +327,17 @@ void main() {
       );
     });
 
-    testWidgets(
-      'uses tag-scoped card count for progress when filter is active',
-      (tester) async {
-        await setupTestEnvironment();
-        final deck = sampleDeck(cardsCount: 2387);
-        const grammarTag = Tag(id: 'tag1', name: 'Grammar', description: '');
-        final harness = FakeDeckStudyBlocHarness(
-          deckId: deck.id,
-          deckTags: const [grammarTag],
-          loadResults: [
-            const DeckStudyLoadResult(
-              cardDetail: null,
-              refreshedCardsCount: 12,
-            ),
-            DeckStudyLoadResult(
-              cardDetail: sampleCardDetail(),
-              refreshedCardsCount: 12,
-            ),
-          ],
-        );
-        addTearDown(() async {
-          await harness.dispose();
-          tearDownTestEnvironment();
-        });
-
-        await tester.pumpWidget(
-          buildTestableWidgetWithOverrides(
-            DeckViewScreen(deck: deck),
-            overrides: [
-              currentDeckProvider.overrideWithValue(deck),
-              deckStudyBlocProvider.overrideWithValue(harness.bloc),
-            ],
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        await _selectStudyTagFilter(tester, 'Grammar');
-        await tester.pumpAndSettle();
-
-        expect(find.text('1 / 12'), findsOneWidget);
-        expect(find.text('1 / 2387'), findsNothing);
-      },
-    );
-
-    testWidgets(
-      'shows current card progress instead of zero progress on first card',
-      (tester) async {
-        await setupTestEnvironment();
-        final deck = sampleDeck(cardsCount: 5);
-        final harness = FakeDeckStudyBlocHarness(
-          deckId: deck.id,
-          loadResults: [DeckStudyLoadResult(cardDetail: sampleCardDetail())],
-        );
-        addTearDown(() async {
-          await harness.dispose();
-          tearDownTestEnvironment();
-        });
-
-        await tester.pumpWidget(
-          buildTestableWidgetWithOverrides(
-            DeckViewScreen(deck: deck),
-            overrides: [
-              currentDeckProvider.overrideWithValue(deck),
-              deckStudyBlocProvider.overrideWithValue(harness.bloc),
-            ],
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        expect(find.text('1 / 5'), findsOneWidget);
-        expect(find.text('20%'), findsOneWidget);
-
-        final indicator = tester.widget<LinearProgressIndicator>(
-          find.byType(LinearProgressIndicator),
-        );
-        expect(indicator.value, 0.2);
-      },
-    );
-
-    testWidgets('shows a fractional percent for very small progress', (
-      tester,
-    ) async {
+    testWidgets('shows due count and clearing progress bar', (tester) async {
       await setupTestEnvironment();
-      final deck = sampleDeck(cardsCount: 2387);
+      final deck = sampleDeck(cardsCount: 5);
       final harness = FakeDeckStudyBlocHarness(
         deckId: deck.id,
-        loadResults: [DeckStudyLoadResult(cardDetail: sampleCardDetail())],
+        loadResults: [
+          DeckStudyLoadResult(
+            cardDetail: sampleCardDetail(),
+            refreshedDueCardsCount: 5,
+          ),
+        ],
       );
       addTearDown(() async {
         await harness.dispose();
@@ -432,14 +355,187 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('1 / 2387'), findsOneWidget);
-      expect(find.text('0.0%'), findsNothing);
-      expect(find.text('0.04%'), findsOneWidget);
-
+      expect(find.text("Today's due"), findsOneWidget);
+      expect(find.text('0/5 (0%)'), findsOneWidget);
       final indicator = tester.widget<LinearProgressIndicator>(
         find.byType(LinearProgressIndicator),
       );
-      expect(indicator.value, closeTo(1 / 2387, 0.000001));
+      // At session start, live due == target → 0% cleared.
+      expect(indicator.value, 0.0);
+    });
+
+    testWidgets(
+      'due progress bar fills as live due drops toward frozen target',
+      (tester) async {
+        await setupTestEnvironment();
+        final deck = sampleDeck(cardsCount: 10);
+        final harness = FakeDeckStudyBlocHarness(
+          deckId: deck.id,
+          loadResults: [
+            DeckStudyLoadResult(
+              cardDetail: sampleCardDetail(),
+              refreshedDueCardsCount: 4,
+            ),
+            DeckStudyLoadResult(
+              cardDetail: sampleCardDetail(),
+              refreshedDueCardsCount: 1,
+            ),
+          ],
+        );
+        addTearDown(() async {
+          await harness.dispose();
+          tearDownTestEnvironment();
+        });
+
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            DeckViewScreen(deck: deck),
+            overrides: [
+              currentDeckProvider.overrideWithValue(deck),
+              deckStudyBlocProvider.overrideWithValue(harness.bloc),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('0/4 (0%)'), findsOneWidget);
+        expect(
+          tester
+              .widget<LinearProgressIndicator>(
+                find.byType(LinearProgressIndicator),
+              )
+              .value,
+          0.0,
+        );
+
+        await tester.tap(find.text('Show Answer'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Next'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('3/4 (75%)'), findsOneWidget);
+        expect(
+          tester
+              .widget<LinearProgressIndicator>(
+                find.byType(LinearProgressIndicator),
+              )
+              .value,
+          closeTo(0.75, 0.000001),
+        );
+      },
+    );
+
+    testWidgets(
+      'due progress bar does not reset when live due spikes above target',
+      (tester) async {
+        await setupTestEnvironment();
+        final deck = sampleDeck(cardsCount: 10);
+        final harness = FakeDeckStudyBlocHarness(
+          deckId: deck.id,
+          loadResults: [
+            DeckStudyLoadResult(
+              cardDetail: sampleCardDetail(),
+              refreshedDueCardsCount: 5,
+            ),
+            DeckStudyLoadResult(
+              cardDetail: sampleCardDetail(),
+              refreshedDueCardsCount: 2,
+            ),
+            DeckStudyLoadResult(
+              cardDetail: sampleCardDetail(),
+              refreshedDueCardsCount: 7,
+            ),
+          ],
+        );
+        addTearDown(() async {
+          await harness.dispose();
+          tearDownTestEnvironment();
+        });
+
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            DeckViewScreen(deck: deck),
+            overrides: [
+              currentDeckProvider.overrideWithValue(deck),
+              deckStudyBlocProvider.overrideWithValue(harness.bloc),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('0/5 (0%)'), findsOneWidget);
+
+        await tester.tap(find.text('Show Answer'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Next'));
+        await tester.pumpAndSettle();
+
+        // liveDue 5→2 → 3 cleared (liveCleared beats cardsStudied=1).
+        expect(find.text('3/5 (60%)'), findsOneWidget);
+
+        await tester.tap(find.text('Show Answer'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Next'));
+        await tester.pumpAndSettle();
+
+        // liveDue spiked to 7 (> target). Without a review-count floor the bar
+        // would show 0/5; floor keeps progress from cardsStudied=2.
+        expect(find.text('0/5 (0%)'), findsNothing);
+        expect(find.text('2/5 (40%)'), findsOneWidget);
+        expect(
+          tester
+              .widget<LinearProgressIndicator>(
+                find.byType(LinearProgressIndicator),
+              )
+              .value,
+          closeTo(0.4, 0.000001),
+        );
+      },
+    );
+
+    testWidgets('uses tag-scoped live due for progress when filter is active', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      final deck = sampleDeck(cardsCount: 2387);
+      const grammarTag = Tag(id: 'tag1', name: 'Grammar', description: '');
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: deck.id,
+        deckTags: const [grammarTag],
+        loadResults: [
+          const DeckStudyLoadResult(
+            cardDetail: null,
+            refreshedCardsCount: 12,
+            refreshedDueCardsCount: 3,
+          ),
+          DeckStudyLoadResult(
+            cardDetail: sampleCardDetail(),
+            refreshedCardsCount: 12,
+            refreshedDueCardsCount: 3,
+          ),
+        ],
+      );
+      addTearDown(() async {
+        await harness.dispose();
+        tearDownTestEnvironment();
+      });
+
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          DeckViewScreen(deck: deck),
+          overrides: [
+            currentDeckProvider.overrideWithValue(deck),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await _selectStudyTagFilter(tester, 'Grammar');
+      await tester.pumpAndSettle();
+
+      expect(find.text('0/3 (0%)'), findsOneWidget);
+      expect(find.text('0/2387 (0%)'), findsNothing);
     });
 
     testWidgets(

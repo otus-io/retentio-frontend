@@ -2,20 +2,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/features/deck_study/data/repositories/deck_study_legacy_service_repository.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/models/tag.dart';
+import 'package:retentio/services/apis/card_service.dart';
 
 void main() {
   group('DeckStudyLegacyServiceRepository', () {
     test(
-      'loadNextDueCard loads tag-scoped card count when tag filter is active',
+      'loadNextDueCard loads tag-scoped card and due counts when tag filter is active',
       () async {
-        var cardsCountCalls = 0;
+        var cardsStatsCalls = 0;
         final repository = DeckStudyLegacyServiceRepository(
           loadNextDueCardFn: (_, {tagId}) async => null,
-          getCardsCountFn: (deckId, {tagId}) async {
-            cardsCountCalls += 1;
+          getCardsStatsFn: (deckId, {tagId}) async {
+            cardsStatsCalls += 1;
             expect(deckId, 'deck-1');
             expect(tagId, 'tag-1');
-            return 12;
+            return const DeckCardsStats(totalCards: 12, dueCards: 4);
           },
         );
 
@@ -26,7 +27,8 @@ void main() {
 
         expect(result.cardDetail, isNull);
         expect(result.refreshedCardsCount, 12);
-        expect(cardsCountCalls, 1);
+        expect(result.refreshedDueCardsCount, 4);
+        expect(cardsStatsCalls, 1);
       },
     );
 
@@ -40,7 +42,7 @@ void main() {
             throw StateError('getDeckDetail should not be called');
           },
           loadNextDueCardFn: (_, {tagId}) async => null,
-          getCardsCountFn: (_, {tagId}) async => null,
+          getCardsStatsFn: (_, {tagId}) async => null,
         );
 
         final result = await repository.loadNextDueCard(
@@ -50,6 +52,7 @@ void main() {
 
         expect(result.cardDetail, isNull);
         expect(result.refreshedCardsCount, isNull);
+        expect(result.refreshedDueCardsCount, isNull);
         expect(deckDetailCalls, 0);
       },
     );
@@ -64,20 +67,47 @@ void main() {
             return Deck.fromJson({
               'id': 'deck-1',
               'name': 'Deck',
-              'stats': {'cards_count': 42},
+              'stats': {'cards_count': 42, 'due_cards': 7},
               'rate': 30,
               'owner': {'username': 'u', 'email': 'u@t.com'},
               'fields': ['a'],
             });
           },
           loadNextDueCardFn: (_, {tagId}) async => null,
+          getCardsStatsFn: (_, {tagId}) async => null,
         );
 
         final result = await repository.loadNextDueCard(deckId: 'deck-1');
 
         expect(result.cardDetail, isNull);
         expect(result.refreshedCardsCount, 42);
+        expect(result.refreshedDueCardsCount, 7);
         expect(deckDetailCalls, 1);
+      },
+    );
+
+    test(
+      'loadNextDueCard loads deck-wide due from card stats when studying',
+      () async {
+        var cardsStatsCalls = 0;
+        final repository = DeckStudyLegacyServiceRepository(
+          loadNextDueCardFn: (_, {tagId}) async => null,
+          getCardsStatsFn: (deckId, {tagId}) async {
+            cardsStatsCalls += 1;
+            expect(deckId, 'deck-1');
+            expect(tagId, isNull);
+            return const DeckCardsStats(totalCards: 42, dueCards: 9);
+          },
+          getDeckDetailFn: (_) async {
+            throw StateError('deck detail should not be needed');
+          },
+        );
+
+        final result = await repository.loadNextDueCard(deckId: 'deck-1');
+
+        expect(result.refreshedCardsCount, 42);
+        expect(result.refreshedDueCardsCount, 9);
+        expect(cardsStatsCalls, 1);
       },
     );
 

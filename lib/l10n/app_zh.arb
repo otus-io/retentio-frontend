@@ -40,6 +40,7 @@
   "themeSystem": "跟随系统",
   "totalCards": "总计",
   "dueCards": "待复习",
+  "todaysDue": "今日待复习",
   "learned": "已学习",
   "noCardsInDeck": "卡组中没有卡片",
   "startLearning": "开始学习",
@@ -85,6 +86,7 @@
   "deleteCardConfirm": "只会删除这一张卡片；对应的词条及其他卡片仍会保留。",
   "deleteCardFailed": "无法删除卡片",
   "deleteDeck": "删除卡组",
+  "deleteDeckConfirm": "「{deckName}」及其所有卡片和词条将被永久删除。",
   "noCardsInThisDeck": "这个卡组中没有卡片",
   "save": "保存",
   "newCardEveryMinutes": "每{interval}分钟引入一张新卡片",
@@ -1047,6 +1049,46 @@
   "@feedbackSubmitSuccess": {
     "description": "Toast after feedback submission succeeds"
   },
+  "reportIssue": "报告问题",
+  "@reportIssue": {
+    "description": "Card menu action to report a problem on an imported fact"
+  },
+  "reportIssueCategory": "问题类型",
+  "@reportIssueCategory": {
+    "description": "Label for report issue category dropdown"
+  },
+  "reportIssueAudio": "音频",
+  "@reportIssueAudio": {
+    "description": "Report issue category: audio"
+  },
+  "reportIssueContent": "内容",
+  "@reportIssueContent": {
+    "description": "Report issue category: content"
+  },
+  "reportIssueOther": "其他",
+  "@reportIssueOther": {
+    "description": "Report issue category: free-text other"
+  },
+  "reportIssueDetailsHint": "补充说明（可选）",
+  "@reportIssueDetailsHint": {
+    "description": "Hint for optional details when a preset category is selected"
+  },
+  "reportIssueOtherHint": "请描述问题",
+  "@reportIssueOtherHint": {
+    "description": "Hint for required details when Other is selected"
+  },
+  "reportIssueDetailsRequired": "请描述问题",
+  "@reportIssueDetailsRequired": {
+    "description": "Validation when Other is selected without details"
+  },
+  "reportIssueSubmit": "提交",
+  "@reportIssueSubmit": {
+    "description": "Primary button on report issue dialog"
+  },
+  "reportIssueSuccess": "问题已报告",
+  "@reportIssueSuccess": {
+    "description": "Toast after report issue submission succeeds"
+  },
   "factEditNoEntries": "该词条没有可编辑内容",
   "@factEditNoEntries": {
     "description": "Shown when fact edit opens an invalid empty fact"
@@ -1075,16 +1117,36 @@
   "@deckUpdatesAccept": {
     "description": "Accept author publish for this fact on sync"
   },
-  "deckUpdatesKeepLocal": "保留本地",
+  "deckUpdatesKeepLocal": "拒绝",
   "@deckUpdatesKeepLocal": {
-    "description": "Keep private overlay when syncing"
+    "description": "Reject the author publish for this fact and keep the local overlay when syncing"
   },
   "deckUpdatesAligned": "已对齐",
+  "@deckUpdatesAligned": {
+    "description": "Hint that a fact update is already aligned with local overlay"
+  },
   "deckUpdatesLocalOverlay": "本地 overlay",
-  "deckUpdatesKeepHint": "有本地 overlay（默认保留）",
+  "@deckUpdatesLocalOverlay": {
+    "description": "Hint that the fact has a private local overlay"
+  },
+  "deckUpdatesKeepHint": "有本地 overlay",
+  "@deckUpdatesKeepHint": {
+    "description": "Hint under Keep Local for facts with a private overlay"
+  },
   "deckUpdatesAcceptHint": "默认接受",
-  "deckUpdatesBefore": "之前",
-  "deckUpdatesAfter": "之后",
+  "@deckUpdatesAcceptHint": {
+    "description": "Hint under Accept for the default sync decision"
+  },
+  "deckUpdatesBefore": "更新前",
+  "@deckUpdatesBefore": {
+    "description": "Label for fact content before the author update"
+  },
+  "deckUpdatesAfter": "更新后",
+  "@deckUpdatesAfter": {
+    "description": "Label for fact content after the author update"
+  },
+  "deckUpdatesReviewChanges": "查看变更",
+  "deckUpdatesHideReview": "收起变更",
   "contributeFactEdit": "向作者提交修改",
   "@contributeFactEdit": {
     "description": "Submit private overlay as fact_edit contribution"

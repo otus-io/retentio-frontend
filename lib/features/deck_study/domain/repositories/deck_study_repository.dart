@@ -53,12 +53,17 @@ class DeckStudyLoadResult {
   const DeckStudyLoadResult({
     required this.cardDetail,
     this.refreshedCardsCount,
+    this.refreshedDueCardsCount,
   });
 
   final CardDetail? cardDetail;
 
   /// Set when no due card exists and the deck detail endpoint is used to refresh.
+  /// With a tag filter, total cards for that tag from card stats.
   final int? refreshedCardsCount;
+
+  /// Live due count from card stats (deck-wide or tag-scoped).
+  final int? refreshedDueCardsCount;
 
   bool get hasCard => cardDetail != null;
 }

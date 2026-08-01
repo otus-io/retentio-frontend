@@ -55,6 +55,9 @@ Deck _$DeckFromJson(Map<String, dynamic> json) => Deck(
   defInterval: (json['def_interval'] as num?)?.toInt() ?? 0,
   maxInterval: (json['max_interval'] as num?)?.toInt() ?? 0,
   sourceDeckId: json['source_deck_id'] as String? ?? '',
+  sourceVersion: (json['source_version'] as num?)?.toInt() ?? 0,
+  publishedVersion: (json['published_version'] as num?)?.toInt() ?? 0,
+  visibility: json['visibility'] as String? ?? '',
   createdAt: json['created_at'] == null
       ? null
       : DateTime.parse(json['created_at'] as String),
@@ -74,6 +77,9 @@ Map<String, dynamic> _$DeckToJson(Deck instance) => <String, dynamic>{
   'def_interval': instance.defInterval,
   'max_interval': instance.maxInterval,
   'source_deck_id': instance.sourceDeckId,
+  'source_version': instance.sourceVersion,
+  'published_version': instance.publishedVersion,
+  'visibility': instance.visibility,
   'created_at': instance.createdAt?.toIso8601String(),
   'updated_at': instance.updatedAt?.toIso8601String(),
 };

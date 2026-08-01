@@ -338,6 +338,12 @@ abstract class AppLocalizations {
   /// **'Due'**
   String get dueCards;
 
+  /// Study-session due-clearing progress label under the progress bar
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s due'**
+  String get todaysDue;
+
   /// Learned cards label
   ///
   /// In en, this message translates to:
@@ -607,6 +613,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete Deck'**
   String get deleteDeck;
+
+  /// Confirmation message before deleting a deck
+  ///
+  /// In en, this message translates to:
+  /// **'\"{deckName}\" and all of its cards and facts will be permanently deleted.'**
+  String deleteDeckConfirm(String deckName);
 
   /// Message when deck has no cards
   ///
@@ -2564,6 +2576,66 @@ abstract class AppLocalizations {
   /// **'Feedback submitted'**
   String get feedbackSubmitSuccess;
 
+  /// Card menu action to report a problem on an imported fact
+  ///
+  /// In en, this message translates to:
+  /// **'Report issue'**
+  String get reportIssue;
+
+  /// Label for report issue category dropdown
+  ///
+  /// In en, this message translates to:
+  /// **'Issue type'**
+  String get reportIssueCategory;
+
+  /// Report issue category: audio
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get reportIssueAudio;
+
+  /// Report issue category: content
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get reportIssueContent;
+
+  /// Report issue category: free-text other
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get reportIssueOther;
+
+  /// Hint for optional details when a preset category is selected
+  ///
+  /// In en, this message translates to:
+  /// **'Add details (optional)'**
+  String get reportIssueDetailsHint;
+
+  /// Hint for required details when Other is selected
+  ///
+  /// In en, this message translates to:
+  /// **'Describe the issue'**
+  String get reportIssueOtherHint;
+
+  /// Validation when Other is selected without details
+  ///
+  /// In en, this message translates to:
+  /// **'Please describe the issue'**
+  String get reportIssueDetailsRequired;
+
+  /// Primary button on report issue dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get reportIssueSubmit;
+
+  /// Toast after report issue submission succeeds
+  ///
+  /// In en, this message translates to:
+  /// **'Issue reported'**
+  String get reportIssueSuccess;
+
   /// Shown when fact edit opens an invalid empty fact
   ///
   /// In en, this message translates to:
@@ -2606,47 +2678,59 @@ abstract class AppLocalizations {
   /// **'Accept'**
   String get deckUpdatesAccept;
 
-  /// Keep private overlay when syncing
+  /// Reject the author publish for this fact and keep the local overlay when syncing
   ///
   /// In en, this message translates to:
-  /// **'Keep local'**
+  /// **'Reject'**
   String get deckUpdatesKeepLocal;
 
-  /// No description provided for @deckUpdatesAligned.
+  /// Hint that a fact update is already aligned with local overlay
   ///
   /// In en, this message translates to:
   /// **'aligned'**
   String get deckUpdatesAligned;
 
-  /// No description provided for @deckUpdatesLocalOverlay.
+  /// Hint that the fact has a private local overlay
   ///
   /// In en, this message translates to:
   /// **'local overlay'**
   String get deckUpdatesLocalOverlay;
 
-  /// No description provided for @deckUpdatesKeepHint.
+  /// Hint under Keep Local for facts with a private overlay
   ///
   /// In en, this message translates to:
-  /// **'has local overlay (default keep)'**
+  /// **'has local overlay'**
   String get deckUpdatesKeepHint;
 
-  /// No description provided for @deckUpdatesAcceptHint.
+  /// Hint under Accept for the default sync decision
   ///
   /// In en, this message translates to:
   /// **'default accept'**
   String get deckUpdatesAcceptHint;
 
-  /// No description provided for @deckUpdatesBefore.
+  /// Label for fact content before the author update
   ///
   /// In en, this message translates to:
-  /// **'Before'**
+  /// **'Before update'**
   String get deckUpdatesBefore;
 
-  /// No description provided for @deckUpdatesAfter.
+  /// Label for fact content after the author update
   ///
   /// In en, this message translates to:
-  /// **'After'**
+  /// **'After update'**
   String get deckUpdatesAfter;
+
+  /// Expand per-fact update review list
+  ///
+  /// In en, this message translates to:
+  /// **'Review changes'**
+  String get deckUpdatesReviewChanges;
+
+  /// Collapse per-fact update review list
+  ///
+  /// In en, this message translates to:
+  /// **'Hide review'**
+  String get deckUpdatesHideReview;
 
   /// Submit private overlay as fact_edit contribution
   ///

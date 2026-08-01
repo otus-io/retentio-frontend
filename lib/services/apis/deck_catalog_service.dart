@@ -93,10 +93,40 @@ class DeckCatalogService {
       pathParams: {'id': deckId},
     );
     if (res == null || !res.isSuccess || res.data is! Map) {
-      throw Exception(res?.msg ?? 'updates_failed');
+      throw Exception(res?.msg ?? 'Unknown error');
     }
 
     return DeckUpdatesResult.fromJson(
+      Map<String, dynamic>.from(res.data as Map),
+    );
+  }
+
+  Future<DeckUpdatesSummary> getDeckUpdatesSummary(String deckId) async {
+    final res = await ApiService.get(
+      Api.deckUpdates,
+      pathParams: {'id': deckId},
+      queryParams: {'summary': '1'},
+    );
+    if (res == null || !res.isSuccess || res.data is! Map) {
+      throw Exception(res?.msg ?? 'Unknown error');
+    }
+    return DeckUpdatesSummary.fromJson(
+      Map<String, dynamic>.from(res.data as Map),
+    );
+  }
+
+  Future<DeckUpdateFactDetail> getDeckUpdateFact({
+    required String deckId,
+    required String factId,
+  }) async {
+    final res = await ApiService.get(
+      Api.deckUpdateFact,
+      pathParams: {'id': deckId, 'factId': factId},
+    );
+    if (res == null || !res.isSuccess || res.data is! Map) {
+      throw Exception(res?.msg ?? 'Unknown error');
+    }
+    return DeckUpdateFactDetail.fromJson(
       Map<String, dynamic>.from(res.data as Map),
     );
   }
@@ -119,7 +149,7 @@ class DeckCatalogService {
       body: body,
     );
     if (res == null || !res.isSuccess || res.data is! Map) {
-      throw Exception(res?.msg ?? 'sync_failed');
+      throw Exception(res?.msg ?? 'Unknown error');
     }
     return _toInt((res.data as Map)['source_version']) ?? 0;
   }

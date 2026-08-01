@@ -10,6 +10,7 @@ import 'package:retentio/screen/deck/card_widgets/card_flip.dart';
 import 'package:retentio/screen/deck/card_widgets/card_side_content.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_study_tag_filter_bar.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
+import 'package:retentio/screen/decks/deck_text_styles.dart';
 import 'package:retentio/theme/theme_tokens.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_toast.dart';
@@ -85,6 +86,27 @@ class DeckViewBody extends StatelessWidget {
                 state.refreshedCardsCount ?? deck.stats.cardsCount;
             final cardsStudied = state.cardsStudied;
             final cardDetail = state.cardDetail;
+            final liveDue = state.refreshedDueCardsCount ?? deck.stats.dueCards;
+            final dueTarget = state.sessionDueTarget ?? liveDue;
+            // Live cleared toward the frozen target. When new cards fall due and
+            // liveDue jumps above dueTarget, liveCleared collapses to 0 — keep
+            // session review count as a floor so the bar does not reset.
+            final liveCleared = liveDue < dueTarget ? dueTarget - liveDue : 0;
+            final reviewFloor = cardsStudied < dueTarget
+                ? cardsStudied
+                : dueTarget;
+            final clearedDue = liveCleared > reviewFloor
+                ? liveCleared
+                : reviewFloor;
+            final dueProgress = dueTarget <= 0
+                ? 1.0
+                : (clearedDue / dueTarget).clamp(0.0, 1.0);
+            final dueProgressPercent = dueProgress * 100;
+            final dueProgressPercentLabel = dueProgressPercent >= 1
+                ? '${dueProgressPercent.toStringAsFixed(0)}%'
+                : dueProgressPercent > 0
+                ? '${dueProgressPercent.toStringAsFixed(2)}%'
+                : '${dueProgressPercent.toStringAsFixed(0)}%';
 
             if (cardDetail == null) {
               final messageBody = state.activeTagId != null
@@ -140,19 +162,6 @@ class DeckViewBody extends StatelessWidget {
               );
             }
 
-            final currentCardNumber = totalCardsInSession > 0
-                ? (cardsStudied + 1).clamp(1, totalCardsInSession)
-                : cardsStudied + 1;
-            final currentProgress = totalCardsInSession > 0
-                ? currentCardNumber / totalCardsInSession
-                : 0.0;
-            final progressPercent = currentProgress * 100;
-            final progressPercentLabel = progressPercent >= 1
-                ? '${progressPercent.toStringAsFixed(0)}%'
-                : progressPercent > 0
-                ? '${progressPercent.toStringAsFixed(2)}%'
-                : '${progressPercent.toStringAsFixed(0)}%';
-
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -160,34 +169,33 @@ class DeckViewBody extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
                   child: Column(
-                    spacing: 6,
                     children: [
+                      ClipRRect(
+                        borderRadius: AppThemeTokens.borderRadiusPill,
+                        child: LinearProgressIndicator(
+                          value: dueProgress,
+                          minHeight: 6,
+                          backgroundColor: scheme.outline.withValues(
+                            alpha: 0.28,
+                          ),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            scheme.primary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '$currentCardNumber / $totalCardsInSession',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: scheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            loc.todaysDue,
+                            style: DeckTextStyles.progressLabel(theme),
                           ),
-                          const Spacer(),
                           Text(
-                            progressPercentLabel,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: scheme.onSurface.withValues(alpha: 0.45),
-                            ),
+                            '$clearedDue/$dueTarget ($dueProgressPercentLabel)',
+                            style: DeckTextStyles.progressValue(theme),
                           ),
                         ],
-                      ),
-                      LinearProgressIndicator(
-                        value: currentProgress,
-                        minHeight: 4,
-                        borderRadius: AppThemeTokens.borderRadiusPill,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          scheme.primary,
-                        ),
-                        backgroundColor: scheme.outline.withValues(alpha: 0.18),
                       ),
                     ],
                   ),

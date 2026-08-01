@@ -101,6 +101,59 @@ void main() {
         expect(deck.owner.username, 'owner1');
         expect(deck.owner.email, 'owner@test.com');
         expect(deck.fields, ['front', 'back']);
+        expect(deck.publishedVersion, 0);
+        expect(deck.visibility, '');
+        expect(deck.sourceVersion, 0);
+        expect(deck.isPublishedSource, isFalse);
+      });
+
+      test('parses sharing fields for source and import decks', () {
+        final source = Deck.fromJson({
+          'id': 'src-1',
+          'name': 'Source',
+          'stats': <String, dynamic>{},
+          'rate': 10,
+          'owner': 'alice',
+          'fields': ['a'],
+          'published_version': 3,
+          'visibility': 'public',
+        });
+        expect(source.publishedVersion, 3);
+        expect(source.visibility, 'public');
+        expect(source.isImported, isFalse);
+        expect(source.isPublishedSource, isTrue);
+
+        final imported = Deck.fromJson({
+          'id': 'imp-1',
+          'name': 'Import',
+          'stats': <String, dynamic>{},
+          'rate': 10,
+          'owner': 'bob',
+          'fields': ['a'],
+          'source_deck_id': 'src-1',
+          'source_version': 2,
+        });
+        expect(imported.isImported, isTrue);
+        expect(imported.sourceVersion, 2);
+        expect(imported.isPublishedSource, isFalse);
+      });
+
+      test('copyWith preserves sharing fields', () {
+        final deck = Deck.fromJson({
+          'id': 'src-2',
+          'name': 'Old',
+          'stats': <String, dynamic>{},
+          'rate': 10,
+          'owner': 'alice',
+          'fields': ['a'],
+          'published_version': 4,
+          'visibility': 'public',
+        });
+        final renamed = deck.copyWith(name: 'New');
+        expect(renamed.name, 'New');
+        expect(renamed.publishedVersion, 4);
+        expect(renamed.visibility, 'public');
+        expect(renamed.isPublishedSource, isTrue);
       });
 
       test('parses deck with owner as string', () {

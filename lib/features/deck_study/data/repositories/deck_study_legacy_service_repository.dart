@@ -11,7 +11,8 @@ typedef LoadNextDueCardFn =
     Future<CardDetail?> Function(String deckId, {String? tagId});
 typedef LoadDeckTagsFn = Future<List<Tag>> Function({required String deckId});
 typedef GetDeckDetailFn = Future<Deck> Function(String deckId);
-typedef GetCardsCountFn = Future<int?> Function(String deckId, {String? tagId});
+typedef GetCardsStatsFn =
+    Future<DeckCardsStats?> Function(String deckId, {String? tagId});
 
 Future<List<Tag>> _defaultLoadDeckTags({required String deckId}) =>
     TagService.of.getTags(usedOn: 'fact', deckId: deckId, unused: 'exclude');
@@ -24,18 +25,18 @@ class DeckStudyLegacyServiceRepository implements DeckStudyRepository {
     LoadNextDueCardFn? loadNextDueCardFn,
     LoadDeckTagsFn? loadDeckTagsFn,
     GetDeckDetailFn? getDeckDetailFn,
-    GetCardsCountFn? getCardsCountFn,
+    GetCardsStatsFn? getCardsStatsFn,
   }) : _deckService = deckService ?? DeckService.of,
        _loadNextDueCardFn = loadNextDueCardFn ?? CardService.getNextDueCard,
        _loadDeckTagsFn = loadDeckTagsFn ?? _defaultLoadDeckTags,
        _getDeckDetailFn = getDeckDetailFn,
-       _getCardsCountFn = getCardsCountFn ?? CardService.getCardsCount;
+       _getCardsStatsFn = getCardsStatsFn ?? CardService.getCardsStats;
 
   final DeckService _deckService;
   final LoadNextDueCardFn _loadNextDueCardFn;
   final LoadDeckTagsFn _loadDeckTagsFn;
   final GetDeckDetailFn? _getDeckDetailFn;
-  final GetCardsCountFn _getCardsCountFn;
+  final GetCardsStatsFn _getCardsStatsFn;
 
   @override
   Future<DeckStudyLoadResult> loadNextDueCard({
@@ -58,49 +59,57 @@ class DeckStudyLegacyServiceRepository implements DeckStudyRepository {
       response = null;
     }
 
-    final tagCardsCount = tagId != null
-        ? await _loadTagCardsCount(deckId, tagId)
-        : null;
+    // Always load stats so study UI can track live due (deck-wide or tag-scoped).
+    final cardsStats = await _loadCardsStats(deckId, tagId);
 
     if (response != null) {
       return DeckStudyLoadResult(
         cardDetail: response,
-        refreshedCardsCount: tagCardsCount,
+        refreshedCardsCount: tagId != null ? cardsStats?.totalCards : null,
+        refreshedDueCardsCount: cardsStats?.dueCards,
       );
     }
 
     if (tagId != null) {
       return DeckStudyLoadResult(
         cardDetail: null,
-        refreshedCardsCount: tagCardsCount,
+        refreshedCardsCount: cardsStats?.totalCards,
+        refreshedDueCardsCount: cardsStats?.dueCards,
       );
     }
 
-    int? refreshedCardsCount;
-    try {
-      final deck = await (_getDeckDetailFn ?? _deckService.getDeckDetail)(
-        deckId,
-      );
-      refreshedCardsCount = deck.stats.cardsCount;
-    } catch (e, s) {
-      logger.w(
-        'Failed to refresh deck detail for empty-study state, deck=$deckId',
-      );
-      logger.e('deck detail refresh error: $e', stackTrace: s);
+    int? refreshedCardsCount = cardsStats?.totalCards;
+    int? refreshedDueCardsCount = cardsStats?.dueCards;
+    if (refreshedCardsCount == null || refreshedDueCardsCount == null) {
+      try {
+        final deck = await (_getDeckDetailFn ?? _deckService.getDeckDetail)(
+          deckId,
+        );
+        refreshedCardsCount ??= deck.stats.cardsCount;
+        refreshedDueCardsCount ??= deck.stats.dueCards;
+      } catch (e, s) {
+        logger.w(
+          'Failed to refresh deck detail for empty-study state, deck=$deckId',
+        );
+        logger.e('deck detail refresh error: $e', stackTrace: s);
+      }
     }
 
     return DeckStudyLoadResult(
       cardDetail: null,
       refreshedCardsCount: refreshedCardsCount,
+      refreshedDueCardsCount: refreshedDueCardsCount,
     );
   }
 
-  Future<int?> _loadTagCardsCount(String deckId, String tagId) async {
+  Future<DeckCardsStats?> _loadCardsStats(String deckId, String? tagId) async {
     try {
-      return await _getCardsCountFn(deckId, tagId: tagId);
+      return await _getCardsStatsFn(deckId, tagId: tagId);
     } catch (e, s) {
-      logger.w('Failed to load tag card stats deck=$deckId tag=$tagId');
-      logger.e('tag card stats error: $e', stackTrace: s);
+      logger.w(
+        'Failed to load card stats deck=$deckId tag=${tagId ?? '(none)'}',
+      );
+      logger.e('card stats error: $e', stackTrace: s);
       return null;
     }
   }

@@ -5,6 +5,7 @@ import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/models/publish_preview.dart';
 import 'package:retentio/providers/main_tab_provider.dart'
     show discoveryRefreshSignalProvider;
 import 'package:retentio/services/apis/deck_publish_service.dart';
@@ -14,9 +15,10 @@ import 'package:retentio/widgets/app_button.dart';
 enum _PublishStatus { idle, loading, success, error }
 
 class PublishDeckSheet extends ConsumerStatefulWidget {
-  const PublishDeckSheet({super.key, required this.deck});
+  const PublishDeckSheet({super.key, required this.deck, this.onPublished});
 
   final Deck deck;
+  final VoidCallback? onPublished;
 
   @override
   ConsumerState<PublishDeckSheet> createState() => _PublishDeckSheetState();
@@ -26,6 +28,36 @@ class _PublishDeckSheetState extends ConsumerState<PublishDeckSheet> {
   _PublishStatus _status = _PublishStatus.idle;
   int? _publishedVersion;
   String? _error;
+  PublishPreview? _preview;
+  bool _previewLoading = false;
+
+  bool get _isUpdate => widget.deck.isPublishedSource;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isUpdate) {
+      _loadPreview();
+    }
+  }
+
+  Future<void> _loadPreview() async {
+    setState(() => _previewLoading = true);
+    try {
+      final preview = await DeckPublishService.of.getPublishPreview(
+        widget.deck.id,
+        detail: true,
+      );
+      if (!mounted) return;
+      setState(() => _preview = preview);
+    } catch (_) {
+      // Non-fatal: sheet still allows publish.
+    } finally {
+      if (mounted) {
+        setState(() => _previewLoading = false);
+      }
+    }
+  }
 
   Future<void> _publish() async {
     setState(() {
@@ -39,8 +71,7 @@ class _PublishDeckSheetState extends ConsumerState<PublishDeckSheet> {
         _status = _PublishStatus.success;
         _publishedVersion = result.publishedVersion;
       });
-      // Refresh Discovery list in the background so it's up to date when
-      // the user navigates there, without forcing a tab switch.
+      widget.onPublished?.call();
       ref.read(discoveryRefreshSignalProvider.notifier).increment();
     } catch (e) {
       if (!mounted) return;
@@ -56,6 +87,10 @@ class _PublishDeckSheetState extends ConsumerState<PublishDeckSheet> {
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final title = _isUpdate ? loc.publishDeckUpdate : loc.publishDeck;
+    final actionLabel = _status == _PublishStatus.loading
+        ? loc.publishingDeck
+        : (_isUpdate ? loc.publishDeckUpdate : loc.publishDeckAction);
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -68,7 +103,6 @@ class _PublishDeckSheetState extends ConsumerState<PublishDeckSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 标题行
           Row(
             children: [
               Container(
@@ -89,7 +123,7 @@ class _PublishDeckSheetState extends ConsumerState<PublishDeckSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      loc.publishDeck,
+                      title,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -117,14 +151,36 @@ class _PublishDeckSheetState extends ConsumerState<PublishDeckSheet> {
               theme: theme,
             ),
           ] else ...[
-            // 说明文字
-            Text(
-              loc.publishDeckHint,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: scheme.onSurface.withValues(alpha: 0.68),
-                height: 1.5,
+            if (_isUpdate) ...[
+              if (_previewLoading)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    loc.publishingDeck,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: scheme.onSurface.withValues(alpha: 0.55),
+                    ),
+                  ),
+                )
+              else if (_preview != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    _preview!.summaryLine(),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: scheme.onSurface.withValues(alpha: 0.78),
+                      height: 1.45,
+                    ),
+                  ),
+                ),
+            ] else
+              Text(
+                loc.publishDeckHint,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurface.withValues(alpha: 0.68),
+                  height: 1.5,
+                ),
               ),
-            ),
             if (_error != null) ...[
               const SizedBox(height: 10),
               Text(
@@ -136,9 +192,7 @@ class _PublishDeckSheetState extends ConsumerState<PublishDeckSheet> {
             ],
             const SizedBox(height: 20),
             AppButton(
-              label: _status == _PublishStatus.loading
-                  ? loc.publishingDeck
-                  : loc.publishDeckAction,
+              label: actionLabel,
               isLoading: _status == _PublishStatus.loading,
               fullWidth: true,
               onPressed: _status == _PublishStatus.loading ? null : _publish,
