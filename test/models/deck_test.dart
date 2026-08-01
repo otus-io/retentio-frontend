@@ -39,6 +39,17 @@ void main() {
       expect(stats.factsCount, 0);
       expect(stats.dueCards, 0);
       expect(stats.cardsCount, 0);
+      expect(stats.totalReviews, 0);
+      expect(stats.totalReviewsToday, 0);
+    });
+
+    test('fromJson uses default 0 for null total_reviews fields', () {
+      final stats = DeckStats.fromJson({
+        'total_reviews': null,
+        'total_reviews_today': null,
+      });
+      expect(stats.totalReviews, 0);
+      expect(stats.totalReviewsToday, 0);
     });
 
     test(
@@ -80,6 +91,8 @@ void main() {
       );
       final again = DeckStats.fromJson(original.toJson());
       expect(again.cardsCount, original.cardsCount);
+      expect(again.totalReviews, 9);
+      expect(again.totalReviewsToday, 2);
       expect(again.lastReviewedAt, original.lastReviewedAt);
     });
   });
