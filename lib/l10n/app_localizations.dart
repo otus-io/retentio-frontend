@@ -236,10 +236,10 @@ abstract class AppLocalizations {
   /// **'words'**
   String get words;
 
-  /// Progress label
+  /// Deck card coverage label (seen cards / total cards)
   ///
   /// In en, this message translates to:
-  /// **'Progress'**
+  /// **'Coverage'**
   String get progress;
 
   /// Cards label
@@ -253,6 +253,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New'**
   String get newCards;
+
+  /// Lifetime card review count for a deck
+  ///
+  /// In en, this message translates to:
+  /// **'Total Reviews'**
+  String get totalReviews;
 
   /// Learn tab label in bottom navigation
   ///

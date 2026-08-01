@@ -24,6 +24,8 @@ DeckStats _$DeckStatsFromJson(Map<String, dynamic> json) => DeckStats(
   dueCards: (json['due_cards'] as num?)?.toInt() ?? 0,
   hiddenCards: (json['hidden_cards'] as num?)?.toInt() ?? 0,
   newCardsToday: (json['new_cards_today'] as num?)?.toInt() ?? 0,
+  totalReviews: (json['total_reviews'] as num?)?.toInt() ?? 0,
+  totalReviewsToday: (json['total_reviews_today'] as num?)?.toInt() ?? 0,
   lastReviewedAt: (json['last_reviewed_at'] as num?)?.toInt() ?? 0,
 );
 
@@ -35,6 +37,8 @@ Map<String, dynamic> _$DeckStatsToJson(DeckStats instance) => <String, dynamic>{
   'due_cards': instance.dueCards,
   'hidden_cards': instance.hiddenCards,
   'new_cards_today': instance.newCardsToday,
+  'total_reviews': instance.totalReviews,
+  'total_reviews_today': instance.totalReviewsToday,
   'last_reviewed_at': instance.lastReviewedAt,
 };
 

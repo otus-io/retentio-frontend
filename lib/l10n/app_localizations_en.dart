@@ -79,13 +79,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get words => 'words';
 
   @override
-  String get progress => 'Progress';
+  String get progress => 'Coverage';
 
   @override
   String get cards => 'cards';
 
   @override
   String get newCards => 'New';
+
+  @override
+  String get totalReviews => 'Total Reviews';
 
   @override
   String get review => 'Review';

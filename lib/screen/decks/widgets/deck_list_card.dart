@@ -138,8 +138,8 @@ class DeckListCard extends StatelessWidget {
             Row(
               children: [
                 _StatBox(
-                  value: deck.stats.unseenCards.toString(),
-                  label: loc.newCards,
+                  value: deck.stats.totalReviews.toString(),
+                  label: loc.totalReviews,
                   color: scheme.primary,
                   theme: theme,
                   scheme: scheme,

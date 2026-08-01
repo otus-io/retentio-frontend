@@ -92,9 +92,9 @@
   "@words": {
     "description": "Words label"
   },
-  "progress": "Progress",
+  "progress": "Coverage",
   "@progress": {
-    "description": "Progress label"
+    "description": "Deck card coverage label (seen cards / total cards)"
   },
   "cards": "cards",
   "@cards": {
@@ -103,6 +103,10 @@
   "newCards": "New",
   "@newCards": {
     "description": "New cards label"
+  },
+  "totalReviews": "Total Reviews",
+  "@totalReviews": {
+    "description": "Lifetime card review count for a deck"
   },
   "review": "Review",
   "@review": {
