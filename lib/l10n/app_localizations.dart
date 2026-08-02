@@ -140,6 +140,12 @@ abstract class AppLocalizations {
   /// **'Login'**
   String get loginPageTitle;
 
+  /// Brand tagline under the app name on the login screen
+  ///
+  /// In en, this message translates to:
+  /// **'Short daily sessions. Progress that compounds.'**
+  String get loginTagline;
+
   /// Email input field label
   ///
   /// In en, this message translates to:

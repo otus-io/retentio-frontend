@@ -151,7 +151,7 @@ class _LoginPanel extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _LoginBrandHeader(theme: theme, scheme: scheme),
+            _LoginBrandHeader(loc: loc, theme: theme, scheme: scheme),
             const SizedBox(height: LoginTokens.spaceXl),
             _LoginForm(
               isDark: isDark,
@@ -178,8 +178,13 @@ class _LoginPanel extends StatelessWidget {
 }
 
 class _LoginBrandHeader extends StatelessWidget {
-  const _LoginBrandHeader({required this.theme, required this.scheme});
+  const _LoginBrandHeader({
+    required this.loc,
+    required this.theme,
+    required this.scheme,
+  });
 
+  final AppLocalizations loc;
   final ThemeData theme;
   final ColorScheme scheme;
 
@@ -203,7 +208,7 @@ class _LoginBrandHeader extends StatelessWidget {
         ),
         const SizedBox(height: LoginTokens.spaceXs),
         Text(
-          'Short daily sessions, lasting memory.',
+          loc.loginTagline,
           style: theme.textTheme.bodySmall?.copyWith(
             color: scheme.onSurfaceVariant,
           ),

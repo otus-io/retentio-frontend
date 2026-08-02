@@ -28,6 +28,10 @@
   "@loginPageTitle": {
     "description": "Login page title"
   },
+  "loginTagline": "Short daily sessions. Progress that compounds.",
+  "@loginTagline": {
+    "description": "Brand tagline under the app name on the login screen"
+  },
   "email": "Email",
   "@email": {
     "description": "Email input field label"

@@ -30,6 +30,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginPageTitle => 'Login';
 
   @override
+  String get loginTagline => 'Short daily sessions. Progress that compounds.';
+
+  @override
   String get email => 'Email';
 
   @override
