@@ -17,6 +17,8 @@ Deck _makeDeck({List<String> fields = const []}) {
       dueCards: 0,
       hiddenCards: 0,
       newCardsToday: 0,
+      totalReviews: 0,
+      totalReviewsToday: 0,
       lastReviewedAt: 0,
     ),
     rate: 10,

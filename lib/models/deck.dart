@@ -10,6 +10,8 @@ const DeckStats _emptyDeckStats = DeckStats(
   dueCards: 0,
   hiddenCards: 0,
   newCardsToday: 0,
+  totalReviews: 0,
+  totalReviewsToday: 0,
   lastReviewedAt: 0,
 );
 
@@ -39,6 +41,8 @@ class DeckStats {
     @JsonKey(defaultValue: 0) required this.dueCards,
     @JsonKey(defaultValue: 0) required this.hiddenCards,
     @JsonKey(defaultValue: 0) required this.newCardsToday,
+    @JsonKey(defaultValue: 0) required this.totalReviews,
+    @JsonKey(defaultValue: 0) required this.totalReviewsToday,
     @JsonKey(defaultValue: 0, fromJson: _intFromJson)
     required this.lastReviewedAt,
   });
@@ -50,6 +54,8 @@ class DeckStats {
   final int dueCards;
   final int hiddenCards;
   final int newCardsToday;
+  final int totalReviews;
+  final int totalReviewsToday;
   final int lastReviewedAt;
 
   factory DeckStats.fromJson(Map<String, dynamic> json) =>

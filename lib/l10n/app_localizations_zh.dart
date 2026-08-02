@@ -30,6 +30,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loginPageTitle => '登录';
 
   @override
+  String get loginTagline => '日积跬步，以至千里。';
+
+  @override
   String get email => '邮箱';
 
   @override
@@ -78,13 +81,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get words => '单词';
 
   @override
-  String get progress => '学习进度';
+  String get progress => '覆盖率';
 
   @override
   String get cards => '卡片';
 
   @override
   String get newCards => '新卡片';
+
+  @override
+  String get totalReviews => '累计复习';
 
   @override
   String get review => '复习';

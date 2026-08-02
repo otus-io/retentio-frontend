@@ -39,6 +39,17 @@ void main() {
       expect(stats.factsCount, 0);
       expect(stats.dueCards, 0);
       expect(stats.cardsCount, 0);
+      expect(stats.totalReviews, 0);
+      expect(stats.totalReviewsToday, 0);
+    });
+
+    test('fromJson uses default 0 for null total_reviews fields', () {
+      final stats = DeckStats.fromJson({
+        'total_reviews': null,
+        'total_reviews_today': null,
+      });
+      expect(stats.totalReviews, 0);
+      expect(stats.totalReviewsToday, 0);
     });
 
     test(
@@ -52,11 +63,15 @@ void main() {
           'due_cards': 5,
           'hidden_cards': 6,
           'new_cards_today': 7,
+          'total_reviews': 9,
+          'total_reviews_today': 2,
           'last_reviewed_at': 1700000000,
         });
         expect(stats.reviewedCards, 4);
         expect(stats.hiddenCards, 6);
         expect(stats.newCardsToday, 7);
+        expect(stats.totalReviews, 9);
+        expect(stats.totalReviewsToday, 2);
         expect(stats.lastReviewedAt, 1700000000);
       },
     );
@@ -70,10 +85,14 @@ void main() {
         dueCards: 5,
         hiddenCards: 6,
         newCardsToday: 7,
+        totalReviews: 9,
+        totalReviewsToday: 2,
         lastReviewedAt: 8,
       );
       final again = DeckStats.fromJson(original.toJson());
       expect(again.cardsCount, original.cardsCount);
+      expect(again.totalReviews, 9);
+      expect(again.totalReviewsToday, 2);
       expect(again.lastReviewedAt, original.lastReviewedAt);
     });
   });
@@ -230,6 +249,8 @@ void main() {
             dueCards: 4,
             hiddenCards: 0,
             newCardsToday: 0,
+            totalReviews: 0,
+            totalReviewsToday: 0,
             lastReviewedAt: 0,
           ),
           rate: 5,
@@ -258,6 +279,8 @@ void main() {
             dueCards: 0,
             hiddenCards: 0,
             newCardsToday: 0,
+            totalReviews: 0,
+            totalReviewsToday: 0,
             lastReviewedAt: 0,
           ),
           rate: 0,
@@ -282,6 +305,8 @@ void main() {
             dueCards: 0,
             hiddenCards: 0,
             newCardsToday: 0,
+            totalReviews: 0,
+            totalReviewsToday: 0,
             lastReviewedAt: 0,
           ),
           rate: 0,

@@ -28,6 +28,10 @@
   "@loginPageTitle": {
     "description": "Login page title"
   },
+  "loginTagline": "Short daily sessions. Progress that compounds.",
+  "@loginTagline": {
+    "description": "Brand tagline under the app name on the login screen"
+  },
   "email": "Email",
   "@email": {
     "description": "Email input field label"
@@ -92,9 +96,9 @@
   "@words": {
     "description": "Words label"
   },
-  "progress": "Progress",
+  "progress": "Coverage",
   "@progress": {
-    "description": "Progress label"
+    "description": "Deck card coverage label (seen cards / total cards)"
   },
   "cards": "cards",
   "@cards": {
@@ -103,6 +107,10 @@
   "newCards": "New",
   "@newCards": {
     "description": "New cards label"
+  },
+  "totalReviews": "Total Reviews",
+  "@totalReviews": {
+    "description": "Lifetime card review count for a deck"
   },
   "review": "Review",
   "@review": {
