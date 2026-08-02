@@ -30,7 +30,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginPageTitle => 'Login';
 
   @override
-  String get loginTagline => 'Short daily sessions. Progress that compounds.';
+  String get loginTagline =>
+      'A journey of a thousand miles begins with a single step';
 
   @override
   String get email => 'Email';

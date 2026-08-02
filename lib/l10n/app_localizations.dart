@@ -145,7 +145,7 @@ abstract class AppLocalizations {
   /// Brand tagline under the app name on the login screen
   ///
   /// In en, this message translates to:
-  /// **'Short daily sessions. Progress that compounds.'**
+  /// **'A journey of a thousand miles begins with a single step'**
   String get loginTagline;
 
   /// Email input field label

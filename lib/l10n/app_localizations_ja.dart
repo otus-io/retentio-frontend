@@ -30,7 +30,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get loginPageTitle => 'ログイン';
 
   @override
-  String get loginTagline => '毎日少しずつ。積み重ねが力になる。';
+  String get loginTagline => '千里の道も一歩から';
 
   @override
   String get email => 'メールアドレス';
