@@ -99,29 +99,11 @@ class LoginScreen extends HookConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    scheme.primary.withValues(alpha: 0.24),
-                                    scheme.secondary.withValues(alpha: 0.18),
-                                  ],
-                                ),
-                                borderRadius: AppThemeTokens.borderRadiusMd,
-                                border: Border.all(
-                                  color: scheme.outlineVariant,
-                                  width: LoginTokens.hairlineBorderWidth,
-                                ),
-                              ),
-                              child: Icon(
-                                LucideIcons.graduationCap,
-                                color: scheme.primary,
-                                size: LoginTokens.brandIconSize,
-                              ),
+                            Image.asset(
+                              'assets/images/rete_app_icon_mark.png',
+                              width: LoginTokens.brandBadgeSize,
+                              height: LoginTokens.brandBadgeSize,
+                              filterQuality: FilterQuality.high,
                             ),
                             const SizedBox(height: LoginTokens.spaceMd),
                             Text(

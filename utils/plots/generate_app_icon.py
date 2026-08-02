@@ -1,8 +1,8 @@
-"""Generate the Rete app icon: blue graduation-cap outline on a tight-corner square.
+"""Generate the Rete app icon: blue graduation-cap outline on a soft circle.
 
-Recreates the reference mark (pastel diagonal gradient + tightly cropped corners
-+ centered line-art mortarboard). Writes SVG by default; also PNG when Pillow is
-available (or via rsvg-convert if installed).
+Recreates the reference mark (pastel diagonal gradient circle + centered
+line-art mortarboard). Writes SVG by default; also PNG when Pillow is available
+(or via rsvg-convert if installed).
 
 Deps:  pip install pillow  (optional, for PNG)
 Run:   python3 generate_app_icon.py [output.svg|output.png]
@@ -20,18 +20,15 @@ DEFAULT_PNG = os.path.join(HERE, "rete_app_icon.png")
 
 # Canvas (iOS / Play Store master size)
 SIZE = 1024
-# Tight corner crop ~10% of side (sharper than iOS squircle)
-RADIUS = 102
+# Cap diamond half-width as a fraction of canvas (tighter = larger).
+CAP_SCALE = 0.36
 
-# Soft fill — match webapp dark --background (#0a0a0a)
-GRAD_TL = (10, 10, 10)  # #0A0A0A
-GRAD_BR = (10, 10, 10)  # #0A0A0A
-# Cap stroke (sampled blue from reference)
-STROKE = (85, 114, 238)  # #5572EE
-# Diamond half-width as fraction of canvas (~78% full width; tight margins)
-CAP_SCALE = 0.39
-# Stroke scales with cap so line weight stays proportional
-STROKE_W = 86  # px at SIZE=1024
+# Soft diagonal fill (top-left lavender -> bottom-right mint), sampled from ref
+GRAD_TL = (230, 233, 247)  # #E6E9F7
+GRAD_BR = (220, 240, 236)  # #DCF0EC
+# Cap stroke
+STROKE = (37, 99, 235)  # #2563EB
+STROKE_W = 58  # px at SIZE=1024
 
 
 def _hex(rgb: tuple[int, int, int]) -> str:
@@ -61,7 +58,8 @@ def _cap_geometry(cx: float, cy: float, scale: float):
     base_bottom = (cx, base_top + base_depth)
 
     # Tassel from the right tip: drop + short outward tick
-    drop = scale * 0.78
+    # Slightly shorter drop keeps the mark inside a tight circular crop.
+    drop = scale * 0.62
     tick = scale * 0.14
     tassel = [right, (right[0], right[1] + drop), (right[0] + tick, right[1] + drop)]
 
@@ -102,26 +100,30 @@ def _tassel_d(pts) -> str:
     )
 
 
-def compose_svg(size: int = SIZE) -> str:
+def compose_svg(size: int = SIZE, *, background: bool = True) -> str:
     cx = cy = size / 2
     scale = size * CAP_SCALE
-    # Cap is heavier below the diamond (base + tassel); shift up to center
-    cy -= size * 0.055
+    cy -= size * 0.01  # optical vertical center
     diamond, bl, br, bb, tassel = _cap_geometry(cx, cy, scale)
     stroke = _hex(STROKE)
     sw = STROKE_W * (size / SIZE)
-    r = RADIUS * (size / SIZE)
+    r = size / 2
 
-    return f'''<?xml version="1.0" encoding="utf-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 {size} {size}">
-  <defs>
+    if background:
+        defs = f'''  <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="{_hex(GRAD_TL)}"/>
       <stop offset="1" stop-color="{_hex(GRAD_BR)}"/>
     </linearGradient>
   </defs>
-  <rect width="{size}" height="{size}" rx="{r:.0f}" ry="{r:.0f}" fill="url(#bg)"/>
-  <g fill="none" stroke="{stroke}" stroke-width="{sw:.1f}"
+  <circle cx="{r:.0f}" cy="{r:.0f}" r="{r:.0f}" fill="url(#bg)"/>
+'''
+    else:
+        defs = ""
+
+    return f'''<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 {size} {size}">
+{defs}  <g fill="none" stroke="{stroke}" stroke-width="{sw:.1f}"
      stroke-linecap="round" stroke-linejoin="round">
     <path d="{_diamond_d(diamond)}"/>
     <path d="{_base_d(bl, br, bb)}"/>
@@ -131,17 +133,17 @@ def compose_svg(size: int = SIZE) -> str:
 '''
 
 
-def write_svg(path: str, size: int = SIZE) -> None:
+def write_svg(path: str, size: int = SIZE, *, background: bool = True) -> None:
     with open(path, "w") as f:
-        f.write(compose_svg(size))
+        f.write(compose_svg(size, background=background))
 
 
-def write_png(path: str, size: int = SIZE) -> None:
+def write_png(path: str, size: int = SIZE, *, background: bool = True) -> None:
     """Rasterize via rsvg-convert if present, else Pillow."""
     rsvg = shutil.which("rsvg-convert")
     if rsvg:
         svg_tmp = path + ".__tmp.svg"
-        write_svg(svg_tmp, size)
+        write_svg(svg_tmp, size, background=background)
         try:
             subprocess.run(
                 [rsvg, "-w", str(size), "-h", str(size), svg_tmp, "-o", path],
@@ -162,35 +164,41 @@ def write_png(path: str, size: int = SIZE) -> None:
     try:
         import cairosvg  # type: ignore
 
-        cairosvg.svg2png(bytestring=compose_svg(size).encode("utf-8"),
-                         write_to=path, output_width=size, output_height=size)
+        cairosvg.svg2png(
+            bytestring=compose_svg(size, background=background).encode("utf-8"),
+            write_to=path,
+            output_width=size,
+            output_height=size,
+        )
         return
     except Exception:
         pass
 
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    r = int(RADIUS * (size / SIZE))
-    mask = Image.new("L", (size, size), 0)
-    ImageDraw.Draw(mask).rounded_rectangle(
-        [0, 0, size - 1, size - 1], radius=r, fill=255
-    )
-    denom = max(size * 2 - 2, 1)
-    px = img.load()
-    for y in range(size):
-        for x in range(size):
-            t = (x + y) / denom
-            rgb = tuple(
-                round(GRAD_TL[i] + (GRAD_BR[i] - GRAD_TL[i]) * t) for i in range(3)
-            )
-            px[x, y] = (*rgb, 255)
-    img.putalpha(mask)
+    if background:
+        mask = Image.new("L", (size, size), 0)
+        ImageDraw.Draw(mask).ellipse([0, 0, size - 1, size - 1], fill=255)
+        denom = max(size * 2 - 2, 1)
+        px = img.load()
+        for y in range(size):
+            for x in range(size):
+                t = (x + y) / denom
+                rgb = tuple(
+                    round(GRAD_TL[i] + (GRAD_BR[i] - GRAD_TL[i]) * t) for i in range(3)
+                )
+                px[x, y] = (*rgb, 255)
+        img.putalpha(mask)
 
-    cx = cy = size / 2
-    scale = size * CAP_SCALE
-    cy -= size * 0.055
+    # Pillow does not antialias ImageDraw paths. Draw the line art at 4x and
+    # downsample it so curved strokes (especially the cap base) stay smooth.
+    antialias = 4
+    render_size = size * antialias
+    cx = cy = render_size / 2
+    scale = render_size * CAP_SCALE
+    cy -= render_size * 0.01
     diamond, bl, br, bb, tassel = _cap_geometry(cx, cy, scale)
-    sw = max(1, int(STROKE_W * (size / SIZE)))
-    overlay = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    sw = max(1, round(STROKE_W * (render_size / SIZE)))
+    overlay = Image.new("RGBA", (render_size, render_size), (0, 0, 0, 0))
     od = ImageDraw.Draw(overlay)
     stroke = (*STROKE, 255)
 
@@ -205,7 +213,9 @@ def write_png(path: str, size: int = SIZE) -> None:
     c3 = (bb[0] + (br[0] - bl[0]) * 0.25, cy_b)
     c4 = (br[0], br[1] + (cy_b - br[1]) * k)
 
-    def cubic(p0, p1, p2, p3, n=24):
+    def cubic(p0, p1, p2, p3, n=None):
+        if n is None:
+            n = max(24, round(render_size * 24 / SIZE))
         out = []
         for i in range(n + 1):
             t = i / n
@@ -218,7 +228,20 @@ def write_png(path: str, size: int = SIZE) -> None:
         return out
 
     base_pts = cubic(bl, c1, c2, bb) + cubic(bb, c3, c4, br)[1:]
-    od.line(base_pts, fill=stroke, width=sw, joint="curve")
+    # Dense samples already form a smooth curve. Asking ImageDraw for a
+    # rounded joint at every sample can create radial artifacts after resize.
+    od.line(base_pts, fill=stroke, width=sw)
+    curve_radius = sw / 2
+    for x, y in base_pts:
+        od.ellipse(
+            [
+                x - curve_radius,
+                y - curve_radius,
+                x + curve_radius,
+                y + curve_radius,
+            ],
+            fill=stroke,
+        )
     od.line(tassel, fill=stroke, width=sw, joint="curve")
 
     # Round caps at endpoints
@@ -228,6 +251,7 @@ def write_png(path: str, size: int = SIZE) -> None:
             [p[0] - rcap, p[1] - rcap, p[0] + rcap, p[1] + rcap], fill=stroke
         )
 
+    overlay = overlay.resize((size, size), Image.Resampling.LANCZOS)
     img = Image.alpha_composite(img, overlay)
     img.save(path)
 

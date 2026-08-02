@@ -2,15 +2,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0A0A0A"/>
-      <stop offset="1" stop-color="#0A0A0A"/>
+      <stop offset="0" stop-color="#E6E9F7"/>
+      <stop offset="1" stop-color="#DCF0EC"/>
     </linearGradient>
   </defs>
-  <rect width="1024" height="1024" rx="102" ry="102" fill="url(#bg)"/>
-  <g fill="none" stroke="#5572EE" stroke-width="86.0"
+  <circle cx="512" cy="512" r="512" fill="url(#bg)"/>
+  <g fill="none" stroke="#2563EB" stroke-width="58.0"
      stroke-linecap="round" stroke-linejoin="round">
-    <path d="M 512.00 236.03 L 911.36 455.68 L 512.00 675.33 L 112.64 455.68 Z"/>
-    <path d="M 312.32 657.76 C 312.32 750.01 412.16 825.49 512.00 825.49 C 611.84 825.49 711.68 750.01 711.68 657.76"/>
-    <path d="M 911.36 455.68 L 911.36 767.18 L 967.27 767.18"/>
+    <path d="M 512.00 299.01 L 880.64 501.76 L 512.00 704.51 L 143.36 501.76 Z"/>
+    <path d="M 327.68 688.29 C 327.68 773.45 419.84 843.12 512.00 843.12 C 604.16 843.12 696.32 773.45 696.32 688.29"/>
+    <path d="M 880.64 501.76 L 880.64 730.32 L 932.25 730.32"/>
   </g>
 </svg>
