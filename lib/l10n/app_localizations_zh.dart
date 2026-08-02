@@ -69,6 +69,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get decks => '卡组';
 
   @override
+  String get deckListSubtitle => '你的学习卡组';
+
+  @override
   String get profile => '我的';
 
   @override

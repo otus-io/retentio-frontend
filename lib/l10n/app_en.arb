@@ -80,6 +80,10 @@
   "@decks": {
     "description": "Decks tab label in bottom navigation and deck list screen title"
   },
+  "deckListSubtitle": "Your study collections",
+  "@deckListSubtitle": {
+    "description": "Subtitle under the Decks screen title"
+  },
   "profile": "Profile",
   "@profile": {
     "description": "Profile tab label in bottom navigation"

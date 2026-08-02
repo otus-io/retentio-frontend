@@ -20,6 +20,7 @@
   "resetPasswordSent": "若账户存在，重置链接已发送。",
   "home": "首页",
   "decks": "卡组",
+  "deckListSubtitle": "你的学习卡组",
   "profile": "我的",
   "noDecksAvailable": "暂无卡组",
   "retry": "重试",

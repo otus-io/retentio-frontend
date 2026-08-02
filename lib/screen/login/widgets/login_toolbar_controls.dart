@@ -72,6 +72,7 @@ class LoginToolbarControls extends HookConsumerWidget {
                 items: const [
                   DropdownMenuItem(value: Locale('en'), child: Text('EN')),
                   DropdownMenuItem(value: Locale('zh'), child: Text('中')),
+                  DropdownMenuItem(value: Locale('ja'), child: Text('日')),
                 ],
                 onChanged: isLoading
                     ? null

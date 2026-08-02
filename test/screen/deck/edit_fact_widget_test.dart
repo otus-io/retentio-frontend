@@ -70,7 +70,11 @@ void main() {
             ),
             child: MaterialApp.router(
               locale: const Locale('en'),
-              supportedLocales: const [Locale('en'), Locale('zh')],
+              supportedLocales: const [
+                Locale('en'),
+                Locale('zh'),
+                Locale('ja'),
+              ],
               localizationsDelegates: const [
                 AppLocalizations.delegate,
                 GlobalMaterialLocalizations.delegate,

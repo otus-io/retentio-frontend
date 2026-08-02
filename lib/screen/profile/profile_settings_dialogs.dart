@@ -14,6 +14,8 @@ String profileLanguageDisplayName(Locale locale) {
   switch (locale.languageCode) {
     case 'zh':
       return '简体中文';
+    case 'ja':
+      return '日本語';
     case 'en':
       return 'English';
     default:
@@ -51,6 +53,7 @@ Future<void> showProfileLanguageDialog(
           options: const [
             _RadioOption(value: Locale('en'), label: 'English'),
             _RadioOption(value: Locale('zh'), label: '简体中文'),
+            _RadioOption(value: Locale('ja'), label: '日本語'),
           ],
           onChanged: (value) {
             Navigator.of(dialogContext).pop(value);

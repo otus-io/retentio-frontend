@@ -63,7 +63,7 @@ Widget buildTestableWidgetWithOverrides(
     overrides: overrides,
     child: MaterialApp(
       locale: locale,
-      supportedLocales: const [Locale('en'), Locale('zh')],
+      supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -98,7 +98,7 @@ Widget buildTestableWidget(
   return ProviderScope(
     child: MaterialApp(
       locale: locale,
-      supportedLocales: const [Locale('en'), Locale('zh')],
+      supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -131,7 +131,7 @@ Widget buildTestableWidgetWithoutProvider(
   return ProviderScope(
     child: MaterialApp(
       locale: locale,
-      supportedLocales: const [Locale('en'), Locale('zh')],
+      supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

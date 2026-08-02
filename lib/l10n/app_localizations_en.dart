@@ -70,6 +70,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get decks => 'Decks';
 
   @override
+  String get deckListSubtitle => 'Your study collections';
+
+  @override
   String get profile => 'Profile';
 
   @override
