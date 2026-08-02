@@ -287,11 +287,32 @@ def write_png(
     img.save(path)
 
 
+def _require_pillow():
+    """Return Pillow Image, or exit if unavailable."""
+    try:
+        from PIL import Image
+    except ImportError as e:
+        raise SystemExit(
+            "Platform PNG masters need Pillow (`pip install pillow`)"
+        ) from e
+    return Image
+
+
+def _ensure_rgb(Image, path: str) -> None:
+    """Convert path to opaque RGB and verify (App Store / square masters)."""
+    Image.open(path).convert("RGB").save(path)
+    mode = Image.open(path).mode
+    if mode != "RGB":
+        raise SystemExit(f"expected RGB after convert, got {mode} for {path}")
+
+
 def write_platform_masters() -> list[str]:
     """Write ios_icon (square), android_icon (circle), mark_icon (transparent)."""
+    Image = _require_pillow()
     written: list[str] = []
 
-    # Full-bleed square — iOS AppIcon / generic master.
+    # Full-bleed square — iOS AppIcon / generic master (must be opaque RGB).
+    opaque_pngs: list[str] = []
     for svg_path, png_path in (
         (DEFAULT_SVG, DEFAULT_PNG),
         (IOS_ICON_SVG, IOS_ICON_PNG),
@@ -300,27 +321,22 @@ def write_platform_masters() -> list[str]:
         written.append(svg_path)
         write_png(png_path, background=True, shape="square")
         written.append(png_path)
+        opaque_pngs.append(png_path)
 
-    # Circular crop with transparent corners — Android launcher.
+    # Circular crop with transparent corners — Android launcher (RGBA).
     write_svg(ANDROID_ICON_SVG, background=True, shape="circle")
     written.append(ANDROID_ICON_SVG)
     write_png(ANDROID_ICON_PNG, background=True, shape="circle")
     written.append(ANDROID_ICON_PNG)
 
-    # Cap mark only — splash / adaptive foreground / in-app badge.
+    # Cap mark only — splash / adaptive foreground / in-app badge (RGBA).
     write_svg(MARK_ICON_SVG, background=False)
     written.append(MARK_ICON_SVG)
     write_png(MARK_ICON_PNG, background=False)
     written.append(MARK_ICON_PNG)
 
-    # App Store marketing icon must be opaque RGB (no alpha).
-    try:
-        from PIL import Image
-
-        im = Image.open(IOS_ICON_PNG).convert("RGB")
-        im.save(IOS_ICON_PNG)
-    except ImportError:
-        pass
+    for png_path in opaque_pngs:
+        _ensure_rgb(Image, png_path)
 
     return written
 
