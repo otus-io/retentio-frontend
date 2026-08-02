@@ -1,11 +1,13 @@
-"""Generate the Rete app icon: blue graduation-cap outline on a soft circle.
+"""Generate the Rete app icon: blue graduation-cap outline on a soft full-bleed fill.
 
-Recreates the reference mark (pastel diagonal gradient circle + centered
-line-art mortarboard). Writes SVG by default; also PNG when Pillow is available
+Recreates the reference mark (pastel diagonal gradient + centered line-art
+mortarboard). Writes SVG by default; also PNG when Pillow is available
 (or via rsvg-convert if installed).
 
 Deps:  pip install pillow  (optional, for PNG)
-Run:   python3 generate_app_icon.py [output.svg|output.png]
+Run:   python3 generate_app_icon.py
+         → ios_icon (square), android_icon (circle), mark_icon (transparent)
+       python3 generate_app_icon.py [output.svg|output.png]
 """
 from __future__ import annotations
 
@@ -17,18 +19,26 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_SVG = os.path.join(HERE, "rete_app_icon.svg")
 DEFAULT_PNG = os.path.join(HERE, "rete_app_icon.png")
+# Platform masters (1024×1024) written alongside the generic rete_app_icon.*
+IOS_ICON_PNG = os.path.join(HERE, "ios_icon.png")
+IOS_ICON_SVG = os.path.join(HERE, "ios_icon.svg")
+ANDROID_ICON_PNG = os.path.join(HERE, "android_icon.png")
+ANDROID_ICON_SVG = os.path.join(HERE, "android_icon.svg")
+MARK_ICON_PNG = os.path.join(HERE, "mark_icon.png")
+MARK_ICON_SVG = os.path.join(HERE, "mark_icon.svg")
 
 # Canvas (iOS / Play Store master size)
 SIZE = 1024
 # Cap diamond half-width as a fraction of canvas (tighter = larger).
 CAP_SCALE = 0.36
 
-# Soft diagonal fill (top-left lavender -> bottom-right mint), sampled from ref
-GRAD_TL = (230, 233, 247)  # #E6E9F7
-GRAD_BR = (220, 240, 236)  # #DCF0EC
-# Cap stroke
-STROKE = (37, 99, 235)  # #2563EB
-STROKE_W = 58  # px at SIZE=1024
+# Soft diagonal fill (top-left lavender -> bottom-right mint), a bit deeper
+# for home-screen contrast under iOS's squircle mask.
+GRAD_TL = (196, 204, 228)  # #C4CCE4
+GRAD_BR = (186, 218, 208)  # #BADAD0
+# Cap stroke (blue-700 — darker than #2563EB for a crisper silhouette)
+STROKE = (29, 78, 216)  # #1D4ED8
+STROKE_W = 62  # px at SIZE=1024
 
 
 def _hex(rgb: tuple[int, int, int]) -> str:
@@ -100,7 +110,16 @@ def _tassel_d(pts) -> str:
     )
 
 
-def compose_svg(size: int = SIZE, *, background: bool = True) -> str:
+def compose_svg(
+    size: int = SIZE, *, background: bool = True, shape: str = "square"
+) -> str:
+    """Compose the icon SVG.
+
+    ``shape`` is ``\"square\"`` (full-bleed, for iOS) or ``\"circle\"`` (soft
+    circular crop with transparent corners, for Android).
+    """
+    if shape not in ("square", "circle"):
+        raise ValueError(f"shape must be 'square' or 'circle', got {shape!r}")
     cx = cy = size / 2
     scale = size * CAP_SCALE
     cy -= size * 0.01  # optical vertical center
@@ -110,13 +129,18 @@ def compose_svg(size: int = SIZE, *, background: bool = True) -> str:
     r = size / 2
 
     if background:
+        fill = (
+            f'<circle cx="{r:.0f}" cy="{r:.0f}" r="{r:.0f}" fill="url(#bg)"/>'
+            if shape == "circle"
+            else f'<rect width="{size}" height="{size}" fill="url(#bg)"/>'
+        )
         defs = f'''  <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="{_hex(GRAD_TL)}"/>
       <stop offset="1" stop-color="{_hex(GRAD_BR)}"/>
     </linearGradient>
   </defs>
-  <circle cx="{r:.0f}" cy="{r:.0f}" r="{r:.0f}" fill="url(#bg)"/>
+  {fill}
 '''
     else:
         defs = ""
@@ -133,17 +157,21 @@ def compose_svg(size: int = SIZE, *, background: bool = True) -> str:
 '''
 
 
-def write_svg(path: str, size: int = SIZE, *, background: bool = True) -> None:
+def write_svg(
+    path: str, size: int = SIZE, *, background: bool = True, shape: str = "square"
+) -> None:
     with open(path, "w") as f:
-        f.write(compose_svg(size, background=background))
+        f.write(compose_svg(size, background=background, shape=shape))
 
 
-def write_png(path: str, size: int = SIZE, *, background: bool = True) -> None:
+def write_png(
+    path: str, size: int = SIZE, *, background: bool = True, shape: str = "square"
+) -> None:
     """Rasterize via rsvg-convert if present, else Pillow."""
     rsvg = shutil.which("rsvg-convert")
     if rsvg:
         svg_tmp = path + ".__tmp.svg"
-        write_svg(svg_tmp, size, background=background)
+        write_svg(svg_tmp, size, background=background, shape=shape)
         try:
             subprocess.run(
                 [rsvg, "-w", str(size), "-h", str(size), svg_tmp, "-o", path],
@@ -165,7 +193,9 @@ def write_png(path: str, size: int = SIZE, *, background: bool = True) -> None:
         import cairosvg  # type: ignore
 
         cairosvg.svg2png(
-            bytestring=compose_svg(size, background=background).encode("utf-8"),
+            bytestring=compose_svg(size, background=background, shape=shape).encode(
+                "utf-8"
+            ),
             write_to=path,
             output_width=size,
             output_height=size,
@@ -176,8 +206,6 @@ def write_png(path: str, size: int = SIZE, *, background: bool = True) -> None:
 
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     if background:
-        mask = Image.new("L", (size, size), 0)
-        ImageDraw.Draw(mask).ellipse([0, 0, size - 1, size - 1], fill=255)
         denom = max(size * 2 - 2, 1)
         px = img.load()
         for y in range(size):
@@ -187,7 +215,10 @@ def write_png(path: str, size: int = SIZE, *, background: bool = True) -> None:
                     round(GRAD_TL[i] + (GRAD_BR[i] - GRAD_TL[i]) * t) for i in range(3)
                 )
                 px[x, y] = (*rgb, 255)
-        img.putalpha(mask)
+        if shape == "circle":
+            mask = Image.new("L", (size, size), 0)
+            ImageDraw.Draw(mask).ellipse([0, 0, size - 1, size - 1], fill=255)
+            img.putalpha(mask)
 
     # Pillow does not antialias ImageDraw paths. Draw the line art at 4x and
     # downsample it so curved strokes (especially the cap base) stay smooth.
@@ -256,10 +287,48 @@ def write_png(path: str, size: int = SIZE, *, background: bool = True) -> None:
     img.save(path)
 
 
+def write_platform_masters() -> list[str]:
+    """Write ios_icon (square), android_icon (circle), mark_icon (transparent)."""
+    written: list[str] = []
+
+    # Full-bleed square — iOS AppIcon / generic master.
+    for svg_path, png_path in (
+        (DEFAULT_SVG, DEFAULT_PNG),
+        (IOS_ICON_SVG, IOS_ICON_PNG),
+    ):
+        write_svg(svg_path, background=True, shape="square")
+        written.append(svg_path)
+        write_png(png_path, background=True, shape="square")
+        written.append(png_path)
+
+    # Circular crop with transparent corners — Android launcher.
+    write_svg(ANDROID_ICON_SVG, background=True, shape="circle")
+    written.append(ANDROID_ICON_SVG)
+    write_png(ANDROID_ICON_PNG, background=True, shape="circle")
+    written.append(ANDROID_ICON_PNG)
+
+    # Cap mark only — splash / adaptive foreground / in-app badge.
+    write_svg(MARK_ICON_SVG, background=False)
+    written.append(MARK_ICON_SVG)
+    write_png(MARK_ICON_PNG, background=False)
+    written.append(MARK_ICON_PNG)
+
+    # App Store marketing icon must be opaque RGB (no alpha).
+    try:
+        from PIL import Image
+
+        im = Image.open(IOS_ICON_PNG).convert("RGB")
+        im.save(IOS_ICON_PNG)
+    except ImportError:
+        pass
+
+    return written
+
+
 def main() -> None:
     out = sys.argv[1] if len(sys.argv) > 1 else None
     if out is None:
-        targets = [DEFAULT_SVG, DEFAULT_PNG]
+        written = write_platform_masters()
     else:
         base, ext = os.path.splitext(out)
         ext = ext.lower()
@@ -270,17 +339,17 @@ def main() -> None:
         else:
             targets = [out + ".svg", out + ".png"]
 
-    written = []
-    for path in targets:
-        if path.lower().endswith(".svg"):
-            write_svg(path)
-            written.append(path)
-        else:
-            try:
-                write_png(path)
+        written = []
+        for path in targets:
+            if path.lower().endswith(".svg"):
+                write_svg(path)
                 written.append(path)
-            except SystemExit as e:
-                print(e)
+            else:
+                try:
+                    write_png(path)
+                    written.append(path)
+                except SystemExit as e:
+                    print(e)
 
     print("wrote:\n  " + "\n  ".join(os.path.basename(p) for p in written))
 
