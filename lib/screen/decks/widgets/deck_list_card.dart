@@ -148,7 +148,7 @@ class DeckListCard extends StatelessWidget {
                 _StatBox(
                   value: deck.reviewCards.toString(),
                   label: loc.dueCards,
-                  color: scheme.secondary,
+                  color: scheme.error,
                   theme: theme,
                   scheme: scheme,
                 ),
@@ -156,7 +156,7 @@ class DeckListCard extends StatelessWidget {
                 _StatBox(
                   value: deck.stats.factsCount.toString(),
                   label: loc.facts,
-                  color: scheme.onSurface.withValues(alpha: 0.5),
+                  color: scheme.onSurface,
                   theme: theme,
                   scheme: scheme,
                 ),
@@ -211,12 +211,19 @@ class _StatBox extends StatelessWidget {
     final effectiveColor = isZero
         ? scheme.onSurface.withValues(alpha: 0.3)
         : color;
+    final fillTint = !isZero && color == scheme.error
+        ? scheme.error
+        : scheme.primary;
+    final boxColor = Color.alphaBlend(
+      fillTint.withValues(alpha: isZero ? 0.03 : 0.05),
+      scheme.surfaceContainerHighest,
+    );
 
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
-          color: effectiveColor.withValues(alpha: isZero ? 0.04 : 0.08),
+          color: boxColor,
           borderRadius: AppThemeTokens.borderRadiusSm,
         ),
         child: Column(
