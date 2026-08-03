@@ -46,6 +46,8 @@
   "changeTheme": "テーマを変更",
   "themeLight": "ライト",
   "themeDark": "ダーク",
+  "switchToLightMode": "ライトモードに切り替え",
+  "switchToDarkMode": "ダークモードに切り替え",
   "themeSystem": "システム",
   "totalCards": "合計",
   "dueCards": "要復習",

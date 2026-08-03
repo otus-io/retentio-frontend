@@ -43,7 +43,7 @@ class LoginToolbarControls extends HookConsumerWidget {
             icon: isDark ? LucideIcons.moonStar : LucideIcons.sunMedium,
             size: _kThemeIconSize,
             outlined: true,
-            tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
+            tooltip: isDark ? loc.switchToLightMode : loc.switchToDarkMode,
             onPressed: () {
               ref
                   .read(themeModeProvider.notifier)

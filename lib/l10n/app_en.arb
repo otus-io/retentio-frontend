@@ -190,6 +190,14 @@
   "@themeDark": {
     "description": "Dark theme"
   },
+  "switchToLightMode": "Switch to light mode",
+  "@switchToLightMode": {
+    "description": "Tooltip for switching from dark to light theme"
+  },
+  "switchToDarkMode": "Switch to dark mode",
+  "@switchToDarkMode": {
+    "description": "Tooltip for switching from light to dark theme"
+  },
   "themeSystem": "System",
   "@themeSystem": {
     "description": "System theme"
