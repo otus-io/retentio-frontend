@@ -184,6 +184,41 @@ void main() {
         expect(detail!.urgency, 0);
       });
     });
+
+    group('tryFromNextCardData', () {
+      test('parses next_card with urgency as a sibling key', () {
+        final detail = CardDetail.tryFromNextCardData({
+          'id': 'cardB',
+          'fact_id': 'factB',
+          'template': [
+            [0],
+            [1],
+          ],
+          'last_review': 1763269600,
+          'due_date': 1763269900,
+          'hidden': false,
+          'created_at': 1763269500,
+          'front': [
+            {'text': 'Book'},
+          ],
+          'back': [
+            {'text': '书'},
+          ],
+          'urgency': 0.5,
+        });
+
+        expect(detail, isNotNull);
+        expect(detail!.card.id, 'cardB');
+        expect(detail.urgency, 0.5);
+        expect(detail.card.front.first.items.first.value, 'Book');
+      });
+
+      test('returns null when next_card is absent or not an object', () {
+        expect(CardDetail.tryFromNextCardData(null), isNull);
+        expect(CardDetail.tryFromNextCardData(<String, dynamic>{}), isNull);
+        expect(CardDetail.tryFromNextCardData('bad'), isNull);
+      });
+    });
   });
 
   group('CardSlot', () {

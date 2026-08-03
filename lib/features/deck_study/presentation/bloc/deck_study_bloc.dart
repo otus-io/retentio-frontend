@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/features/deck_study/domain/usecases/delete_study_card_usecase.dart';
 import 'package:retentio/features/deck_study/domain/usecases/get_next_due_card_usecase.dart';
 import 'package:retentio/features/deck_study/domain/usecases/load_deck_tags_usecase.dart';
@@ -8,6 +9,8 @@ import 'package:retentio/features/deck_study/domain/usecases/submit_card_review_
 import 'package:retentio/features/deck_study/domain/value_objects/review_interval_range.dart';
 import 'package:retentio/features/deck_study/presentation/bloc/deck_study_event.dart';
 import 'package:retentio/features/deck_study/presentation/bloc/deck_study_state.dart';
+import 'package:retentio/models/card.dart';
+import 'package:retentio/utils/audio_cache_utils.dart';
 
 class DeckStudyBloc extends Cubit<DeckStudyState> {
   DeckStudyBloc({
@@ -57,6 +60,7 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
           clearActiveTagId: event.tagId == null,
           cardsStudied: 0,
           resetCardDetail: true,
+          clearPrefetchedCard: true,
           clearRefreshedCardsCount: true,
           clearRefreshedDueCardsCount: true,
           clearSessionDueTarget: true,
@@ -77,6 +81,7 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
           cardsStudied: 0,
           isLoading: true,
           resetCardDetail: true,
+          clearPrefetchedCard: true,
           clearRefreshedCardsCount: true,
           clearRefreshedDueCardsCount: true,
           clearSessionDueTarget: true,
@@ -133,6 +138,23 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
       return;
     }
 
+    final prefetched = state.prefetchedCard;
+    if (prefetched != null && prefetched.card.id != cardId) {
+      _emit(
+        _stateWithCard(
+          state.copyWith(
+            cardsStudied: state.cardsStudied + 1,
+            clearPrefetchedCard: true,
+          ),
+          prefetched,
+        ),
+      );
+      unawaited(
+        _refillLookahead(cardId: prefetched.card.id, tagId: state.activeTagId),
+      );
+      return;
+    }
+
     await _loadCard(
       resetProgress: false,
       cardsStudiedOverride: state.cardsStudied + 1,
@@ -183,59 +205,114 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
     final detail = result.cardDetail;
 
     if (detail != null) {
-      final nowSec = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-      final interval = ReviewIntervalRange.fromTimestamps(
-        nowSec: nowSec,
-        lastReview: detail.card.lastReview,
-        dueDate: detail.card.dueDate,
-      );
       _emit(
-        state.copyWith(
-          cardDetail: detail,
-          isLoading: false,
-          isHide: false,
-          loadingPhase: DeckStudyLoadingPhase.loaded,
-          clearRefreshedCardsCount:
-              state.activeTagId == null && result.refreshedCardsCount == null,
-          refreshedCardsCount: state.activeTagId != null
-              ? (result.refreshedCardsCount ?? state.refreshedCardsCount)
-              : result.refreshedCardsCount,
-          refreshedDueCardsCount:
-              result.refreshedDueCardsCount ?? state.refreshedDueCardsCount,
-          // Option A: freeze due target at first known value for this session.
-          sessionDueTarget:
-              state.sessionDueTarget ??
-              result.refreshedDueCardsCount ??
-              state.refreshedDueCardsCount,
-          minInterval: interval.minInterval,
-          maxInterval: interval.maxInterval,
-          selectedInterval: interval.midInterval,
+        _stateWithCard(
+          _withLookahead(
+            _withRefreshedCounts(state, result),
+            result.nextCardDetail,
+          ),
+          detail,
         ),
       );
       return;
     }
 
     _emit(
-      state.copyWith(
+      _withRefreshedCounts(state, result).copyWith(
         resetCardDetail: true,
+        clearPrefetchedCard: true,
         isLoading: false,
         isHide: false,
         loadingPhase: DeckStudyLoadingPhase.loaded,
-        clearRefreshedCardsCount:
-            state.activeTagId == null && result.refreshedCardsCount == null,
-        refreshedCardsCount: state.activeTagId != null
-            ? (result.refreshedCardsCount ?? state.refreshedCardsCount)
-            : result.refreshedCardsCount,
-        refreshedDueCardsCount:
-            result.refreshedDueCardsCount ?? state.refreshedDueCardsCount,
-        sessionDueTarget:
-            state.sessionDueTarget ??
-            result.refreshedDueCardsCount ??
-            state.refreshedDueCardsCount,
         minInterval: 0,
         maxInterval: 0,
         selectedInterval: 0,
       ),
+    );
+  }
+
+  /// Refreshes counts and the lookahead after a prefetched card was promoted,
+  /// so the visible card never waits on this request.
+  Future<void> _refillLookahead({
+    required String cardId,
+    required String? tagId,
+  }) async {
+    final DeckStudyLoadResult result;
+    try {
+      result = await _getNextDueCardUseCase(deckId: state.deckId, tagId: tagId);
+    } catch (_) {
+      return;
+    }
+
+    // Drop stale refills: the user may have advanced or changed filter meanwhile.
+    if (state.cardDetail?.card.id != cardId || state.activeTagId != tagId) {
+      return;
+    }
+
+    // A failed or empty refill teaches us nothing while a card is on screen;
+    // keep the current counts and let the next advance load synchronously.
+    final serverCard = result.cardDetail;
+    if (serverCard == null) {
+      return;
+    }
+
+    // When the server now ranks another card first, keep the visible card and
+    // queue that card next instead of swapping content under the user.
+    final lookahead = serverCard.card.id != cardId
+        ? serverCard
+        : result.nextCardDetail;
+
+    _emit(_withLookahead(_withRefreshedCounts(state, result), lookahead));
+  }
+
+  DeckStudyState _withRefreshedCounts(
+    DeckStudyState base,
+    DeckStudyLoadResult result,
+  ) {
+    return base.copyWith(
+      clearRefreshedCardsCount:
+          base.activeTagId == null && result.refreshedCardsCount == null,
+      refreshedCardsCount: base.activeTagId != null
+          ? (result.refreshedCardsCount ?? base.refreshedCardsCount)
+          : result.refreshedCardsCount,
+      refreshedDueCardsCount:
+          result.refreshedDueCardsCount ?? base.refreshedDueCardsCount,
+      // Option A: freeze due target at first known value for this session.
+      sessionDueTarget:
+          base.sessionDueTarget ??
+          result.refreshedDueCardsCount ??
+          base.refreshedDueCardsCount,
+    );
+  }
+
+  DeckStudyState _withLookahead(DeckStudyState base, CardDetail? lookahead) {
+    if (lookahead != null) {
+      // Warm the audio cache so the next card plays without waiting on download.
+      unawaited(prefetchCardAudio(lookahead.card));
+    }
+    return base.copyWith(
+      prefetchedCard: lookahead,
+      clearPrefetchedCard: lookahead == null,
+    );
+  }
+
+  DeckStudyState _stateWithCard(DeckStudyState base, CardDetail detail) {
+    // Warm cache for the visible card too (first open has no prior lookahead).
+    unawaited(prefetchCardAudio(detail.card));
+    final nowSec = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+    final interval = ReviewIntervalRange.fromTimestamps(
+      nowSec: nowSec,
+      lastReview: detail.card.lastReview,
+      dueDate: detail.card.dueDate,
+    );
+    return base.copyWith(
+      cardDetail: detail,
+      isLoading: false,
+      isHide: false,
+      loadingPhase: DeckStudyLoadingPhase.loaded,
+      minInterval: interval.minInterval,
+      maxInterval: interval.maxInterval,
+      selectedInterval: interval.midInterval,
     );
   }
 

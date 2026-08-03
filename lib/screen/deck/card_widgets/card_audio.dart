@@ -28,85 +28,84 @@ class CardAudio extends StatefulWidget {
 
 class _CardAudioState extends State<CardAudio>
     with AutomaticKeepAliveClientMixin {
+  static const _kCompactSize = 36.0;
+  static const _kCompactIconSize = 22.0;
+  static const _kFullHeight = 50.0;
+  static const _kFullIconSize = 28.0;
+  static const _kLoadingOpacity = 0.45;
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final core = Consumer(
       builder: (context, ref, child) {
         final audioState = ref.watch(audioPlayerProvider);
+        final accent = widget.color ?? Colors.blue;
+
         if (audioState.loadFailed) {
           final failIcon = Icon(
             LucideIcons.volumeX,
-            size: widget.compact ? 20 : 28,
+            size: widget.compact ? 20 : _kFullIconSize,
             color: Theme.of(context).disabledColor,
           );
           return widget.compact
               ? Tooltip(
                   message: context.loc.cardAudioUnavailable,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: failIcon,
+                  child: SizedBox(
+                    width: _kCompactSize,
+                    height: _kCompactSize,
+                    child: Center(child: failIcon),
                   ),
                 )
               : SizedBox(
-                  height: 50,
+                  height: _kFullHeight,
                   child: Tooltip(
                     message: context.loc.cardAudioUnavailable,
                     child: Center(child: failIcon),
                   ),
                 );
         }
+
         final isReady = audioState.isReady;
         final isPlaying = ref.watch(
           audioPlayerProvider.select((value) => value.isPlaying),
         );
-        final accent = widget.color ?? Colors.blue;
-        if (!isReady) {
-          return widget.compact
-              ? const SizedBox(
-                  width: 36,
-                  height: 36,
-                  child: Center(
-                    child: SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                )
-              : const SizedBox(
-                  height: 50,
-                  child: Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                );
-        }
+        final notifier = ref.read(audioPlayerProvider.notifier);
+        // Keep play control geometry stable while the player prepares so the
+        // tab bar / row does not reflow when isReady flips.
+        final color = isReady
+            ? accent
+            : accent.withValues(alpha: _kLoadingOpacity);
+
         if (widget.compact) {
-          final notifier = ref.read(audioPlayerProvider.notifier);
-          return IconButton(
-            padding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            iconSize: 22,
-            color: accent,
-            onPressed: notifier.playPause,
-            icon: Icon(isPlaying ? LucideIcons.pause : LucideIcons.play),
+          return SizedBox(
+            width: _kCompactSize,
+            height: _kCompactSize,
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(
+                minWidth: _kCompactSize,
+                minHeight: _kCompactSize,
+              ),
+              iconSize: _kCompactIconSize,
+              color: color,
+              onPressed: isReady ? notifier.playPause : null,
+              icon: Icon(isPlaying ? LucideIcons.pause : LucideIcons.play),
+            ),
           );
         }
+
         return SizedBox(
-          height: 50,
+          height: _kFullHeight,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               IconButton(
                 padding: const EdgeInsets.all(8),
-                iconSize: 28,
-                color: accent,
-                onPressed: ref.read(audioPlayerProvider.notifier).playPause,
+                iconSize: _kFullIconSize,
+                color: color,
+                onPressed: isReady ? notifier.playPause : null,
                 icon: Icon(isPlaying ? LucideIcons.pause : LucideIcons.play),
               ),
               Expanded(
@@ -133,12 +132,21 @@ class _CardAudioState extends State<CardAudio>
                         activeTrackColor: accent,
                         inactiveTrackColor: Colors.grey.withValues(alpha: 0.35),
                         thumbColor: accent,
+                        disabledActiveTrackColor: accent.withValues(
+                          alpha: _kLoadingOpacity,
+                        ),
+                        disabledInactiveTrackColor: Colors.grey.withValues(
+                          alpha: 0.25,
+                        ),
+                        disabledThumbColor: accent.withValues(
+                          alpha: _kLoadingOpacity,
+                        ),
                       ),
                       child: Slider(
                         value: progress.toDouble(),
                         min: 0,
                         max: (max <= 0 ? 1 : max).toDouble(),
-                        onChanged: max <= 0
+                        onChanged: !isReady || max <= 0
                             ? null
                             : (value) => ref
                                   .read(audioPlayerProvider.notifier)

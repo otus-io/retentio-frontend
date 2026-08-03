@@ -10,6 +10,7 @@ class DeckStudyState extends Equatable {
     this.deckTags = const [],
     this.activeTagId,
     this.cardDetail,
+    this.prefetchedCard,
     this.isLoading = false,
     this.cardsStudied = 0,
     this.loadingPhase = DeckStudyLoadingPhase.initial,
@@ -27,6 +28,10 @@ class DeckStudyState extends Equatable {
   final List<Tag> deckTags;
   final String? activeTagId;
   final CardDetail? cardDetail;
+
+  /// Next card served alongside [cardDetail]; shown immediately on advance so
+  /// the user does not wait for the network.
+  final CardDetail? prefetchedCard;
   final bool isLoading;
   final int cardsStudied;
   final DeckStudyLoadingPhase loadingPhase;
@@ -51,6 +56,8 @@ class DeckStudyState extends Equatable {
     bool clearActiveTagId = false,
     CardDetail? cardDetail,
     bool resetCardDetail = false,
+    CardDetail? prefetchedCard,
+    bool clearPrefetchedCard = false,
     bool? isLoading,
     int? cardsStudied,
     DeckStudyLoadingPhase? loadingPhase,
@@ -72,6 +79,9 @@ class DeckStudyState extends Equatable {
       deckTags: deckTags ?? this.deckTags,
       activeTagId: clearActiveTagId ? null : (activeTagId ?? this.activeTagId),
       cardDetail: resetCardDetail ? null : (cardDetail ?? this.cardDetail),
+      prefetchedCard: clearPrefetchedCard
+          ? null
+          : (prefetchedCard ?? this.prefetchedCard),
       isLoading: isLoading ?? this.isLoading,
       cardsStudied: cardsStudied ?? this.cardsStudied,
       loadingPhase: loadingPhase ?? this.loadingPhase,
@@ -100,6 +110,7 @@ class DeckStudyState extends Equatable {
     deckTags,
     activeTagId,
     cardDetail,
+    prefetchedCard,
     isLoading,
     cardsStudied,
     loadingPhase,

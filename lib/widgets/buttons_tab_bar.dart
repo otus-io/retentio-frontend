@@ -250,7 +250,9 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     // context until after layout. Post-frame matches TabBar's own pattern.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _scrollTo(_currentIndex);
+      // Jump on attach: animating here slides the whole strip (and any widget
+      // hosted in a tab, e.g. the card audio control) in when the bar mounts.
+      _scrollTo(_currentIndex, animate: false);
     });
   }
 
@@ -567,7 +569,7 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     _animationController.forward();
   }
 
-  void _scrollTo(int index) {
+  void _scrollTo(int index, {bool animate = true}) {
     if (!mounted) return;
     if (index < 0 || index >= _tabKeys.length) return;
 
@@ -635,8 +637,15 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     offset *= (_textLTR ? 1 : -1);
 
     // scroll the calculated ammount
+    final double target = offset + _scrollController.offset;
+    if (!animate) {
+      _scrollController.jumpTo(
+        target.clamp(0.0, _scrollController.position.maxScrollExtent),
+      );
+      return;
+    }
     _scrollController.animateTo(
-      offset + _scrollController.offset,
+      target,
       duration: Duration(milliseconds: widget.duration),
       curve: Curves.easeInOut,
     );

@@ -52,11 +52,16 @@ class DeckStudySubmitRequest {
 class DeckStudyLoadResult {
   const DeckStudyLoadResult({
     required this.cardDetail,
+    this.nextCardDetail,
     this.refreshedCardsCount,
     this.refreshedDueCardsCount,
   });
 
   final CardDetail? cardDetail;
+
+  /// Second-most urgent card, kept as a lookahead so the next review renders
+  /// without waiting for another request. Null when the queue has no more cards.
+  final CardDetail? nextCardDetail;
 
   /// Set when no due card exists and the deck detail endpoint is used to refresh.
   /// With a tag filter, total cards for that tag from card stats.

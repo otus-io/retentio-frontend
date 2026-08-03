@@ -72,6 +72,52 @@ class _FakeCardHttpClientAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+/// Serves GET `/api/decks/{id}/card` payloads keyed by deck id.
+class _FakeNextCardHttpClientAdapter implements HttpClientAdapter {
+  _FakeNextCardHttpClientAdapter(this.dataByDeckId);
+
+  final Map<String, Map<String, dynamic>> dataByDeckId;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    final deckId = options.path
+        .split('/api/decks/')
+        .last
+        .replaceAll('/card', '');
+    final data = dataByDeckId[deckId];
+    if (options.method != 'GET' || data == null) {
+      return _jsonResponse({'code': -1, 'msg': 'not found', 'data': null}, 404);
+    }
+    return _jsonResponse({'code': 0, 'msg': 'ok', 'data': data}, 200);
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+Map<String, dynamic> _cardPayload(String id) => {
+  'id': id,
+  'fact_id': 'fact-$id',
+  'template': [
+    [0],
+    [1],
+  ],
+  'last_review': 1763269700,
+  'due_date': 1763269800,
+  'hidden': false,
+  'created_at': 1763269600,
+  'front': [
+    {'text': 'front-$id'},
+  ],
+  'back': [
+    {'text': 'back-$id'},
+  ],
+};
+
 ResponseBody _jsonResponse(Map<String, dynamic> body, int statusCode) {
   return ResponseBody.fromString(
     jsonEncode(body),
@@ -162,5 +208,56 @@ void main() {
         expect(result, isNull);
       },
     );
+  });
+
+  group('CardService.getNextDueCard', () {
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      await ApiService.clearToken();
+
+      networkDioClient.configure(
+        baseUrl: 'http://localhost',
+        options: BaseOptions(),
+      );
+      networkDioClient.dio.httpClientAdapter = _FakeNextCardHttpClientAdapter({
+        'empty-deck': {'card': <dynamic>[]},
+        'single-card': {'card': _cardPayload('only'), 'urgency': 1.0},
+        'two-cards': {
+          'card': _cardPayload('first'),
+          'urgency': 2.0,
+          'next_card': {..._cardPayload('second'), 'urgency': 0.5},
+        },
+      });
+    });
+
+    test('returns no cards for an empty deck', () async {
+      final result = await CardService.getNextDueCard('empty-deck');
+
+      expect(result.cardDetail, isNull);
+      expect(result.nextCardDetail, isNull);
+    });
+
+    test('returns no lookahead when the deck has a single card', () async {
+      final result = await CardService.getNextDueCard('single-card');
+
+      expect(result.cardDetail?.card.id, 'only');
+      expect(result.nextCardDetail, isNull);
+    });
+
+    test('parses next_card with its own urgency', () async {
+      final result = await CardService.getNextDueCard('two-cards');
+
+      expect(result.cardDetail?.card.id, 'first');
+      expect(result.cardDetail?.urgency, 2.0);
+      expect(result.nextCardDetail?.card.id, 'second');
+      expect(result.nextCardDetail?.urgency, 0.5);
+    });
+
+    test('returns no cards when the request fails', () async {
+      final result = await CardService.getNextDueCard('missing-deck');
+
+      expect(result.cardDetail, isNull);
+      expect(result.nextCardDetail, isNull);
+    });
   });
 }

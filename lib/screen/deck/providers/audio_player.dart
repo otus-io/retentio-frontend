@@ -5,9 +5,6 @@ import 'package:flutter/foundation.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
-import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/screen/deck/providers/card_audio_mic_handoff.dart';
 import 'package:retentio/utils/audio_cache_utils.dart';
 import 'package:retentio/utils/log.dart';
@@ -21,11 +18,6 @@ final audioUrlProvider = Provider.autoDispose<String>(
     'audioUrlProvider must be overridden in AudioPlayerNotifier',
   ),
 );
-
-Future<String> _localAudioCachePath(String audioUrl) async {
-  final dir = await getTemporaryDirectory();
-  return p.join(dir.path, 'audio', cacheFileNameForAudioUrl(audioUrl));
-}
 
 Future<void> _logInvalidAudioFile(String path) async {
   final f = File(path);
@@ -157,37 +149,18 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
 
   Future<void> _loadAudio(String audioUrl) async {
     try {
-      final path = await _localAudioCachePath(audioUrl);
-      final cacheFile = File(path);
-      final cacheExists = cacheFile.existsSync();
-      var cacheBytes = -1;
-      if (cacheExists) {
-        try {
-          cacheBytes = cacheFile.lengthSync();
-        } catch (_) {}
-      }
-      final cacheUsable = cacheExists && cacheBytes > 0;
-      if (!cacheUsable) {
-        if (cacheExists) {
-          try {
-            await cacheFile.delete();
-          } catch (_) {}
+      final path = await ensureAudioCached(audioUrl);
+      if (path == null) {
+        logger.e('音频缓存失败');
+        if (ref.mounted) {
+          state = state.copyWith(loadFailed: true);
         }
-        logger.i("开始下载音频...");
-        final file = await ApiService.downloadFile(audioUrl, path);
-        logger.i("下载完成: $file");
-        if (file == null || file.isEmpty) {
-          logger.e("下载失败");
-          if (ref.mounted) {
-            state = state.copyWith(loadFailed: true);
-          }
-          return;
-        }
+        return;
       }
       var pathForPlayer = await renameMp3CacheToM4aIfFtyp(path);
       final bytes = await File(pathForPlayer).length();
       if (bytes == 0) {
-        logger.w("Audio file is empty: $pathForPlayer");
+        logger.w('Audio file is empty: $pathForPlayer');
         if (ref.mounted) {
           state = state.copyWith(loadFailed: true);
         }
@@ -217,7 +190,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
         state = state.copyWith(loadFailed: true);
       }
       try {
-        await _logInvalidAudioFile(await _localAudioCachePath(audioUrl));
+        await _logInvalidAudioFile(await localAudioCachePath(audioUrl));
       } catch (_) {}
     }
   }

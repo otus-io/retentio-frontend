@@ -8,7 +8,7 @@ import 'package:retentio/services/apis/tag_service.dart';
 import 'package:retentio/utils/log.dart';
 
 typedef LoadNextDueCardFn =
-    Future<CardDetail?> Function(String deckId, {String? tagId});
+    Future<NextDueCardResult> Function(String deckId, {String? tagId});
 typedef LoadDeckTagsFn = Future<List<Tag>> Function({required String deckId});
 typedef GetDeckDetailFn = Future<Deck> Function(String deckId);
 typedef GetCardsStatsFn =
@@ -43,7 +43,7 @@ class DeckStudyLegacyServiceRepository implements DeckStudyRepository {
     required String deckId,
     String? tagId,
   }) async {
-    CardDetail? response;
+    NextDueCardResult response;
     try {
       response = await _loadNextDueCardFn(deckId, tagId: tagId);
     } catch (e, s) {
@@ -54,17 +54,26 @@ class DeckStudyLegacyServiceRepository implements DeckStudyRepository {
       return const DeckStudyLoadResult(cardDetail: null);
     }
 
-    if (_shouldIgnoreCardDetailForStudy(response)) {
-      logger.w('Ignoring hidden card in deck study: ${response!.card.id}');
-      response = null;
+    var cardDetail = response.cardDetail;
+    if (_shouldIgnoreCardDetailForStudy(cardDetail)) {
+      logger.w('Ignoring hidden card in deck study: ${cardDetail!.card.id}');
+      cardDetail = null;
+    }
+
+    var nextCardDetail = response.nextCardDetail;
+    if (cardDetail == null ||
+        _shouldIgnoreCardDetailForStudy(nextCardDetail) ||
+        nextCardDetail?.card.id == cardDetail.card.id) {
+      nextCardDetail = null;
     }
 
     // Always load stats so study UI can track live due (deck-wide or tag-scoped).
     final cardsStats = await _loadCardsStats(deckId, tagId);
 
-    if (response != null) {
+    if (cardDetail != null) {
       return DeckStudyLoadResult(
-        cardDetail: response,
+        cardDetail: cardDetail,
+        nextCardDetail: nextCardDetail,
         refreshedCardsCount: tagId != null ? cardsStats?.totalCards : null,
         refreshedDueCardsCount: cardsStats?.dueCards,
       );

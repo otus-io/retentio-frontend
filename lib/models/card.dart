@@ -52,6 +52,15 @@ class CardDetail {
     return CardDetail.fromJson(map);
   }
 
+  /// Parses the `next_card` object of GET `/decks/:id/card`, where urgency is a
+  /// sibling of the card fields instead of a separate top-level key.
+  static CardDetail? tryFromNextCardData(dynamic data) {
+    if (data is! Map) return null;
+    final card = Map<String, dynamic>.from(data);
+    if (card.isEmpty) return null;
+    return tryFromApiData({'card': card, 'urgency': card['urgency'] ?? 0});
+  }
+
   Map<String, dynamic> toJson() => _$CardDetailToJson(this);
 }
 
