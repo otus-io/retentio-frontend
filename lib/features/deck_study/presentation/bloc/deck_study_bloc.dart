@@ -138,20 +138,7 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
       return;
     }
 
-    final prefetched = state.prefetchedCard;
-    if (prefetched != null && prefetched.card.id != cardId) {
-      _emit(
-        _stateWithCard(
-          state.copyWith(
-            cardsStudied: state.cardsStudied + 1,
-            clearPrefetchedCard: true,
-          ),
-          prefetched,
-        ),
-      );
-      unawaited(
-        _refillLookahead(cardId: prefetched.card.id, tagId: state.activeTagId),
-      );
+    if (_promotePrefetchedCard(cardId)) {
       return;
     }
 
@@ -159,6 +146,28 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
       resetProgress: false,
       cardsStudiedOverride: state.cardsStudied + 1,
     );
+  }
+
+  /// Shows the prefetched card at once and refills the lookahead in the
+  /// background. Returns false when there is no usable card to promote.
+  bool _promotePrefetchedCard(String reviewedCardId) {
+    final prefetched = state.prefetchedCard;
+    if (prefetched == null || prefetched.card.id == reviewedCardId) {
+      return false;
+    }
+    _emit(
+      _stateWithCard(
+        state.copyWith(
+          cardsStudied: state.cardsStudied + 1,
+          clearPrefetchedCard: true,
+        ),
+        prefetched,
+      ),
+    );
+    unawaited(
+      _refillLookahead(cardId: prefetched.card.id, tagId: state.activeTagId),
+    );
+    return true;
   }
 
   Future<void> _handleDeleteCurrentCard() async {

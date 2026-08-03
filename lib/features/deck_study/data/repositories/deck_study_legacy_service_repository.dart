@@ -87,6 +87,15 @@ class DeckStudyLegacyServiceRepository implements DeckStudyRepository {
       );
     }
 
+    return _emptyDeckWideResult(deckId, cardsStats);
+  }
+
+  /// Deck-wide empty state: fills the counts card stats could not provide from
+  /// deck detail so the study screen still shows real numbers.
+  Future<DeckStudyLoadResult> _emptyDeckWideResult(
+    String deckId,
+    DeckCardsStats? cardsStats,
+  ) async {
     int? refreshedCardsCount = cardsStats?.totalCards;
     int? refreshedDueCardsCount = cardsStats?.dueCards;
     if (refreshedCardsCount == null || refreshedDueCardsCount == null) {

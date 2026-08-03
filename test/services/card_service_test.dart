@@ -99,6 +99,53 @@ class _FakeNextCardHttpClientAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+/// Serves GET `/api/decks/{id}` deck detail payloads keyed by deck id.
+class _FakeDeckDetailHttpClientAdapter implements HttpClientAdapter {
+  _FakeDeckDetailHttpClientAdapter(this.dataByDeckId);
+
+  final Map<String, Map<String, dynamic>> dataByDeckId;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    final deckId = options.path.split('/api/decks/').last;
+    final data = dataByDeckId[deckId];
+    if (options.method != 'GET' || data == null) {
+      return _jsonResponse({'code': -1, 'msg': 'not found', 'data': null}, 404);
+    }
+    return _jsonResponse({'code': 0, 'msg': 'ok', 'data': data}, 200);
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+Map<String, dynamic> _deckPayload({
+  required int cardsCount,
+  required int dueCards,
+}) => {
+  'id': 'deck-1',
+  'name': 'Deck one',
+  'rate': 30,
+  'fields': <String>[],
+  'stats': {
+    'cards_count': cardsCount,
+    'facts_count': 4,
+    'unseen_cards': 2,
+    'reviewed_cards': cardsCount - 2,
+    'due_cards': dueCards,
+    'hidden_cards': 0,
+    'new_cards_today': 0,
+    'last_reviewed_at': 0,
+  },
+  'min_interval': 60,
+  'def_interval': 300,
+  'max_interval': 86400,
+};
+
 Map<String, dynamic> _cardPayload(String id) => {
   'id': id,
   'fact_id': 'fact-$id',
@@ -258,6 +305,34 @@ void main() {
 
       expect(result.cardDetail, isNull);
       expect(result.nextCardDetail, isNull);
+    });
+  });
+
+  group('CardService.getCardsStats without a tag filter', () {
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      await ApiService.clearToken();
+
+      networkDioClient.configure(
+        baseUrl: 'http://localhost',
+        options: BaseOptions(),
+      );
+      networkDioClient.dio.httpClientAdapter = _FakeDeckDetailHttpClientAdapter(
+        {'deck-1': _deckPayload(cardsCount: 12, dueCards: 5)},
+      );
+    });
+
+    test('maps deck detail stats to cards and due counts', () async {
+      final stats = await CardService.getCardsStats('deck-1');
+
+      expect(stats?.totalCards, 12);
+      expect(stats?.dueCards, 5);
+    });
+
+    test('returns null when the deck detail request fails', () async {
+      final stats = await CardService.getCardsStats('missing-deck');
+
+      expect(stats, isNull);
     });
   });
 }

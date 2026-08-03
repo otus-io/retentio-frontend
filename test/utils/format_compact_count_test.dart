@@ -17,5 +17,11 @@ void main() {
     test('compacts millions with two decimal places', () {
       expect(formatCompactCount(1500000), '1.50M');
     });
+
+    test('rolls over to the next unit when rounding reaches 1000', () {
+      expect(formatCompactCount(999994), '999.99k');
+      expect(formatCompactCount(999999), '1.00M');
+      expect(formatCompactCount(999999999), '1.00B');
+    });
   });
 }

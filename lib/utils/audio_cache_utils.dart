@@ -34,6 +34,10 @@ Future<String> localAudioCachePath(String audioUrl) async {
   return p.join(dir.path, 'audio', cacheFileNameForAudioUrl(audioUrl));
 }
 
+/// Downloads in progress, keyed by cache path, so concurrent callers for the
+/// same clip share one download instead of writing the same file twice.
+final Map<String, Future<String?>> _inFlightDownloads = {};
+
 /// Ensures [audioUrl] is present in the shared temp audio cache.
 /// Returns the cache path, or null when the URL is empty or download fails.
 Future<String?> ensureAudioCached(
@@ -46,24 +50,47 @@ Future<String?> ensureAudioCached(
 
   final path = await (cachePath ?? localAudioCachePath)(url);
   final cacheFile = File(path);
-  final cacheExists = cacheFile.existsSync();
   var cacheBytes = -1;
-  if (cacheExists) {
+  if (cacheFile.existsSync()) {
     try {
       cacheBytes = cacheFile.lengthSync();
     } catch (_) {}
   }
-  if (cacheExists && cacheBytes > 0) {
+  // A partial or truncated file is unplayable, so re-download instead of
+  // serving it: a download in flight leaves exactly that behind.
+  if (cacheBytes >= kMinAudioFileBytesForPlayback) {
     return path;
   }
-  if (cacheExists) {
+
+  final pending = _inFlightDownloads[path];
+  if (pending != null) {
+    return pending;
+  }
+  final operation =
+      _downloadToCache(
+        url,
+        path,
+        download ?? ApiService.downloadFile,
+      ).whenComplete(() {
+        // Must not return the removed future: whenComplete would await itself.
+        _inFlightDownloads.remove(path);
+      });
+  _inFlightDownloads[path] = operation;
+  return operation;
+}
+
+Future<String?> _downloadToCache(
+  String url,
+  String path,
+  AudioDownloadFn download,
+) async {
+  final cacheFile = File(path);
+  if (cacheFile.existsSync()) {
     try {
       await cacheFile.delete();
     } catch (_) {}
   }
-
-  final dl = download ?? ApiService.downloadFile;
-  final file = await dl(url, path);
+  final file = await download(url, path);
   if (file == null || file.isEmpty) {
     return null;
   }

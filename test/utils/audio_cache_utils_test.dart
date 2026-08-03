@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -140,10 +141,12 @@ void main() {
       }
     });
 
-    test('skips download when a non-empty cache file exists', () async {
+    test('skips download when a playable cache file exists', () async {
       var downloads = 0;
       final path = '${dir.path}/clip.m4a';
-      await File(path).writeAsBytes([1, 2, 3]);
+      await File(
+        path,
+      ).writeAsBytes(List<int>.filled(kMinAudioFileBytesForPlayback, 1));
 
       final out = await ensureAudioCached(
         'https://cdn/clip.m4a',
@@ -156,6 +159,58 @@ void main() {
 
       expect(out, path);
       expect(downloads, 0);
+    });
+
+    test('re-downloads a cache file too small to play', () async {
+      var downloads = 0;
+      final path = '${dir.path}/truncated.m4a';
+      await File(path).writeAsBytes([1, 2, 3]);
+
+      final out = await ensureAudioCached(
+        'https://cdn/truncated.m4a',
+        cachePath: (_) async => path,
+        download: (url, p) async {
+          downloads += 1;
+          await File(
+            p,
+          ).writeAsBytes(List<int>.filled(kMinAudioFileBytesForPlayback, 2));
+          return p;
+        },
+      );
+
+      expect(out, path);
+      expect(downloads, 1);
+    });
+
+    test('concurrent callers share a single download', () async {
+      var downloads = 0;
+      final path = '${dir.path}/shared.m4a';
+      final gate = Completer<void>();
+
+      final first = ensureAudioCached(
+        'https://cdn/shared.m4a',
+        cachePath: (_) async => path,
+        download: (url, p) async {
+          downloads += 1;
+          await gate.future;
+          await File(
+            p,
+          ).writeAsBytes(List<int>.filled(kMinAudioFileBytesForPlayback, 3));
+          return p;
+        },
+      );
+      final second = ensureAudioCached(
+        'https://cdn/shared.m4a',
+        cachePath: (_) async => path,
+        download: (url, p) async {
+          downloads += 1;
+          return p;
+        },
+      );
+      gate.complete();
+
+      expect(await Future.wait([first, second]), [path, path]);
+      expect(downloads, 1);
     });
 
     test('downloads when cache is missing', () async {
