@@ -328,6 +328,36 @@ abstract class AppLocalizations {
   /// **'日本語'**
   String get languageJapanese;
 
+  /// Native display name for the English locale
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// Native display name for the Simplified Chinese locale
+  ///
+  /// In en, this message translates to:
+  /// **'简体中文'**
+  String get languageChinese;
+
+  /// Compact label for the Japanese locale in the login toolbar
+  ///
+  /// In en, this message translates to:
+  /// **'日'**
+  String get languageJapaneseShort;
+
+  /// Compact label for the English locale in the login toolbar
+  ///
+  /// In en, this message translates to:
+  /// **'EN'**
+  String get languageEnglishShort;
+
+  /// Compact label for the Simplified Chinese locale in the login toolbar
+  ///
+  /// In en, this message translates to:
+  /// **'中'**
+  String get languageChineseShort;
+
   /// Change theme setting
   ///
   /// In en, this message translates to:

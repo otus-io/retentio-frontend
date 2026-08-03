@@ -79,7 +79,7 @@ class MyApp extends ConsumerWidget {
       themeAnimationCurve: Curves.linear,
       themeMode: themeMode,
       locale: locale,
-      supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
+      supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [
         AppLocalizations.delegate,
         RefreshLocalizations.delegate,

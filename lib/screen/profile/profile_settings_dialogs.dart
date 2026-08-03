@@ -13,11 +13,11 @@ const _kDialogOptionPadding = EdgeInsets.symmetric(horizontal: 2);
 String profileLanguageDisplayName(Locale locale, AppLocalizations loc) {
   switch (locale.languageCode) {
     case 'zh':
-      return '简体中文';
+      return loc.languageChinese;
     case 'ja':
       return loc.languageJapanese;
     case 'en':
-      return 'English';
+      return loc.languageEnglish;
     default:
       return locale.languageCode;
   }
@@ -51,8 +51,8 @@ Future<void> showProfileLanguageDialog(
           title: loc.changeLanguage,
           groupValue: currentLocale,
           options: [
-            const _RadioOption(value: Locale('en'), label: 'English'),
-            const _RadioOption(value: Locale('zh'), label: '简体中文'),
+            _RadioOption(value: Locale('en'), label: loc.languageEnglish),
+            _RadioOption(value: Locale('zh'), label: loc.languageChinese),
             _RadioOption(value: Locale('ja'), label: loc.languageJapanese),
           ],
           onChanged: (value) {
