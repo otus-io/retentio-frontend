@@ -122,6 +122,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get changeLanguage => '言語を変更';
 
   @override
+  String get languageJapanese => '日本語';
+
+  @override
   String get changeTheme => 'テーマを変更';
 
   @override
@@ -928,7 +931,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get apiTemplateInvalid => 'カードテンプレートが無効です';
 
   @override
-  String get apiEntryContentRequired => '各エントリには文字、音声、画像、動画、またはJSONが必要です';
+  String get apiEntryContentRequired => '各エントリにはテキスト、音声、画像、動画、またはJSONが必要です';
 
   @override
   String get apiFactNotFound => '項目が見つかりません';
@@ -1244,7 +1247,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String apiFactEntryContent(int index) {
-    return '項目 $index：各エントリには文字、音声、画像、動画、またはJSONが必要です';
+    return '項目 $index：各エントリにはテキスト、音声、画像、動画、またはJSONが必要です';
   }
 
   @override
@@ -1386,7 +1389,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deckUpdatesReviewChanges => '変更を確認';
 
   @override
-  String get deckUpdatesHideReview => '変更を閉じる';
+  String get deckUpdatesHideReview => 'レビューを非表示';
 
   @override
   String get contributeFactEdit => '作者に編集を提出';
@@ -1521,7 +1524,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String pendingSendPartial(int sent, int failed) {
-    return '$sent件を送信、$failed件が失敗';
+    return '$sent件を送信しました。$failed件が失敗しました';
   }
 
   @override

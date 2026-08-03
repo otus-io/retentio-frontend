@@ -322,6 +322,12 @@ abstract class AppLocalizations {
   /// **'Change Language'**
   String get changeLanguage;
 
+  /// Native display name for the Japanese locale
+  ///
+  /// In en, this message translates to:
+  /// **'日本語'**
+  String get languageJapanese;
+
   /// Change theme setting
   ///
   /// In en, this message translates to:

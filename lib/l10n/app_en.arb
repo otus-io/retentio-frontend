@@ -154,6 +154,10 @@
   "@changeLanguage": {
     "description": "Change language setting"
   },
+  "languageJapanese": "日本語",
+  "@languageJapanese": {
+    "description": "Native display name for the Japanese locale"
+  },
   "changeTheme": "Change Theme",
   "@changeTheme": {
     "description": "Change theme setting"

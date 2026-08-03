@@ -124,6 +124,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get changeLanguage => 'Change Language';
 
   @override
+  String get languageJapanese => '日本語';
+
+  @override
   String get changeTheme => 'Change Theme';
 
   @override

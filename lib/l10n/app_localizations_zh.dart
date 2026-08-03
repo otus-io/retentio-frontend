@@ -122,6 +122,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get changeLanguage => '更改语言';
 
   @override
+  String get languageJapanese => '日本語';
+
+  @override
   String get changeTheme => '更改主题';
 
   @override

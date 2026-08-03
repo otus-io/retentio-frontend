@@ -92,6 +92,7 @@ class ProfileScreen extends HookConsumerWidget {
                               title: loc.changeLanguage,
                               subtitle: profileLanguageDisplayName(
                                 currentLocale,
+                                loc,
                               ),
                               onTap: () => showProfileLanguageDialog(
                                 context,
