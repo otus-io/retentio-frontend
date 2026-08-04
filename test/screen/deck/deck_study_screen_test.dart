@@ -89,6 +89,39 @@ void main() {
     });
 
     testWidgets(
+      'shows the same empty message when a stocked deck can serve no card',
+      (tester) async {
+        await setupTestEnvironment();
+        // Cards exist but none can be served (e.g. all hidden). Being caught up
+        // on reviews never reaches this state — the server keeps serving the
+        // most urgent card — so there is no separate caught-up message.
+        final deck = sampleDeck(cardsCount: 50);
+        final harness = FakeDeckStudyBlocHarness(
+          deckId: deck.id,
+          loadResults: const [DeckStudyLoadResult(cardDetail: null)],
+        );
+        addTearDown(() async {
+          await harness.dispose();
+          tearDownTestEnvironment();
+        });
+
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            DeckViewScreen(deck: deck),
+            overrides: [
+              currentDeckProvider.overrideWithValue(deck),
+              deckStudyBlocProvider.overrideWithValue(harness.bloc),
+            ],
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 200));
+
+        expect(find.text('No cards in this deck'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
       'keeps showing a study card when session studied count reaches deck total',
       (tester) async {
         await setupTestEnvironment();

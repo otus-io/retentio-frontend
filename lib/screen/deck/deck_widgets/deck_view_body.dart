@@ -80,8 +80,6 @@ class DeckViewBody extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
 
-            final totalCardsInSession =
-                state.refreshedCardsCount ?? deck.stats.cardsCount;
             final cardsStudied = state.cardsStudied;
             final cardDetail = state.cardDetail;
             final liveDue = state.refreshedDueCardsCount ?? deck.stats.dueCards;
@@ -116,12 +114,9 @@ class DeckViewBody extends StatelessWidget {
                         requestDeckStudyTagFilterChanged(context, null);
                       },
                     )
-                  : totalCardsInSession == 0
-                  ? _DeckStudyMessageColumn(
-                      icon: LucideIcons.circleQuestionMark,
-                      title: loc.noCardsInThisDeck,
-                      theme: theme,
-                    )
+                  // Reviewing everything due does not land here: the server
+                  // always serves the most urgent card regardless of due date.
+                  // Reaching this means nothing is servable at all.
                   : _DeckStudyMessageColumn(
                       icon: LucideIcons.circleQuestionMark,
                       title: loc.noCardsInThisDeck,

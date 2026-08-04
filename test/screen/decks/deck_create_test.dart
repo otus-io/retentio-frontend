@@ -23,8 +23,12 @@ class _FakeDeckListCubit extends DeckListCubit {
 }
 
 void main() {
-  Widget buildDeckCreateHarness(Widget child) {
+  Widget buildDeckCreateHarness(
+    Widget child, {
+    Locale locale = const Locale('en'),
+  }) {
     return buildTestableWidget(
+      locale: locale,
       MultiBlocProvider(
         providers: [
           BlocProvider<TagManagerCubit>(create: (_) => _FakeTagManagerCubit()),
@@ -205,6 +209,43 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Fill in every column header'), findsOneWidget);
+    });
+
+    testWidgets('validation errors are localized', (tester) async {
+      await tester.pumpWidget(
+        buildDeckCreateHarness(const DeckCreate(), locale: const Locale('ja')),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final textFields = find.byType(TextField);
+      await tester.enterText(textFields.at(0), 'Japanese');
+      await tester.enterText(textFields.at(1), 'Front');
+      await tester.enterText(textFields.at(2), '');
+
+      await tester.tap(find.byType(FilledButton));
+      await tester.pumpAndSettle();
+
+      expect(find.text('すべての列見出しを入力してください'), findsOneWidget);
+      expect(find.text('Fill in every column header'), findsNothing);
+    });
+
+    testWidgets('missing deck name error is localized', (tester) async {
+      await tester.pumpWidget(
+        buildDeckCreateHarness(const DeckCreate(), locale: const Locale('ja')),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final textFields = find.byType(TextField);
+      await tester.enterText(textFields.at(1), 'Front');
+      await tester.enterText(textFields.at(2), 'Back');
+
+      await tester.tap(find.byType(FilledButton));
+      await tester.pumpAndSettle();
+
+      expect(find.text('デッキ名を入力してください'), findsOneWidget);
+      expect(find.text('Please enter a deck name'), findsNothing);
     });
   });
 }

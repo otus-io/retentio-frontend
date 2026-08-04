@@ -79,16 +79,24 @@ class DeckCreateState {
   }
 }
 
+/// Client-side validation failures. The cubit has no [BuildContext], so it
+/// reports the reason and the call-site localizes it.
+enum DeckCreateError { nameEmpty, blankFieldName }
+
 class DeckCreateResult {
   const DeckCreateResult({
     required this.success,
     this.message,
+    this.error,
     this.updatedDeckName,
     this.newDeckId,
   });
 
   final bool success;
+
+  /// Server-supplied message; null for [error] validation failures.
   final String? message;
+  final DeckCreateError? error;
   final String? updatedDeckName;
 
   /// Populated after a successful CREATE; null in edit mode.
@@ -158,15 +166,15 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
     if (name.isEmpty) {
       return const DeckCreateResult(
         success: false,
-        message: 'Please enter a deck name',
+        error: DeckCreateError.nameEmpty,
       );
     }
 
     final fields = normalizeDeckFieldNames(fieldNames);
-    if (hasBlankDeckFieldNames(fieldNames)) {
+    if (hasBlankDeckFieldNames(fields)) {
       return const DeckCreateResult(
         success: false,
-        message: 'Fill in every column header',
+        error: DeckCreateError.blankFieldName,
       );
     }
 

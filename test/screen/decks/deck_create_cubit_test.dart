@@ -13,6 +13,38 @@ void main() {
     });
   });
 
+  group('DeckCreateCubit.submit validation', () {
+    DeckCreateCubit buildCubit(String name) => DeckCreateCubit(
+      name: name,
+      rate: kDeckEditorRateDefault,
+      deckId: '',
+      cardType: DeckCardType.add,
+    );
+
+    test('empty name reports a typed error, not an English message', () async {
+      final cubit = buildCubit('   ');
+      addTearDown(cubit.close);
+
+      final result = await cubit.submit(fieldNames: ['Front']);
+
+      expect(result.success, isFalse);
+      expect(result.error, DeckCreateError.nameEmpty);
+      // A raw message here would bypass localization at the call-site.
+      expect(result.message, isNull);
+    });
+
+    test('blank column header reports a typed error', () async {
+      final cubit = buildCubit('Japanese');
+      addTearDown(cubit.close);
+
+      final result = await cubit.submit(fieldNames: ['Front', '   ']);
+
+      expect(result.success, isFalse);
+      expect(result.error, DeckCreateError.blankFieldName);
+      expect(result.message, isNull);
+    });
+  });
+
   group('buildDeckEditorSubmitParams', () {
     test('imported edit deck sends rate only', () {
       final params = buildDeckEditorSubmitParams(
