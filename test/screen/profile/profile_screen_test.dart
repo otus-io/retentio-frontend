@@ -64,7 +64,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
-      expect(tiles, hasLength(3));
+      expect(tiles, hasLength(4));
       for (final tile in tiles) {
         expect(
           tile.trailing,
