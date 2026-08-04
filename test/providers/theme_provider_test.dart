@@ -5,15 +5,46 @@ import 'package:retentio/services/storage/hydrated_storage.dart';
 import '../helpers/in_memory_hydrated_storage.dart';
 
 void main() {
-  setUpAll(() {
+  // Fresh storage per test: assigning the instance also drops the in-memory
+  // cache, so persisted state from one test cannot leak into the next.
+  setUp(() {
     HydratedStorage.instance = InMemoryHydratedStorage();
   });
 
-  tearDownAll(() {
+  tearDown(() {
     HydratedStorage.instance = null;
   });
 
   group('ThemeModeNotifier', () {
+    test('defaults to dark when nothing is hydrated', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      expect(container.read(themeModeProvider), AppThemeMode.dark);
+    });
+
+    test('a persisted theme wins over the dark default', () {
+      final first = ProviderContainer();
+      first.read(themeModeProvider.notifier).setThemeMode(AppThemeMode.light);
+      first.dispose();
+
+      final second = ProviderContainer();
+      addTearDown(second.dispose);
+
+      expect(second.read(themeModeProvider), AppThemeMode.light);
+    });
+
+    test('a persisted system theme is not overridden by the dark default', () {
+      final first = ProviderContainer();
+      first.read(themeModeProvider.notifier).setThemeMode(AppThemeMode.system);
+      first.dispose();
+
+      final second = ProviderContainer();
+      addTearDown(second.dispose);
+
+      expect(second.read(themeModeProvider), AppThemeMode.system);
+    });
+
     test('toJson serializes AppThemeMode to index', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
@@ -59,6 +90,17 @@ void main() {
 
       notifier.toggle();
       expect(container.read(themeModeProvider), AppThemeMode.light);
+    });
+
+    test('toggle from system goes to dark', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(themeModeProvider.notifier);
+      notifier.setThemeMode(AppThemeMode.system);
+      notifier.toggle();
+
+      expect(container.read(themeModeProvider), AppThemeMode.dark);
     });
 
     test('setThemeMode updates state', () {

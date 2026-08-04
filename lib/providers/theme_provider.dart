@@ -6,7 +6,7 @@ enum AppThemeMode { light, dark, sepia, system }
 
 class ThemeModeNotifier extends HydratedNotifier<AppThemeMode> {
   @override
-  AppThemeMode build() => hydrate() ?? AppThemeMode.system;
+  AppThemeMode build() => hydrate() ?? AppThemeMode.dark;
 
   void setThemeMode(AppThemeMode mode) => state = mode;
 
