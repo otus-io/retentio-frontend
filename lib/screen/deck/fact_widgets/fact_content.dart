@@ -123,6 +123,21 @@ class FactContent extends ConsumerWidget {
       tabWidgets.add(const Tab(icon: Icon(LucideIcons.fileText)));
     }
 
+    // Single content type: skip TabBarView nesting to allow scrolling and
+    // avoid the spurious top-border divider from the unused tab bar.
+    if (tabPages.length == 1) {
+      final single = tabPages.first;
+      if (singleAudioScope) {
+        return ProviderScope(
+          overrides: [
+            audioUrlProvider.overrideWithValue(audioItems.first.value),
+          ],
+          child: single,
+        );
+      }
+      return single;
+    }
+
     Widget tree = DefaultTabController(
       key: const ValueKey('field_content_widget'),
       length: tabPages.length,
@@ -302,7 +317,7 @@ class _InlineTextPane extends StatelessWidget {
 }
 
 /// Text for the combined field tab; audio controls live on the tab bar by the note icon.
-class _CombinedTextPane extends StatelessWidget {
+class _CombinedTextPane extends StatefulWidget {
   const _CombinedTextPane({
     required this.textItems,
     required this.color,
@@ -316,31 +331,48 @@ class _CombinedTextPane extends StatelessWidget {
   final bool typographyIsFront;
 
   @override
+  State<_CombinedTextPane> createState() => _CombinedTextPaneState();
+}
+
+class _CombinedTextPaneState extends State<_CombinedTextPane> {
+  late final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final t in textItems)
-                    if (t.value.trim().isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: CardText(
-                          text: t.value,
-                          color: color,
-                          scrollable: false,
-                          typographyDeckId: typographyDeckId,
-                          typographyIsFront: typographyIsFront,
+        return Scrollbar(
+          controller: _scrollController,
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final t in widget.textItems)
+                      if (t.value.trim().isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: CardText(
+                            text: t.value,
+                            color: widget.color,
+                            scrollable: false,
+                            typographyDeckId: widget.typographyDeckId,
+                            typographyIsFront: widget.typographyIsFront,
+                          ),
                         ),
-                      ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
