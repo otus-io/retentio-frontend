@@ -20,15 +20,28 @@ class ThemeModeNotifier extends HydratedNotifier<AppThemeMode> {
   }
 
   @override
-  Map<String, dynamic>? toJson(AppThemeMode state) => {'mode': state.index};
+  Map<String, dynamic>? toJson(AppThemeMode state) => {'mode': state.name};
 
   @override
   AppThemeMode? fromJson(Map<String, dynamic> json) {
-    final index = json['mode'] as int?;
-    if (index == null || index < 0 || index >= AppThemeMode.values.length) {
+    final mode = json['mode'];
+    if (mode is String) {
+      for (final value in AppThemeMode.values) {
+        if (value.name == mode) return value;
+      }
       return null;
     }
-    return AppThemeMode.values[index];
+    // Older builds stored Flutter's ThemeMode index, whose order differs from
+    // AppThemeMode. Names are stored instead so reordering stays harmless.
+    if (mode is int) {
+      const legacy = [
+        AppThemeMode.system,
+        AppThemeMode.light,
+        AppThemeMode.dark,
+      ];
+      return mode >= 0 && mode < legacy.length ? legacy[mode] : null;
+    }
+    return null;
   }
 }
 
