@@ -8,6 +8,7 @@ import '../../../main.dart';
 import '../../../mixins/notifier_mixin.dart';
 import '../../../services/apis/deck_service.dart';
 import '../../../widgets/app_toast.dart';
+import '../bloc/deck_create_cubit.dart';
 import 'deck_list.dart';
 
 /// Inclusive bounds for the rate field when creating or editing a deck.
@@ -114,10 +115,14 @@ class CreateDeckNotifier extends Notifier<CreateDeckState> {
       );
       return;
     }
-    final fields = fieldNames
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
+    if (hasBlankDeckFieldNames(fieldNames)) {
+      AppToast.error(
+        context,
+        loc?.deckEditorFieldNamesRequired ?? 'Fill in every column header',
+      );
+      return;
+    }
+    final fields = normalizeDeckFieldNames(fieldNames);
     final params = {
       'name': name,
       'fields': fields,

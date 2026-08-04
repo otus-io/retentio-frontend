@@ -2,6 +2,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/screen/decks/bloc/deck_create_cubit.dart';
 
 void main() {
+  group('deck field helpers', () {
+    test('normalizeDeckFieldNames trims whitespace', () {
+      expect(
+        normalizeDeckFieldNames([' Front ', 'Back  ']),
+        ['Front', 'Back'],
+      );
+    });
+
+    test('hasBlankDeckFieldNames detects empty or whitespace-only fields', () {
+      expect(hasBlankDeckFieldNames(['Front', '   ']), isTrue);
+      expect(hasBlankDeckFieldNames(['Front', 'Back']), isFalse);
+    });
+  });
+
   group('buildDeckEditorSubmitParams', () {
     test('imported edit deck sends rate only', () {
       final params = buildDeckEditorSubmitParams(

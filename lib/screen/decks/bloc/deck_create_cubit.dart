@@ -10,6 +10,12 @@ const int kDeckEditorRateDefault = 30;
 int clampDeckEditorRate(int rate) =>
     rate.clamp(kDeckEditorRateMin, kDeckEditorRateMax);
 
+List<String> normalizeDeckFieldNames(List<String> fields) =>
+    fields.map((s) => s.trim()).toList();
+
+bool hasBlankDeckFieldNames(List<String> fields) =>
+    normalizeDeckFieldNames(fields).any((s) => s.isEmpty);
+
 Map<String, dynamic> buildDeckEditorSubmitParams({
   required DeckCardType cardType,
   required bool isImported,
@@ -156,10 +162,13 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
       );
     }
 
-    final fields = fieldNames
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
+    final fields = normalizeDeckFieldNames(fieldNames);
+    if (hasBlankDeckFieldNames(fieldNames)) {
+      return const DeckCreateResult(
+        success: false,
+        message: 'Fill in every column header',
+      );
+    }
 
     final params = buildDeckEditorSubmitParams(
       cardType: state.cardType,

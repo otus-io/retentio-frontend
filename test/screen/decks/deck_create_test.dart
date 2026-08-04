@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/decks/bloc/deck_create_cubit.dart';
+import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/decks/widgets/deck_create.dart';
 import 'package:retentio/widgets/number_picker.dart';
 
@@ -16,12 +17,18 @@ class _FakeTagManagerCubit extends TagManagerCubit {
   }
 }
 
+class _FakeDeckListCubit extends DeckListCubit {
+  @override
+  Future<void> onRefresh() async {}
+}
+
 void main() {
   Widget buildDeckCreateHarness(Widget child) {
     return buildTestableWidget(
       MultiBlocProvider(
         providers: [
           BlocProvider<TagManagerCubit>(create: (_) => _FakeTagManagerCubit()),
+          BlocProvider<DeckListCubit>(create: (_) => _FakeDeckListCubit()),
           BlocProvider(
             create: (_) => DeckCreateCubit(
               name: '',
@@ -158,6 +165,9 @@ void main() {
               BlocProvider<TagManagerCubit>(
                 create: (_) => _FakeTagManagerCubit(),
               ),
+              BlocProvider<DeckListCubit>(
+                create: (_) => _FakeDeckListCubit(),
+              ),
               BlocProvider(
                 create: (_) => DeckCreateCubit(
                   name: '',
@@ -179,6 +189,24 @@ void main() {
 
       expect(find.byType(ReorderableListView), findsOneWidget);
       expect(find.byType(ReorderableDelayedDragStartListener), findsWidgets);
+    });
+
+    testWidgets('shows validation error when any field name is blank', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildDeckCreateHarness(const DeckCreate()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final textFields = find.byType(TextField);
+      await tester.enterText(textFields.at(0), 'Japanese');
+      await tester.enterText(textFields.at(1), 'Front');
+      await tester.enterText(textFields.at(2), '');
+
+      await tester.tap(find.byType(FilledButton));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Fill in every column header'), findsOneWidget);
     });
   });
 }
