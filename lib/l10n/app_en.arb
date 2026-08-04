@@ -28,7 +28,7 @@
   "@loginPageTitle": {
     "description": "Login page title"
   },
-  "loginTagline": "Short daily sessions. Progress that compounds.",
+  "loginTagline": "A journey of a thousand miles begins with a single step",
   "@loginTagline": {
     "description": "Brand tagline under the app name on the login screen"
   },
@@ -79,6 +79,10 @@
   "decks": "Decks",
   "@decks": {
     "description": "Decks tab label in bottom navigation and deck list screen title"
+  },
+  "deckListSubtitle": "Your study collections",
+  "@deckListSubtitle": {
+    "description": "Subtitle under the Decks screen title"
   },
   "profile": "Profile",
   "@profile": {
@@ -150,6 +154,30 @@
   "@changeLanguage": {
     "description": "Change language setting"
   },
+  "languageJapanese": "日本語",
+  "@languageJapanese": {
+    "description": "Native display name for the Japanese locale"
+  },
+  "languageEnglish": "English",
+  "@languageEnglish": {
+    "description": "Native display name for the English locale"
+  },
+  "languageChinese": "简体中文",
+  "@languageChinese": {
+    "description": "Native display name for the Simplified Chinese locale"
+  },
+  "languageJapaneseShort": "日",
+  "@languageJapaneseShort": {
+    "description": "Compact label for the Japanese locale in the login toolbar"
+  },
+  "languageEnglishShort": "EN",
+  "@languageEnglishShort": {
+    "description": "Compact label for the English locale in the login toolbar"
+  },
+  "languageChineseShort": "中",
+  "@languageChineseShort": {
+    "description": "Compact label for the Simplified Chinese locale in the login toolbar"
+  },
   "changeTheme": "Change Theme",
   "@changeTheme": {
     "description": "Change theme setting"
@@ -161,6 +189,14 @@
   "themeDark": "Dark",
   "@themeDark": {
     "description": "Dark theme"
+  },
+  "switchToLightMode": "Switch to light mode",
+  "@switchToLightMode": {
+    "description": "Tooltip for switching from dark to light theme"
+  },
+  "switchToDarkMode": "Switch to dark mode",
+  "@switchToDarkMode": {
+    "description": "Tooltip for switching from light to dark theme"
   },
   "themeSystem": "System",
   "@themeSystem": {

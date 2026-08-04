@@ -1,6 +1,6 @@
 ---
 description: Flutter/Dart frontend conventions for the Retentio mobile app
-globs: lib/**/*.dart
+globs: lib/**/*.dart,lib/l10n/app_*.arb
 alwaysApply: false
 ---
 
@@ -12,7 +12,7 @@ alwaysApply: false
 - **Routing**: `go_router` config in `routers/app_pages.dart`
 - **HTTP**: Dio client in `services/dio_client/`; all API calls go through `ApiService` / service classes in `services/apis/`
 - **Storage**: `SharedPreferences` for auth tokens; Hive for local data
-- **i18n**: `flutter_localizations` + `intl` (en, zh); strings in `lib/l10n/app_en.arb` and `app_zh.arb`; accessed via `AppLocalizations.of(context)!`
+- **i18n**: `flutter_localizations` + `intl` (en, zh, ja); strings in `lib/l10n/app_en.arb`, `app_zh.arb`, and `app_ja.arb`; accessed via `AppLocalizations.of(context)!`
 - **Icons**: `lucide_icons_flutter` (`LucideIcons.*`) — use exclusively, avoid `Icons.*`
 
 ## File Organization
@@ -117,7 +117,7 @@ static Future<SomeModel?> doThing(String id) async {
 
 - All user-visible strings in ARB files — no hardcoded strings in widgets
 - Key naming: `camelCase`, descriptive (`addFactUploadFailed` not `error1`)
-- Add to both `app_en.arb` and `app_zh.arb` in the same commit
+- Add to `app_en.arb`, `app_zh.arb`, and `app_ja.arb` in the same commit
 
 ## Checks Before Commit
 

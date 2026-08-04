@@ -11,6 +11,7 @@ import 'package:retentio/screen/decks/deck_text_styles.dart';
 import 'package:retentio/screen/decks/widgets/badged_app_icon_button.dart';
 import 'package:retentio/screen/decks/widgets/publish_deck_sheet.dart';
 import 'package:retentio/theme/theme_tokens.dart';
+import 'package:retentio/utils/format_compact_count.dart';
 import 'package:retentio/widgets/common_bottom_sheet.dart';
 
 import '../../../routers/routers.dart';
@@ -138,7 +139,7 @@ class DeckListCard extends StatelessWidget {
             Row(
               children: [
                 _StatBox(
-                  value: deck.stats.totalReviews.toString(),
+                  value: deck.stats.totalReviews,
                   label: loc.totalReviews,
                   color: scheme.primary,
                   theme: theme,
@@ -146,17 +147,17 @@ class DeckListCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 _StatBox(
-                  value: deck.reviewCards.toString(),
+                  value: deck.reviewCards,
                   label: loc.dueCards,
-                  color: scheme.secondary,
+                  color: scheme.error,
                   theme: theme,
                   scheme: scheme,
                 ),
                 const SizedBox(width: 8),
                 _StatBox(
-                  value: deck.stats.factsCount.toString(),
+                  value: deck.stats.factsCount,
                   label: loc.facts,
-                  color: scheme.onSurface.withValues(alpha: 0.5),
+                  color: scheme.onSurface,
                   theme: theme,
                   scheme: scheme,
                 ),
@@ -199,7 +200,7 @@ class _StatBox extends StatelessWidget {
     required this.scheme,
   });
 
-  final String value;
+  final int value;
   final String label;
   final Color color;
   final ThemeData theme;
@@ -207,22 +208,32 @@ class _StatBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isZero = value == '0';
+    final isZero = value == 0;
     final effectiveColor = isZero
         ? scheme.onSurface.withValues(alpha: 0.3)
         : color;
+    final fillTint = !isZero && color == scheme.error
+        ? scheme.error
+        : scheme.primary;
+    final boxColor = Color.alphaBlend(
+      fillTint.withValues(alpha: isZero ? 0.03 : 0.05),
+      scheme.surfaceContainerHighest,
+    );
+    final display = formatCompactCount(value);
 
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
-          color: effectiveColor.withValues(alpha: isZero ? 0.04 : 0.08),
+          color: boxColor,
           borderRadius: AppThemeTokens.borderRadiusSm,
         ),
         child: Column(
           children: [
             Text(
-              value,
+              display,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: theme.textTheme.titleSmall?.copyWith(
                 color: effectiveColor,
                 fontWeight: FontWeight.w700,
@@ -231,6 +242,8 @@ class _StatBox extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: scheme.onSurface.withValues(alpha: 0.5),
               ),

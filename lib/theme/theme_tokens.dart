@@ -6,7 +6,7 @@ class AppThemeTokens {
   static const Color lightPrimary = Color(0xFF4361EE);
   static const Color lightSecondary = Color(0xFF10B981);
   static const Color lightTertiary = Color(0xFF7C6FF7);
-  static const Color lightSurface = Color(0xFFF8F9FB);
+  static const Color lightSurface = Color(0xFFF7F8FF);
   static const Color lightSurfaceHigh = Color(0xFFFFFFFF);
   static const Color lightOutline = Color(0xFFC5CAD8);
 
@@ -78,6 +78,6 @@ class AppThemeTokens {
     if (brightness == Brightness.dark) {
       return const [Color(0xFF0D1117), Color(0xFF111827), Color(0xFF0F172A)];
     }
-    return const [Color(0xFFEEF2FF), Color(0xFFF8F9FB), Color(0xFFF0F4FF)];
+    return const [Color(0xFFEEF2FF), Color(0xFFF7F8FF), Color(0xFFF0F4FF)];
   }
 }

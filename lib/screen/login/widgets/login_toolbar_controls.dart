@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/providers/locale_provider.dart';
 import 'package:retentio/providers/theme_provider.dart';
 import 'package:retentio/theme/theme_tokens.dart';
@@ -27,6 +28,7 @@ class LoginToolbarControls extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentLocale = ref.watch(localeProvider);
+    final loc = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
     final paddingTop = MediaQuery.of(context).padding.top;
 
@@ -41,7 +43,7 @@ class LoginToolbarControls extends HookConsumerWidget {
             icon: isDark ? LucideIcons.moonStar : LucideIcons.sunMedium,
             size: _kThemeIconSize,
             outlined: true,
-            tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
+            tooltip: isDark ? loc.switchToLightMode : loc.switchToDarkMode,
             onPressed: () {
               ref
                   .read(themeModeProvider.notifier)
@@ -69,9 +71,19 @@ class LoginToolbarControls extends HookConsumerWidget {
                 ),
                 style: Theme.of(context).textTheme.labelMedium,
                 borderRadius: AppThemeTokens.borderRadiusS,
-                items: const [
-                  DropdownMenuItem(value: Locale('en'), child: Text('EN')),
-                  DropdownMenuItem(value: Locale('zh'), child: Text('中')),
+                items: [
+                  DropdownMenuItem(
+                    value: const Locale('en'),
+                    child: Text(loc.languageEnglishShort),
+                  ),
+                  DropdownMenuItem(
+                    value: const Locale('zh'),
+                    child: Text(loc.languageChineseShort),
+                  ),
+                  DropdownMenuItem(
+                    value: const Locale('ja'),
+                    child: Text(loc.languageJapaneseShort),
+                  ),
                 ],
                 onChanged: isLoading
                     ? null

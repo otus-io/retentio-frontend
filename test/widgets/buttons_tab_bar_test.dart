@@ -73,6 +73,67 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('does not animate the tab strip into place on mount', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(200, 600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: DefaultTabController(
+              length: 6,
+              initialIndex: 5,
+              child: Column(
+                children: [
+                  ButtonsTabBar(
+                    tabs: const [
+                      Tab(text: 'Field one'),
+                      Tab(text: 'Field two'),
+                      Tab(text: 'Field three'),
+                      Tab(text: 'Field four'),
+                      Tab(text: 'Field five'),
+                      Tab(text: 'Field six'),
+                    ],
+                  ),
+                  const Expanded(
+                    child: TabBarView(
+                      children: [
+                        SizedBox.expand(),
+                        SizedBox.expand(),
+                        SizedBox.expand(),
+                        SizedBox.expand(),
+                        SizedBox.expand(),
+                        SizedBox.expand(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      // Let the post-frame attach callback position the strip.
+      await tester.pump();
+
+      final strip = tester.state<ScrollableState>(
+        find.descendant(
+          of: find.byType(ButtonsTabBar),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      final offsetAfterMount = strip.position.pixels;
+
+      // The selected tab is off screen, so the strip must already be scrolled.
+      expect(offsetAfterMount, greaterThan(0));
+
+      // No scroll animation may still be running after mount.
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(strip.position.pixels, offsetAfterMount);
+    });
+
     testWidgets('center mode does not throw when tab strip lays out', (
       tester,
     ) async {

@@ -4,6 +4,8 @@ import 'package:retentio/models/deck.dart';
 import 'package:retentio/models/tag.dart';
 import 'package:retentio/services/apis/card_service.dart';
 
+import '../../../helpers/card_test_samples.dart';
+
 void main() {
   group('DeckStudyLegacyServiceRepository', () {
     test(
@@ -11,7 +13,7 @@ void main() {
       () async {
         var cardsStatsCalls = 0;
         final repository = DeckStudyLegacyServiceRepository(
-          loadNextDueCardFn: (_, {tagId}) async => null,
+          loadNextDueCardFn: (_, {tagId}) async => const NextDueCardResult(),
           getCardsStatsFn: (deckId, {tagId}) async {
             cardsStatsCalls += 1;
             expect(deckId, 'deck-1');
@@ -41,7 +43,7 @@ void main() {
             deckDetailCalls += 1;
             throw StateError('getDeckDetail should not be called');
           },
-          loadNextDueCardFn: (_, {tagId}) async => null,
+          loadNextDueCardFn: (_, {tagId}) async => const NextDueCardResult(),
           getCardsStatsFn: (_, {tagId}) async => null,
         );
 
@@ -73,7 +75,7 @@ void main() {
               'fields': ['a'],
             });
           },
-          loadNextDueCardFn: (_, {tagId}) async => null,
+          loadNextDueCardFn: (_, {tagId}) async => const NextDueCardResult(),
           getCardsStatsFn: (_, {tagId}) async => null,
         );
 
@@ -91,7 +93,7 @@ void main() {
       () async {
         var cardsStatsCalls = 0;
         final repository = DeckStudyLegacyServiceRepository(
-          loadNextDueCardFn: (_, {tagId}) async => null,
+          loadNextDueCardFn: (_, {tagId}) async => const NextDueCardResult(),
           getCardsStatsFn: (deckId, {tagId}) async {
             cardsStatsCalls += 1;
             expect(deckId, 'deck-1');
@@ -108,6 +110,56 @@ void main() {
         expect(result.refreshedCardsCount, 42);
         expect(result.refreshedDueCardsCount, 9);
         expect(cardsStatsCalls, 1);
+      },
+    );
+
+    test('loadNextDueCard passes the lookahead card through', () async {
+      final repository = DeckStudyLegacyServiceRepository(
+        loadNextDueCardFn: (_, {tagId}) async => NextDueCardResult(
+          cardDetail: sampleCardDetail(id: 'card-a'),
+          nextCardDetail: sampleCardDetail(id: 'card-b'),
+        ),
+        getCardsStatsFn: (_, {tagId}) async => null,
+      );
+
+      final result = await repository.loadNextDueCard(deckId: 'deck-1');
+
+      expect(result.cardDetail?.card.id, 'card-a');
+      expect(result.nextCardDetail?.card.id, 'card-b');
+    });
+
+    test('loadNextDueCard drops a hidden lookahead card', () async {
+      final repository = DeckStudyLegacyServiceRepository(
+        loadNextDueCardFn: (_, {tagId}) async => NextDueCardResult(
+          cardDetail: sampleCardDetail(id: 'card-a'),
+          nextCardDetail: sampleCardDetail(id: 'card-b', hidden: true),
+        ),
+        getCardsStatsFn: (_, {tagId}) async => null,
+      );
+
+      final result = await repository.loadNextDueCard(deckId: 'deck-1');
+
+      expect(result.cardDetail?.card.id, 'card-a');
+      expect(result.nextCardDetail, isNull);
+    });
+
+    test(
+      'loadNextDueCard drops the lookahead when no card is served',
+      () async {
+        final repository = DeckStudyLegacyServiceRepository(
+          loadNextDueCardFn: (_, {tagId}) async => NextDueCardResult(
+            cardDetail: sampleCardDetail(id: 'card-a', hidden: true),
+            nextCardDetail: sampleCardDetail(id: 'card-b'),
+          ),
+          getCardsStatsFn: (_, {tagId}) async => null,
+          getDeckDetailFn: (_) async =>
+              throw StateError('deck detail should not be needed'),
+        );
+
+        final result = await repository.loadNextDueCard(deckId: 'deck-1');
+
+        expect(result.cardDetail, isNull);
+        expect(result.nextCardDetail, isNull);
       },
     );
 

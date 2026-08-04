@@ -250,7 +250,9 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     // context until after layout. Post-frame matches TabBar's own pattern.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _scrollTo(_currentIndex);
+      // Jump on attach: animating here slides the whole strip (and any widget
+      // hosted in a tab, e.g. the card audio control) in when the bar mounts.
+      _scrollTo(_currentIndex, animate: false);
     });
   }
 
@@ -567,17 +569,30 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     _animationController.forward();
   }
 
-  void _scrollTo(int index) {
+  void _scrollTo(int index, {bool animate = true}) {
     if (!mounted) return;
     if (index < 0 || index >= _tabKeys.length) return;
 
+    final offset = _centeringOffset(index);
+    if (offset == null) return;
+
+    // scroll the calculated ammount
+    _applyScroll(offset + _scrollController.offset, animate: animate);
+  }
+
+  /// How far the strip must move to center the button at [index], limited so
+  /// the first / last button stays stuck to its edge. Null while the tabs have
+  /// no layout yet.
+  double? _centeringOffset(int index) {
     // get the screen width. This is used to check if we have an element off screen
     final tabsContainerCtx = _tabsContainerKey.currentContext;
     final tabsContainerObj = tabsContainerCtx?.findRenderObject();
-    if (tabsContainerObj is! RenderBox || !tabsContainerObj.hasSize) return;
+    if (tabsContainerObj is! RenderBox || !tabsContainerObj.hasSize) {
+      return null;
+    }
     final RenderBox tabsContainer = tabsContainerObj;
 
-    double screenWidth = tabsContainer.size.width;
+    final double screenWidth = tabsContainer.size.width;
     final tabsContainerPosition = tabsContainer.localToGlobal(Offset.zero).dx;
     // get the TabsContainer offset (for cases when padding is used)
     final tabsContainerOffset = Offset(-tabsContainerPosition, 0);
@@ -585,58 +600,79 @@ class _ButtonsTabBarState extends State<ButtonsTabBar>
     // get the button we want to scroll to
     final RenderBox? tabBox =
         _tabKeys[index].currentContext?.findRenderObject() as RenderBox?;
-    if (tabBox == null || !tabBox.hasSize) return;
-    RenderBox renderBox = tabBox;
+    if (tabBox == null || !tabBox.hasSize) return null;
     // get its size
-    double size = renderBox.size.width;
+    final double size = tabBox.size.width;
     // and position
-    double position = renderBox.localToGlobal(tabsContainerOffset).dx;
+    final double position = tabBox.localToGlobal(tabsContainerOffset).dx;
 
     // this is how much the button is away from the center of the screen and how much we must scroll to get it into place
-    double offset = (position + size / 2) - screenWidth / 2;
+    final double offset = (position + size / 2) - screenWidth / 2;
 
-    // if the button is to the left of the middle
-    if (offset < 0) {
-      // get the first button
-      final edgeBox =
-          (_textLTR ? _tabKeys.first : _tabKeys.last).currentContext
-                  ?.findRenderObject()
-              as RenderBox?;
-      if (edgeBox == null || !edgeBox.hasSize) return;
-      renderBox = edgeBox;
-      // get the position of the first button of the TabBar
-      position = renderBox.localToGlobal(tabsContainerOffset).dx;
+    // if the button is to the left of the middle, limit against the first
+    // button, otherwise against the last one
+    final limited = offset < 0
+        ? _offsetStuckToStart(offset, tabsContainerOffset)
+        : _offsetStuckToEnd(offset, tabsContainerOffset, screenWidth);
+    if (limited == null) return null;
 
-      // if the offset pulls the first button away from the left side, we limit that movement so the first button is stuck to the left side
-      if (!widget.center && position > offset) offset = position;
-    } else {
-      // if the button is to the right of the middle
-      // get the last button
-      final edgeBox =
-          (_textLTR ? _tabKeys.last : _tabKeys.first).currentContext
-                  ?.findRenderObject()
-              as RenderBox?;
-      if (edgeBox == null || !edgeBox.hasSize) return;
-      renderBox = edgeBox;
-      // get its position
-      position = renderBox.localToGlobal(tabsContainerOffset).dx;
-      // and size
-      size = renderBox.size.width;
+    return limited * (_textLTR ? 1 : -1);
+  }
 
-      // if the last button doesn't reach the right side, use it's right side as the limit of the screen for the TabBar
-      if (position + size < screenWidth) screenWidth = position + size;
+  /// Limits [offset] so centering never pulls the first button away from the
+  /// left side. Null while that button has no layout yet.
+  double? _offsetStuckToStart(double offset, Offset tabsContainerOffset) {
+    // get the first button
+    final edgeBox =
+        (_textLTR ? _tabKeys.first : _tabKeys.last).currentContext
+                ?.findRenderObject()
+            as RenderBox?;
+    if (edgeBox == null || !edgeBox.hasSize) return null;
+    // get the position of the first button of the TabBar
+    final position = edgeBox.localToGlobal(tabsContainerOffset).dx;
 
-      // if the offset pulls the last button away from the right side limit, we reduce that movement so the last button is stuck to the right side limit
-      if (!widget.center && position + size - offset < screenWidth) {
-        offset = position + size - screenWidth;
-      }
+    // if the offset pulls the first button away from the left side, we limit that movement so the first button is stuck to the left side
+    if (!widget.center && position > offset) return position;
+    return offset;
+  }
+
+  /// Limits [offset] so centering never pulls the last button away from the
+  /// right side limit. Null while that button has no layout yet.
+  double? _offsetStuckToEnd(
+    double offset,
+    Offset tabsContainerOffset,
+    double screenWidth,
+  ) {
+    // get the last button
+    final edgeBox =
+        (_textLTR ? _tabKeys.last : _tabKeys.first).currentContext
+                ?.findRenderObject()
+            as RenderBox?;
+    if (edgeBox == null || !edgeBox.hasSize) return null;
+    // get its position
+    final position = edgeBox.localToGlobal(tabsContainerOffset).dx;
+    // and size
+    final size = edgeBox.size.width;
+
+    // if the last button doesn't reach the right side, use it's right side as the limit of the screen for the TabBar
+    final limit = position + size < screenWidth ? position + size : screenWidth;
+
+    // if the offset pulls the last button away from the right side limit, we reduce that movement so the last button is stuck to the right side limit
+    if (!widget.center && position + size - offset < limit) {
+      return position + size - limit;
     }
+    return offset;
+  }
 
-    offset *= (_textLTR ? 1 : -1);
-
-    // scroll the calculated ammount
+  void _applyScroll(double target, {required bool animate}) {
+    if (!animate) {
+      _scrollController.jumpTo(
+        target.clamp(0.0, _scrollController.position.maxScrollExtent),
+      );
+      return;
+    }
     _scrollController.animateTo(
-      offset + _scrollController.offset,
+      target,
       duration: Duration(milliseconds: widget.duration),
       curve: Curves.easeInOut,
     );

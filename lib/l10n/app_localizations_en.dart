@@ -30,7 +30,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginPageTitle => 'Login';
 
   @override
-  String get loginTagline => 'Short daily sessions. Progress that compounds.';
+  String get loginTagline =>
+      'A journey of a thousand miles begins with a single step';
 
   @override
   String get email => 'Email';
@@ -68,6 +69,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get decks => 'Decks';
+
+  @override
+  String get deckListSubtitle => 'Your study collections';
 
   @override
   String get profile => 'Profile';
@@ -120,6 +124,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get changeLanguage => 'Change Language';
 
   @override
+  String get languageJapanese => '日本語';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageChinese => '简体中文';
+
+  @override
+  String get languageJapaneseShort => '日';
+
+  @override
+  String get languageEnglishShort => 'EN';
+
+  @override
+  String get languageChineseShort => '中';
+
+  @override
   String get changeTheme => 'Change Theme';
 
   @override
@@ -127,6 +149,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themeDark => 'Dark';
+
+  @override
+  String get switchToLightMode => 'Switch to light mode';
+
+  @override
+  String get switchToDarkMode => 'Switch to dark mode';
 
   @override
   String get themeSystem => 'System';

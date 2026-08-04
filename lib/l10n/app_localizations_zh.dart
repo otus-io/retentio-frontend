@@ -69,6 +69,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get decks => '卡组';
 
   @override
+  String get deckListSubtitle => '你的学习卡组';
+
+  @override
   String get profile => '我的';
 
   @override
@@ -119,6 +122,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get changeLanguage => '更改语言';
 
   @override
+  String get languageJapanese => '日本語';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageChinese => '简体中文';
+
+  @override
+  String get languageJapaneseShort => '日';
+
+  @override
+  String get languageEnglishShort => 'EN';
+
+  @override
+  String get languageChineseShort => '中';
+
+  @override
   String get changeTheme => '更改主题';
 
   @override
@@ -126,6 +147,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get themeDark => '深色';
+
+  @override
+  String get switchToLightMode => '切换到浅色模式';
+
+  @override
+  String get switchToDarkMode => '切换到深色模式';
 
   @override
   String get themeSystem => '跟随系统';

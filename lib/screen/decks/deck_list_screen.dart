@@ -136,9 +136,7 @@ class _DeckListScreenState extends State<DeckListScreen>
                         10,
                       ),
                       child: Text(
-                        Localizations.localeOf(context).languageCode == 'zh'
-                            ? '你的学习卡组'
-                            : 'Your study collections',
+                        loc.deckListSubtitle,
                         style: DeckTextStyles.pageSubtitle(theme),
                       ),
                     ),

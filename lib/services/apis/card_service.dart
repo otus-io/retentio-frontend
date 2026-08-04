@@ -2,6 +2,7 @@ import 'package:retentio/models/card.dart';
 import 'package:retentio/models/fact.dart';
 import 'package:retentio/models/api_response.dart';
 import 'package:retentio/services/apis/api_service.dart';
+import 'package:retentio/services/apis/deck_service.dart';
 import 'package:retentio/services/index.dart';
 import 'package:retentio/utils/log.dart';
 
@@ -10,6 +11,15 @@ class DeckCardsStats {
 
   final int? totalCards;
   final int? dueCards;
+}
+
+/// Most urgent card plus the server's second-most urgent card (`next_card`),
+/// used as a one-card lookahead so the next review needs no extra round trip.
+class NextDueCardResult {
+  const NextDueCardResult({this.cardDetail, this.nextCardDetail});
+
+  final CardDetail? cardDetail;
+  final CardDetail? nextCardDetail;
 }
 
 /// Parses GET `/api/decks/{id}/cards` payload (`data` object).
@@ -62,18 +72,27 @@ int? _readInt(dynamic value) {
 }
 
 class CardService {
-  /// 获取卡组卡片统计，可选 [tagId] 限定到带该标签的词条对应卡片。
+  /// Deck-wide stats use GET /decks/{id} (stats only). Tag-scoped stats still
+  /// need GET /decks/{id}/cards?tag_id=… because that endpoint returns the
+  /// filtered list the API uses to compute counts.
   static Future<DeckCardsStats?> getCardsStats(
     String deckId, {
     String? tagId,
   }) async {
     try {
-      final res = await ApiService.get(
-        Api.cards,
-        pathParams: {'id': deckId},
-        queryParams: tagId != null ? {'tag_id': tagId} : null,
+      if (tagId != null && tagId.isNotEmpty) {
+        final res = await ApiService.get(
+          Api.cards,
+          pathParams: {'id': deckId},
+          queryParams: {'tag_id': tagId},
+        );
+        return parseDeckCardsStatsData(res?.data);
+      }
+      final deck = await DeckService.of.getDeckDetail(deckId);
+      return DeckCardsStats(
+        totalCards: deck.stats.cardsCount,
+        dueCards: deck.stats.dueCards,
       );
-      return parseDeckCardsStatsData(res?.data);
     } catch (e) {
       logger.e(e);
       return null;
@@ -86,8 +105,8 @@ class CardService {
     return stats?.totalCards;
   }
 
-  /// 获取下一张需要学习的卡片，可选 tagId 筛选
-  static Future<CardDetail?> getNextDueCard(
+  /// 获取下一张需要学习的卡片（含服务端返回的次紧急卡片 `next_card`），可选 tagId 筛选
+  static Future<NextDueCardResult> getNextDueCard(
     String deckId, {
     String? tagId,
   }) async {
@@ -98,14 +117,20 @@ class CardService {
         queryParams: tagId != null ? {'tag_id': tagId} : null,
       );
 
-      if (res?.data == null) {
-        return null;
+      final data = res?.data;
+      if (data == null) {
+        return const NextDueCardResult();
       }
 
-      return CardDetail.tryFromApiData(res!.data);
+      return NextDueCardResult(
+        cardDetail: CardDetail.tryFromApiData(data),
+        nextCardDetail: data is Map
+            ? CardDetail.tryFromNextCardData(data['next_card'])
+            : null,
+      );
     } catch (e) {
       logger.e(e);
-      return null;
+      return const NextDueCardResult();
     }
   }
 

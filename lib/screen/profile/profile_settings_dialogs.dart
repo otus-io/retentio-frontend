@@ -10,12 +10,14 @@ import 'package:retentio/widgets/app_button.dart';
 
 const _kDialogOptionPadding = EdgeInsets.symmetric(horizontal: 2);
 
-String profileLanguageDisplayName(Locale locale) {
+String profileLanguageDisplayName(Locale locale, AppLocalizations loc) {
   switch (locale.languageCode) {
     case 'zh':
-      return '简体中文';
+      return loc.languageChinese;
+    case 'ja':
+      return loc.languageJapanese;
     case 'en':
-      return 'English';
+      return loc.languageEnglish;
     default:
       return locale.languageCode;
   }
@@ -48,9 +50,10 @@ Future<void> showProfileLanguageDialog(
         _ProfileRadioDialog<Locale>(
           title: loc.changeLanguage,
           groupValue: currentLocale,
-          options: const [
-            _RadioOption(value: Locale('en'), label: 'English'),
-            _RadioOption(value: Locale('zh'), label: '简体中文'),
+          options: [
+            _RadioOption(value: Locale('en'), label: loc.languageEnglish),
+            _RadioOption(value: Locale('zh'), label: loc.languageChinese),
+            _RadioOption(value: Locale('ja'), label: loc.languageJapanese),
           ],
           onChanged: (value) {
             Navigator.of(dialogContext).pop(value);

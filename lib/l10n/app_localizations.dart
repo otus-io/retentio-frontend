@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
+import 'app_localizations_ja.dart';
 import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
@@ -95,6 +96,7 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
+    Locale('ja'),
     Locale('zh'),
   ];
 
@@ -143,7 +145,7 @@ abstract class AppLocalizations {
   /// Brand tagline under the app name on the login screen
   ///
   /// In en, this message translates to:
-  /// **'Short daily sessions. Progress that compounds.'**
+  /// **'A journey of a thousand miles begins with a single step'**
   String get loginTagline;
 
   /// Email input field label
@@ -217,6 +219,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Decks'**
   String get decks;
+
+  /// Subtitle under the Decks screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Your study collections'**
+  String get deckListSubtitle;
 
   /// Profile tab label in bottom navigation
   ///
@@ -314,6 +322,42 @@ abstract class AppLocalizations {
   /// **'Change Language'**
   String get changeLanguage;
 
+  /// Native display name for the Japanese locale
+  ///
+  /// In en, this message translates to:
+  /// **'日本語'**
+  String get languageJapanese;
+
+  /// Native display name for the English locale
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// Native display name for the Simplified Chinese locale
+  ///
+  /// In en, this message translates to:
+  /// **'简体中文'**
+  String get languageChinese;
+
+  /// Compact label for the Japanese locale in the login toolbar
+  ///
+  /// In en, this message translates to:
+  /// **'日'**
+  String get languageJapaneseShort;
+
+  /// Compact label for the English locale in the login toolbar
+  ///
+  /// In en, this message translates to:
+  /// **'EN'**
+  String get languageEnglishShort;
+
+  /// Compact label for the Simplified Chinese locale in the login toolbar
+  ///
+  /// In en, this message translates to:
+  /// **'中'**
+  String get languageChineseShort;
+
   /// Change theme setting
   ///
   /// In en, this message translates to:
@@ -331,6 +375,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dark'**
   String get themeDark;
+
+  /// Tooltip for switching from dark to light theme
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to light mode'**
+  String get switchToLightMode;
+
+  /// Tooltip for switching from light to dark theme
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to dark mode'**
+  String get switchToDarkMode;
 
   /// System theme
   ///
@@ -3152,7 +3208,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'zh'].contains(locale.languageCode);
+      <String>['en', 'ja', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -3163,6 +3219,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'en':
       return AppLocalizationsEn();
+    case 'ja':
+      return AppLocalizationsJa();
     case 'zh':
       return AppLocalizationsZh();
   }

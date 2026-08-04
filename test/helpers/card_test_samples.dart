@@ -25,11 +25,11 @@ Deck sampleDeck({int cardsCount = 5}) {
 }
 
 /// Minimal valid [CardDetail] for widget/provider tests (single tab per side).
-CardDetail sampleCardDetail({bool hidden = false}) {
+CardDetail sampleCardDetail({bool hidden = false, String id = 'card-test-1'}) {
   return CardDetail.fromJson({
     'urgency': 0.5,
     'card': {
-      'id': 'card-test-1',
+      'id': id,
       'fact_id': 'fact-test-1',
       'hidden': hidden,
       'created_at': 1,

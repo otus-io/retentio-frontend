@@ -59,12 +59,10 @@ class DeckViewBody extends StatelessWidget {
       },
       child: BlocListener<DeckStudyBloc, DeckStudyState>(
         listenWhen: (previous, current) =>
-            previous.isLoading != current.isLoading ||
+            (current.isLoading && !previous.isLoading) ||
             previous.cardDetail?.card.id != current.cardDetail?.card.id,
         listener: (context, state) {
-          if (state.isLoading || state.cardDetail == null) {
-            flipController.showFront();
-          }
+          flipController.showFront();
         },
         child: BlocBuilder<DeckStudyBloc, DeckStudyState>(
           builder: (context, state) {
