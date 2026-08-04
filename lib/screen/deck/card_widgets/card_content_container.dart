@@ -155,36 +155,34 @@ class CardContentContainer extends StatelessWidget {
     return _CardContentShell(
       trailing: trailing,
       padding: padding,
-      child: Scrollbar(
-        child: ListView.separated(
-          padding: EdgeInsets.zero,
-          itemCount: cards.length,
-          separatorBuilder: (context, index) => Divider(
-            height: _kSectionSpacing * 2,
-            thickness: AppThemeTokens.borderWidthHairline,
-            color: scheme.outline.withValues(alpha: _kDividerAlpha),
-          ),
-          itemBuilder: (context, index) {
-            final slot = cards[index];
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _FieldSectionLabel(
-                  label: slot.field,
-                  accentColor: effectiveAccentColor,
-                ),
-                SizedBox(height: _kSectionGap),
-                FactContent(
-                  items: slot.items,
-                  color: color,
-                  typographyDeckId: typographyDeckId,
-                  typographyIsFront: typographyIsFront,
-                  inline: true,
-                ),
-              ],
-            );
-          },
+      child: ListView.separated(
+        padding: EdgeInsets.zero,
+        itemCount: cards.length,
+        separatorBuilder: (context, index) => Divider(
+          height: _kSectionSpacing * 2,
+          thickness: AppThemeTokens.borderWidthHairline,
+          color: scheme.outline.withValues(alpha: _kDividerAlpha),
         ),
+        itemBuilder: (context, index) {
+          final slot = cards[index];
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _FieldSectionLabel(
+                label: slot.field,
+                accentColor: effectiveAccentColor,
+              ),
+              SizedBox(height: _kSectionGap),
+              FactContent(
+                items: slot.items,
+                color: color,
+                typographyDeckId: typographyDeckId,
+                typographyIsFront: typographyIsFront,
+                inline: true,
+              ),
+            ],
+          );
+        },
       ),
     );
   }

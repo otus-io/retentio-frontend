@@ -319,30 +319,28 @@ class _CombinedTextPane extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return Scrollbar(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final t in textItems)
-                      if (t.value.trim().isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: CardText(
-                            text: t.value,
-                            color: color,
-                            scrollable: false,
-                            typographyDeckId: typographyDeckId,
-                            typographyIsFront: typographyIsFront,
-                          ),
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final t in textItems)
+                    if (t.value.trim().isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: CardText(
+                          text: t.value,
+                          color: color,
+                          scrollable: false,
+                          typographyDeckId: typographyDeckId,
+                          typographyIsFront: typographyIsFront,
                         ),
-                  ],
-                ),
+                      ),
+                ],
               ),
             ),
           ),
