@@ -176,9 +176,7 @@ class _FactAddState extends ConsumerState<FactAdd>
     FocusManager.instance.primaryFocus?.unfocus();
     if (_recordingVoice) {
       unawaited(_discardRecordingAndResetForm());
-      return;
     }
-    _resetForm();
   }
 
   Future<void> _discardRecordingAndResetForm() async {
