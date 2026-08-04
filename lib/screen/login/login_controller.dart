@@ -32,6 +32,9 @@ class LoginController {
         return;
       }
 
+      ProviderScope.containerOf(context, listen: false)
+          .read(selectedTabIndexProvider.notifier)
+          .setIndex(0);
       context.go(AppRoutes.main.path);
     } catch (e) {
       if (!context.mounted) return;
