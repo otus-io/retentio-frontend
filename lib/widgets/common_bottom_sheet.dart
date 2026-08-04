@@ -121,7 +121,9 @@ Future<T?> showCommonBottomSheet<T>({
           // combination with DraggableScrollableSheet can pop the modal. Inset
           // is applied as padding so the scroll view can still scroll above keys.
           final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
-          return ClipRRect(
+          return _KeyboardScrollToTop(
+            scrollController: scrollController,
+            child: ClipRRect(
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(_kSheetTopRadius),
             ),
@@ -176,7 +178,7 @@ Future<T?> showCommonBottomSheet<T>({
                 ),
               ),
             ),
-          );
+          ));
         },
       );
     },
@@ -207,4 +209,43 @@ Future<T?> showCommonBottomSheet<T>({
     anchorPoint: anchorPoint,
     requestFocus: requestFocus,
   );
+}
+
+/// Scrolls the sheet's [ScrollController] to the top whenever the keyboard
+/// opens. Keeps the form header visible so the user can see all fields.
+class _KeyboardScrollToTop extends StatefulWidget {
+  const _KeyboardScrollToTop({
+    required this.scrollController,
+    required this.child,
+  });
+
+  final ScrollController scrollController;
+  final Widget child;
+
+  @override
+  State<_KeyboardScrollToTop> createState() => _KeyboardScrollToTopState();
+}
+
+class _KeyboardScrollToTopState extends State<_KeyboardScrollToTop> {
+  double _prevBottom = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    if (bottom > 0 && _prevBottom == 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !widget.scrollController.hasClients) return;
+        widget.scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      });
+    }
+    _prevBottom = bottom;
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
