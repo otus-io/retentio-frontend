@@ -21,14 +21,40 @@ const _kMessageIconSize = 84.0;
 const _kMessageTitleTopSpacing = 24.0;
 const _kMessageButtonTopSpacing = 16.0;
 
+const _kStudyCardPreferredMin = 180.0;
+const _kStudyCardPreferredSpacing = 100.0;
+const _kStudyCardControlsReserve = 150.0;
+
+/// Gap under the study card for a viewport of [availableHeight].
+///
+/// Prefers [_kStudyCardPreferredSpacing], but shrinks on short viewports so
+/// card + spacing never exceed [availableHeight].
+double studyCardBottomSpacing(double availableHeight) {
+  if (availableHeight <= 0) return 0.0;
+  final overflow =
+      (_kStudyCardPreferredMin + _kStudyCardPreferredSpacing) - availableHeight;
+  if (overflow <= 0) return _kStudyCardPreferredSpacing;
+  return math.max(0.0, _kStudyCardPreferredSpacing - overflow);
+}
+
 /// Study card height for a viewport of [availableHeight].
 ///
-/// Short viewports (keyboard open, small devices) can drive the upper bound
-/// below the lower one, which [num.clamp] rejects with an [ArgumentError], so
-/// the upper bound is floored at the minimum height.
-double studyCardHeight(double availableHeight) => (availableHeight * 0.62)
-    .clamp(180.0, math.max(180.0, availableHeight - 150.0))
-    .toDouble();
+/// Short viewports (keyboard open, small devices) can drive the preferred
+/// bounds past each other or past the remaining space after
+/// [studyCardBottomSpacing]; the result is always sized so card + spacing fit.
+double studyCardHeight(double availableHeight) {
+  final spacing = studyCardBottomSpacing(availableHeight);
+  final maxCard = math.max(0.0, availableHeight - spacing);
+  if (maxCard <= 0) return 0.0;
+
+  final lower = math.min(_kStudyCardPreferredMin, maxCard);
+  final controlsUpper = math.max(
+    0.0,
+    availableHeight - _kStudyCardControlsReserve,
+  );
+  final upper = math.min(maxCard, math.max(lower, controlsUpper));
+  return (availableHeight * 0.62).clamp(lower, upper).toDouble();
+}
 
 String? _tagNameFor(DeckStudyState state) {
   final activeTagId = state.activeTagId;
@@ -185,7 +211,11 @@ class DeckViewBody extends StatelessWidget {
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final screenWidth = MediaQuery.sizeOf(context).width;
-                      final cardHeight = studyCardHeight(constraints.maxHeight);
+                      final availableHeight = constraints.maxHeight;
+                      final cardHeight = studyCardHeight(availableHeight);
+                      final bottomSpacing = studyCardBottomSpacing(
+                        availableHeight,
+                      );
                       return Stack(
                         children: [
                           Padding(
@@ -204,7 +234,7 @@ class DeckViewBody extends StatelessWidget {
                                     isFront: false,
                                   ),
                                 ),
-                                const SizedBox(height: 100),
+                                SizedBox(height: bottomSpacing),
                               ],
                             ),
                           ),
