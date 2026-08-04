@@ -122,12 +122,10 @@ class DeckViewBody extends StatelessWidget {
                       title: loc.noCardsInThisDeck,
                       theme: theme,
                     )
-                  : _CaughtUpColumn(
-                      loc: loc,
+                  : _DeckStudyMessageColumn(
+                      icon: LucideIcons.circleQuestionMark,
+                      title: loc.noCardsInThisDeck,
                       theme: theme,
-                      onReviewAgain: () {
-                        requestDeckStudyReviewAgain(context);
-                      },
                     );
 
               return Column(
@@ -135,27 +133,6 @@ class DeckViewBody extends StatelessWidget {
                 children: [
                   if (state.deckTags.isNotEmpty) buildTagFilterBar(),
                   Expanded(child: messageBody),
-                ],
-              );
-            }
-
-            final isCompleted =
-                state.activeTagId == null &&
-                totalCardsInSession == cardsStudied;
-            if (isCompleted) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (state.deckTags.isNotEmpty) buildTagFilterBar(),
-                  Expanded(
-                    child: _CaughtUpColumn(
-                      loc: loc,
-                      theme: theme,
-                      onReviewAgain: () {
-                        requestDeckStudyReviewAgain(context);
-                      },
-                    ),
-                  ),
                 ],
               );
             }
@@ -288,47 +265,6 @@ class _TagFilterEmptyColumn extends StatelessWidget {
           AppButton(
             label: loc.clearTagFilter,
             onPressed: onClearFilter,
-            variant: AppButtonVariant.primary,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CaughtUpColumn extends StatelessWidget {
-  const _CaughtUpColumn({
-    required this.loc,
-    required this.theme,
-    required this.onReviewAgain,
-  });
-
-  final AppLocalizations loc;
-  final ThemeData theme;
-  final VoidCallback onReviewAgain;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            LucideIcons.circleCheckBig,
-            size: _kMessageIconSize,
-            color: theme.colorScheme.primary,
-          ),
-          const SizedBox(height: _kMessageTitleTopSpacing),
-          Text(
-            loc.allCaughtUp,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: _kMessageButtonTopSpacing),
-          AppButton(
-            label: loc.reviewAgain,
-            onPressed: onReviewAgain,
             variant: AppButtonVariant.primary,
           ),
         ],

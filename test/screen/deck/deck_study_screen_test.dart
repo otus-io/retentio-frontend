@@ -88,13 +88,15 @@ void main() {
       expect(find.text('No cards in this deck'), findsOneWidget);
     });
 
-    testWidgets('Review Again triggers one more card reload', (tester) async {
+    testWidgets(
+      'keeps showing a study card when session studied count reaches deck total',
+      (tester) async {
       await setupTestEnvironment();
-      final deck = sampleDeck(cardsCount: 5);
+      final deck = sampleDeck(cardsCount: 1);
       final harness = FakeDeckStudyBlocHarness(
         deckId: deck.id,
         loadResults: [
-          const DeckStudyLoadResult(cardDetail: null, refreshedCardsCount: 5),
+          DeckStudyLoadResult(cardDetail: sampleCardDetail()),
           DeckStudyLoadResult(cardDetail: sampleCardDetail()),
         ],
       );
@@ -114,12 +116,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final before = harness.repository.loadCalls;
-      expect(find.text('Review Again'), findsOneWidget);
-      await tester.tap(find.text('Review Again'));
+      await tester.tap(find.text('Show Answer'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
       await tester.pumpAndSettle();
 
-      expect(harness.repository.loadCalls, before + 1);
+      expect(find.text('All Caught Up!'), findsNothing);
+      expect(find.text('Review Again'), findsNothing);
+      expect(find.text('Show Answer'), findsOneWidget);
     });
 
     testWidgets('shows empty tag filter message instead of all caught up', (

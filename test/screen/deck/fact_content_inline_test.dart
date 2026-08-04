@@ -33,7 +33,9 @@ void main() {
       expect(find.byType(TabBarView), findsNothing);
     });
 
-    testWidgets('inline: false (default) uses TabBarView', (tester) async {
+    testWidgets(
+      'inline: false (default) with a single content type skips TabBarView',
+      (tester) async {
       await tester.pumpWidget(
         buildTestableWidgetWithOverrides(
           Scaffold(
@@ -49,7 +51,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byType(TabBarView), findsOneWidget);
+      expect(find.text('Hello'), findsOneWidget);
+      expect(find.byType(TabBarView), findsNothing);
     });
 
     testWidgets('inline: true with no items renders empty CardText', (

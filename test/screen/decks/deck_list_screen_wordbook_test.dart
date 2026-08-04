@@ -77,7 +77,10 @@ void main() {
 
       expect(find.byType(DeckCreate), findsOneWidget);
 
-      await tester.enterText(find.byType(TextField).first, 'My new deck');
+      final textFields = find.byType(TextField);
+      await tester.enterText(textFields.at(0), 'My new deck');
+      await tester.enterText(textFields.at(1), 'Front');
+      await tester.enterText(textFields.at(2), 'Back');
       await tester.pump();
 
       final saveButton = find.widgetWithText(FilledButton, 'Save');

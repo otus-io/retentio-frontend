@@ -57,5 +57,40 @@ void main() {
         await tester.pumpAndSettle();
       },
     );
+
+    testWidgets(
+      'tap outside only unfocuses and does not clear form while recording',
+      (tester) async {
+        await setupTestEnvironment();
+        addTearDown(tearDownTestEnvironment);
+
+        final deck = sampleDeck();
+
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            Scaffold(body: FactAdd(deck: deck)),
+            overrides: [
+              deckListProvider.overrideWith(() => FakeDeckListNotifier([deck])),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final textFields = find.byType(TextField);
+        await tester.enterText(textFields.at(0), 'Hello');
+        await tester.enterText(textFields.at(1), 'World');
+        await tester.tap(textFields.at(0));
+        await tester.pumpAndSettle();
+
+        final dynamic state = tester.state(find.byType(FactAdd));
+        state.isRecordingVoice = true;
+
+        await tester.tapAt(const Offset(8, 8));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Hello'), findsOneWidget);
+        expect(find.text('World'), findsOneWidget);
+      },
+    );
   });
 }

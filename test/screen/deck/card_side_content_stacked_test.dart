@@ -89,7 +89,7 @@ void main() {
     });
 
     testWidgets(
-      'back uses tabbed FactContent without field labels for single-field cards',
+      'back uses single-pane FactContent without field labels for single-field cards',
       (tester) async {
         await pumpCardSide(
           tester,
@@ -103,8 +103,8 @@ void main() {
         final backText = tester.widget<Text>(find.text('World'));
         expect(backText.textAlign, TextAlign.center);
 
-        // Media tab bar from FactContent, not field tabs (multi-field back has none).
-        expect(find.byType(ButtonsTabBar), findsOneWidget);
+        // Single content type skips the media tab bar entirely.
+        expect(find.byType(ButtonsTabBar), findsNothing);
       },
     );
   });
