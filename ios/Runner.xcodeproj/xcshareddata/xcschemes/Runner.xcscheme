@@ -19,10 +19,26 @@
                      BlueprintName = "Runner"
                      ReferencedContainer = "container:Runner.xcodeproj">
                   </BuildableReference>
-               </EnvironmentBuildable>
-            </ActionContent>
-         </ExecutionAction>
-      </PreActions>
+            </EnvironmentBuildable>
+         </ActionContent>
+      </ExecutionAction>
+      <ExecutionAction
+         ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+         <ActionContent
+            title = "Sync Generated Package Deployment Target"
+            scriptText = "# The prepare script above regenerates the plugin package pinned to&#10;# Flutter&apos;s default iOS version; only `flutter build`/`flutter run` raise it&#10;# to this target&apos;s, so an Xcode-driven build fails to resolve plugins that&#10;# need more. Raise it here, before Xcode resolves the package graph.&#10;MANIFEST=&quot;$SRCROOT/Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Package.swift&quot;&#10;if [ -f &quot;$MANIFEST&quot; ] &amp;&amp; [ -n &quot;$IPHONEOS_DEPLOYMENT_TARGET&quot; ]; then&#10;  /usr/bin/sed -i &apos;&apos; &quot;s/\.iOS(\&quot;[0-9.]*\&quot;)/.iOS(\&quot;$IPHONEOS_DEPLOYMENT_TARGET\&quot;)/&quot; &quot;$MANIFEST&quot;&#10;fi&#10;">
+            <EnvironmentBuildable>
+               <BuildableReference
+                  BuildableIdentifier = "primary"
+                  BlueprintIdentifier = "97C146ED1CF9000F007C117D"
+                  BuildableName = "Runner.app"
+                  BlueprintName = "Runner"
+                  ReferencedContainer = "container:Runner.xcodeproj">
+               </BuildableReference>
+            </EnvironmentBuildable>
+         </ActionContent>
+      </ExecutionAction>
+   </PreActions>
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
