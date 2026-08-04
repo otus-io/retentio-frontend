@@ -58,12 +58,16 @@ class _TagPickerSheet extends HookWidget {
     // Client-side filter
     final query = filterText.value.trim().toLowerCase();
 
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.55,
       minChildSize: 0.4,
       maxChildSize: 0.9,
-      builder: (_, scrollController) => Column(
+      builder: (_, scrollController) => Padding(
+        padding: EdgeInsets.only(bottom: keyboardInset),
+        child: Column(
         children: [
           // ── handle ──────────────────────────────────────
           Padding(
@@ -214,6 +218,7 @@ class _TagPickerSheet extends HookWidget {
             },
           ),
         ],
+        ),
       ),
     );
   }
