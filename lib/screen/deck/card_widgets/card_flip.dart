@@ -158,11 +158,14 @@ class CardFlip extends HookWidget {
             ),
             IgnorePointer(
               ignoring: showFront,
-              child: _FlipCardFace(
-                animation: frontAnimation,
-                height: height,
-                width: width,
-                child: backWidget,
+              child: GestureDetector(
+                onTap: showFront ? null : () => toggleSideRef.value(),
+                child: _FlipCardFace(
+                  animation: frontAnimation,
+                  height: height,
+                  width: width,
+                  child: backWidget,
+                ),
               ),
             ),
           ],
