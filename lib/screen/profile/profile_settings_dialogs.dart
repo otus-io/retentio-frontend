@@ -23,15 +23,13 @@ String profileLanguageDisplayName(Locale locale, AppLocalizations loc) {
   }
 }
 
-String profileThemeDisplayName(ThemeMode theme, AppLocalizations loc) {
-  switch (theme) {
-    case ThemeMode.light:
-      return loc.themeLight;
-    case ThemeMode.dark:
-      return loc.themeDark;
-    case ThemeMode.system:
-      return loc.themeSystem;
-  }
+String profileThemeDisplayName(AppThemeMode theme, AppLocalizations loc) {
+  return switch (theme) {
+    AppThemeMode.light => loc.themeLight,
+    AppThemeMode.dark => loc.themeDark,
+    AppThemeMode.sepia => loc.themeSepia,
+    AppThemeMode.system => loc.themeSystem,
+  };
 }
 
 Future<void> showProfileLanguageDialog(
@@ -69,23 +67,24 @@ Future<void> showProfileLanguageDialog(
 Future<void> showProfileThemeDialog(
   BuildContext context,
   WidgetRef ref,
-  ThemeMode currentTheme,
+  AppThemeMode currentTheme,
   AppLocalizations loc,
 ) async {
-  final selected = await showGeneralDialog<ThemeMode>(
+  final selected = await showGeneralDialog<AppThemeMode>(
     context: context,
     barrierDismissible: true,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
     barrierColor: Colors.black54,
     transitionDuration: Duration.zero,
     pageBuilder: (dialogContext, animation, secondaryAnimation) =>
-        _ProfileRadioDialog<ThemeMode>(
+        _ProfileRadioDialog<AppThemeMode>(
           title: loc.changeTheme,
           groupValue: currentTheme,
           options: [
-            _RadioOption(value: ThemeMode.light, label: loc.themeLight),
-            _RadioOption(value: ThemeMode.dark, label: loc.themeDark),
-            _RadioOption(value: ThemeMode.system, label: loc.themeSystem),
+            _RadioOption(value: AppThemeMode.light, label: loc.themeLight),
+            _RadioOption(value: AppThemeMode.dark, label: loc.themeDark),
+            _RadioOption(value: AppThemeMode.sepia, label: loc.themeSepia),
+            _RadioOption(value: AppThemeMode.system, label: loc.themeSystem),
           ],
           onChanged: (value) {
             Navigator.of(dialogContext).pop(value);

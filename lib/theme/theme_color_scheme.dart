@@ -5,6 +5,32 @@ import 'theme_tokens.dart';
 class AppThemeColorScheme {
   AppThemeColorScheme._();
 
+  static ColorScheme sepia() {
+    final baseScheme = ColorScheme.fromSeed(
+      seedColor: AppThemeTokens.sepiaPrimary,
+      brightness: Brightness.light,
+    );
+    return baseScheme.copyWith(
+      primary: AppThemeTokens.sepiaPrimary,
+      onPrimary: Colors.white,
+      secondary: AppThemeTokens.sepiaSecondary,
+      onSecondary: Colors.white,
+      tertiary: AppThemeTokens.sepiaTertiary,
+      onTertiary: Colors.white,
+      surface: AppThemeTokens.sepiaSurface,
+      surfaceContainer: const Color(0xFFEDE3CE),
+      surfaceContainerHigh: const Color(0xFFF0E8D5),
+      surfaceContainerHighest: AppThemeTokens.sepiaSurfaceHigh,
+      surfaceBright: const Color(0xFFFFFCF3),
+      surfaceDim: const Color(0xFFEADDBE),
+      onSurfaceVariant: const Color(0xFF5A4832),
+      outline: AppThemeTokens.sepiaOutline,
+      outlineVariant: const Color(0xFFDDD0B8),
+      onSurface: AppThemeTokens.sepiaOnSurface,
+      shadow: const Color(0xFF1A0F00),
+    );
+  }
+
   static ColorScheme resolve(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
     final baseScheme = ColorScheme.fromSeed(
@@ -21,16 +47,16 @@ class AppThemeColorScheme {
         secondary: AppThemeTokens.darkSecondary,
         onSecondary: const Color(0xFF022B1A),
         tertiary: AppThemeTokens.darkTertiary,
-        onTertiary: const Color(0xFF1A1040),
+        onTertiary: const Color(0xFF0A1E33),
         surface: AppThemeTokens.darkSurface,
-        surfaceContainer: const Color(0xFF111827),
-        surfaceContainerHigh: const Color(0xFF1A2035),
+        surfaceContainer: const Color(0xFF191D24),
+        surfaceContainerHigh: const Color(0xFF1C2028),
         surfaceContainerHighest: AppThemeTokens.darkSurfaceHigh,
-        surfaceBright: const Color(0xFF2D3748),
-        surfaceDim: const Color(0xFF080C14),
-        onSurfaceVariant: const Color(0xFF94A3B8),
+        surfaceBright: const Color(0xFF252B34),
+        surfaceDim: const Color(0xFF0D1015),
+        onSurfaceVariant: const Color(0xFF9AA0AC),
         outline: AppThemeTokens.darkOutline,
-        outlineVariant: const Color(0xFF1E293B),
+        outlineVariant: const Color(0xFF333844),
         onSurface: AppThemeTokens.darkOnSurface,
         shadow: const Color(0xFF000000),
       );

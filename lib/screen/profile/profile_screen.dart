@@ -29,7 +29,7 @@ class ProfileScreen extends HookConsumerWidget {
     final scheme = theme.colorScheme;
     final dividerTheme = theme.dividerTheme;
     final currentLocale = ref.watch(localeProvider);
-    final currentTheme = ref.watch(themeModeProvider);
+    final AppThemeMode currentTheme = ref.watch(themeModeProvider);
 
     return BlocProvider<ProfileCubit>(
       create: (_) => ProfileCubit(),

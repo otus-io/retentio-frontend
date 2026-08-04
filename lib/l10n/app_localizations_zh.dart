@@ -158,6 +158,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get themeSystem => '跟随系统';
 
   @override
+  String get themeSepia => '护眼模式';
+
+  @override
   String get totalCards => '总计';
 
   @override

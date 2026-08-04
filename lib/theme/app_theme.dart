@@ -13,6 +13,27 @@ class AppTheme {
 
   static ThemeData dark() => _buildTheme(Brightness.dark);
 
+  static ThemeData sepia() {
+    final colorScheme = AppThemeColorScheme.sepia();
+    final textTheme = AppThemeTypography.build(Brightness.light);
+    final baseTheme = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      colorScheme: colorScheme,
+      textTheme: textTheme,
+      extensions: <ThemeExtension<dynamic>>[
+        AppTypographySemantic.fromTextTheme(textTheme),
+      ],
+      scaffoldBackgroundColor: colorScheme.surface,
+    );
+    return AppThemeComponents.apply(
+      base: baseTheme,
+      brightness: Brightness.light,
+      colorScheme: colorScheme,
+      textTheme: textTheme,
+    );
+  }
+
   static ThemeData _buildTheme(Brightness brightness) {
     final colorScheme = AppThemeColorScheme.resolve(brightness);
     final textTheme = AppThemeTypography.build(brightness);

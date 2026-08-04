@@ -45,8 +45,8 @@ class LoginScreen extends HookConsumerWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final isDark =
-        themeMode == ThemeMode.dark ||
-        (themeMode == ThemeMode.system &&
+        themeMode == AppThemeMode.dark ||
+        (themeMode == AppThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
 
     return Scaffold(

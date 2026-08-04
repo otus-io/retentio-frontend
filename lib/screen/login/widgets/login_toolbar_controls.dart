@@ -47,7 +47,7 @@ class LoginToolbarControls extends HookConsumerWidget {
             onPressed: () {
               ref
                   .read(themeModeProvider.notifier)
-                  .setThemeMode(isDark ? ThemeMode.light : ThemeMode.dark);
+                  .setThemeMode(isDark ? AppThemeMode.light : AppThemeMode.dark);
             },
           ),
           Container(

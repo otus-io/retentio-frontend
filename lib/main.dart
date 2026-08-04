@@ -30,6 +30,7 @@ import 'widgets/app_navigation_bar.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final ThemeData _lightTheme = AppTheme.light();
 final ThemeData _darkTheme = AppTheme.dark();
+final ThemeData _sepiaTheme = AppTheme.sepia();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,11 +58,18 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
+    final appThemeMode = ref.watch(themeModeProvider);
     final locale = ref.watch(localeProvider);
     // Initialize auth lifecycle side effects without subscribing this widget
     // to login-state changes.
     ref.read(isLoginProvider);
+
+    final (activeTheme, activeDarkTheme, flutterThemeMode) = switch (appThemeMode) {
+      AppThemeMode.light => (_lightTheme, _darkTheme, ThemeMode.light),
+      AppThemeMode.dark => (_lightTheme, _darkTheme, ThemeMode.dark),
+      AppThemeMode.sepia => (_sepiaTheme, _darkTheme, ThemeMode.light),
+      AppThemeMode.system => (_lightTheme, _darkTheme, ThemeMode.system),
+    };
 
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
@@ -73,11 +81,11 @@ class MyApp extends ConsumerWidget {
           child: child ?? const SizedBox.shrink(),
         );
       },
-      theme: _lightTheme,
-      darkTheme: _darkTheme,
+      theme: activeTheme,
+      darkTheme: activeDarkTheme,
       themeAnimationDuration: Duration.zero,
       themeAnimationCurve: Curves.linear,
-      themeMode: themeMode,
+      themeMode: flutterThemeMode,
       locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [

@@ -394,6 +394,12 @@ abstract class AppLocalizations {
   /// **'System'**
   String get themeSystem;
 
+  /// Sepia theme
+  ///
+  /// In en, this message translates to:
+  /// **'Sepia'**
+  String get themeSepia;
+
   /// Total cards count label
   ///
   /// In en, this message translates to:

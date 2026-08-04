@@ -202,6 +202,10 @@
   "@themeSystem": {
     "description": "System theme"
   },
+  "themeSepia": "Sepia",
+  "@themeSepia": {
+    "description": "Sepia theme"
+  },
   "totalCards": "Total",
   "@totalCards": {
     "description": "Total cards count label"
