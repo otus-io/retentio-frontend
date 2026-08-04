@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/models/card.dart';
+import 'package:retentio/screen/deck/card_widgets/card_audio.dart';
 import 'package:retentio/screen/deck/card_widgets/card_text.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_content.dart';
 
@@ -53,6 +54,33 @@ void main() {
 
         expect(find.text('Hello'), findsOneWidget);
         expect(find.byType(TabBarView), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'single text+audio field shows play control without TabBarView',
+      (tester) async {
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            Scaffold(
+              body: SizedBox(
+                height: 400,
+                child: FactContent(
+                  color: Colors.black,
+                  items: [
+                    Item(type: 'text', value: 'Hello'),
+                    Item(type: 'audio', value: 'https://cdn.example.com/a.m4a'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.text('Hello'), findsOneWidget);
+        expect(find.byType(TabBarView), findsNothing);
+        expect(find.byType(CardAudio), findsOneWidget);
       },
     );
 

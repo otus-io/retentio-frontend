@@ -125,8 +125,24 @@ class FactContent extends ConsumerWidget {
 
     // Single content type: skip TabBarView nesting to allow scrolling and
     // avoid the spurious top-border divider from the unused tab bar.
+    // Audio normally lives on that tab bar — surface it under the pane instead.
     if (tabPages.length == 1) {
-      final single = tabPages.first;
+      Widget single = tabPages.first;
+      if (audioItems.isNotEmpty) {
+        single = Column(
+          children: [
+            Expanded(child: single),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: _CombinedAudioTrailing(
+                audioItems: audioItems,
+                color: color,
+                singleAudioScope: singleAudioScope,
+              ),
+            ),
+          ],
+        );
+      }
       if (singleAudioScope) {
         return ProviderScope(
           overrides: [
