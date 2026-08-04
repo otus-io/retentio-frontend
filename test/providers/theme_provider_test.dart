@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:retentio/providers/theme_provider.dart';
@@ -15,25 +14,25 @@ void main() {
   });
 
   group('ThemeModeNotifier', () {
-    test('toJson serializes ThemeMode to index', () {
+    test('toJson serializes AppThemeMode to index', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
       final notifier = container.read(themeModeProvider.notifier);
-      notifier.setThemeMode(ThemeMode.dark);
+      notifier.setThemeMode(AppThemeMode.dark);
 
-      final json = notifier.toJson(ThemeMode.dark);
+      final json = notifier.toJson(AppThemeMode.dark);
       expect(json, isNotNull);
-      expect(json!['mode'], ThemeMode.dark.index);
+      expect(json!['mode'], AppThemeMode.dark.index);
     });
 
-    test('fromJson deserializes valid index to ThemeMode', () {
+    test('fromJson deserializes valid index to AppThemeMode', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
       final notifier = container.read(themeModeProvider.notifier);
-      final result = notifier.fromJson({'mode': 0});
-      expect(result, ThemeMode.system);
+      final result = notifier.fromJson({'mode': AppThemeMode.system.index});
+      expect(result, AppThemeMode.system);
     });
 
     test('fromJson returns null for invalid index', () {
@@ -51,12 +50,15 @@ void main() {
       addTearDown(container.dispose);
 
       final notifier = container.read(themeModeProvider.notifier);
-      notifier.setThemeMode(ThemeMode.light);
+      notifier.setThemeMode(AppThemeMode.light);
       notifier.toggle();
-      expect(container.read(themeModeProvider), ThemeMode.dark);
+      expect(container.read(themeModeProvider), AppThemeMode.dark);
 
       notifier.toggle();
-      expect(container.read(themeModeProvider), ThemeMode.light);
+      expect(container.read(themeModeProvider), AppThemeMode.sepia);
+
+      notifier.toggle();
+      expect(container.read(themeModeProvider), AppThemeMode.light);
     });
 
     test('setThemeMode updates state', () {
@@ -64,11 +66,11 @@ void main() {
       addTearDown(container.dispose);
 
       final notifier = container.read(themeModeProvider.notifier);
-      notifier.setThemeMode(ThemeMode.dark);
-      expect(container.read(themeModeProvider), ThemeMode.dark);
+      notifier.setThemeMode(AppThemeMode.dark);
+      expect(container.read(themeModeProvider), AppThemeMode.dark);
 
-      notifier.setThemeMode(ThemeMode.light);
-      expect(container.read(themeModeProvider), ThemeMode.light);
+      notifier.setThemeMode(AppThemeMode.light);
+      expect(container.read(themeModeProvider), AppThemeMode.light);
     });
   });
 }

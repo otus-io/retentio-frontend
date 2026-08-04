@@ -247,7 +247,7 @@ void main() {
           'published_version': 2,
         });
         expect(deck.publishedVersion, 2);
-        expect(deck.isPublished, isTrue);
+        expect(deck.isPublishedSource, isTrue);
       });
 
       test('does not treat imported decks as published source decks', () {
@@ -261,7 +261,7 @@ void main() {
           'published_version': 2,
         });
         expect(deck.isImported, isTrue);
-        expect(deck.isPublished, isFalse);
+        expect(deck.isPublishedSource, isFalse);
       });
 
       test('toJson includes intervals and nested stats', () {
