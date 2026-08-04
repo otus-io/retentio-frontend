@@ -11,36 +11,30 @@ import 'package:retentio/widgets/app_input.dart';
 
 // ── public API ────────────────────────────────────────────────────────────────
 
-/// Shows a bottom sheet that lets the user pick tags from their tag list.
+/// Pushes a full-screen tag picker page.
 ///
 /// [selectedIds] — tag ids already attached to the item being edited.
 /// Returns the updated set of selected tag ids, or null if cancelled.
 ///
-/// The sheet reads [TagManagerCubit] from context; make sure it is provided
-/// above the caller (e.g. at the app or deck level).
+/// Reads [TagManagerCubit] from context; make sure it is provided above caller.
 Future<Set<String>?> showTagPickerSheet(
   BuildContext context, {
   required Set<String> selectedIds,
 }) {
-  return showModalBottomSheet<Set<String>>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-    ),
-    builder: (_) => BlocProvider.value(
-      value: context.read<TagManagerCubit>(),
-      child: _TagPickerSheet(initialSelectedIds: selectedIds),
+  return Navigator.of(context).push<Set<String>>(
+    MaterialPageRoute(
+      builder: (_) => BlocProvider.value(
+        value: context.read<TagManagerCubit>(),
+        child: _TagPickerPage(initialSelectedIds: selectedIds),
+      ),
     ),
   );
 }
 
-// ── private sheet ─────────────────────────────────────────────────────────────
+// ── page ──────────────────────────────────────────────────────────────────────
 
-class _TagPickerSheet extends HookWidget {
-  const _TagPickerSheet({required this.initialSelectedIds});
+class _TagPickerPage extends HookWidget {
+  const _TagPickerPage({required this.initialSelectedIds});
 
   final Set<String> initialSelectedIds;
 
@@ -55,49 +49,23 @@ class _TagPickerSheet extends HookWidget {
     final filterController = useTextEditingController();
     final cubit = context.read<TagManagerCubit>();
 
-    // Client-side filter
     final query = filterText.value.trim().toLowerCase();
 
-    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.55,
-      minChildSize: 0.4,
-      maxChildSize: 0.9,
-      builder: (_, scrollController) => Padding(
-        padding: EdgeInsets.only(bottom: keyboardInset),
-        child: Column(
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(loc.tagPickerTitle),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(selected.value),
+            child: Text(loc.tagPickerDone),
+          ),
+        ],
+      ),
+      body: Column(
         children: [
-          // ── handle ──────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.only(top: 12, bottom: 4),
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: scheme.onSurfaceVariant.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          // ── title ───────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Text(loc.tagPickerTitle, style: theme.textTheme.titleMedium),
-                const Spacer(),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(selected.value),
-                  child: Text(loc.tagPickerDone),
-                ),
-              ],
-            ),
-          ),
           // ── search ──────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: AppInput(
               controller: filterController,
               hint: loc.tagPickerSearchHint,
@@ -129,7 +97,6 @@ class _TagPickerSheet extends HookWidget {
                 return Stack(
                   children: [
                     ListView.builder(
-                      controller: scrollController,
                       itemCount: filtered.length,
                       itemBuilder: (_, i) {
                         final tag = filtered[i];
@@ -217,8 +184,8 @@ class _TagPickerSheet extends HookWidget {
               );
             },
           ),
+          SafeArea(top: false, child: const SizedBox.shrink()),
         ],
-        ),
       ),
     );
   }
