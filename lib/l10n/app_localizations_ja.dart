@@ -164,7 +164,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get themeSystem => 'システム';
 
   @override
-  String get themeSepia => 'Sepia';
+  String get themeSepia => 'セピア';
 
   @override
   String get totalCards => '合計';
