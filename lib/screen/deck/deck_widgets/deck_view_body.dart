@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -18,6 +20,15 @@ import 'package:retentio/widgets/app_toast.dart';
 const _kMessageIconSize = 84.0;
 const _kMessageTitleTopSpacing = 24.0;
 const _kMessageButtonTopSpacing = 16.0;
+
+/// Study card height for a viewport of [availableHeight].
+///
+/// Short viewports (keyboard open, small devices) can drive the upper bound
+/// below the lower one, which [num.clamp] rejects with an [ArgumentError], so
+/// the upper bound is floored at the minimum height.
+double studyCardHeight(double availableHeight) => (availableHeight * 0.62)
+    .clamp(180.0, math.max(180.0, availableHeight - 150.0))
+    .toDouble();
 
 String? _tagNameFor(DeckStudyState state) {
   final activeTagId = state.activeTagId;
@@ -174,9 +185,7 @@ class DeckViewBody extends StatelessWidget {
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final screenWidth = MediaQuery.sizeOf(context).width;
-                      final maxCardHeight = (constraints.maxHeight * 0.62)
-                          .clamp(180.0, constraints.maxHeight - 150.0);
-                      final cardHeight = maxCardHeight.toDouble();
+                      final cardHeight = studyCardHeight(constraints.maxHeight);
                       return Stack(
                         children: [
                           Padding(
