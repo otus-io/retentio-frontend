@@ -33,6 +33,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get loginTagline => '千里の道も一歩から';
 
   @override
+  String get registerPageTitle => 'アカウントを作成';
+
+  @override
+  String get registerPageSubtitle => '長期記憶デッキを作り始めましょう';
+
+  @override
   String get email => 'メールアドレス';
 
   @override
@@ -149,9 +155,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get themeDark => 'ダーク';
 
   @override
-  String get themeSepia => 'セピア';
-
-  @override
   String get switchToLightMode => 'ライトモードに切り替え';
 
   @override
@@ -159,6 +162,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get themeSystem => 'システム';
+
+  @override
+  String get themeSepia => 'Sepia';
 
   @override
   String get totalCards => '合計';

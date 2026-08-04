@@ -34,6 +34,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'A journey of a thousand miles begins with a single step';
 
   @override
+  String get registerPageTitle => 'Create Account';
+
+  @override
+  String get registerPageSubtitle =>
+      'Start building your long-term memory decks';
+
+  @override
   String get email => 'Email';
 
   @override

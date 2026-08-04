@@ -33,6 +33,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loginTagline => '日积跬步，以至千里。';
 
   @override
+  String get registerPageTitle => '创建账号';
+
+  @override
+  String get registerPageSubtitle => '开始构建你的长期记忆卡组';
+
+  @override
   String get email => '邮箱';
 
   @override

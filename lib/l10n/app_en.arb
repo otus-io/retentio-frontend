@@ -32,6 +32,14 @@
   "@loginTagline": {
     "description": "Brand tagline under the app name on the login screen"
   },
+  "registerPageTitle": "Create Account",
+  "@registerPageTitle": {
+    "description": "Register page title heading"
+  },
+  "registerPageSubtitle": "Start building your long-term memory decks",
+  "@registerPageSubtitle": {
+    "description": "Register page subtitle under the title"
+  },
   "email": "Email",
   "@email": {
     "description": "Email input field label"

@@ -8,6 +8,8 @@
   "password": "密码",
   "loginPageTitle": "登录",
   "loginTagline": "日积跬步，以至千里。",
+  "registerPageTitle": "创建账号",
+  "registerPageSubtitle": "开始构建你的长期记忆卡组",
   "email": "邮箱",
   "confirmPassword": "确认密码",
   "pleaseFillAllFields": "请填写所有字段",

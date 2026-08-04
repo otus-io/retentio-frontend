@@ -148,6 +148,18 @@ abstract class AppLocalizations {
   /// **'A journey of a thousand miles begins with a single step'**
   String get loginTagline;
 
+  /// Register page title heading
+  ///
+  /// In en, this message translates to:
+  /// **'Create Account'**
+  String get registerPageTitle;
+
+  /// Register page subtitle under the title
+  ///
+  /// In en, this message translates to:
+  /// **'Start building your long-term memory decks'**
+  String get registerPageSubtitle;
+
   /// Email input field label
   ///
   /// In en, this message translates to:
