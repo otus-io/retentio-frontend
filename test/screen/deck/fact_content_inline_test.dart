@@ -36,24 +36,25 @@ void main() {
     testWidgets(
       'inline: false (default) with a single content type skips TabBarView',
       (tester) async {
-      await tester.pumpWidget(
-        buildTestableWidgetWithOverrides(
-          Scaffold(
-            body: SizedBox(
-              height: 400,
-              child: FactContent(
-                color: Colors.black,
-                items: [Item(type: 'text', value: 'Hello')],
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            Scaffold(
+              body: SizedBox(
+                height: 400,
+                child: FactContent(
+                  color: Colors.black,
+                  items: [Item(type: 'text', value: 'Hello')],
+                ),
               ),
             ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Hello'), findsOneWidget);
-      expect(find.byType(TabBarView), findsNothing);
-    });
+        expect(find.text('Hello'), findsOneWidget);
+        expect(find.byType(TabBarView), findsNothing);
+      },
+    );
 
     testWidgets('inline: true with no items renders empty CardText', (
       tester,

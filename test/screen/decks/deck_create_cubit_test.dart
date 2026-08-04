@@ -4,10 +4,7 @@ import 'package:retentio/screen/decks/bloc/deck_create_cubit.dart';
 void main() {
   group('deck field helpers', () {
     test('normalizeDeckFieldNames trims whitespace', () {
-      expect(
-        normalizeDeckFieldNames([' Front ', 'Back  ']),
-        ['Front', 'Back'],
-      );
+      expect(normalizeDeckFieldNames([' Front ', 'Back  ']), ['Front', 'Back']);
     });
 
     test('hasBlankDeckFieldNames detects empty or whitespace-only fields', () {

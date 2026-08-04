@@ -233,13 +233,14 @@ class _StatBox extends StatelessWidget {
               display,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: (isDueEmphasis
-                      ? theme.textTheme.titleMedium
-                      : theme.textTheme.titleSmall)
-                  ?.copyWith(
-                color: effectiveColor,
-                fontWeight: FontWeight.w700,
-              ),
+              style:
+                  (isDueEmphasis
+                          ? theme.textTheme.titleMedium
+                          : theme.textTheme.titleSmall)
+                      ?.copyWith(
+                        color: effectiveColor,
+                        fontWeight: FontWeight.w700,
+                      ),
             ),
             const SizedBox(height: 2),
             Text(

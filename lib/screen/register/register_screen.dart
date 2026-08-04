@@ -67,7 +67,10 @@ class RegisterScreen extends HookWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(loc.registerPageTitle, style: theme.textTheme.titleLarge),
+                      Text(
+                        loc.registerPageTitle,
+                        style: theme.textTheme.titleLarge,
+                      ),
                       const SizedBox(height: _kSubtitleSpacing),
                       Text(
                         loc.registerPageSubtitle,

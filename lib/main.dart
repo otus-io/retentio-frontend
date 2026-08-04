@@ -64,7 +64,11 @@ class MyApp extends ConsumerWidget {
     // to login-state changes.
     ref.read(isLoginProvider);
 
-    final (activeTheme, activeDarkTheme, flutterThemeMode) = switch (appThemeMode) {
+    final (
+      activeTheme,
+      activeDarkTheme,
+      flutterThemeMode,
+    ) = switch (appThemeMode) {
       AppThemeMode.light => (_lightTheme, _darkTheme, ThemeMode.light),
       AppThemeMode.dark => (_lightTheme, _darkTheme, ThemeMode.dark),
       AppThemeMode.sepia => (_sepiaTheme, _darkTheme, ThemeMode.light),

@@ -91,40 +91,41 @@ void main() {
     testWidgets(
       'keeps showing a study card when session studied count reaches deck total',
       (tester) async {
-      await setupTestEnvironment();
-      final deck = sampleDeck(cardsCount: 1);
-      final harness = FakeDeckStudyBlocHarness(
-        deckId: deck.id,
-        loadResults: [
-          DeckStudyLoadResult(cardDetail: sampleCardDetail()),
-          DeckStudyLoadResult(cardDetail: sampleCardDetail()),
-        ],
-      );
-      addTearDown(() async {
-        await harness.dispose();
-        tearDownTestEnvironment();
-      });
-
-      await tester.pumpWidget(
-        buildTestableWidgetWithOverrides(
-          DeckViewScreen(deck: deck),
-          overrides: [
-            currentDeckProvider.overrideWithValue(deck),
-            deckStudyBlocProvider.overrideWithValue(harness.bloc),
+        await setupTestEnvironment();
+        final deck = sampleDeck(cardsCount: 1);
+        final harness = FakeDeckStudyBlocHarness(
+          deckId: deck.id,
+          loadResults: [
+            DeckStudyLoadResult(cardDetail: sampleCardDetail()),
+            DeckStudyLoadResult(cardDetail: sampleCardDetail()),
           ],
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        addTearDown(() async {
+          await harness.dispose();
+          tearDownTestEnvironment();
+        });
 
-      await tester.tap(find.text('Show Answer'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Next'));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            DeckViewScreen(deck: deck),
+            overrides: [
+              currentDeckProvider.overrideWithValue(deck),
+              deckStudyBlocProvider.overrideWithValue(harness.bloc),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('All Caught Up!'), findsNothing);
-      expect(find.text('Review Again'), findsNothing);
-      expect(find.text('Show Answer'), findsOneWidget);
-    });
+        await tester.tap(find.text('Show Answer'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Next'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('All Caught Up!'), findsNothing);
+        expect(find.text('Review Again'), findsNothing);
+        expect(find.text('Show Answer'), findsOneWidget);
+      },
+    );
 
     testWidgets('shows empty tag filter message instead of all caught up', (
       tester,

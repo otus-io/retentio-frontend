@@ -165,9 +165,7 @@ void main() {
               BlocProvider<TagManagerCubit>(
                 create: (_) => _FakeTagManagerCubit(),
               ),
-              BlocProvider<DeckListCubit>(
-                create: (_) => _FakeDeckListCubit(),
-              ),
+              BlocProvider<DeckListCubit>(create: (_) => _FakeDeckListCubit()),
               BlocProvider(
                 create: (_) => DeckCreateCubit(
                   name: '',

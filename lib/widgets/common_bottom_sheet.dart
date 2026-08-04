@@ -124,61 +124,62 @@ Future<T?> showCommonBottomSheet<T>({
           return _KeyboardScrollToTop(
             scrollController: scrollController,
             child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(_kSheetTopRadius),
-            ),
-            child: Material(
-              color: scheme.surface,
-              child: RepaintBoundary(
-                child: Scrollbar(
-                  controller: scrollController,
-                  thumbVisibility: true,
-                  child: SingleChildScrollView(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(_kSheetTopRadius),
+              ),
+              child: Material(
+                color: scheme.surface,
+                child: RepaintBoundary(
+                  child: Scrollbar(
                     controller: scrollController,
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        left: _kSheetHorizontalPadding,
-                        top: _kSheetTopPadding,
-                        right: _kSheetHorizontalPadding,
-                        bottom: _kSheetBottomPadding + keyboardBottom,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.max,
-                        children: [
-                          // Drag indicator.
-                          Center(
-                            child: Container(
-                              width: _kSheetHandleWidth,
-                              height: _kSheetHandleHeight,
-                              margin: const EdgeInsets.only(
-                                bottom: _kSheetHandleBottomMargin,
-                              ),
-                              decoration: BoxDecoration(
-                                color: handleColor,
-                                borderRadius: BorderRadius.circular(
-                                  _kSheetHandleRadius,
+                    thumbVisibility: true,
+                    child: SingleChildScrollView(
+                      controller: scrollController,
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          left: _kSheetHorizontalPadding,
+                          top: _kSheetTopPadding,
+                          right: _kSheetHorizontalPadding,
+                          bottom: _kSheetBottomPadding + keyboardBottom,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            // Drag indicator.
+                            Center(
+                              child: Container(
+                                width: _kSheetHandleWidth,
+                                height: _kSheetHandleHeight,
+                                margin: const EdgeInsets.only(
+                                  bottom: _kSheetHandleBottomMargin,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: handleColor,
+                                  borderRadius: BorderRadius.circular(
+                                    _kSheetHandleRadius,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          Center(
-                            child: Text(
-                              title ?? '',
-                              textAlign: TextAlign.center,
-                              style: titleStyle,
+                            Center(
+                              child: Text(
+                                title ?? '',
+                                textAlign: TextAlign.center,
+                                style: titleStyle,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: _kSheetTitleGapDraggable),
-                          child,
-                        ],
+                            const SizedBox(height: _kSheetTitleGapDraggable),
+                            child,
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ));
+          );
         },
       );
     },
