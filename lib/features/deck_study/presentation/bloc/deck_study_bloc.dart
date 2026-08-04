@@ -91,7 +91,19 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
       return;
     }
     if (event is DeckStudyReloadRequested) {
-      await _loadCard(resetProgress: false);
+      // If the deck was in caught-up/empty state, reset session counters so
+      // newly added cards are picked up and shown immediately.
+      final wasCaughtUp = state.cardDetail == null;
+      if (wasCaughtUp) {
+        _emit(
+          state.copyWith(
+            clearRefreshedCardsCount: true,
+            clearRefreshedDueCardsCount: true,
+            clearSessionDueTarget: true,
+          ),
+        );
+      }
+      await _loadCard(resetProgress: wasCaughtUp);
       return;
     }
     if (event is DeckStudyNextCardRequested) {
