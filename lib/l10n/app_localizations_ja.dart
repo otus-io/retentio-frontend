@@ -149,6 +149,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get themeDark => 'ダーク';
 
   @override
+  String get themeSepia => 'セピア';
+
+  @override
   String get switchToLightMode => 'ライトモードに切り替え';
 
   @override
