@@ -202,10 +202,9 @@ class DeckViewBody extends StatelessWidget {
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final screenWidth = MediaQuery.sizeOf(context).width;
-                      final idealCardHeight = screenWidth - 48 - 46;
-                      final maxCardHeight = (constraints.maxHeight - 150).clamp(
+                      final maxCardHeight = (constraints.maxHeight * 0.62).clamp(
                         180.0,
-                        idealCardHeight,
+                        constraints.maxHeight - 150.0,
                       );
                       final cardHeight = maxCardHeight.toDouble();
                       return Stack(

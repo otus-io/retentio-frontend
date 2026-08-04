@@ -9,6 +9,7 @@ import 'package:retentio/providers/theme_provider.dart';
 import 'package:retentio/screen/profile/bloc/profile_cubit.dart';
 import 'package:retentio/screen/profile/profile_settings_dialogs.dart';
 import 'package:retentio/screen/profile/widgets/profile_user_header.dart';
+import 'package:retentio/screen/tags/tags_screen.dart';
 import 'package:retentio/theme/theme_tokens.dart';
 import 'package:retentio/widgets/app_button.dart';
 
@@ -126,6 +127,20 @@ class ProfileScreen extends HookConsumerWidget {
                               endIndent: _kDividerHorizontalInset,
                             ),
                             _ProfileTileWidget(
+                              icon: LucideIcons.tag,
+                              title: loc.tags,
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const TagsScreen(),
+                                ),
+                              ),
+                            ),
+                            Divider(
+                              height: dividerTheme.space ?? 1,
+                              indent: _kDividerHorizontalInset,
+                              endIndent: _kDividerHorizontalInset,
+                            ),
+                            _ProfileTileWidget(
                               icon: LucideIcons.logOut,
                               title: loc.logout,
                               titleColor: scheme.error,
@@ -137,6 +152,15 @@ class ProfileScreen extends HookConsumerWidget {
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    Center(
+                      child: Text(
+                        'Retentio v1.0',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: scheme.onSurface.withValues(alpha: 0.28),
                         ),
                       ),
                     ),

@@ -46,7 +46,7 @@ class AppButton extends StatelessWidget {
     AppButtonSize.lg => 20,
   };
 
-  Widget _buildChild(BuildContext context) {
+  Widget _buildChild(BuildContext context, Color foregroundColor) {
     final typography = Theme.of(context).semanticTypography;
     final textStyle = switch (size) {
       AppButtonSize.sm =>
@@ -58,10 +58,10 @@ class AppButton extends StatelessWidget {
       ),
     };
     if (isLoading) {
-      return const SizedBox(
+      return SizedBox(
         width: 18,
         height: 18,
-        child: CircularProgressIndicator(strokeWidth: 2),
+        child: CircularProgressIndicator(strokeWidth: 2, color: foregroundColor),
       );
     }
     if (child != null) {
@@ -71,7 +71,7 @@ class AppButton extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (leading != null) ...[leading!, const SizedBox(width: 8)],
-        Text(label ?? '', style: textStyle.copyWith(color: null)),
+        Text(label ?? '', style: textStyle.copyWith(color: foregroundColor)),
         if (trailing != null) ...[const SizedBox(width: 8), trailing!],
       ],
     );
@@ -87,7 +87,6 @@ class AppButton extends StatelessWidget {
     final effectiveOnPressed = isLoading ? null : onPressed;
     final padding = EdgeInsets.symmetric(horizontal: _hPadding);
     final fixedSize = Size.fromHeight(_height);
-    final childWidget = _buildChild(context);
 
     if (label == null && child == null) {
       throw ArgumentError('Either label or child must be provided');
@@ -100,7 +99,7 @@ class AppButton extends StatelessWidget {
           padding: padding,
           fixedSize: fixedSize,
         ).merge(style),
-        child: childWidget,
+        child: _buildChild(context, colorScheme.onPrimary),
       );
       if (fullWidth) {
         button = SizedBox(width: double.infinity, child: button);
@@ -120,7 +119,7 @@ class AppButton extends StatelessWidget {
             borderRadius: AppThemeTokens.borderRadiusMd,
           ),
         ).merge(style),
-        child: childWidget,
+        child: _buildChild(context, colorScheme.onPrimary),
       ),
       AppButtonVariant.secondary => OutlinedButton(
         onPressed: effectiveOnPressed,
@@ -136,7 +135,7 @@ class AppButton extends StatelessWidget {
             borderRadius: AppThemeTokens.borderRadiusMd,
           ),
         ).merge(style),
-        child: childWidget,
+        child: _buildChild(context, colorScheme.primary),
       ),
       AppButtonVariant.ghost => TextButton(
         onPressed: effectiveOnPressed,
@@ -148,7 +147,7 @@ class AppButton extends StatelessWidget {
             borderRadius: AppThemeTokens.borderRadiusSm,
           ),
         ).merge(style),
-        child: childWidget,
+        child: _buildChild(context, colorScheme.primary),
       ),
       AppButtonVariant.danger => FilledButton(
         onPressed: effectiveOnPressed,
@@ -161,7 +160,7 @@ class AppButton extends StatelessWidget {
             borderRadius: AppThemeTokens.borderRadiusMd,
           ),
         ).merge(style),
-        child: childWidget,
+        child: _buildChild(context, colorScheme.onError),
       ),
     };
 

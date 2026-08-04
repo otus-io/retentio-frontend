@@ -15,7 +15,7 @@ class AppThemeTokens {
   static const Color darkTertiary = Color(0xFF5DB8F0);
   static const Color darkSurface = Color(0xFF15181D);
   static const Color darkSurfaceHigh = Color(0xFF1E222A);
-  static const Color darkOutline = Color(0xFF2A2F3A);
+  static const Color darkOutline = Color(0xFF353C4C);
 
   static const Color lightOnSurface = Color(0xFF111827);
   static const Color darkOnSurface = Color(0xFFF1F5FF);
@@ -24,9 +24,9 @@ class AppThemeTokens {
   static const Color sepiaPrimary = Color(0xFF7B5C3A);
   static const Color sepiaSecondary = Color(0xFF5A8A6A);
   static const Color sepiaTertiary = Color(0xFF7A5A7A);
-  static const Color sepiaSurface = Color(0xFFF5EDD7);
-  static const Color sepiaSurfaceHigh = Color(0xFFFBF6E9);
-  static const Color sepiaOutline = Color(0xFFCCBDA4);
+  static const Color sepiaSurface = Color(0xFFEDE0BF);
+  static const Color sepiaSurfaceHigh = Color(0xFFF9F3E4);
+  static const Color sepiaOutline = Color(0xFFAA9878);
   static const Color sepiaOnSurface = Color(0xFF2D2014);
 
   static const double radiusXs = 6;

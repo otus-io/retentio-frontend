@@ -115,16 +115,25 @@ class AppThemeComponents {
         thickness: 1,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        height: 72,
+        height: 68,
         elevation: 0,
         backgroundColor: colorScheme.surfaceContainerHighest,
-        indicatorColor: colorScheme.primary.withValues(alpha: 0.18),
+        indicatorColor: Colors.transparent,
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final isSelected = states.contains(WidgetState.selected);
+          return IconThemeData(
+            size: 22,
+            color: isSelected
+                ? colorScheme.primary
+                : colorScheme.onSurfaceVariant.withValues(alpha: 0.55),
+          );
+        }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final isSelected = states.contains(WidgetState.selected);
           return semanticTypography.navigationLabel.copyWith(
             color: isSelected
                 ? colorScheme.primary
-                : colorScheme.onSurfaceVariant,
+                : colorScheme.onSurfaceVariant.withValues(alpha: 0.55),
             fontWeight: isSelected
                 ? AppTypographyTokens.weightBold
                 : AppTypographyTokens.weightMedium,

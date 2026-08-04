@@ -476,13 +476,13 @@ class _FieldPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: scheme.tertiaryContainer.withValues(alpha: 0.5),
+        color: scheme.primaryContainer.withValues(alpha: 0.6),
         borderRadius: AppThemeTokens.borderRadiusPill,
       ),
       child: Text(
         name,
         style: theme.textTheme.labelMedium?.copyWith(
-          color: scheme.onTertiaryContainer,
+          color: scheme.onPrimaryContainer,
         ),
       ),
     );
@@ -543,7 +543,7 @@ class _ErrorView extends StatelessWidget {
             const SizedBox(height: 12),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 16),
-            FilledButton(onPressed: onRetry, child: Text(loc.discoveryRetry)),
+            AppButton(label: loc.discoveryRetry, onPressed: onRetry),
           ],
         ),
       ),

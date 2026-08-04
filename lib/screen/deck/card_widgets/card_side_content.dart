@@ -7,13 +7,14 @@ import 'package:retentio/models/card.dart';
 import 'package:retentio/screen/deck/bloc/deck_study_context_cubit.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
 import 'package:retentio/screen/deck/providers/deck_scope.dart';
+import 'package:retentio/theme/theme_tokens.dart';
 import 'card_content_container.dart';
 import 'card_menu.dart';
 
 /// One side (front or back) of the current review card on the deck study screen:
 /// field tabs (front) or stacked sections (back), field content, and card actions.
 class CardSideContent extends StatelessWidget {
-  static const _kContainerRadius = 16.0;
+  static const _kContainerRadius = AppThemeTokens.radiusLg;
   static const _kMenuColorAlpha = 0.75;
 
   const CardSideContent({super.key, required this.isFront});
@@ -40,7 +41,7 @@ class CardSideContent extends StatelessWidget {
         final cardId = state.cardDetail?.card.id;
         final content = CardContentContainer(
           cards: sideCards,
-          color: accentColor,
+          color: isFront ? accentColor : contentColor,
           accentColor: accentColor,
           textColor: contentColor,
           trailing: sideCards.isNotEmpty
