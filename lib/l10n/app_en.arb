@@ -4,6 +4,20 @@
   "@appTitle": {
     "description": "Application title"
   },
+  "appVersionLabel": "{appName} v{version}",
+  "@appVersionLabel": {
+    "description": "App name and version shown at the bottom of the profile screen",
+    "placeholders": {
+      "appName": {
+        "type": "String",
+        "example": "Rete"
+      },
+      "version": {
+        "type": "String",
+        "example": "1.0.0"
+      }
+    }
+  },
   "login": "Login",
   "@login": {
     "description": "Login button text"

@@ -1,6 +1,7 @@
 {
   "@@locale": "ja",
   "appTitle": "Rete",
+  "appVersionLabel": "{appName} v{version}",
   "login": "ログイン",
   "register": "登録",
   "forgotPassword": "パスワードをお忘れですか？",

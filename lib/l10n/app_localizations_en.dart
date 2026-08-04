@@ -12,6 +12,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Rete';
 
   @override
+  String appVersionLabel(String appName, String version) {
+    return '$appName v$version';
+  }
+
+  @override
   String get login => 'Login';
 
   @override

@@ -9,6 +9,7 @@ void main() {
 
     test('hasBlankDeckFieldNames detects empty or whitespace-only fields', () {
       expect(hasBlankDeckFieldNames(['Front', '   ']), isTrue);
+      expect(hasBlankDeckFieldNames(['Front', '']), isTrue);
       expect(hasBlankDeckFieldNames(['Front', 'Back']), isFalse);
     });
   });

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/profile/profile_screen.dart';
 
@@ -13,6 +14,13 @@ void main() {
   setUpAll(() async {
     await setupTestEnvironment();
     interceptor = attachFakeProfileApiInterceptor();
+    PackageInfo.setMockInitialValues(
+      appName: 'Rete',
+      packageName: 'com.example.retentio',
+      version: '2.3.4',
+      buildNumber: '8',
+      buildSignature: '',
+    );
   });
 
   tearDownAll(() {
@@ -57,6 +65,15 @@ void main() {
 
       expect(find.text(loc.logoutConfirmMessage), findsOneWidget);
       expect(find.text(loc.cancel), findsOneWidget);
+    });
+
+    testWidgets('shows the running app version, not a hardcoded one', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestableWidget(const ProfileScreen()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Rete v2.3.4'), findsOneWidget);
     });
 
     testWidgets('has forward arrow icons on settings items', (tester) async {

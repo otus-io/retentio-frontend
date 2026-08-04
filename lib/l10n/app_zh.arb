@@ -1,6 +1,7 @@
 {
   "@@locale": "zh",
   "appTitle": "Rete",
+  "appVersionLabel": "{appName} v{version}",
   "login": "登录",
   "register": "注册",
   "forgotPassword": "忘记密码？",

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/providers/locale_provider.dart';
@@ -31,6 +33,8 @@ class ProfileScreen extends HookConsumerWidget {
     final dividerTheme = theme.dividerTheme;
     final currentLocale = ref.watch(localeProvider);
     final AppThemeMode currentTheme = ref.watch(themeModeProvider);
+    final packageInfo = useFuture(useMemoized(PackageInfo.fromPlatform));
+    final version = packageInfo.data?.version;
 
     return BlocProvider<ProfileCubit>(
       create: (_) => ProfileCubit(),
@@ -155,15 +159,17 @@ class ProfileScreen extends HookConsumerWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 32),
-                    Center(
-                      child: Text(
-                        'Retentio v1.0',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: scheme.onSurface.withValues(alpha: 0.28),
+                    if (version != null) ...[
+                      const SizedBox(height: 32),
+                      Center(
+                        child: Text(
+                          loc.appVersionLabel(loc.appTitle, version),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: scheme.onSurface.withValues(alpha: 0.28),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 );
               },

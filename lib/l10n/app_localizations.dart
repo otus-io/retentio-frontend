@@ -106,6 +106,12 @@ abstract class AppLocalizations {
   /// **'Rete'**
   String get appTitle;
 
+  /// App name and version shown at the bottom of the profile screen
+  ///
+  /// In en, this message translates to:
+  /// **'{appName} v{version}'**
+  String appVersionLabel(String appName, String version);
+
   /// Login button text
   ///
   /// In en, this message translates to:
