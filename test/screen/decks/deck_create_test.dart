@@ -1,12 +1,18 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retentio/core/network/network.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/decks/bloc/deck_create_cubit.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/decks/widgets/deck_create.dart';
 import 'package:retentio/widgets/number_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/test_wrapper.dart';
 
@@ -20,6 +26,28 @@ class _FakeTagManagerCubit extends TagManagerCubit {
 class _FakeDeckListCubit extends DeckListCubit {
   @override
   Future<void> onRefresh() async {}
+}
+
+/// Answers every request with a failure that carries no `msg`, the shape a
+/// server error can take when nothing explains it.
+class _MessagelessFailureAdapter implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    return ResponseBody.fromString(
+      jsonEncode({'code': -1}),
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
 }
 
 void main() {
@@ -247,5 +275,32 @@ void main() {
       expect(find.text('デッキ名を入力してください'), findsOneWidget);
       expect(find.text('Please enter a deck name'), findsNothing);
     });
+
+    testWidgets(
+      'a server failure without a message is not blamed on the name',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        networkDioClient.configure(
+          baseUrl: 'http://localhost',
+          options: BaseOptions(),
+        );
+        networkDioClient.dio.httpClientAdapter = _MessagelessFailureAdapter();
+
+        await tester.pumpWidget(buildDeckCreateHarness(const DeckCreate()));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+
+        final textFields = find.byType(TextField);
+        await tester.enterText(textFields.at(0), 'Japanese');
+        await tester.enterText(textFields.at(1), 'Front');
+        await tester.enterText(textFields.at(2), 'Back');
+
+        await tester.tap(find.byType(FilledButton));
+        await tester.pumpAndSettle();
+
+        expect(find.text('An unexpected error occurred'), findsOneWidget);
+        expect(find.text('Please enter a deck name'), findsNothing);
+      },
+    );
   });
 }
