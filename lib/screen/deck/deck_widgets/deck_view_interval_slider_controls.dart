@@ -243,14 +243,14 @@ class DeckViewIntervalSliderControls extends StatelessWidget {
                         ),
                         SliderTheme(
                           data: SliderTheme.of(context).copyWith(
-                            trackHeight: 3,
+                            trackHeight: 5,
                             thumbShape: _IntervalLabelThumbShape(
                               textScaleFactor: MediaQuery.textScalerOf(
                                 context,
                               ).scale(1),
                             ),
                             overlayShape: const RoundSliderOverlayShape(
-                              overlayRadius: 18,
+                              overlayRadius: 24,
                             ),
                             tickMarkShape: const RoundSliderTickMarkShape(
                               tickMarkRadius: 2.5,
