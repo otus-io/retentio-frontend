@@ -119,6 +119,7 @@ class AppThemeComponents {
         elevation: 0,
         backgroundColor: colorScheme.surfaceContainerHighest,
         indicatorColor: Colors.transparent,
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final isSelected = states.contains(WidgetState.selected);
           return IconThemeData(
