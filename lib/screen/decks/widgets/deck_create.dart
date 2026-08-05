@@ -504,9 +504,14 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
             }
 
             if (!result.success) {
-              final msg = result.message?.isNotEmpty == true
-                  ? result.message!
-                  : (loc.deckEditorNameRequired);
+              final msg = switch (result.error) {
+                DeckCreateError.nameEmpty => loc.deckEditorNameRequired,
+                DeckCreateError.blankFieldName =>
+                  loc.deckEditorFieldNamesRequired,
+                // Server failure: resolve() localizes known messages below and
+                // falls back to errorUnknown when the server sent none.
+                null => result.message ?? '',
+              };
               setState(() => _submitError = msg);
               return;
             }

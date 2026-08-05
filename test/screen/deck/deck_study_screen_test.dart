@@ -88,39 +88,77 @@ void main() {
       expect(find.text('No cards in this deck'), findsOneWidget);
     });
 
-    testWidgets('Review Again triggers one more card reload', (tester) async {
-      await setupTestEnvironment();
-      final deck = sampleDeck(cardsCount: 5);
-      final harness = FakeDeckStudyBlocHarness(
-        deckId: deck.id,
-        loadResults: [
-          const DeckStudyLoadResult(cardDetail: null, refreshedCardsCount: 5),
-          DeckStudyLoadResult(cardDetail: sampleCardDetail()),
-        ],
-      );
-      addTearDown(() async {
-        await harness.dispose();
-        tearDownTestEnvironment();
-      });
+    testWidgets(
+      'shows the same empty message when a stocked deck can serve no card',
+      (tester) async {
+        await setupTestEnvironment();
+        // Cards exist but none can be served (e.g. all hidden). Being caught up
+        // on reviews never reaches this state — the server keeps serving the
+        // most urgent card — so there is no separate caught-up message.
+        final deck = sampleDeck(cardsCount: 50);
+        final harness = FakeDeckStudyBlocHarness(
+          deckId: deck.id,
+          loadResults: const [DeckStudyLoadResult(cardDetail: null)],
+        );
+        addTearDown(() async {
+          await harness.dispose();
+          tearDownTestEnvironment();
+        });
 
-      await tester.pumpWidget(
-        buildTestableWidgetWithOverrides(
-          DeckViewScreen(deck: deck),
-          overrides: [
-            currentDeckProvider.overrideWithValue(deck),
-            deckStudyBlocProvider.overrideWithValue(harness.bloc),
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            DeckViewScreen(deck: deck),
+            overrides: [
+              currentDeckProvider.overrideWithValue(deck),
+              deckStudyBlocProvider.overrideWithValue(harness.bloc),
+            ],
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 200));
+
+        expect(find.text('No cards in this deck'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'keeps showing a study card when session studied count reaches deck total',
+      (tester) async {
+        await setupTestEnvironment();
+        final deck = sampleDeck(cardsCount: 1);
+        final harness = FakeDeckStudyBlocHarness(
+          deckId: deck.id,
+          loadResults: [
+            DeckStudyLoadResult(cardDetail: sampleCardDetail()),
+            DeckStudyLoadResult(cardDetail: sampleCardDetail()),
           ],
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        addTearDown(() async {
+          await harness.dispose();
+          tearDownTestEnvironment();
+        });
 
-      final before = harness.repository.loadCalls;
-      expect(find.text('Review Again'), findsOneWidget);
-      await tester.tap(find.text('Review Again'));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            DeckViewScreen(deck: deck),
+            overrides: [
+              currentDeckProvider.overrideWithValue(deck),
+              deckStudyBlocProvider.overrideWithValue(harness.bloc),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(harness.repository.loadCalls, before + 1);
-    });
+        await tester.tap(find.text('Show Answer'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Next'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('All Caught Up!'), findsNothing);
+        expect(find.text('Review Again'), findsNothing);
+        expect(find.text('Show Answer'), findsOneWidget);
+      },
+    );
 
     testWidgets('shows empty tag filter message instead of all caught up', (
       tester,

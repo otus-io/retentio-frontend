@@ -29,7 +29,7 @@ class CardAudio extends StatefulWidget {
 
 class _CardAudioState extends State<CardAudio>
     with AutomaticKeepAliveClientMixin {
-  static const _kCompactSize = 36.0;
+  static const _kCompactSize = 44.0;
   static const _kCompactIconSize = 22.0;
   static const _kFullHeight = 50.0;
   static const _kFullIconSize = 28.0;
@@ -115,11 +115,8 @@ class _CardAudioState extends State<CardAudio>
     return SizedBox(
       width: _kCompactSize,
       height: _kCompactSize,
-      // Raw IconButton: this control must stay 36 px to fit the field tab bar,
-      // while AppIconButton clamps its touch target to a 44 px minimum.
       child: IconButton(
         padding: EdgeInsets.zero,
-        visualDensity: VisualDensity.compact,
         constraints: const BoxConstraints(
           minWidth: _kCompactSize,
           minHeight: _kCompactSize,
@@ -127,7 +124,7 @@ class _CardAudioState extends State<CardAudio>
         iconSize: _kCompactIconSize,
         color: color,
         onPressed: onPressed,
-        icon: Icon(isPlaying ? LucideIcons.pause : LucideIcons.play),
+        icon: Icon(isPlaying ? LucideIcons.pause : LucideIcons.volume2),
       ),
     );
   }
@@ -145,7 +142,7 @@ class _CardAudioState extends State<CardAudio>
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           AppIconButton(
-            icon: isPlaying ? LucideIcons.pause : LucideIcons.play,
+            icon: isPlaying ? LucideIcons.pause : LucideIcons.volume2,
             size: _kFullIconSize,
             iconSize: _kFullIconSize,
             padding: const EdgeInsets.all(8),

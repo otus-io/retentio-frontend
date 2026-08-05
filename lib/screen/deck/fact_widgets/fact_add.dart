@@ -174,16 +174,6 @@ class _FactAddState extends ConsumerState<FactAdd>
   void _onTapOutsideForm(PointerDownEvent event) {
     if (_submitting || !mounted) return;
     FocusManager.instance.primaryFocus?.unfocus();
-    if (_recordingVoice) {
-      unawaited(_discardRecordingAndResetForm());
-      return;
-    }
-    _resetForm();
-  }
-
-  Future<void> _discardRecordingAndResetForm() async {
-    await cancelVoiceRecording();
-    if (mounted) _resetForm();
   }
 
   Future<void> _submit() async {

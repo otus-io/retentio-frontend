@@ -15,9 +15,6 @@ class CardContentContainer extends StatelessWidget {
 
   static const _kContentPadding = EdgeInsets.fromLTRB(14, 12, 14, 16);
   static const _kContentPaddingWithMenu = EdgeInsets.fromLTRB(14, 40, 14, 16);
-  static const _kSectionGap = 6.0;
-  static const _kSectionSpacing = 14.0;
-  static const _kDividerAlpha = 0.35;
 
   const CardContentContainer({
     super.key,
@@ -149,40 +146,15 @@ class CardContentContainer extends StatelessWidget {
       );
     }
 
-    final scheme = Theme.of(context).colorScheme;
-    final effectiveAccentColor = accentColor ?? color;
-
     return _CardContentShell(
       trailing: trailing,
       padding: padding,
-      child: ListView.separated(
-        padding: EdgeInsets.zero,
-        itemCount: cards.length,
-        separatorBuilder: (context, index) => Divider(
-          height: _kSectionSpacing * 2,
-          thickness: AppThemeTokens.borderWidthHairline,
-          color: scheme.outline.withValues(alpha: _kDividerAlpha),
-        ),
-        itemBuilder: (context, index) {
-          final slot = cards[index];
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _FieldSectionLabel(
-                label: slot.field,
-                accentColor: effectiveAccentColor,
-              ),
-              SizedBox(height: _kSectionGap),
-              FactContent(
-                items: slot.items,
-                color: color,
-                typographyDeckId: typographyDeckId,
-                typographyIsFront: typographyIsFront,
-                inline: true,
-              ),
-            ],
-          );
-        },
+      child: _StackedScrollContent(
+        cards: cards,
+        color: color,
+        accentColor: accentColor ?? color,
+        typographyDeckId: typographyDeckId,
+        typographyIsFront: typographyIsFront,
       ),
     );
   }
@@ -260,6 +232,85 @@ class _FieldSectionLabel extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StackedScrollContent extends StatefulWidget {
+  const _StackedScrollContent({
+    required this.cards,
+    required this.color,
+    required this.accentColor,
+    this.typographyDeckId,
+    this.typographyIsFront = true,
+  });
+
+  final List<CardSlot> cards;
+  final Color color;
+  final Color accentColor;
+  final String? typographyDeckId;
+  final bool typographyIsFront;
+
+  @override
+  State<_StackedScrollContent> createState() => _StackedScrollContentState();
+}
+
+class _StackedScrollContentState extends State<_StackedScrollContent> {
+  static const _kSectionGap = 6.0;
+  static const _kSectionSpacing = 14.0;
+  static const _kDividerAlpha = 0.35;
+
+  late final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final divider = Divider(
+      height: _kSectionSpacing * 2,
+      thickness: AppThemeTokens.borderWidthHairline,
+      color: scheme.outline.withValues(alpha: _kDividerAlpha),
+    );
+
+    final children = <Widget>[];
+    for (var i = 0; i < widget.cards.length; i++) {
+      if (i > 0) children.add(divider);
+      final slot = widget.cards[i];
+      children.add(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _FieldSectionLabel(
+              label: slot.field,
+              accentColor: widget.accentColor,
+            ),
+            SizedBox(height: _kSectionGap),
+            FactContent(
+              items: slot.items,
+              color: widget.color,
+              typographyDeckId: widget.typographyDeckId,
+              typographyIsFront: widget.typographyIsFront,
+              inline: true,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Scrollbar(
+      controller: _scrollController,
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        ),
       ),
     );
   }

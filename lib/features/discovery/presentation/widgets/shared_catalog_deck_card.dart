@@ -88,9 +88,9 @@ class SharedCatalogDeckCard extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: scheme.shadow.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
+                color: scheme.shadow.withValues(alpha: 0.08),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -236,8 +236,7 @@ class _StatusBadge extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
             fontWeight: FontWeight.w500,
             color: fg,
             height: 1.4,

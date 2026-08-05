@@ -12,6 +12,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get appTitle => 'Rete';
 
   @override
+  String appVersionLabel(String appName, String version) {
+    return '$appName v$version';
+  }
+
+  @override
   String get login => 'ログイン';
 
   @override
@@ -31,6 +36,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get loginTagline => '千里の道も一歩から';
+
+  @override
+  String get registerPageTitle => 'アカウントを作成';
+
+  @override
+  String get registerPageSubtitle => '長期記憶デッキを作り始めましょう';
 
   @override
   String get email => 'メールアドレス';
@@ -156,6 +167,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get themeSystem => 'システム';
+
+  @override
+  String get themeSepia => 'セピア';
 
   @override
   String get totalCards => '合計';

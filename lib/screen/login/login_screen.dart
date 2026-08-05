@@ -15,6 +15,7 @@ import 'package:retentio/screen/login/widgets/login_gradient_background.dart';
 import 'package:retentio/screen/login/widgets/login_toolbar_controls.dart';
 import 'package:retentio/screen/register/register_screen.dart';
 import 'package:retentio/theme/theme_tokens.dart';
+import 'package:retentio/providers/main_tab_provider.dart';
 import 'package:retentio/utils/util.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_input.dart';
@@ -45,8 +46,8 @@ class LoginScreen extends HookConsumerWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final isDark =
-        themeMode == ThemeMode.dark ||
-        (themeMode == ThemeMode.system &&
+        themeMode == AppThemeMode.dark ||
+        (themeMode == AppThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
 
     return Scaffold(

@@ -135,40 +135,34 @@ class DeckMenu extends StatelessWidget {
             title: loc.editDeck,
             onTap: () async {
               final deckContextCubit = context.read<DeckStudyContextCubit>();
-              await _showSheetAfterMenuDismissed(
-                context,
-                showSheet: () {
-                  showCommonBottomSheet(
-                    context: context,
-                    title: loc.editDeck,
-                    fullScreen: true,
-                    child: MultiBlocProvider(
-                      providers: [
-                        BlocProvider.value(
-                          value: context.read<DeckListCubit>(),
+              final deckListCubit = context.read<DeckListCubit>();
+              await Future<void>.delayed(const Duration(milliseconds: 10));
+              if (!context.mounted) return;
+              final value = await Navigator.of(context).push<String>(
+                MaterialPageRoute(
+                  builder: (_) => MultiBlocProvider(
+                    providers: [
+                      BlocProvider.value(value: deckListCubit),
+                      BlocProvider<DeckCreateCubit>(
+                        create: (_) => DeckCreateCubit(
+                          name: deck.name,
+                          rate: deck.rate,
+                          deckId: deck.id,
+                          cardType: DeckCardType.edit,
+                          isImported: deck.isImported,
                         ),
-                        BlocProvider<DeckCreateCubit>(
-                          create: (_) => DeckCreateCubit(
-                            name: deck.name,
-                            rate: deck.rate,
-                            deckId: deck.id,
-                            cardType: DeckCardType.edit,
-                            isImported: deck.isImported,
-                          ),
-                        ),
-                        BlocProvider<TagManagerCubit>(
-                          create: (_) => TagManagerCubit(usedOn: 'deck'),
-                        ),
-                      ],
-                      child: DeckCreate(deck: deck),
-                    ),
-                  ).then((value) {
-                    if (value is String && value.isNotEmpty) {
-                      deckContextCubit.updateDeck(deck.copyWith(name: value));
-                    }
-                  });
-                },
+                      ),
+                      BlocProvider<TagManagerCubit>(
+                        create: (_) => TagManagerCubit(usedOn: 'deck'),
+                      ),
+                    ],
+                    child: _DeckEditScreen(deck: deck),
+                  ),
+                ),
               );
+              if (value != null && value.isNotEmpty) {
+                deckContextCubit.updateDeck(deck.copyWith(name: value));
+              }
             },
             icon: LucideIcons.squarePen,
             itemTheme: PullDownMenuItemTheme(
@@ -279,6 +273,10 @@ class DeckMenu extends StatelessWidget {
           PullDownMenuItem(
             title: loc.deleteDeck,
             onTap: () async {
+              if (deck.isPublishedSource) {
+                AppToast.error(context, loc.errorPublishedDeckCannotDelete);
+                return;
+              }
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (dialogContext) => AlertDialog(
@@ -329,6 +327,27 @@ class DeckMenu extends StatelessWidget {
         padding: const EdgeInsets.all(AppThemeTokens.spaceSm),
         onPressed: showMenu,
         tooltip: loc.deckOptionsTooltip,
+      ),
+    );
+  }
+}
+
+class _DeckEditScreen extends StatelessWidget {
+  const _DeckEditScreen({required this.deck});
+
+  final Deck deck;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final scheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(title: Text(loc.editDeck)),
+      backgroundColor: scheme.surfaceContainerHighest,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: DeckCreate(deck: deck),
       ),
     );
   }

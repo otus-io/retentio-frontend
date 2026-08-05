@@ -121,55 +121,58 @@ Future<T?> showCommonBottomSheet<T>({
           // combination with DraggableScrollableSheet can pop the modal. Inset
           // is applied as padding so the scroll view can still scroll above keys.
           final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
-          return ClipRRect(
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(_kSheetTopRadius),
-            ),
-            child: Material(
-              color: scheme.surface,
-              child: RepaintBoundary(
-                child: Scrollbar(
-                  controller: scrollController,
-                  thumbVisibility: true,
-                  child: SingleChildScrollView(
+          return _KeyboardScrollToTop(
+            scrollController: scrollController,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(_kSheetTopRadius),
+              ),
+              child: Material(
+                color: scheme.surface,
+                child: RepaintBoundary(
+                  child: Scrollbar(
                     controller: scrollController,
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        left: _kSheetHorizontalPadding,
-                        top: _kSheetTopPadding,
-                        right: _kSheetHorizontalPadding,
-                        bottom: _kSheetBottomPadding + keyboardBottom,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.max,
-                        children: [
-                          // Drag indicator.
-                          Center(
-                            child: Container(
-                              width: _kSheetHandleWidth,
-                              height: _kSheetHandleHeight,
-                              margin: const EdgeInsets.only(
-                                bottom: _kSheetHandleBottomMargin,
-                              ),
-                              decoration: BoxDecoration(
-                                color: handleColor,
-                                borderRadius: BorderRadius.circular(
-                                  _kSheetHandleRadius,
+                    thumbVisibility: true,
+                    child: SingleChildScrollView(
+                      controller: scrollController,
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          left: _kSheetHorizontalPadding,
+                          top: _kSheetTopPadding,
+                          right: _kSheetHorizontalPadding,
+                          bottom: _kSheetBottomPadding + keyboardBottom,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            // Drag indicator.
+                            Center(
+                              child: Container(
+                                width: _kSheetHandleWidth,
+                                height: _kSheetHandleHeight,
+                                margin: const EdgeInsets.only(
+                                  bottom: _kSheetHandleBottomMargin,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: handleColor,
+                                  borderRadius: BorderRadius.circular(
+                                    _kSheetHandleRadius,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          Center(
-                            child: Text(
-                              title ?? '',
-                              textAlign: TextAlign.center,
-                              style: titleStyle,
+                            Center(
+                              child: Text(
+                                title ?? '',
+                                textAlign: TextAlign.center,
+                                style: titleStyle,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: _kSheetTitleGapDraggable),
-                          child,
-                        ],
+                            const SizedBox(height: _kSheetTitleGapDraggable),
+                            child,
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -207,4 +210,43 @@ Future<T?> showCommonBottomSheet<T>({
     anchorPoint: anchorPoint,
     requestFocus: requestFocus,
   );
+}
+
+/// Scrolls the sheet's [ScrollController] to the top whenever the keyboard
+/// opens. Keeps the form header visible so the user can see all fields.
+class _KeyboardScrollToTop extends StatefulWidget {
+  const _KeyboardScrollToTop({
+    required this.scrollController,
+    required this.child,
+  });
+
+  final ScrollController scrollController;
+  final Widget child;
+
+  @override
+  State<_KeyboardScrollToTop> createState() => _KeyboardScrollToTopState();
+}
+
+class _KeyboardScrollToTopState extends State<_KeyboardScrollToTop> {
+  double _prevBottom = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    if (bottom > 0 && _prevBottom == 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !widget.scrollController.hasClients) return;
+        widget.scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      });
+    }
+    _prevBottom = bottom;
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

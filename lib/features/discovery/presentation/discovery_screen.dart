@@ -10,6 +10,7 @@ import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/providers/main_tab_provider.dart';
 import 'package:retentio/routers/routers.dart';
 import 'package:retentio/theme/theme_tokens.dart';
+import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_input.dart';
 import 'package:retentio/widgets/common_refresher.dart';
 
@@ -262,7 +263,7 @@ class _ErrorView extends StatelessWidget {
             const SizedBox(height: 12),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 16),
-            FilledButton(onPressed: onRetry, child: Text(loc.discoveryRetry)),
+            AppButton(label: loc.discoveryRetry, onPressed: onRetry),
           ],
         ),
       ),

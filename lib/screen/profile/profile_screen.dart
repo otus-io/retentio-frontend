@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/providers/locale_provider.dart';
@@ -9,6 +11,7 @@ import 'package:retentio/providers/theme_provider.dart';
 import 'package:retentio/screen/profile/bloc/profile_cubit.dart';
 import 'package:retentio/screen/profile/profile_settings_dialogs.dart';
 import 'package:retentio/screen/profile/widgets/profile_user_header.dart';
+import 'package:retentio/screen/tags/tags_screen.dart';
 import 'package:retentio/theme/theme_tokens.dart';
 import 'package:retentio/widgets/app_button.dart';
 
@@ -29,7 +32,9 @@ class ProfileScreen extends HookConsumerWidget {
     final scheme = theme.colorScheme;
     final dividerTheme = theme.dividerTheme;
     final currentLocale = ref.watch(localeProvider);
-    final currentTheme = ref.watch(themeModeProvider);
+    final AppThemeMode currentTheme = ref.watch(themeModeProvider);
+    final packageInfo = useFuture(useMemoized(PackageInfo.fromPlatform));
+    final version = packageInfo.data?.version;
 
     return BlocProvider<ProfileCubit>(
       create: (_) => ProfileCubit(),
@@ -126,6 +131,20 @@ class ProfileScreen extends HookConsumerWidget {
                               endIndent: _kDividerHorizontalInset,
                             ),
                             _ProfileTileWidget(
+                              icon: LucideIcons.tag,
+                              title: loc.tags,
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const TagsScreen(),
+                                ),
+                              ),
+                            ),
+                            Divider(
+                              height: dividerTheme.space ?? 1,
+                              indent: _kDividerHorizontalInset,
+                              endIndent: _kDividerHorizontalInset,
+                            ),
+                            _ProfileTileWidget(
                               icon: LucideIcons.logOut,
                               title: loc.logout,
                               titleColor: scheme.error,
@@ -140,6 +159,17 @@ class ProfileScreen extends HookConsumerWidget {
                         ),
                       ),
                     ),
+                    if (version != null) ...[
+                      const SizedBox(height: 32),
+                      Center(
+                        child: Text(
+                          loc.appVersionLabel(loc.appTitle, version),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: scheme.onSurface.withValues(alpha: 0.28),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 );
               },

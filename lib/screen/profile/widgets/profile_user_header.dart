@@ -68,7 +68,7 @@ class _ProfileUserHeaderState extends State<ProfileUserHeader> {
         borderRadius: AppThemeTokens.borderRadiusXl,
         color: scheme.surfaceContainerHighest,
         border: Border.all(
-          color: scheme.outline,
+          color: scheme.outline.withValues(alpha: 0.18),
           width: AppThemeTokens.borderWidthHairline,
         ),
       ),

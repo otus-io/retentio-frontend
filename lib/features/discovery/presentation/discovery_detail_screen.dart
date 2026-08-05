@@ -13,6 +13,7 @@ import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/catalog_deck.dart';
 import 'package:retentio/providers/main_tab_provider.dart';
 import 'package:retentio/routers/routers.dart';
+import 'package:retentio/services/apis/deck_service.dart';
 import 'package:retentio/theme/theme_tokens.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_icon_button.dart';
@@ -61,23 +62,30 @@ class _DiscoveryDetailScreenState extends State<DiscoveryDetailScreen> {
 
   void _showImportSuccess(BuildContext context, AppLocalizations loc) {
     AppToast.success(context, loc.discoveryImportSuccess);
+    // Refresh deck list immediately so it's up-to-date when user navigates back.
+    final container = ProviderScope.containerOf(context, listen: false);
+    container.read(deckListRefreshSignalProvider.notifier).increment();
   }
 
   Future<void> _goToImportedDeckStudy() async {
     final importResult = _cubit.state.importResult;
+    if (!mounted) return;
+
     final container = ProviderScope.containerOf(context, listen: false);
-    if (importResult == null) {
-      if (mounted) {
-        container.read(selectedTabIndexProvider.notifier).setIndex(0);
-        container.read(deckListRefreshSignalProvider.notifier).increment();
-        context.go(AppRoutes.main.path);
+    container.read(selectedTabIndexProvider.notifier).setIndex(0);
+
+    if (importResult != null) {
+      try {
+        final deck = await DeckService.of.getDeckDetail(importResult.id);
+        if (!mounted) return;
+        context.push(AppRoutes.study.path, extra: {'deck': deck});
+        return;
+      } catch (_) {
+        // Fall through to deck list on error.
       }
-      return;
     }
 
     if (!mounted) return;
-    container.read(selectedTabIndexProvider.notifier).setIndex(0);
-    container.read(deckListRefreshSignalProvider.notifier).increment();
     context.go(AppRoutes.main.path);
   }
 
@@ -468,13 +476,13 @@ class _FieldPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: scheme.tertiaryContainer.withValues(alpha: 0.5),
+        color: scheme.primaryContainer.withValues(alpha: 0.6),
         borderRadius: AppThemeTokens.borderRadiusPill,
       ),
       child: Text(
         name,
         style: theme.textTheme.labelMedium?.copyWith(
-          color: scheme.onTertiaryContainer,
+          color: scheme.onPrimaryContainer,
         ),
       ),
     );
@@ -535,7 +543,7 @@ class _ErrorView extends StatelessWidget {
             const SizedBox(height: 12),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 16),
-            FilledButton(onPressed: onRetry, child: Text(loc.discoveryRetry)),
+            AppButton(label: loc.discoveryRetry, onPressed: onRetry),
           ],
         ),
       ),

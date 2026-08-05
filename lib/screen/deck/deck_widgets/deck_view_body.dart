@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -18,6 +20,41 @@ import 'package:retentio/widgets/app_toast.dart';
 const _kMessageIconSize = 84.0;
 const _kMessageTitleTopSpacing = 24.0;
 const _kMessageButtonTopSpacing = 16.0;
+
+const _kStudyCardPreferredMin = 180.0;
+const _kStudyCardPreferredSpacing = 100.0;
+const _kStudyCardControlsReserve = 150.0;
+
+/// Gap under the study card for a viewport of [availableHeight].
+///
+/// Prefers [_kStudyCardPreferredSpacing], but shrinks on short viewports so
+/// card + spacing never exceed [availableHeight].
+double studyCardBottomSpacing(double availableHeight) {
+  if (availableHeight <= 0) return 0.0;
+  final overflow =
+      (_kStudyCardPreferredMin + _kStudyCardPreferredSpacing) - availableHeight;
+  if (overflow <= 0) return _kStudyCardPreferredSpacing;
+  return math.max(0.0, _kStudyCardPreferredSpacing - overflow);
+}
+
+/// Study card height for a viewport of [availableHeight].
+///
+/// Short viewports (keyboard open, small devices) can drive the preferred
+/// bounds past each other or past the remaining space after
+/// [studyCardBottomSpacing]; the result is always sized so card + spacing fit.
+double studyCardHeight(double availableHeight) {
+  final spacing = studyCardBottomSpacing(availableHeight);
+  final maxCard = math.max(0.0, availableHeight - spacing);
+  if (maxCard <= 0) return 0.0;
+
+  final lower = math.min(_kStudyCardPreferredMin, maxCard);
+  final controlsUpper = math.max(
+    0.0,
+    availableHeight - _kStudyCardControlsReserve,
+  );
+  final upper = math.min(maxCard, math.max(lower, controlsUpper));
+  return (availableHeight * 0.62).clamp(lower, upper).toDouble();
+}
 
 String? _tagNameFor(DeckStudyState state) {
   final activeTagId = state.activeTagId;
@@ -80,8 +117,6 @@ class DeckViewBody extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
 
-            final totalCardsInSession =
-                state.refreshedCardsCount ?? deck.stats.cardsCount;
             final cardsStudied = state.cardsStudied;
             final cardDetail = state.cardDetail;
             final liveDue = state.refreshedDueCardsCount ?? deck.stats.dueCards;
@@ -116,18 +151,13 @@ class DeckViewBody extends StatelessWidget {
                         requestDeckStudyTagFilterChanged(context, null);
                       },
                     )
-                  : totalCardsInSession == 0
-                  ? _DeckStudyMessageColumn(
+                  // Reviewing everything due does not land here: the server
+                  // always serves the most urgent card regardless of due date.
+                  // Reaching this means nothing is servable at all.
+                  : _DeckStudyMessageColumn(
                       icon: LucideIcons.circleQuestionMark,
                       title: loc.noCardsInThisDeck,
                       theme: theme,
-                    )
-                  : _CaughtUpColumn(
-                      loc: loc,
-                      theme: theme,
-                      onReviewAgain: () {
-                        requestDeckStudyReviewAgain(context);
-                      },
                     );
 
               return Column(
@@ -135,27 +165,6 @@ class DeckViewBody extends StatelessWidget {
                 children: [
                   if (state.deckTags.isNotEmpty) buildTagFilterBar(),
                   Expanded(child: messageBody),
-                ],
-              );
-            }
-
-            final isCompleted =
-                state.activeTagId == null &&
-                totalCardsInSession == cardsStudied;
-            if (isCompleted) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (state.deckTags.isNotEmpty) buildTagFilterBar(),
-                  Expanded(
-                    child: _CaughtUpColumn(
-                      loc: loc,
-                      theme: theme,
-                      onReviewAgain: () {
-                        requestDeckStudyReviewAgain(context);
-                      },
-                    ),
-                  ),
                 ],
               );
             }
@@ -202,12 +211,11 @@ class DeckViewBody extends StatelessWidget {
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final screenWidth = MediaQuery.sizeOf(context).width;
-                      final idealCardHeight = screenWidth - 48 - 46;
-                      final maxCardHeight = (constraints.maxHeight - 150).clamp(
-                        180.0,
-                        idealCardHeight,
+                      final availableHeight = constraints.maxHeight;
+                      final cardHeight = studyCardHeight(availableHeight);
+                      final bottomSpacing = studyCardBottomSpacing(
+                        availableHeight,
                       );
-                      final cardHeight = maxCardHeight.toDouble();
                       return Stack(
                         children: [
                           Padding(
@@ -226,7 +234,7 @@ class DeckViewBody extends StatelessWidget {
                                     isFront: false,
                                   ),
                                 ),
-                                const SizedBox(height: 100),
+                                SizedBox(height: bottomSpacing),
                               ],
                             ),
                           ),
@@ -289,47 +297,6 @@ class _TagFilterEmptyColumn extends StatelessWidget {
           AppButton(
             label: loc.clearTagFilter,
             onPressed: onClearFilter,
-            variant: AppButtonVariant.primary,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CaughtUpColumn extends StatelessWidget {
-  const _CaughtUpColumn({
-    required this.loc,
-    required this.theme,
-    required this.onReviewAgain,
-  });
-
-  final AppLocalizations loc;
-  final ThemeData theme;
-  final VoidCallback onReviewAgain;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            LucideIcons.circleCheckBig,
-            size: _kMessageIconSize,
-            color: theme.colorScheme.primary,
-          ),
-          const SizedBox(height: _kMessageTitleTopSpacing),
-          Text(
-            loc.allCaughtUp,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: _kMessageButtonTopSpacing),
-          AppButton(
-            label: loc.reviewAgain,
-            onPressed: onReviewAgain,
             variant: AppButtonVariant.primary,
           ),
         ],

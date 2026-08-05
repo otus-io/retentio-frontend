@@ -235,22 +235,34 @@ class DeckViewIntervalSliderControls extends StatelessWidget {
                   if (!isFront)
                     Row(
                       children: [
-                        Text(
-                          loc.hard,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: scheme.onSurface.withValues(alpha: 0.35),
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              loc.hard,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: scheme.onSurface.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            Text(
+                              formatReviewIntervalLabel(minInterval),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: scheme.onSurface.withValues(alpha: 0.25),
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
                         ),
                         SliderTheme(
                           data: SliderTheme.of(context).copyWith(
-                            trackHeight: 3,
+                            trackHeight: 5,
                             thumbShape: _IntervalLabelThumbShape(
                               textScaleFactor: MediaQuery.textScalerOf(
                                 context,
                               ).scale(1),
                             ),
                             overlayShape: const RoundSliderOverlayShape(
-                              overlayRadius: 18,
+                              overlayRadius: 24,
                             ),
                             tickMarkShape: const RoundSliderTickMarkShape(
                               tickMarkRadius: 2.5,
@@ -287,11 +299,23 @@ class DeckViewIntervalSliderControls extends StatelessWidget {
                             },
                           ),
                         ).expanded(),
-                        Text(
-                          loc.easy,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: scheme.onSurface.withValues(alpha: 0.35),
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              loc.easy,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: scheme.onSurface.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            Text(
+                              formatReviewIntervalLabel(maxInterval),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: scheme.onSurface.withValues(alpha: 0.25),
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

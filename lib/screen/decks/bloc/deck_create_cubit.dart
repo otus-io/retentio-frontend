@@ -10,6 +10,12 @@ const int kDeckEditorRateDefault = 30;
 int clampDeckEditorRate(int rate) =>
     rate.clamp(kDeckEditorRateMin, kDeckEditorRateMax);
 
+List<String> normalizeDeckFieldNames(List<String> fields) =>
+    fields.map((s) => s.trim()).toList();
+
+bool hasBlankDeckFieldNames(List<String> fields) =>
+    normalizeDeckFieldNames(fields).any((s) => s.isEmpty);
+
 Map<String, dynamic> buildDeckEditorSubmitParams({
   required DeckCardType cardType,
   required bool isImported,
@@ -73,16 +79,24 @@ class DeckCreateState {
   }
 }
 
+/// Client-side validation failures. The cubit has no [BuildContext], so it
+/// reports the reason and the call-site localizes it.
+enum DeckCreateError { nameEmpty, blankFieldName }
+
 class DeckCreateResult {
   const DeckCreateResult({
     required this.success,
     this.message,
+    this.error,
     this.updatedDeckName,
     this.newDeckId,
   });
 
   final bool success;
+
+  /// Server-supplied message; null for [error] validation failures.
   final String? message;
+  final DeckCreateError? error;
   final String? updatedDeckName;
 
   /// Populated after a successful CREATE; null in edit mode.
@@ -152,14 +166,17 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
     if (name.isEmpty) {
       return const DeckCreateResult(
         success: false,
-        message: 'Please enter a deck name',
+        error: DeckCreateError.nameEmpty,
       );
     }
 
-    final fields = fieldNames
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
+    final fields = normalizeDeckFieldNames(fieldNames);
+    if (hasBlankDeckFieldNames(fields)) {
+      return const DeckCreateResult(
+        success: false,
+        error: DeckCreateError.blankFieldName,
+      );
+    }
 
     final params = buildDeckEditorSubmitParams(
       cardType: state.cardType,

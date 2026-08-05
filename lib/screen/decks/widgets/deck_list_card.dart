@@ -59,9 +59,9 @@ class DeckListCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: scheme.shadow.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
+              color: scheme.shadow.withValues(alpha: 0.08),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -209,12 +209,11 @@ class _StatBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isZero = value == 0;
+    final isDueEmphasis = !isZero && color == scheme.error;
     final effectiveColor = isZero
         ? scheme.onSurface.withValues(alpha: 0.3)
         : color;
-    final fillTint = !isZero && color == scheme.error
-        ? scheme.error
-        : scheme.primary;
+    final fillTint = isDueEmphasis ? scheme.error : scheme.primary;
     final boxColor = Color.alphaBlend(
       fillTint.withValues(alpha: isZero ? 0.03 : 0.05),
       scheme.surfaceContainerHighest,
@@ -234,10 +233,14 @@ class _StatBox extends StatelessWidget {
               display,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: effectiveColor,
-                fontWeight: FontWeight.w700,
-              ),
+              style:
+                  (isDueEmphasis
+                          ? theme.textTheme.titleMedium
+                          : theme.textTheme.titleSmall)
+                      ?.copyWith(
+                        color: effectiveColor,
+                        fontWeight: FontWeight.w700,
+                      ),
             ),
             const SizedBox(height: 2),
             Text(

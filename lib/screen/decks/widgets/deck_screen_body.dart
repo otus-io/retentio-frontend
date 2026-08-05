@@ -9,7 +9,7 @@ import 'package:retentio/widgets/common_refresher.dart';
 
 import 'deck_list_card.dart';
 
-const double _kDeckStateHorizontalPadding = 26;
+const double _kDeckStateHorizontalPadding = 16;
 
 class DeckScreenBody extends StatelessWidget {
   const DeckScreenBody({super.key});

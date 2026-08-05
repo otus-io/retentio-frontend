@@ -56,7 +56,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(AppBar), findsOneWidget);
-      expect(find.byType(IconButton), findsOneWidget);
     });
 
     testWidgets('has Scaffold structure', (tester) async {

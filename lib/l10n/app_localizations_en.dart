@@ -12,6 +12,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Rete';
 
   @override
+  String appVersionLabel(String appName, String version) {
+    return '$appName v$version';
+  }
+
+  @override
   String get login => 'Login';
 
   @override
@@ -32,6 +37,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get loginTagline =>
       'A journey of a thousand miles begins with a single step';
+
+  @override
+  String get registerPageTitle => 'Create Account';
+
+  @override
+  String get registerPageSubtitle =>
+      'Start building your long-term memory decks';
 
   @override
   String get email => 'Email';
@@ -158,6 +170,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themeSystem => 'System';
+
+  @override
+  String get themeSepia => 'Sepia';
 
   @override
   String get totalCards => 'Total';

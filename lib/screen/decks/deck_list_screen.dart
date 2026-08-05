@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/decks/bloc/deck_create_cubit.dart';
@@ -9,9 +8,6 @@ import 'package:retentio/screen/decks/bloc/deck_sharing_status_cubit.dart';
 import 'package:retentio/screen/decks/deck_text_styles.dart';
 import 'package:retentio/screen/decks/widgets/deck_create.dart';
 import 'package:retentio/screen/decks/widgets/deck_screen_body.dart';
-import 'package:retentio/screen/tags/tags_screen.dart';
-import 'package:retentio/theme/theme_tokens.dart';
-import 'package:retentio/widgets/app_icon_button.dart';
 import 'package:retentio/widgets/draggable_fab.dart';
 
 import '../../widgets/common_bottom_sheet.dart';
@@ -105,25 +101,6 @@ class _DeckListScreenState extends State<DeckListScreen>
               appBar: AppBar(
                 title: Text(loc.decks),
                 scrolledUnderElevation: 0,
-                actions: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: AppIconButton(
-                      icon: LucideIcons.tag,
-                      tooltip: loc.tags,
-                      constraints: const BoxConstraints(
-                        minWidth: 40,
-                        minHeight: 40,
-                      ),
-                      padding: const EdgeInsets.all(AppThemeTokens.spaceSm),
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const TagsScreen(),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
                 bottom: PreferredSize(
                   preferredSize: const Size.fromHeight(30),
                   child: Align(

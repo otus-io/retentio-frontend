@@ -12,6 +12,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appTitle => 'Rete';
 
   @override
+  String appVersionLabel(String appName, String version) {
+    return '$appName v$version';
+  }
+
+  @override
   String get login => '登录';
 
   @override
@@ -31,6 +36,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get loginTagline => '日积跬步，以至千里。';
+
+  @override
+  String get registerPageTitle => '创建账号';
+
+  @override
+  String get registerPageSubtitle => '开始构建你的长期记忆卡组';
 
   @override
   String get email => '邮箱';
@@ -156,6 +167,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get themeSystem => '跟随系统';
+
+  @override
+  String get themeSepia => '护眼模式';
 
   @override
   String get totalCards => '总计';

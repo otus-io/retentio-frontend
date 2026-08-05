@@ -67,10 +67,13 @@ class RegisterScreen extends HookWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Create account', style: theme.textTheme.titleLarge),
+                      Text(
+                        loc.registerPageTitle,
+                        style: theme.textTheme.titleLarge,
+                      ),
                       const SizedBox(height: _kSubtitleSpacing),
                       Text(
-                        'Start building your long-term memory decks',
+                        loc.registerPageSubtitle,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: scheme.onSurface.withValues(alpha: 0.64),
                         ),

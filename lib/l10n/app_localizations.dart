@@ -106,6 +106,12 @@ abstract class AppLocalizations {
   /// **'Rete'**
   String get appTitle;
 
+  /// App name and version shown at the bottom of the profile screen
+  ///
+  /// In en, this message translates to:
+  /// **'{appName} v{version}'**
+  String appVersionLabel(String appName, String version);
+
   /// Login button text
   ///
   /// In en, this message translates to:
@@ -147,6 +153,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A journey of a thousand miles begins with a single step'**
   String get loginTagline;
+
+  /// Register page title heading
+  ///
+  /// In en, this message translates to:
+  /// **'Create Account'**
+  String get registerPageTitle;
+
+  /// Register page subtitle under the title
+  ///
+  /// In en, this message translates to:
+  /// **'Start building your long-term memory decks'**
+  String get registerPageSubtitle;
 
   /// Email input field label
   ///
@@ -393,6 +411,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System'**
   String get themeSystem;
+
+  /// Sepia theme
+  ///
+  /// In en, this message translates to:
+  /// **'Sepia'**
+  String get themeSepia;
 
   /// Total cards count label
   ///

@@ -98,8 +98,15 @@ void main() {
       expect(find.text('secret123'), findsOneWidget);
     });
 
-    testWidgets('has theme toggle icon button', (tester) async {
+    testWidgets('theme toggle offers light mode on the dark default', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Switch to light mode'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Switch to light mode'));
       await tester.pumpAndSettle();
 
       expect(find.byTooltip('Switch to dark mode'), findsOneWidget);
