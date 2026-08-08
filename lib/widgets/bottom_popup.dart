@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:retentio/widgets/dismiss_keyboard_on_tap.dart';
 
 const double _kPopupTopRadius = 16;
 const double _kPopupDefaultHeight = 320;
@@ -32,7 +33,10 @@ class BottomPopup extends StatelessWidget {
           padding: EdgeInsets.only(bottom: keyboardBottom),
           child: SizedBox(
             height: (height ?? _kPopupDefaultHeight) + safeBottom,
-            child: SafeArea(top: false, child: child),
+            child: SafeArea(
+              top: false,
+              child: DismissKeyboardOnTap(child: child),
+            ),
           ),
         );
       },

@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/tag.dart';
 import 'package:retentio/widgets/app_input.dart';
+import 'package:retentio/widgets/dismiss_keyboard_on_tap.dart';
 
 /// Distinguishes an explicit sheet pick from dismiss (which returns null).
 class _TagFilterPick {
@@ -54,7 +55,11 @@ class DeckStudyTagFilterBar extends HookWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (sheetContext) {
-        return _DeckStudyTagFilterSheet(tags: tags, activeTagId: activeTagId);
+        final keyboardBottom = MediaQuery.viewInsetsOf(sheetContext).bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: keyboardBottom),
+          child: _DeckStudyTagFilterSheet(tags: tags, activeTagId: activeTagId),
+        );
       },
     );
     if (pick == null || !context.mounted) {
@@ -197,74 +202,76 @@ class _DeckStudyTagFilterSheet extends HookWidget {
     }, [query.value, tags]);
 
     return SafeArea(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: maxHeight),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 10),
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: scheme.onSurfaceVariant.withValues(alpha: 0.28),
-                borderRadius: BorderRadius.circular(2),
+      child: DismissKeyboardOnTap(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxHeight),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 10),
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: scheme.onSurfaceVariant.withValues(alpha: 0.28),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  loc.studyTagFilterTitle,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    loc.studyTagFilterTitle,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-              child: AppInput(
-                controller: searchController,
-                hint: loc.tagPickerSearchHint,
-                prefix: const Icon(LucideIcons.search, size: 18),
-                onChanged: (value) => query.value = value,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: AppInput(
+                  controller: searchController,
+                  hint: loc.tagPickerSearchHint,
+                  prefix: const Icon(LucideIcons.search, size: 18),
+                  onChanged: (value) => query.value = value,
+                ),
               ),
-            ),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                padding: const EdgeInsets.only(bottom: 12),
-                children: [
-                  _DeckStudyTagFilterTile(
-                    label: loc.filterAll,
-                    selected: activeTagId == null,
-                    onTap: () =>
-                        Navigator.of(context).pop(_TagFilterPick(null)),
-                  ),
-                  if (filtered.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                      child: Text(
-                        loc.noTags,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: scheme.onSurfaceVariant,
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.only(bottom: 12),
+                  children: [
+                    _DeckStudyTagFilterTile(
+                      label: loc.filterAll,
+                      selected: activeTagId == null,
+                      onTap: () =>
+                          Navigator.of(context).pop(_TagFilterPick(null)),
+                    ),
+                    if (filtered.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                        child: Text(
+                          loc.noTags,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
                         ),
-                      ),
-                    )
-                  else
-                    for (final tag in filtered)
-                      _DeckStudyTagFilterTile(
-                        label: tag.name,
-                        selected: activeTagId == tag.id,
-                        onTap: () =>
-                            Navigator.of(context).pop(_TagFilterPick(tag.id)),
-                      ),
-                ],
+                      )
+                    else
+                      for (final tag in filtered)
+                        _DeckStudyTagFilterTile(
+                          label: tag.name,
+                          selected: activeTagId == tag.id,
+                          onTap: () =>
+                              Navigator.of(context).pop(_TagFilterPick(tag.id)),
+                        ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

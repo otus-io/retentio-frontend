@@ -6,6 +6,7 @@ import 'package:retentio/services/apis/deck_catalog_service.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_input.dart';
 import 'package:retentio/widgets/app_toast.dart';
+import 'package:retentio/widgets/dismiss_keyboard_on_tap.dart';
 
 enum ReportIssueKind { audio, content, other }
 
@@ -105,44 +106,52 @@ class _ReportIssueDialogState extends State<_ReportIssueDialog> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final detailsRequired = _kind == ReportIssueKind.other;
+    final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
 
     return PopScope(
       canPop: !_submitting,
       child: AlertDialog(
+        insetPadding: EdgeInsets.fromLTRB(24, 24, 24, 24 + keyboardBottom),
         title: Text(loc.reportIssue),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DropdownButtonFormField<ReportIssueKind>(
-              initialValue: _kind,
-              decoration: InputDecoration(labelText: loc.reportIssueCategory),
-              items: [
-                for (final kind in ReportIssueKind.values)
-                  DropdownMenuItem(
-                    value: kind,
-                    child: Text(_kindLabel(loc, kind)),
+        content: DismissKeyboardOnTap(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                DropdownButtonFormField<ReportIssueKind>(
+                  initialValue: _kind,
+                  decoration: InputDecoration(
+                    labelText: loc.reportIssueCategory,
                   ),
+                  items: [
+                    for (final kind in ReportIssueKind.values)
+                      DropdownMenuItem(
+                        value: kind,
+                        child: Text(_kindLabel(loc, kind)),
+                      ),
+                  ],
+                  onChanged: _submitting
+                      ? null
+                      : (value) {
+                          if (value == null) return;
+                          setState(() => _kind = value);
+                        },
+                ),
+                const SizedBox(height: 12),
+                AppInput(
+                  controller: _detailsController,
+                  hint: detailsRequired
+                      ? loc.reportIssueOtherHint
+                      : loc.reportIssueDetailsHint,
+                  maxLines: 4,
+                  minLines: 3,
+                  maxLength: 200,
+                  enabled: !_submitting,
+                ),
               ],
-              onChanged: _submitting
-                  ? null
-                  : (value) {
-                      if (value == null) return;
-                      setState(() => _kind = value);
-                    },
             ),
-            const SizedBox(height: 12),
-            AppInput(
-              controller: _detailsController,
-              hint: detailsRequired
-                  ? loc.reportIssueOtherHint
-                  : loc.reportIssueDetailsHint,
-              maxLines: 4,
-              minLines: 3,
-              maxLength: 200,
-              enabled: !_submitting,
-            ),
-          ],
+          ),
         ),
         actions: [
           AppButton(
