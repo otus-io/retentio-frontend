@@ -191,7 +191,7 @@ class _TagPickerPage extends HookWidget {
               );
             },
           ),
-          SafeArea(top: false, child: const SizedBox.shrink()),
+          SizedBox(height: MediaQuery.paddingOf(context).bottom),
         ],
       ),
     );

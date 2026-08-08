@@ -21,9 +21,7 @@ Future<void> showReportIssueDialog({
   return showCommonBottomSheet<void>(
     context: context,
     title: AppLocalizations.of(context)!.reportIssue,
-    initialChildSize: 0.62,
-    minChildSize: 0.45,
-    maxChildSize: 0.92,
+    liftWithKeyboard: true,
     routeSettings: const RouteSettings(name: 'report-issue-sheet'),
     child: _ReportIssueForm(
       importDeckId: importDeckId,
@@ -176,8 +174,8 @@ class _ReportIssueFormState extends State<_ReportIssueForm> {
           hint: detailsRequired
               ? loc.reportIssueOtherHint
               : loc.reportIssueDetailsHint,
-          maxLines: 4,
-          minLines: 3,
+          maxLines: 3,
+          minLines: 2,
           maxLength: 200,
           enabled: !_submitting,
           textAlignVertical: TextAlignVertical.top,
@@ -230,36 +228,43 @@ class _KindTile extends StatelessWidget {
         ? scheme.primary
         : scheme.outline.withValues(alpha: 0.35);
 
-    return Material(
-      color: Colors.transparent,
-      borderRadius: AppThemeTokens.borderRadiusMd,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: AppThemeTokens.borderRadiusMd,
-            border: Border.all(color: borderColor, width: 1.2),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 20, color: fg),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: fg,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+    return Semantics(
+      selected: selected,
+      inMutuallyExclusiveGroup: true,
+      button: true,
+      enabled: enabled,
+      label: label,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: AppThemeTokens.borderRadiusMd,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: AppThemeTokens.borderRadiusMd,
+              border: Border.all(color: borderColor, width: 1.2),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 20, color: fg),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: fg,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

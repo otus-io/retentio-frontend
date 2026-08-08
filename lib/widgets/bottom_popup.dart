@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:retentio/widgets/dismiss_keyboard_on_tap.dart';
 
@@ -29,10 +31,16 @@ class BottomPopup extends StatelessWidget {
       builder: (context) {
         final safeBottom = MediaQuery.paddingOf(context).bottom;
         final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
+        final availableAboveKeyboard =
+            MediaQuery.sizeOf(context).height - keyboardBottom - safeBottom;
+        final contentHeight = math.min(
+          height ?? _kPopupDefaultHeight,
+          math.max(0.0, availableAboveKeyboard),
+        );
         return Padding(
           padding: EdgeInsets.only(bottom: keyboardBottom),
           child: SizedBox(
-            height: (height ?? _kPopupDefaultHeight) + safeBottom,
+            height: contentHeight + safeBottom,
             child: SafeArea(
               top: false,
               child: DismissKeyboardOnTap(child: child),

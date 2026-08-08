@@ -63,6 +63,45 @@ void main() {
       },
     );
 
+    testWidgets('liftWithKeyboard sheet dismisses when tapping dimmed area', (
+      tester,
+    ) async {
+      _setViewLogicalSize(tester, const Size(400, 800));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                return Center(
+                  child: TextButton(
+                    onPressed: () {
+                      showCommonBottomSheet<void>(
+                        context: context,
+                        title: 'Compact sheet',
+                        liftWithKeyboard: true,
+                        child: const Text('Sheet body'),
+                      );
+                    },
+                    child: const Text('Open'),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      expect(find.text('Compact sheet'), findsOneWidget);
+
+      await tester.tapAt(const Offset(200, 40));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Compact sheet'), findsNothing);
+    });
+
     testWidgets(
       'sheet stays open after keyboard insets and focusing TextField',
       (tester) async {
