@@ -19,6 +19,9 @@ class BottomPopup extends StatelessWidget {
   }) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    // Captured outside the sheet: showModalBottomSheet removes top padding
+    // from the builder MediaQuery (useSafeArea defaults to false).
+    final safeTop = MediaQuery.paddingOf(context).top;
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: true,
@@ -32,7 +35,10 @@ class BottomPopup extends StatelessWidget {
         final safeBottom = MediaQuery.paddingOf(context).bottom;
         final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
         final availableAboveKeyboard =
-            MediaQuery.sizeOf(context).height - keyboardBottom - safeBottom;
+            MediaQuery.sizeOf(context).height -
+            keyboardBottom -
+            safeBottom -
+            safeTop;
         final contentHeight = math.min(
           height ?? _kPopupDefaultHeight,
           math.max(0.0, availableAboveKeyboard),
