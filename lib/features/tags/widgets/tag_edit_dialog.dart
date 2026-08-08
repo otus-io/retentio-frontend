@@ -4,10 +4,6 @@ import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_input.dart';
 import 'package:retentio/widgets/common_bottom_sheet.dart';
 
-const double _kTagSheetInitialSize = 0.48;
-const double _kTagSheetMinSize = 0.38;
-const double _kTagSheetMaxSize = 0.72;
-
 Future<void> showTagEditDialog(
   BuildContext context, {
   required String title,
@@ -20,9 +16,7 @@ Future<void> showTagEditDialog(
     context: context,
     useRootNavigator: true,
     title: title,
-    initialChildSize: _kTagSheetInitialSize,
-    minChildSize: _kTagSheetMinSize,
-    maxChildSize: _kTagSheetMaxSize,
+    liftWithKeyboard: true,
     routeSettings: const RouteSettings(name: 'tag-edit-sheet'),
     child: _TagEditForm(
       confirmLabel: confirmLabel,

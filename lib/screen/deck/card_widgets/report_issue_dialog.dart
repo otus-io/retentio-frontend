@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/services/apis/deck_catalog_service.dart';
+import 'package:retentio/theme/theme_tokens.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_input.dart';
 import 'package:retentio/widgets/app_toast.dart';
+import 'package:retentio/widgets/common_bottom_sheet.dart';
 
 enum ReportIssueKind { audio, content, other }
 
@@ -15,9 +18,12 @@ Future<void> showReportIssueDialog({
   required String importDeckId,
   required String factId,
 }) {
-  return showDialog<void>(
+  return showCommonBottomSheet<void>(
     context: context,
-    builder: (dialogContext) => _ReportIssueDialog(
+    title: AppLocalizations.of(context)!.reportIssue,
+    liftWithKeyboard: true,
+    routeSettings: const RouteSettings(name: 'report-issue-sheet'),
+    child: _ReportIssueForm(
       importDeckId: importDeckId,
       factId: factId,
       pageContext: context,
@@ -25,8 +31,8 @@ Future<void> showReportIssueDialog({
   );
 }
 
-class _ReportIssueDialog extends StatefulWidget {
-  const _ReportIssueDialog({
+class _ReportIssueForm extends StatefulWidget {
+  const _ReportIssueForm({
     required this.importDeckId,
     required this.factId,
     required this.pageContext,
@@ -37,10 +43,10 @@ class _ReportIssueDialog extends StatefulWidget {
   final BuildContext pageContext;
 
   @override
-  State<_ReportIssueDialog> createState() => _ReportIssueDialogState();
+  State<_ReportIssueForm> createState() => _ReportIssueFormState();
 }
 
-class _ReportIssueDialogState extends State<_ReportIssueDialog> {
+class _ReportIssueFormState extends State<_ReportIssueForm> {
   ReportIssueKind _kind = ReportIssueKind.audio;
   final _detailsController = TextEditingController();
   bool _submitting = false;
@@ -56,6 +62,14 @@ class _ReportIssueDialogState extends State<_ReportIssueDialog> {
       ReportIssueKind.audio => loc.reportIssueAudio,
       ReportIssueKind.content => loc.reportIssueContent,
       ReportIssueKind.other => loc.reportIssueOther,
+    };
+  }
+
+  IconData _kindIcon(ReportIssueKind kind) {
+    return switch (kind) {
+      ReportIssueKind.audio => LucideIcons.volume2,
+      ReportIssueKind.content => LucideIcons.fileText,
+      ReportIssueKind.other => LucideIcons.circleHelp,
     };
   }
 
@@ -104,59 +118,155 @@ class _ReportIssueDialogState extends State<_ReportIssueDialog> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final detailsRequired = _kind == ReportIssueKind.other;
 
-    return PopScope(
-      canPop: !_submitting,
-      child: AlertDialog(
-        title: Text(loc.reportIssue),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
           children: [
-            DropdownButtonFormField<ReportIssueKind>(
-              initialValue: _kind,
-              decoration: InputDecoration(labelText: loc.reportIssueCategory),
-              items: [
-                for (final kind in ReportIssueKind.values)
-                  DropdownMenuItem(
-                    value: kind,
-                    child: Text(_kindLabel(loc, kind)),
-                  ),
-              ],
-              onChanged: _submitting
-                  ? null
-                  : (value) {
-                      if (value == null) return;
-                      setState(() => _kind = value);
-                    },
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: scheme.primaryContainer,
+                borderRadius: AppThemeTokens.borderRadiusMd,
+              ),
+              child: Icon(
+                LucideIcons.flag,
+                size: 20,
+                color: scheme.onPrimaryContainer,
+              ),
             ),
-            const SizedBox(height: 12),
-            AppInput(
-              controller: _detailsController,
-              hint: detailsRequired
-                  ? loc.reportIssueOtherHint
-                  : loc.reportIssueDetailsHint,
-              maxLines: 4,
-              minLines: 3,
-              maxLength: 200,
-              enabled: !_submitting,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                loc.reportIssueCategory,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         ),
-        actions: [
-          AppButton(
-            label: loc.cancel,
-            variant: AppButtonVariant.ghost,
-            onPressed: _submitting ? null : () => Navigator.of(context).pop(),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            for (final kind in ReportIssueKind.values) ...[
+              if (kind != ReportIssueKind.values.first)
+                const SizedBox(width: 8),
+              Expanded(
+                child: _KindTile(
+                  label: _kindLabel(loc, kind),
+                  icon: _kindIcon(kind),
+                  selected: _kind == kind,
+                  enabled: !_submitting,
+                  onTap: () => setState(() => _kind = kind),
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 20),
+        AppInput(
+          controller: _detailsController,
+          hint: detailsRequired
+              ? loc.reportIssueOtherHint
+              : loc.reportIssueDetailsHint,
+          maxLines: 3,
+          minLines: 2,
+          maxLength: 200,
+          enabled: !_submitting,
+          textAlignVertical: TextAlignVertical.top,
+        ),
+        const SizedBox(height: 20),
+        AppButton(
+          label: loc.reportIssueSubmit,
+          variant: AppButtonVariant.primary,
+          fullWidth: true,
+          isLoading: _submitting,
+          onPressed: _submitting ? null : _onSubmit,
+          leading: const Icon(LucideIcons.send, size: 16),
+        ),
+        const SizedBox(height: 8),
+        AppButton(
+          label: loc.cancel,
+          variant: AppButtonVariant.ghost,
+          fullWidth: true,
+          onPressed: _submitting ? null : () => Navigator.of(context).pop(),
+        ),
+      ],
+    );
+  }
+}
+
+class _KindTile extends StatelessWidget {
+  const _KindTile({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final fg = selected
+        ? scheme.onPrimary
+        : scheme.onSurface.withValues(alpha: 0.55);
+    final bg = selected ? scheme.primary : Colors.transparent;
+    final borderColor = selected
+        ? scheme.primary
+        : scheme.outline.withValues(alpha: 0.35);
+
+    return Semantics(
+      selected: selected,
+      inMutuallyExclusiveGroup: true,
+      button: true,
+      enabled: enabled,
+      label: label,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: AppThemeTokens.borderRadiusMd,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: AppThemeTokens.borderRadiusMd,
+              border: Border.all(color: borderColor, width: 1.2),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 20, color: fg),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: fg,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
-          AppButton(
-            label: loc.reportIssueSubmit,
-            variant: AppButtonVariant.primary,
-            isLoading: _submitting,
-            onPressed: _submitting ? null : _onSubmit,
-          ),
-        ],
+        ),
       ),
     );
   }

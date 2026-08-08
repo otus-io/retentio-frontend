@@ -8,6 +8,7 @@ import 'package:retentio/features/tags/widgets/tag_edit_dialog.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/tag.dart';
 import 'package:retentio/widgets/app_input.dart';
+import 'package:retentio/widgets/dismiss_keyboard_on_tap.dart';
 
 // ── public API ────────────────────────────────────────────────────────────────
 
@@ -76,56 +77,62 @@ class _TagPickerPage extends HookWidget {
           const Divider(height: 1),
           // ── list ────────────────────────────────────────
           Expanded(
-            child: BlocBuilder<TagManagerCubit, TagManagerState>(
-              builder: (context, state) {
-                final filtered = query.isEmpty
-                    ? state.tags
-                    : state.tags
-                          .where(
-                            (tag) => tag.name.toLowerCase().contains(query),
-                          )
-                          .toList();
+            child: DismissKeyboardOnTap(
+              child: BlocBuilder<TagManagerCubit, TagManagerState>(
+                builder: (context, state) {
+                  final filtered = query.isEmpty
+                      ? state.tags
+                      : state.tags
+                            .where(
+                              (tag) => tag.name.toLowerCase().contains(query),
+                            )
+                            .toList();
 
-                if (state.isLoading && state.tags.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+                  if (state.isLoading && state.tags.isEmpty) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                if (filtered.isEmpty) {
-                  return _EmptyState(hasQuery: query.isNotEmpty, query: query);
-                }
+                  if (filtered.isEmpty) {
+                    return _EmptyState(
+                      hasQuery: query.isNotEmpty,
+                      query: query,
+                    );
+                  }
 
-                return Stack(
-                  children: [
-                    ListView.builder(
-                      itemCount: filtered.length,
-                      itemBuilder: (_, i) {
-                        final tag = filtered[i];
-                        final isSelected = selected.value.contains(tag.id);
-                        return _TagTile(
-                          tag: tag,
-                          selected: isSelected,
-                          onToggle: () {
-                            final next = {...selected.value};
-                            if (isSelected) {
-                              next.remove(tag.id);
-                            } else {
-                              next.add(tag.id);
-                            }
-                            selected.value = next;
-                          },
-                        );
-                      },
-                    ),
-                    if (state.isLoading)
-                      const Positioned(
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        child: LinearProgressIndicator(minHeight: 2),
+                  return Stack(
+                    children: [
+                      ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (_, i) {
+                          final tag = filtered[i];
+                          final isSelected = selected.value.contains(tag.id);
+                          return _TagTile(
+                            tag: tag,
+                            selected: isSelected,
+                            onToggle: () {
+                              FocusManager.instance.primaryFocus?.unfocus();
+                              final next = {...selected.value};
+                              if (isSelected) {
+                                next.remove(tag.id);
+                              } else {
+                                next.add(tag.id);
+                              }
+                              selected.value = next;
+                            },
+                          );
+                        },
                       ),
-                  ],
-                );
-              },
+                      if (state.isLoading)
+                        const Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: LinearProgressIndicator(minHeight: 2),
+                        ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
           const Divider(height: 1),
@@ -184,7 +191,7 @@ class _TagPickerPage extends HookWidget {
               );
             },
           ),
-          SafeArea(top: false, child: const SizedBox.shrink()),
+          SizedBox(height: MediaQuery.paddingOf(context).bottom),
         ],
       ),
     );

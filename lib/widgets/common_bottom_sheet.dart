@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:retentio/widgets/dismiss_keyboard_on_tap.dart';
 
 const double _kSheetTopRadius = 20;
 const double _kSheetHandleWidth = 40;
@@ -10,6 +11,7 @@ const double _kSheetBottomPadding = 20;
 const double _kSheetHandleBottomMargin = 20;
 const double _kSheetTitleGapFullScreen = 28;
 const double _kSheetTitleGapDraggable = 48;
+const double _kSheetTitleGapCompact = 20;
 const double _kSheetHandleOpacity = 0.6;
 const double _kSheetFullScreenMinChildSize = 0.35;
 const double _kSheetBarrierOpacity = 0.44;
@@ -45,6 +47,10 @@ Future<T?> showCommonBottomSheet<T>({
 
   /// When true, the sheet sizes to fill its parent; use with tall [initialChildSize] / [fullScreen].
   bool expandSheet = false,
+
+  /// Short forms (e.g. create tag): size to content and lift above the keyboard
+  /// so actions like Cancel stay visible without using [DraggableScrollableSheet].
+  bool liftWithKeyboard = false,
 }) {
   final resolvedInitial = fullScreen ? 1.0 : initialChildSize;
   final resolvedMax = fullScreen ? 1.0 : maxChildSize;
@@ -56,54 +62,59 @@ Future<T?> showCommonBottomSheet<T>({
   return showModalBottomSheet<T>(
     context: context,
     builder: (context) {
+      final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
       final theme = Theme.of(context);
       final scheme = theme.colorScheme;
       final titleStyle = theme.textTheme.titleLarge;
       final handleColor = scheme.outline.withValues(
         alpha: _kSheetHandleOpacity,
       );
-      // For full-screen usage (e.g. create/edit deck), avoid DraggableScrollableSheet.
-      // Using a plain scroll view prevents the "double sheet" effect when dragging down.
+      // Outer inset lifts the sheet above the keyboard without shrinking a
+      // DraggableScrollableSheet (these paths have none).
       if (fullScreen) {
-        final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
-        return ClipRRect(
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(_kSheetTopRadius),
-          ),
-          child: Material(
-            color: scheme.surface,
-            child: RepaintBoundary(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.only(
-                  left: _kSheetHorizontalPadding,
-                  top: _kSheetTopPadding,
-                  right: _kSheetHorizontalPadding,
-                  bottom: _kSheetBottomPadding + keyboardBottom,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: _kSheetHandleWidth,
-                        height: _kSheetHandleHeight,
-                        margin: const EdgeInsets.only(
-                          bottom: _kSheetHandleBottomMargin,
-                        ),
-                        decoration: BoxDecoration(
-                          color: handleColor,
-                          borderRadius: BorderRadius.circular(
-                            _kSheetHandleRadius,
+        return Padding(
+          padding: EdgeInsets.only(bottom: keyboardBottom),
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(_kSheetTopRadius),
+            ),
+            child: Material(
+              color: scheme.surface,
+              child: RepaintBoundary(
+                child: DismissKeyboardOnTap(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(
+                      left: _kSheetHorizontalPadding,
+                      top: _kSheetTopPadding,
+                      right: _kSheetHorizontalPadding,
+                      bottom: _kSheetBottomPadding,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: _kSheetHandleWidth,
+                            height: _kSheetHandleHeight,
+                            margin: const EdgeInsets.only(
+                              bottom: _kSheetHandleBottomMargin,
+                            ),
+                            decoration: BoxDecoration(
+                              color: handleColor,
+                              borderRadius: BorderRadius.circular(
+                                _kSheetHandleRadius,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        if (title != null && title.isNotEmpty)
+                          Text(title, style: titleStyle),
+                        const SizedBox(height: _kSheetTitleGapFullScreen),
+                        child,
+                      ],
                     ),
-                    if (title != null && title.isNotEmpty)
-                      Text(title, style: titleStyle),
-                    const SizedBox(height: _kSheetTitleGapFullScreen),
-                    child,
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -111,28 +122,102 @@ Future<T?> showCommonBottomSheet<T>({
         );
       }
 
+      // Short forms (create tag): content-sized sheet that lifts with keyboard
+      // so Save/Cancel stay visible above the keys.
+      if (liftWithKeyboard) {
+        // Modal route uses an opaque hit target for the full viewport, so taps
+        // on the dimmed area never reach the barrier — dismiss explicitly.
+        return Padding(
+          padding: EdgeInsets.only(bottom: keyboardBottom),
+          child: Stack(
+            children: [
+              if (isDismissible)
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Material(
+                  color: scheme.surface,
+                  elevation: 6,
+                  shadowColor: scheme.shadow,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(_kSheetTopRadius),
+                    ),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: RepaintBoundary(
+                    child: DismissKeyboardOnTap(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.only(
+                          left: _kSheetHorizontalPadding,
+                          top: _kSheetTopPadding,
+                          right: _kSheetHorizontalPadding,
+                          bottom: _kSheetBottomPadding,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Center(
+                              child: Container(
+                                width: _kSheetHandleWidth,
+                                height: _kSheetHandleHeight,
+                                margin: const EdgeInsets.only(
+                                  bottom: _kSheetHandleBottomMargin,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: handleColor,
+                                  borderRadius: BorderRadius.circular(
+                                    _kSheetHandleRadius,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (title != null && title.isNotEmpty)
+                              Text(
+                                title,
+                                textAlign: TextAlign.center,
+                                style: titleStyle,
+                              ),
+                            const SizedBox(height: _kSheetTitleGapCompact),
+                            child,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      // Avoid shrinking DraggableScrollableSheet when the keyboard opens (iOS):
+      // that combination can pop the modal. Apply inset as scroll padding so
+      // content can scroll above the keys without changing sheet maxHeight.
       return DraggableScrollableSheet(
         initialChildSize: resolvedInitial,
         minChildSize: resolvedMin,
         maxChildSize: resolvedMax,
         expand: resolvedExpand,
         builder: (context, scrollController) {
-          // Avoid shrinking the sheet when the keyboard opens (iOS device): that
-          // combination with DraggableScrollableSheet can pop the modal. Inset
-          // is applied as padding so the scroll view can still scroll above keys.
-          final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
-          return _KeyboardScrollToTop(
-            scrollController: scrollController,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(_kSheetTopRadius),
-              ),
-              child: Material(
-                color: scheme.surface,
-                child: RepaintBoundary(
-                  child: Scrollbar(
-                    controller: scrollController,
-                    thumbVisibility: true,
+          return ClipRRect(
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(_kSheetTopRadius),
+            ),
+            child: Material(
+              color: scheme.surface,
+              child: RepaintBoundary(
+                child: Scrollbar(
+                  controller: scrollController,
+                  thumbVisibility: true,
+                  child: DismissKeyboardOnTap(
                     child: SingleChildScrollView(
                       controller: scrollController,
                       child: Padding(
@@ -184,15 +269,19 @@ Future<T?> showCommonBottomSheet<T>({
       );
     },
 
-    backgroundColor: backgroundColor,
+    // Compact lift sheets size to content; keep the modal chrome transparent so
+    // the dimmed barrier shows above the card (not a full-height white panel).
+    backgroundColor: liftWithKeyboard
+        ? (backgroundColor ?? Colors.transparent)
+        : backgroundColor,
     barrierLabel: barrierLabel,
-    elevation: elevation,
+    elevation: liftWithKeyboard ? 0 : elevation,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(
         top: Radius.circular(_kSheetTopRadius),
       ),
     ),
-    clipBehavior: clipBehavior,
+    clipBehavior: liftWithKeyboard ? Clip.none : clipBehavior,
     constraints: constraints,
     barrierColor:
         barrierColor ??
@@ -210,43 +299,4 @@ Future<T?> showCommonBottomSheet<T>({
     anchorPoint: anchorPoint,
     requestFocus: requestFocus,
   );
-}
-
-/// Scrolls the sheet's [ScrollController] to the top whenever the keyboard
-/// opens. Keeps the form header visible so the user can see all fields.
-class _KeyboardScrollToTop extends StatefulWidget {
-  const _KeyboardScrollToTop({
-    required this.scrollController,
-    required this.child,
-  });
-
-  final ScrollController scrollController;
-  final Widget child;
-
-  @override
-  State<_KeyboardScrollToTop> createState() => _KeyboardScrollToTopState();
-}
-
-class _KeyboardScrollToTopState extends State<_KeyboardScrollToTop> {
-  double _prevBottom = 0;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
-    if (bottom > 0 && _prevBottom == 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || !widget.scrollController.hasClients) return;
-        widget.scrollController.animateTo(
-          0,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
-        );
-      });
-    }
-    _prevBottom = bottom;
-  }
-
-  @override
-  Widget build(BuildContext context) => widget.child;
 }
