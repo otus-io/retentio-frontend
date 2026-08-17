@@ -1,19 +1,19 @@
 # 本地离线学习缓存方案
 
-**目标：** 用户无网络时，可以继续学习已下载卡组；联网后自动同步复习结果。
+**目标：** 无论是否联网，默认都从本地 Hive 读卡学习；仅在需要从服务端下载/更新学习包，或把本地卡片数据推送到服务端时才与服务器通信。无网络时亦可继续学习已下载卡组。
 
-做一个独立的离线学习链路：
+做一个独立的本地优先学习链路：
 
-- 在线时下载卡组学习包。
-- 离线时从本地 Hive 读卡片，由前端调度器计算下一张。
+- 学习时默认从本地 Hive 读卡片，由前端调度器计算下一张。
+- 按需从服务端下载或刷新卡组学习包。
 - 复习、隐藏操作先落本地，再写同步队列。
-- 网络恢复后批量同步。
+- 待同步队列超过 100 张卡片时可尝试自动上传；未超过阈值时，即使已联网也不自动上传。
 - 同步成功后，以服务端返回的卡片状态覆盖本地临时状态。
-- 内容发布和学习进度同步分开处理。编辑内容需要用户手动发布；复习进度联网后自动同步。
+- 学习进度只走本地队列与上传；本方案不覆盖内容编辑。
 
 ## 首期范围
 
-首期支持离线学习和离线编辑。发布仍然要求联网。
+首期只做离线学习与复习进度同步，不考虑离线编辑（意义不大）。
 
 支持：
 
@@ -22,39 +22,18 @@
 - 提交复习间隔。
 - 隐藏当前卡片。
 - 使用已下载的标签筛选。
-- 编辑已下载卡组的名称、字段和词条内容。
-- 保存本地草稿。
 - 展示待同步状态。
-- 联网后自动同步。
+- 待同步队列超过 100 张时自动上传复习进度。
 
 不支持：
 
 - 离线创建、删除卡组。
 - 离线新增、删除词条。
 - 离线上传媒体。
-- 离线发布卡组。
-- 离线导入、发布、同步共享卡组。
+- 离线导入、同步共享卡组。
 - 离线删除卡片。
 
 新增、删除、媒体上传和共享卡组同步涉及服务端 ID、权限和版本冲突，首期不纳入。
-
-## 内容编辑与发布
-
-卡组和词条编辑可以离线完成，但编辑结果先保存为本地草稿，不走学习进度同步。
-
-规则：
-
-- 卡组和词条可以编辑。
-- 编辑后只保存本地草稿，不自动上传。
-- 草稿记录编辑前的 `server_version`。
-- 离线状态不能发布，提示“暂时没有网，等有网了之后再发布”。
-- 网络恢复后，卡组右上角显示红点。
-- 用户点击红点，再点击“发布”，才提交内容更新。
-- 发布前检查服务端版本；版本不一致时提示需要刷新或处理冲突。
-
-这条链路只处理内容变更，例如卡组名称、字段、词条文本、卡片模板。
-
-学习进度不走发布流程。用户复习卡片后，客户端直接写本地同步队列，联网后自动上传。
 
 ## 用户路径
 
@@ -87,7 +66,11 @@
 
 ### 同步
 
-网络恢复、应用启动、回到前台、用户手动重试时触发同步。
+用户复习卡片后，客户端直接写本地同步队列。
+
+自动上传条件：待同步队列超过 100 张卡片，且当前已联网。未超过 100 张时，即使已联网也不自动上传。
+
+满足阈值后，可在网络恢复、应用启动、回到前台，或用户手动重试时触发同步。
 
 同步失败不阻塞学习，只更新状态：
 
@@ -99,13 +82,10 @@
 
 ### 红点
 
-红点只表示需要用户处理的发布或更新状态，不表示学习进度同步。
-
-拆成两类：
+红点只表示需要用户处理的更新状态，不表示学习进度同步。
 
 | 类型 | 触发条件 | 无网时是否显示 |
 | --- | --- | --- |
-| 待发布 | 当前用户有本地草稿且网络可用 | 否 |
 | 有更新 | 导入卡组检测到源卡组有新版本 | 否 |
 
 更新检查触发时机：
@@ -146,7 +126,7 @@
 [复习/隐藏]
      |
      v
-[更新本地卡片] -> [StudySyncQueue] -> [网络恢复] -> [同步接口]
+[更新本地卡片] -> [StudySyncQueue] -> [队列 > 100 且已联网] -> [同步接口]
 ```
 
 学习链路：
@@ -163,21 +143,6 @@
 - 保持 `DeckStudyRepository` 接口稳定。
 - 新增 `OfflineFirstDeckStudyRepository` 替换旧的纯远程实现。
 - API 层不直接改 BLoC、Cubit 或 Riverpod 状态。
-- 编辑草稿和学习同步使用不同的 Repository、状态字段和接口。
-
-内容编辑链路：
-
-```text
-DeckEditScreen
-  -> ContentDraftRepository
-  -> LocalContentDraftDataSource
-  -> Hive
-
-点击发布
-  -> 网络检测
-  -> ContentPublishRepository
-  -> PATCH / POST publish APIs
-```
 
 ## 本地存储
 
@@ -221,16 +186,13 @@ offline_sync_meta
   "last_synced_at": 1776157200,
   "card_count": 1200,
   "media_bytes": 52428800,
-  "has_pending_operations": false,
-  "has_unpublished_changes": true,
-  "base_server_version": 12,
-  "draft_updated_at": 1776157200
+  "has_pending_operations": false
 }
 ```
 
 ### 离线词条
 
-词条数据以 JSON 形式保存，再导入 Hive。它用于离线渲染、编辑前预览，以及后续做内容增量更新。
+词条数据以 JSON 形式保存，再导入 Hive。它用于离线渲染，以及后续做内容增量更新。
 
 ```json
 {
@@ -248,13 +210,9 @@ offline_sync_meta
     }
   ],
   "server_version": 12,
-  "base_server_version": 12,
-  "is_dirty": true,
   "updated_at": 1776157200
 }
 ```
-
-`base_server_version` 是用户开始编辑时看到的服务端版本。发布前需要再次检查，避免覆盖其他设备已经发布的内容。
 
 ### 离线卡片
 
@@ -461,16 +419,6 @@ POST /api/sync/study-events
 
 短期如果只能复用 `PATCH /api/decks/{id}/card`，至少要加 `Idempotency-Key`，否则重试会有重复复习风险。
 
-### 内容发布接口
-
-内容编辑仍走现有接口：
-
-- `PATCH /api/decks/{id}`：更新卡组信息。
-- `PATCH /api/decks/{id}/facts/{factId}`：更新词条。
-- `POST /api/decks/{id}/publish`：发布卡组内容。
-
-发布接口只在用户点击发布时调用。离线时不入学习同步队列。
-
 ## 同步规则
 
 队列处理：
@@ -521,7 +469,7 @@ Hive 只保存索引：
 
 ## 安全
 
-离线学习包包含用户内容，发布前需要：
+离线学习包包含用户内容，落地前需要：
 
 - 离线业务 Box 使用 Hive AES 加密（当前 Hive 默认未加密，需要新增）。
 - 加密 key 放安全存储，不放 `SharedPreferences`。项目目前未引入 `flutter_secure_storage`，这是新依赖，需单独评估。
@@ -538,21 +486,17 @@ lib/features/offline_learning/
   data/
     datasources/
       local_offline_learning_data_source.dart
-      local_content_draft_data_source.dart
       remote_offline_package_data_source.dart
       study_sync_data_source.dart
     repositories/
       offline_learning_repository_impl.dart
-      content_publish_repository_impl.dart
   domain/
     entities/
       offline_deck.dart
       offline_card.dart
       study_sync_operation.dart
-      content_draft.dart
     repositories/
       offline_learning_repository.dart
-      content_publish_repository.dart
     services/
       offline_scheduler.dart
       offline_sync_service.dart
@@ -591,8 +535,6 @@ lib/core/storage/account_scope.dart
 - 重试退避。
 - 账号隔离。
 - 红点状态计算。
-- 离线草稿序列化和恢复。
-- `base_server_version` 保存与读取。
 
 Repository 测试：
 
@@ -602,8 +544,6 @@ Repository 测试：
 - 卡片状态和队列同时写入。
 - 同步成功后使用服务端状态覆盖本地。
 - 401 不丢队列。
-- 内容发布失败不会进入学习同步队列。
-- 发布前检测服务端版本冲突。
 
 BLoC / Widget 测试：
 
@@ -611,9 +551,6 @@ BLoC / Widget 测试：
 - 离线复习后立即显示下一张。
 - 同步失败不阻塞学习。
 - 切换账号后看不到上个账号缓存。
-- 离线点击发布时展示无网提示。
-- 离线编辑后杀进程再打开，草稿仍然存在。
-- 网络恢复后有草稿的卡组显示发布红点。
 - 有网后检测到导入卡组更新才显示更新红点。
 
 验收标准：
