@@ -1,8 +1,10 @@
 # 本地优先学习缓存方案
 
+英文版：[offline_learning_cache_plan.md](offline_learning_cache_plan.md)
+
 Flutter 应用采用本地优先学习：卡组元数据、词条、媒体和卡片调度一次性下载到 Hive 后，出卡与复习都在本地完成，沿用后端同一套选卡规则，无需每次点击都等网络。
 
-复习/隐藏先写入本地队列，后台批量同步——逐条 `PATCH /api/decks/{id}/card` 上传进度，批次结束后再 `GET /api/decks/{id}` 对齐统计；队列超过 100 条或离开学习/恢复网络时触发，且不用服务端 `cards[]` 覆盖本地调度。
+复习/隐藏先写入本地队列，后台批量同步——逐条 `PATCH /api/decks/{id}/card` 上传进度，批次结束后再 `GET /api/decks/{id}` 对齐统计；队列达到 100 条及以上或离开学习/恢复网络时触发，且不用服务端 `cards[]` 覆盖本地调度。
 
 **目标：** 无论是否联网，默认都从本地 Hive 读卡学习；仅在需要从服务端下载/更新词条与媒体，或把本地复习进度推送到服务端时才与服务器通信。无网络时亦可继续学习已下载卡组。
 
@@ -11,7 +13,7 @@ Flutter 应用采用本地优先学习：卡组元数据、词条、媒体和卡
 - 学习时默认从本地 Hive 读卡片，由前端调度器按后端 `GetNextCard` 同一套规则计算下一张。
 - 按需用现有列表接口下载或刷新卡组元数据、词条、媒体；卡片调度只在首次落地时从 `GET /api/decks/{id}/cards` 播种。
 - 复习、隐藏操作先落本地，再写同步队列。
-- 待同步队列超过 100 张时可尝试自动上传；未超过时不自动上传。离开学习页、前后台、网络恢复时也可刷写。
+- 待同步队列达到 100 条及以上时可尝试自动上传；未达到 100 条时不自动上传。离开学习页、前后台、网络恢复时也可刷写。
 - **卡片进度** → `PATCH /api/decks/{id}/card`（队列 FIFO，逐条复习/隐藏）。
 - **卡组统计** → 刷写批次结束后 `GET /api/decks/{id}` 的 `stats`（不用 `GET /cards` 的 `cards[]` 覆盖 Hive 调度）。
 - 学习进度只走本地队列与上传；本方案不覆盖内容编辑。
@@ -63,7 +65,7 @@ Flutter 应用采用本地优先学习：卡组元数据、词条、媒体和卡
 - 隐藏当前卡片。
 - 使用已下载的**词条标签**筛选（与 `GET /api/decks/{id}/card?tag_id=` 相同）。
 - 展示待同步状态。
-- 待同步队列超过 100 张时自动上传复习进度，并对齐服务端卡组统计。
+- 待同步队列达到 100 条及以上时自动上传复习进度，并对齐服务端卡组统计。
 
 不支持：
 
@@ -119,7 +121,7 @@ Flutter 应用采用本地优先学习：卡组元数据、词条、媒体和卡
 
 用户复习卡片后，客户端直接写本地同步队列。**上传到服务端只用** `PATCH /api/decks/{id}/card`；`GET /api/decks/{id}/card` 仅用于无本地包时的在线出卡，不参与进度同步。
 
-自动上传条件：待同步队列超过 100 张，且当前已联网。未超过 100 张时，即使已联网也不自动上传。
+自动上传条件：待同步队列达到 100 条及以上，且当前已联网。未达到 100 条时，即使已联网也不自动上传。
 
 满足阈值后，可在网络恢复、应用启动、回到前台、离开学习页，或用户手动重试时触发同步。**一次刷写分两步**：（1）按队列 FIFO `PATCH` 每条复习/隐藏；（2）本批次 PATCH 结束后 `GET /api/decks/{id}`，用响应 `stats` 对齐 `total_reviews` / `total_reviews_today` 等服务端计数（见「卡组统计」）。离开学习页等其它触发条件也走同样两步。
 
@@ -130,7 +132,7 @@ Flutter 应用采用本地优先学习：卡组元数据、词条、媒体和卡
 
 `interval` 在服务端会截成 `int64`；若 `last_review > now`，服务端会钳到 `now`，然后 `due_date = last_review + interval`。客户端本地更新应使用同一规则。
 
-当前 PATCH **没有** `Idempotency-Key`，重试可能重复计入 `total_reviews`。队列侧用 `operation_id` 保证同一事件只成功提交一次。
+当前 PATCH **没有** 服务端幂等。刷写时每次 PATCH 必须携带 `Idempotency-Key: {operation_id}`（或等价的请求头/字段，需与后端约定）；队列侧用 `operation_id` 保证同一事件只成功提交一次，重试不得重复计入 `total_reviews`。
 
 同步失败不阻塞学习，只更新状态：
 
@@ -147,13 +149,13 @@ Flutter 应用采用本地优先学习：卡组元数据、词条、媒体和卡
 | 字段 | 服务端怎么来 | 本地/local-first |
 | --- | --- | --- |
 | `due_cards`, `unseen_cards`, `reviewed_cards`, `hidden_cards`, `new_cards_today`, `last_reviewed_at`, `cards_count` | 对卡片列表跑 `ComputeStats`（见附录） | **本地重算**：用 Hive `offline_cards`（+ 本地 `facts_count`）按同一规则算；每次复习/隐藏后立即更新。有 `tag_id` 时先按词条标签过滤 `fact_id` 再算 |
-| `total_reviews`, `total_reviews_today` | **独立 Redis 计数器**；仅 PATCH **interval** 成功时 +1（隐藏不算复习） | 学习过程中本地可先乐观展示；**队列刷写批次结束后**（含超过 100 条触发）必须 `GET /api/decks/{id}` 拉 `stats` 对齐。也可在 PATCH 过程中逐条 +1 估算，但以刷写后 GET 为准 |
+| `total_reviews`, `total_reviews_today` | **独立 Redis 计数器**；仅 PATCH **interval** 成功时 +1（隐藏不算复习） | 学习过程中本地可先乐观展示；**队列刷写批次结束后**（含达到 100 条及以上触发）必须 `GET /api/decks/{id}` 拉 `stats` 对齐。也可在 PATCH 过程中逐条 +1 估算，但以刷写后 GET 为准 |
 | `facts_count` | 词条集合大小 | 本地 `offline_facts` 数量 |
 
 **与 PATCH / GET 的关系：**
 
 - 复习/隐藏后：本地 card 行 + 本地 **调度类** stats 立即重算；**计数类** stats 在刷写批次完成前可滞后。
-- **刷写触发**（队列 > 100、离开学习、前后台、网络恢复、手动重试）：先 PATCH 队列 → 再 `GET /api/decks/{id}` 同步 `stats`（至少 `total_reviews*`；可选校验 `due_cards` 等与本地重算一致）。
+- **刷写触发**（队列 ≥ 100、离开学习、前后台、网络恢复、手动重试）：先 PATCH 队列 → 再 `GET /api/decks/{id}` 同步 `stats`（至少 `total_reviews*`；可选校验 `due_cards` 等与本地重算一致）。
 - `GET /api/decks/{id}/cards` 响应含 `stats` + `cards[]`：若用此接口取 stats，**只读 `stats`**；**不要用** `cards[]` 覆盖 Hive 里尚未刷写的本地调度。
 - 学习页「待复习 / 进度条」：用本地 `ComputeStats`，不为 live due 打 GET。
 
@@ -163,7 +165,7 @@ Flutter 应用采用本地优先学习：卡组元数据、词条、媒体和卡
 | --- | --- |
 | 学习页 live due / 进度条 | 本地 `ComputeStats(local_cards)`，每次复习后刷新 |
 | 卡组列表「待复习」 | 本地重算；刷写批次后可用 `GET /decks` 的 `stats.due_cards` 校验 |
-| 卡组列表「累计复习 / 今日复习」 | **刷写批次结束后** `GET /decks/{id}` 更新 `stats.total_reviews*`（与 >100 触发同步同一时机） |
+| 卡组列表「累计复习 / 今日复习」 | **刷写批次结束后** `GET /decks/{id}` 更新 `stats.total_reviews*`（与 ≥100 触发同步同一时机） |
 
 ### 红点
 
@@ -213,7 +215,7 @@ Flutter 应用采用本地优先学习：卡组元数据、词条、媒体和卡
 [复习/隐藏]
      |
      v
-[更新本地 Card] -> [StudySyncQueue] -> [队列 > 100 且已联网]
+[更新本地 Card] -> [StudySyncQueue] -> [队列 ≥ 100 且已联网]
                                          -> [PATCH 队列 FIFO]
                                          -> [GET /decks/{id} 对齐 stats]
 ```
@@ -389,8 +391,8 @@ CardDetail = { card: { ...card, front, back }, urgency }
 4. 若 `due_date - last_review <= 0`：与后端一样视为数据损坏，该卡不出队（后端对此返回 400）。
 5. `now = unix 秒`。
 6. `urgency = (now - last_review) / (due_date - last_review)`（`float32` 除法）。
-7. 在剩余卡片中取 urgency **严格最大**的一张；并列时保留遍历中先遇到的那张（`LoadCards` / Redis `SMEMBERS` 顺序），**不用** `card_id` 做稳定排序。
-8. 第二大 urgency 作为 lookahead（对应响应里的 `next_card`）。
+7. 在剩余卡片中取 urgency **严格最大**的一张；**urgency 并列时按 `card_id` 字典序取较小者**（客户端与后端须一致；本地 Hive 加载后先按 `card_id` 升序排序再遍历，后端 `GetNextCard` 亦应在选卡前对候选集做相同排序）。
+8. 第二大 urgency 作为 lookahead（对应响应里的 `next_card`）；若与第一名 urgency 并列，同样按 `card_id` 字典序取较小者，且须不同于主卡。
 9. 若没有非隐藏卡：结束学习（后端此时 `card` 为 `[]`）。
 
 未到期卡**可以**出队：后端并不要求 `due_date <= now`。当没有更紧急的卡时，会出 urgency 最高的未到期卡。
@@ -399,13 +401,22 @@ CardDetail = { card: { ...card, front, back }, urgency }
 
 复习提交后立即更新本地卡片（与 PATCH 语义一致）：
 
+复习：
+
 ```text
 if last_review > now: last_review = now
 due_date = last_review + int64(selectedInterval)
 dirty = true
 ```
 
-然后写入同步队列。卡片更新和队列写入需要封装成同一个本地事务语义，避免应用被杀后只写了一半。
+隐藏：
+
+```text
+hidden = true
+dirty = true
+```
+
+然后写入同步队列。卡片更新和队列写入需要封装成同一个本地事务语义，避免应用被杀后只写了一半。隐藏后调度器跳过 `hidden == true` 的卡。
 
 ## 后端接口
 
@@ -453,6 +464,8 @@ PATCH /api/decks/{id}/card
 
 没有 `server_version`，也没有整张卡回传。客户端用上述字段确认本地行，然后删除对应队列项。
 
+**刷写层 PATCH 封装：** 现有 `CardService.updateCard` 返回 `Future<bool?>`，无法区分 HTTP 状态与响应体。同步刷写器须改用（或新增）返回 **typed result** 的封装，至少包含：`httpStatus`、`isSuccess`、`responseData`（`last_review` / `due_date` / `new_interval` 或 `hidden_status`）、`operationId`（回传对账）。刷写器据此区分：成功（删队列项）、401（暂停刷写、保留队列）、400（标记 `failed`、保留 payload）、404（标记 `remote_deleted`、删队列项）、其它（退避重试）。在线 `DeckStudyLegacyServiceRepository` 可继续用 bool 封装，但 outbox flusher 必须走 typed 路径。
+
 后续若要做批量幂等同步，再新增 `POST /api/sync/study-events`（`operation_id` 去重）；在此之前不要依赖服务端幂等。
 
 ## 同步规则
@@ -461,18 +474,19 @@ PATCH /api/decks/{id}/card
 
 1. 取 `pending` 且 `next_retry_at <= now` 的事件。
 2. 按 `client_sequence` 升序上传。
-3. 每条对应一次 `PATCH /api/decks/{id}/card`（复习与隐藏拆开）。
-4. HTTP 成功且 `operation_id` 未处理过：用响应字段确认本地卡，删除队列项。
+3. 每条对应一次 `PATCH /api/decks/{id}/card`（复习与隐藏拆开），请求头携带 `Idempotency-Key: {operation_id}`。
+4. 根据 typed PATCH 结果处理：HTTP 2xx 且 `operation_id` 未处理过 → 用响应字段确认本地卡，删除队列项。
 5. **本批次全部 PATCH 完成后**：`GET /api/decks/{id}`，用 `stats` 更新本地缓存的 `total_reviews` / `total_reviews_today`（及卡组列表展示用的其它 stats 字段）；**不要**用 `GET /cards` 的 `cards[]` 覆盖 Hive 调度。
 6. 网络错误指数退避：`30s -> 2m -> 10m -> 30m -> 2h`。
 7. 401 暂停同步，不删除队列。
-8. 参数错误标记 `failed`，保留 payload。
+8. 400 参数错误标记 `failed`，保留 payload。
+9. 404 标记本地卡 `remote_deleted`，删除队列项，不再出卡。
 
 冲突处理：
 
 | 场景 | 处理 |
 | --- | --- |
-| 同一事件重试 | 客户端 `operation_id` 去重；PATCH 本身不幂等 |
+| 同一事件重试 | 客户端 `operation_id` 去重 + PATCH `Idempotency-Key`；服务端须保证同一 key 不重复计入 `total_reviews` |
 | 同设备顺序 | `client_sequence` 升序 |
 | 多设备复习同一卡 | 服务端以最后一次成功的 PATCH 为准；另一台设备不回拉调度 |
 | 词条被删导致卡不存在 | PATCH 404 后本地标记 `remote_deleted`，不再出卡，丢掉该队列项 |
@@ -511,7 +525,7 @@ Hive 只保存索引：
 - 离线业务 Box 使用 Hive AES 加密（当前 Hive 默认未加密，需要新增）。
 - 加密 key 放安全存储，不放 `SharedPreferences`。项目目前未引入 `flutter_secure_storage`，这是新依赖，需单独评估。
 - key 和数据都按账号隔离。
-- 登出时检查是否有未同步事件。
+- **登出策略（待同步队列）：** 若 `offline_sync_queue` / `review_outbox` 非空，**不得无条件删除**。v1 默认：提示用户，提供「立即同步并登出」「保留待同步数据并登出（同账号重新登录后继续刷写）」或「放弃未同步复习并登出」。仅当队列为空，或用户明确选择「放弃未同步」时，才清除该账号的 Hive 离线 box 与媒体缓存。
 - 401 时暂停队列，重新登录后继续同步。
 
 ## 代码落点
@@ -565,12 +579,12 @@ lib/core/storage/account_scope.dart
 - 隐藏卡不出队。
 - `due_date - last_review <= 0` 视为损坏。
 - 词条标签筛选（按 `fact_id`，不是卡上的 `tag_ids`）。
-- urgency 公式与并列时取先遇到的卡。
+- urgency 公式与并列时按 `card_id` 字典序取较小者。
 - 未到期卡在没有更紧急卡时仍可出队。
 - 未见卡 interval 为 1；未来 `last_review` 钳到 now。
-- 前端调度器与后端 `GetNextCard` 在同一时间点、同一卡集上选出同一张。
-- 队列序列化；复习/隐藏 PATCH body 拆分。
-- 重试退避与 `operation_id` 去重。
+- 前端调度器与后端 `GetNextCard` 在同一时间点、同一卡集上选出同一张（含 urgency 并列时的 `card_id` tie-break）。
+- 队列序列化；复习/隐藏 PATCH body 拆分；隐藏时本地 `hidden = true` 与队列项同事务写入。
+- 重试退避与 `operation_id` 去重；同一 `operation_id` 重试携带相同 `Idempotency-Key`，`total_reviews` 不得重复 +1。
 - 账号隔离。
 - 导入卡组红点用 `source_version` / `published_version`。
 
@@ -596,7 +610,7 @@ BLoC / Widget 测试：
 - 飞行模式下，已下载卡组可连续学习 100 张。
 - 复习点击到 UI 更新小于 100 ms。
 - 杀进程再打开，待同步事件不丢。
-- 同一 `operation_id` 多次触发同步不会重复 PATCH。
+- 同一 `operation_id` 多次触发同步不会重复 PATCH；重试时 `total_reviews` 不重复计入。
 - PATCH 成功后本地 `last_review` / `due_date` / `hidden` 与响应一致。
 - 相同卡集和相同 `now` 下，本地调度器与 `GetNextCard` 的下一张卡一致。
 - 未下载卡组不会误显示为可离线学习。
@@ -650,7 +664,7 @@ BLoC / Widget 测试：
 | `total_reviews` | int64 | 累计复习次数（PATCH interval 计数） |
 | `total_reviews_today` | int64 | 今日复习次数（UTC 日桶） |
 
-**离线/local-first**：调度类字段本地重算；`total_reviews*` 在队列刷写批次（含 >100 触发）PATCH 完成后经 `GET /decks/{id}` 的 `stats` 对齐（见「卡组统计（DeckStats）」）。
+**离线/local-first**：调度类字段本地重算；`total_reviews*` 在队列刷写批次（含 ≥100 触发）PATCH 完成后经 `GET /decks/{id}` 的 `stats` 对齐（见「卡组统计（DeckStats）」）。
 
 **Flutter `Deck`**（`lib/models/deck.dart`）还解析 `min_interval` / `def_interval` / `max_interval`，但当前后端 **不返回** 这些字段；复习滑块区间由客户端按 urgency 计算（`ReviewIntervalRange`）。
 
