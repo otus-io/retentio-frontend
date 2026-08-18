@@ -131,7 +131,7 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/api/decks/{id}/card`                        | GET    | Get most urgent card. Optional query: `tag_id` to restrict selection to cards whose facts have this tag in this deck.                                                                        |
 | `/api/decks/{id}/card`                        | POST   | Add one card from an existing fact (e.g. reversed). Body: `fact_id`, `template`, optional `operation`.                                                                                          |
 | `/api/decks/{id}/card`                        | PATCH  | Update card interval or visibility (by card_id)                                                                                                                                                 |
-| `/api/decks/{id}/cards`                       | GET    | Get card stats (total, hidden count, hidden facts). Optional query: `tag_id` to filter cards by fact tag in this deck; `stats_only=true` omits `cards`. |
+| `/api/decks/{id}/cards`                       | GET    | Get card stats (`stats` nested, same shape as GET /api/decks/{id}) and the `cards` array. Optional query: `tag_id` to filter cards by fact tag in this deck; `stats_only=true` omits `cards`. |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE | Delete a single card (fact and other cards unchanged)                                                                                                                                           |
 | `/api/decks/{id}/reschedule`                  | POST   | **Not wired** — route not registered on the current server; **404** (typically no JSON `{ "msg" }` body). See [Reschedule deck](#reschedule-deck). |
 | `/api/tags`                                   | POST   | Create a tag (`name`, optional `description`). **201** on success.                                                                                                                              |
@@ -2705,26 +2705,21 @@ Permanently remove a single card from a deck. The fact and any other cards for t
 
 Example: `GET /api/decks/{id}/cards?tag_id=Kt8QmNz2&stats_only=true`
 
-**Response:**
+**Response** (default — `stats` and `cards`):
 
 ```json
 {
   "data": {
-    "total_cards": 20,
-    "hidden_cards_count": 3,
-    "due_cards": 7,
-    "unseen_cards": 5,
-    "hidden_cards_list": [
-      {
-        "id": "cd1ef2gh",
-        "fact_id": "h1d2e3n4",
-        "template": [[0], [1]],
-        "last_review": 1710000000,
-        "due_date": 1710500000,
-        "hidden": true,
-        "created_at": 1709000000
-      }
-    ],
+    "stats": {
+      "cards_count": 20,
+      "facts_count": 10,
+      "unseen_cards": 5,
+      "reviewed_cards": 15,
+      "due_cards": 7,
+      "hidden_cards": 3,
+      "new_cards_today": 4,
+      "last_reviewed_at": 1710000000
+    },
     "cards": [
       {
         "id": "cd1ef2gh",
@@ -2736,6 +2731,26 @@ Example: `GET /api/decks/{id}/cards?tag_id=Kt8QmNz2&stats_only=true`
         "created_at": 1709000000
       }
     ]
+  },
+  "meta": { "msg": "Card stats retrieved successfully" }
+}
+```
+
+**Response** (`stats_only=true` — `cards` omitted):
+
+```json
+{
+  "data": {
+    "stats": {
+      "cards_count": 20,
+      "facts_count": 10,
+      "unseen_cards": 5,
+      "reviewed_cards": 15,
+      "due_cards": 7,
+      "hidden_cards": 3,
+      "new_cards_today": 4,
+      "last_reviewed_at": 1710000000
+    }
   },
   "meta": { "msg": "Card stats retrieved successfully" }
 }
@@ -3148,7 +3163,7 @@ Tag **name** validation (`POST /api/tags`, `PATCH /api/tags/{tagId}`, tag names 
 | `/api/decks/{id}/facts/{factId}`              | DELETE      | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks/{id}/card`                        | GET         | Optional query `tag_id`. Response shape unchanged: `{ "data": { "card": { id, fact_id, template, …, front[], back[] }, "urgency" }, "meta": { "msg", … } }` |
 | `/api/decks/{id}/card`                        | PATCH       | Interval: `{ "data": { "last_review", "due_date", "new_interval" }, "meta": { "msg" } }`; visibility: `{ "data": { "hidden_status" }, "meta": { "msg" } }` |
-| `/api/decks/{id}/cards`                       | GET         | Optional query `tag_id`. Response shape unchanged: `{ "data": { "total_cards", "hidden_count", "hidden_facts" }, "meta": { "msg" } }` |
+| `/api/decks/{id}/cards`                       | GET         | Optional query `tag_id`, `stats_only`. `{ "data": { "stats", "cards"? }, "meta": { "msg" } }` — `stats` same shape as GET /api/decks/{id}; `cards` omitted when `stats_only=true` |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE      | `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks/{id}/reschedule`                  | POST        | **Not wired** — **404** (typically no JSON `{ "msg" }` body). See [Reschedule deck](#reschedule-deck). |
 | `/api/decks/catalog`                          | GET         | `{ "data": { "decks": [ … ] }, "meta": { "msg", "count", "total", "limit", "offset", "has_more" } }` — defaults `limit` 50, `offset` 0; optional `query` |

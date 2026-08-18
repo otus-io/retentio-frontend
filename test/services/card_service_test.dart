@@ -145,7 +145,16 @@ class _FakeTaggedCardsStatsHttpClientAdapter implements HttpClientAdapter {
       'code': 0,
       'msg': 'ok',
       'data': {
-        'stats': {'cards_count': 3, 'due_cards': 2},
+        'stats': {
+          'cards_count': 3,
+          'facts_count': 4,
+          'unseen_cards': 2,
+          'reviewed_cards': 1,
+          'due_cards': 2,
+          'hidden_cards': 0,
+          'new_cards_today': 0,
+          'last_reviewed_at': 0,
+        },
       },
     }, 200);
   }
