@@ -131,7 +131,7 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/api/decks/{id}/card`                        | GET    | Get most urgent card. Optional query: `tag_id` to restrict selection to cards whose facts have this tag in this deck.                                                                        |
 | `/api/decks/{id}/card`                        | POST   | Add one card from an existing fact (e.g. reversed). Body: `fact_id`, `template`, optional `operation`.                                                                                          |
 | `/api/decks/{id}/card`                        | PATCH  | Update card interval or visibility (by card_id)                                                                                                                                                 |
-| `/api/decks/{id}/cards`                       | GET    | Get card stats (total, hidden count, hidden facts). Optional query: `tag_id` to filter cards by fact tag in this deck.                                                                        |
+| `/api/decks/{id}/cards`                       | GET    | Get card stats (total, hidden count, hidden facts). Optional query: `tag_id` to filter cards by fact tag in this deck; `stats_only=true` omits `cards`. |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE | Delete a single card (fact and other cards unchanged)                                                                                                                                           |
 | `/api/decks/{id}/reschedule`                  | POST   | **Not wired** — route not registered on the current server; **404** (typically no JSON `{ "msg" }` body). See [Reschedule deck](#reschedule-deck). |
 | `/api/tags`                                   | POST   | Create a tag (`name`, optional `description`). **201** on success.                                                                                                                              |
@@ -2698,11 +2698,12 @@ Permanently remove a single card from a deck. The fact and any other cards for t
 
 **Query (optional):**
 
-| Query    | Description |
-|----------|-------------|
-| `tag_id` | Tag ID. When provided, only cards whose `fact_id` belongs to facts tagged with this tag **in the same deck** are included in all counts/lists. |
+| Query        | Description |
+|--------------|-------------|
+| `tag_id`     | Tag ID. When provided, only cards whose `fact_id` belongs to facts tagged with this tag **in the same deck** are included in all counts/lists. |
+| `stats_only` | If `true` (or `1`), omit `cards` and return `stats` only. Default is the full `{ stats, cards }` payload. |
 
-Example: `GET /api/decks/{id}/cards?tag_id=Kt8QmNz2`
+Example: `GET /api/decks/{id}/cards?tag_id=Kt8QmNz2&stats_only=true`
 
 **Response:**
 

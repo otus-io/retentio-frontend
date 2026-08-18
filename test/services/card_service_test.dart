@@ -123,6 +123,37 @@ class _FakeDeckDetailHttpClientAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+/// Serves GET `/api/decks/{id}/cards` stats-only payloads and records the URI.
+class _FakeTaggedCardsStatsHttpClientAdapter implements HttpClientAdapter {
+  Uri? lastUri;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    lastUri = options.uri;
+    final isCardsGet =
+        options.method == 'GET' &&
+        options.path.contains('/api/decks/') &&
+        options.path.endsWith('/cards');
+    if (!isCardsGet) {
+      return _jsonResponse({'code': -1, 'msg': 'not found', 'data': null}, 404);
+    }
+    return _jsonResponse({
+      'code': 0,
+      'msg': 'ok',
+      'data': {
+        'stats': {'cards_count': 3, 'due_cards': 2},
+      },
+    }, 200);
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
 Map<String, dynamic> _deckPayload({
   required int cardsCount,
   required int dueCards,
@@ -333,6 +364,32 @@ void main() {
       final stats = await CardService.getCardsStats('missing-deck');
 
       expect(stats, isNull);
+    });
+  });
+
+  group('CardService.getCardsStats with a tag filter', () {
+    late _FakeTaggedCardsStatsHttpClientAdapter adapter;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      await ApiService.clearToken();
+
+      networkDioClient.configure(
+        baseUrl: 'http://localhost',
+        options: BaseOptions(),
+      );
+      adapter = _FakeTaggedCardsStatsHttpClientAdapter();
+      networkDioClient.dio.httpClientAdapter = adapter;
+    });
+
+    test('requests cards stats with stats_only and maps counts', () async {
+      final stats = await CardService.getCardsStats('deck-1', tagId: 'tag-1');
+
+      expect(adapter.lastUri?.path, '/api/decks/deck-1/cards');
+      expect(adapter.lastUri?.queryParameters['tag_id'], 'tag-1');
+      expect(adapter.lastUri?.queryParameters['stats_only'], 'true');
+      expect(stats?.totalCards, 3);
+      expect(stats?.dueCards, 2);
     });
   });
 }

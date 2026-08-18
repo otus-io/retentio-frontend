@@ -131,7 +131,7 @@
 | `/api/decks/{id}/card`                        | GET    | 获取最紧急卡片。可选查询：`tag_id`，仅在当前卡组中从带该标签的词条对应卡片里选取下一张。                                                           |
 | `/api/decks/{id}/card`                        | POST   | 为已有词条添加一张卡（如反向卡）。请求体：fact_id、template，可选 operation。                                                                        |
 | `/api/decks/{id}/card`                        | PATCH  | 更新卡片间隔或可见性（按 card_id）                                                                                                                   |
-| `/api/decks/{id}/cards`                       | GET    | 获取卡片统计。可选查询：`tag_id`，按当前卡组中该标签对应词条过滤卡片。                                                                             |
+| `/api/decks/{id}/cards`                       | GET    | 获取卡片统计。可选查询：`tag_id`，按当前卡组中该标签对应词条过滤卡片；`stats_only=true` 时省略 `cards`。 |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE | 删除单张卡片（词条及其他卡片不变）                                                                                                                   |
 | `/api/decks/{id}/reschedule`                  | POST   | **未挂载** — 当前服务端未注册该路由；**404**（通常无 JSON `{ "msg" }` body）。见 [假期模式（平移复习计划）](#假期模式平移复习计划)。 |
 | `/api/tags`                                   | POST   | 创建标签（`name`、可选 `description`）。成功时 **201**。                                                                                             |
@@ -2702,11 +2702,12 @@ Accept: application/json
 
 **查询参数（可选）：**
 
-| 参数     | 说明 |
-|----------|------|
-| `tag_id` | 标签 ID。提供后，仅统计当前卡组中、其 `fact_id` 对应到该标签词条的卡片。 |
+| 参数         | 说明 |
+|--------------|------|
+| `tag_id`     | 标签 ID。提供后，仅统计当前卡组中、其 `fact_id` 对应到该标签词条的卡片。 |
+| `stats_only` | 为 `true`（或 `1`）时省略 `cards`，只返回 `stats`。默认仍为完整 `{ stats, cards }`。 |
 
-示例：`GET /api/decks/{id}/cards?tag_id=Kt8QmNz2`
+示例：`GET /api/decks/{id}/cards?tag_id=Kt8QmNz2&stats_only=true`
 
 **响应示例：**
 

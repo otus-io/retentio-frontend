@@ -73,8 +73,7 @@ int? _readInt(dynamic value) {
 
 class CardService {
   /// Deck-wide stats use GET /decks/{id} (stats only). Tag-scoped stats still
-  /// need GET /decks/{id}/cards?tag_id=… because that endpoint returns the
-  /// filtered list the API uses to compute counts.
+  /// need GET /decks/{id}/cards?tag_id=…&stats_only=true (omit the card list).
   static Future<DeckCardsStats?> getCardsStats(
     String deckId, {
     String? tagId,
@@ -84,7 +83,7 @@ class CardService {
         final res = await ApiService.get(
           Api.cards,
           pathParams: {'id': deckId},
-          queryParams: {'tag_id': tagId},
+          queryParams: {'tag_id': tagId, 'stats_only': true},
         );
         return parseDeckCardsStatsData(res?.data);
       }
