@@ -131,7 +131,7 @@
 | `/api/decks/{id}/card`                        | GET    | 获取最紧急卡片。可选查询：`tag_id`，仅在当前卡组中从带该标签的词条对应卡片里选取下一张。                                                           |
 | `/api/decks/{id}/card`                        | POST   | 为已有词条添加一张卡（如反向卡）。请求体：fact_id、template，可选 operation。                                                                        |
 | `/api/decks/{id}/card`                        | PATCH  | 更新卡片间隔或可见性（按 card_id）                                                                                                                   |
-| `/api/decks/{id}/cards`                       | GET    | 获取卡片统计。可选查询：`tag_id`，按当前卡组中该标签对应词条过滤卡片。                                                                             |
+| `/api/decks/{id}/cards`                       | GET    | 获取卡片统计（嵌套 `stats`，形状与 GET /api/decks/{id} 相同）及 `cards` 数组。可选查询：`tag_id`，按当前卡组中该标签对应词条过滤卡片；`stats_only=true` 时省略 `cards`。 |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE | 删除单张卡片（词条及其他卡片不变）                                                                                                                   |
 | `/api/decks/{id}/reschedule`                  | POST   | **未挂载** — 当前服务端未注册该路由；**404**（通常无 JSON `{ "msg" }` body）。见 [假期模式（平移复习计划）](#假期模式平移复习计划)。 |
 | `/api/tags`                                   | POST   | 创建标签（`name`、可选 `description`）。成功时 **201**。                                                                                             |
@@ -2702,32 +2702,28 @@ Accept: application/json
 
 **查询参数（可选）：**
 
-| 参数     | 说明 |
-|----------|------|
-| `tag_id` | 标签 ID。提供后，仅统计当前卡组中、其 `fact_id` 对应到该标签词条的卡片。 |
+| 参数         | 说明 |
+|--------------|------|
+| `tag_id`     | 标签 ID。提供后，仅统计当前卡组中、其 `fact_id` 对应到该标签词条的卡片。 |
+| `stats_only` | 为 `true`（或 `1`）时省略 `cards`，只返回 `stats`。默认仍为完整 `{ stats, cards }`。 |
 
-示例：`GET /api/decks/{id}/cards?tag_id=Kt8QmNz2`
+示例：`GET /api/decks/{id}/cards?tag_id=Kt8QmNz2&stats_only=true`
 
-**响应示例：**
+**响应示例**（默认 — 含 `stats` 与 `cards`）：
 
 ```json
 {
   "data": {
-    "total_cards": 20,
-    "hidden_cards_count": 3,
-    "due_cards": 7,
-    "unseen_cards": 5,
-    "hidden_cards_list": [
-      {
-        "id": "cd1ef2gh",
-        "fact_id": "h1d2e3n4",
-        "template": [[0], [1]],
-        "last_review": 1710000000,
-        "due_date": 1710500000,
-        "hidden": true,
-        "created_at": 1709000000
-      }
-    ],
+    "stats": {
+      "cards_count": 20,
+      "facts_count": 10,
+      "unseen_cards": 5,
+      "reviewed_cards": 15,
+      "due_cards": 7,
+      "hidden_cards": 3,
+      "new_cards_today": 4,
+      "last_reviewed_at": 1710000000
+    },
     "cards": [
       {
         "id": "cd1ef2gh",
@@ -2739,6 +2735,26 @@ Accept: application/json
         "created_at": 1709000000
       }
     ]
+  },
+  "meta": { "msg": "Card stats retrieved successfully" }
+}
+```
+
+**响应示例** (`stats_only=true` — 省略 `cards`)：
+
+```json
+{
+  "data": {
+    "stats": {
+      "cards_count": 20,
+      "facts_count": 10,
+      "unseen_cards": 5,
+      "reviewed_cards": 15,
+      "due_cards": 7,
+      "hidden_cards": 3,
+      "new_cards_today": 4,
+      "last_reviewed_at": 1710000000
+    }
   },
   "meta": { "msg": "Card stats retrieved successfully" }
 }
@@ -3152,7 +3168,7 @@ Accept: application/json
 | `/api/decks/{id}/facts/{factId}`              | DELETE      | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                       |
 | `/api/decks/{id}/card`                        | GET         | 可选查询 `tag_id`。形状不变：`{ "data": { "card": { id, fact_id, template, …, front[], back[] }, "urgency" }, "meta": { "msg", … } }`                |
 | `/api/decks/{id}/card`                        | PATCH       | 间隔：`{ "data": { "last_review", "due_date", "new_interval" }, "meta": { "msg" } }`；可见性：`{ "data": { "hidden_status" }, "meta": { "msg" } }` |
-| `/api/decks/{id}/cards`                       | GET         | 可选查询 `tag_id`。形状不变：`{ "data": { "total_cards", "hidden_count", "hidden_facts" }, "meta": { "msg" } }`              |
+| `/api/decks/{id}/cards`                       | GET         | 可选查询 `tag_id`、`stats_only`。`{ "data": { "stats", "cards"? }, "meta": { "msg" } }` — `stats` 与 GET /api/decks/{id} 相同；`stats_only=true` 时省略 `cards` |
 | `/api/decks/{id}/cards/{cardId}`              | DELETE      | `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                                       |
 | `/api/decks/{id}/reschedule`                  | POST        | **未挂载** — **404**（通常无 JSON `{ "msg" }` body）。见 [假期模式（平移复习计划）](#假期模式平移复习计划)。 |
 | `/api/decks/catalog`                          | GET         | `{ "data": { "decks": [ … ] }, "meta": { "msg", "count", "total", "limit", "offset", "has_more" } }` — 默认 `limit` 50、`offset` 0；可选 `query` |
