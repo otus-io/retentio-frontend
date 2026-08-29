@@ -8,6 +8,8 @@ import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/apis/card_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../helpers/fake_qa_api_adapter.dart';
+
 class _FakeCardHttpClientAdapter implements HttpClientAdapter {
   @override
   Future<ResponseBody> fetch(
@@ -399,6 +401,50 @@ void main() {
       expect(adapter.lastUri?.queryParameters['stats_only'], 'true');
       expect(stats?.totalCards, 3);
       expect(stats?.dueCards, 2);
+    });
+  });
+
+  group('CardService.listFactIds', () {
+    late FakeQaApiAdapter adapter;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      await ApiService.clearToken();
+
+      networkDioClient.configure(
+        baseUrl: 'http://localhost',
+        options: BaseOptions(),
+      );
+      adapter = FakeQaApiAdapter(
+        factIds: [for (var i = 0; i < 450; i++) 'fact-$i'],
+      );
+      networkDioClient.dio.httpClientAdapter = adapter;
+    });
+
+    test('walks every page', () async {
+      final ids = await CardService.listFactIds('deck-1');
+
+      expect(ids, hasLength(450));
+      expect(adapter.factListOffsets, [
+        0,
+        50,
+        100,
+        150,
+        200,
+        250,
+        300,
+        350,
+        400,
+        450,
+      ]);
+    });
+
+    test('answers empty when the list cannot be read', () async {
+      networkDioClient.dio.httpClientAdapter = _FakeDeckDetailHttpClientAdapter(
+        const {},
+      );
+
+      expect(await CardService.listFactIds('deck-1'), isEmpty);
     });
   });
 }

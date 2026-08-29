@@ -1640,6 +1640,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pendingClearAll => 'Clear all';
 
   @override
+  String get qaMode => 'QA mode';
+
+  @override
+  String get qaModeEmpty => 'This imported deck has no facts to review.';
+
+  @override
+  String get qaModeFactLoadFailed => 'Could not load this fact.';
+
+  @override
+  String qaModeProgress(int current, int total) {
+    return 'Fact $current / $total';
+  }
+
+  @override
+  String qaModeVerifiedAspects(int verified, int total) {
+    return 'Verified $verified/$total';
+  }
+
+  @override
+  String qaModeEdited(int count) {
+    return 'Edited $count';
+  }
+
+  @override
+  String get qaModeColumnEmpty => 'Nothing to verify in this column';
+
+  @override
+  String get qaModePrevious => 'Previous';
+
+  @override
+  String get qaModeVerify => 'Verified';
+
+  @override
+  String get qaVerifyConfirmTitle => 'Send verification';
+
+  @override
+  String qaVerifyConfirmFields(String fields) {
+    return 'Signing off: $fields';
+  }
+
+  @override
+  String get qaVerifySuccess => 'Quality saved';
+
+  @override
+  String get qaEditSubmitted => 'Edit sent to the author';
+
+  @override
   String get pendingStaged => 'Saved to unsent contributions';
 
   @override

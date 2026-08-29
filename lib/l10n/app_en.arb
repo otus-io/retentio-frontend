@@ -2040,6 +2040,31 @@
   },
   "pendingDismissSelected": "Dismiss selected",
   "pendingClearAll": "Clear all",
+  "qaMode": "QA mode",
+  "qaModeEmpty": "This imported deck has no facts to review.",
+  "qaModeFactLoadFailed": "Could not load this fact.",
+  "qaModeProgress": "Fact {current} / {total}",
+  "@qaModeProgress": {
+    "placeholders": { "current": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "qaModeVerifiedAspects": "Verified {verified}/{total}",
+  "@qaModeVerifiedAspects": {
+    "placeholders": { "verified": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "qaModeEdited": "Edited {count}",
+  "@qaModeEdited": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "qaModeColumnEmpty": "Nothing to verify in this column",
+  "qaModePrevious": "Previous",
+  "qaModeVerify": "Verified",
+  "qaVerifyConfirmTitle": "Send verification",
+  "qaVerifyConfirmFields": "Signing off: {fields}",
+  "@qaVerifyConfirmFields": {
+    "placeholders": { "fields": { "type": "String" } }
+  },
+  "qaVerifySuccess": "Quality saved",
+  "qaEditSubmitted": "Edit sent to the author",
   "pendingStaged": "Saved to unsent contributions",
   "pendingSendSuccess": "{count, plural, =1{Sent 1 contribution} other{Sent {count} contributions}}",
   "@pendingSendSuccess": {

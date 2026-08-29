@@ -1544,6 +1544,53 @@ class AppLocalizationsJa extends AppLocalizations {
   String get pendingClearAll => 'すべてクリア';
 
   @override
+  String get qaMode => 'QAモード';
+
+  @override
+  String get qaModeEmpty => 'このインポート済みデッキに確認できる項目はありません。';
+
+  @override
+  String get qaModeFactLoadFailed => 'この項目を読み込めませんでした。';
+
+  @override
+  String qaModeProgress(int current, int total) {
+    return '項目 $current / $total';
+  }
+
+  @override
+  String qaModeVerifiedAspects(int verified, int total) {
+    return '確認済み $verified/$total';
+  }
+
+  @override
+  String qaModeEdited(int count) {
+    return '編集 $count';
+  }
+
+  @override
+  String get qaModeColumnEmpty => 'この列に確認する内容はありません';
+
+  @override
+  String get qaModePrevious => '前へ';
+
+  @override
+  String get qaModeVerify => '確認済みにする';
+
+  @override
+  String get qaVerifyConfirmTitle => '確認を送信';
+
+  @override
+  String qaVerifyConfirmFields(String fields) {
+    return '確認する項目：$fields';
+  }
+
+  @override
+  String get qaVerifySuccess => '品質を保存しました';
+
+  @override
+  String get qaEditSubmitted => '編集を作者に送信しました';
+
+  @override
   String get pendingStaged => '未送信の貢献に保存しました';
 
   @override

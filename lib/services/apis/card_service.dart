@@ -135,6 +135,15 @@ class CardService {
 
   /// Loads a single fact (entries + fields) for editing.
   static Future<Fact?> getFact(String deckId, String factId) async {
+    final detail = await getFactDetail(deckId, factId);
+    return detail?.fact;
+  }
+
+  /// Fact plus optional snapshot `media_versions` (import decks).
+  static Future<({Fact fact, Map<String, int> mediaVersions})?> getFactDetail(
+    String deckId,
+    String factId,
+  ) async {
     try {
       final res = await ApiService.get(
         Api.fact,
@@ -145,11 +154,31 @@ class CardService {
       if (data is! Map) return null;
       final factRaw = data['fact'];
       if (factRaw is! Map) return null;
-      return Fact.fromJson(Map<String, dynamic>.from(factRaw));
+      final mediaVersions = _parseMediaVersions(data['media_versions']);
+      return (
+        fact: Fact.fromJson(Map<String, dynamic>.from(factRaw)),
+        mediaVersions: mediaVersions,
+      );
     } catch (e) {
       logger.e(e);
       return null;
     }
+  }
+
+  static Map<String, int> _parseMediaVersions(dynamic raw) {
+    if (raw is! Map) return const {};
+    final out = <String, int>{};
+    raw.forEach((key, value) {
+      final id = key.toString();
+      if (id.isEmpty) return;
+      final n = value is int
+          ? value
+          : value is num
+          ? value.toInt()
+          : int.tryParse('$value');
+      if (n != null && n > 0) out[id] = n;
+    });
+    return out;
   }
 
   static Future<bool?> updateCard(String deckId, dynamic params) async {
@@ -204,28 +233,36 @@ class CardService {
     return res;
   }
 
+  /// Fact ids per page of [listFactIdsPage] / [listFactIds].
+  static const int factIdsPageSize = 50;
+
+  /// Loads one page of fact ids. Empty when the page is past the end or failed.
+  static Future<List<String>> listFactIdsPage(
+    String deckId, {
+    int offset = 0,
+  }) async {
+    final res = await ApiService.get(
+      Api.facts,
+      pathParams: {'id': deckId},
+      queryParams: {'limit': factIdsPageSize, 'offset': offset},
+    );
+    final data = res?.data;
+    if (data is! Map || data['facts'] is! List) return const [];
+    return [
+      for (final row in data['facts'] as List)
+        if (row is Map && row['id'] != null) row['id'].toString(),
+    ];
+  }
+
   /// Loads fact ids for a deck (paged). Used to detect newly added facts.
   static Future<List<String>> listFactIds(String deckId) async {
     final ids = <String>[];
     var offset = 0;
-    const limit = 200;
     while (true) {
-      final res = await ApiService.get(
-        Api.facts,
-        pathParams: {'id': deckId},
-        queryParams: {'limit': limit, 'offset': offset},
-      );
-      final data = res?.data;
-      if (data is! Map || data['facts'] is! List) break;
-      final facts = data['facts'] as List;
-      if (facts.isEmpty) break;
-      for (final row in facts) {
-        if (row is Map && row['id'] != null) {
-          ids.add(row['id'].toString());
-        }
-      }
-      if (facts.length < limit) break;
-      offset += facts.length;
+      final page = await listFactIdsPage(deckId, offset: offset);
+      ids.addAll(page);
+      if (page.length < factIdsPageSize) break;
+      offset += page.length;
       if (offset > 10000) break;
     }
     return ids;

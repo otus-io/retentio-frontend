@@ -1245,6 +1245,31 @@
   },
   "pendingDismissSelected": "忽略所选",
   "pendingClearAll": "清空全部",
+  "qaMode": "QA 模式",
+  "qaModeEmpty": "该导入卡组没有可校验的词条。",
+  "qaModeFactLoadFailed": "无法加载该词条。",
+  "qaModeProgress": "词条 {current} / {total}",
+  "@qaModeProgress": {
+    "placeholders": { "current": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "qaModeVerifiedAspects": "已核验 {verified}/{total}",
+  "@qaModeVerifiedAspects": {
+    "placeholders": { "verified": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "qaModeEdited": "已编辑 {count}",
+  "@qaModeEdited": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "qaModeColumnEmpty": "该列没有可核验的内容",
+  "qaModePrevious": "上一条",
+  "qaModeVerify": "已核验",
+  "qaVerifyConfirmTitle": "发送核验",
+  "qaVerifyConfirmFields": "将核验：{fields}",
+  "@qaVerifyConfirmFields": {
+    "placeholders": { "fields": { "type": "String" } }
+  },
+  "qaVerifySuccess": "质量已保存",
+  "qaEditSubmitted": "编辑已发送给作者",
   "pendingStaged": "已加入未发送贡献",
   "pendingSendSuccess": "{count, plural, =1{已发送 1 条贡献} other{已发送 {count} 条贡献}}",
   "@pendingSendSuccess": {

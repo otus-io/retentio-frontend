@@ -3034,6 +3034,84 @@ abstract class AppLocalizations {
   /// **'Clear all'**
   String get pendingClearAll;
 
+  /// No description provided for @qaMode.
+  ///
+  /// In en, this message translates to:
+  /// **'QA mode'**
+  String get qaMode;
+
+  /// No description provided for @qaModeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'This imported deck has no facts to review.'**
+  String get qaModeEmpty;
+
+  /// No description provided for @qaModeFactLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load this fact.'**
+  String get qaModeFactLoadFailed;
+
+  /// No description provided for @qaModeProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Fact {current} / {total}'**
+  String qaModeProgress(int current, int total);
+
+  /// No description provided for @qaModeVerifiedAspects.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified {verified}/{total}'**
+  String qaModeVerifiedAspects(int verified, int total);
+
+  /// No description provided for @qaModeEdited.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited {count}'**
+  String qaModeEdited(int count);
+
+  /// No description provided for @qaModeColumnEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to verify in this column'**
+  String get qaModeColumnEmpty;
+
+  /// No description provided for @qaModePrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get qaModePrevious;
+
+  /// No description provided for @qaModeVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get qaModeVerify;
+
+  /// No description provided for @qaVerifyConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send verification'**
+  String get qaVerifyConfirmTitle;
+
+  /// No description provided for @qaVerifyConfirmFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing off: {fields}'**
+  String qaVerifyConfirmFields(String fields);
+
+  /// No description provided for @qaVerifySuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality saved'**
+  String get qaVerifySuccess;
+
+  /// No description provided for @qaEditSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit sent to the author'**
+  String get qaEditSubmitted;
+
   /// No description provided for @pendingStaged.
   ///
   /// In en, this message translates to:
