@@ -97,6 +97,29 @@ abstract final class WikiRubyMarkup {
     return buf.toString();
   }
 
+  /// Wraps `text[start:end]` as `[[selection|reading]]`.
+  ///
+  /// Returns null when the range is empty/invalid, [reading] is blank, or
+  /// either side would break wiki ruby delimiters (`[`, `]`, `|`).
+  static String? wrapSelection({
+    required String text,
+    required int start,
+    required int end,
+    required String reading,
+  }) {
+    if (start < 0 || end > text.length || start >= end) return null;
+    final kanji = text.substring(start, end);
+    final trimmedReading = reading.trim();
+    if (kanji.isEmpty || trimmedReading.isEmpty) return null;
+    if (_breaksRubyDelimiters(kanji) || _breaksRubyDelimiters(trimmedReading)) {
+      return null;
+    }
+    return text.replaceRange(start, end, '[[$kanji|$trimmedReading]]');
+  }
+
+  static bool _breaksRubyDelimiters(String s) =>
+      s.contains('[') || s.contains(']') || s.contains('|');
+
   /// Parses [input] into ordered segments. Text outside pairs is plain (including
   /// stray `[[` without a closing `]]`).
   static WikiRubyParseResult parse(String input) {

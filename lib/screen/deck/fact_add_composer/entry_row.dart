@@ -7,6 +7,7 @@ import 'package:retentio/screen/deck/fact_add_composer/attachment_chip.dart';
 import 'package:retentio/screen/deck/fact_add_composer/media_play_url.dart';
 import 'package:retentio/screen/deck/fact_add_composer/row_model.dart';
 import 'package:retentio/screen/deck/fact_add_composer/wiki_ruby_content_editor.dart';
+import 'package:retentio/screen/deck/fact_add_composer/wiki_ruby_wrap_action.dart';
 import 'package:retentio/services/apis/media_service.dart';
 import 'package:retentio/widgets/app_input.dart';
 
@@ -63,7 +64,6 @@ class AddFactEntryRow extends HookWidget {
         .where((k) => row.pathFor(k) != null)
         .toList(growable: false);
     final showMediaChips = activeKinds.isNotEmpty;
-    final hints = wikiRubyContentEditorHints(loc);
     final useRubyEditor = wikiRubyContentUsesReadingEditor(row.content.text);
     final fieldPadding = showMediaChips
         ? _kContentFieldPaddingWithMedia
@@ -74,7 +74,7 @@ class AddFactEntryRow extends HookWidget {
       textField = WikiRubyContentEditor(
         storage: row.content,
         baseStyle: theme.textTheme.bodyMedium ?? const TextStyle(),
-        readingHint: hints.reading,
+        readingHint: loc.factRubyReadingHint,
         contentPadding: fieldPadding,
       );
     } else {
@@ -84,11 +84,21 @@ class AddFactEntryRow extends HookWidget {
         style: theme.textTheme.bodyMedium,
         enableInteractiveSelection: true,
         contextMenuBuilder: (context, editableTextState) {
-          return AdaptiveTextSelectionToolbar.editableText(
+          return wikiRubySelectionToolbar(
+            context: context,
             editableTextState: editableTextState,
+            loc: loc,
+            readingHint: loc.factRubyReadingHint,
+            onReadingChosen: (reading, {required start, required end}) async {
+              wikiRubyApplyWrapToController(
+                row.content,
+                reading,
+                start: start,
+                end: end,
+              );
+            },
           );
         },
-        hint: loc.addFactContentHint,
         isDense: true,
         border: InputBorder.none,
         contentPadding: fieldPadding,
@@ -188,6 +198,7 @@ class AddFactEntryRow extends HookWidget {
     final contentFocus = useFocusNode();
     final fieldNameEditorOpen = useState(false);
     final fieldNameTextTick = useListenable(row.fieldName);
+    useListenable(row.content);
     useListenable(fieldNameFocus);
 
     useEffect(() {

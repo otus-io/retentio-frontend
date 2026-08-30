@@ -354,6 +354,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get factRubyReadingHint => '读音';
 
   @override
+  String get factRubyMenuLabel => '注音';
+
+  @override
+  String factRubyReadingDialogTitle(String base) {
+    return '$base的读音';
+  }
+
+  @override
+  String get factRubyApply => '完成';
+
+  @override
   String get addFactAttachImage => '图片';
 
   @override

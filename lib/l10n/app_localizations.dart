@@ -766,6 +766,24 @@ abstract class AppLocalizations {
   /// **'Reading'**
   String get factRubyReadingHint;
 
+  /// Selection toolbar action to wrap selected text as ruby
+  ///
+  /// In en, this message translates to:
+  /// **'Ruby'**
+  String get factRubyMenuLabel;
+
+  /// Title of the dialog that asks for a reading for selected base text
+  ///
+  /// In en, this message translates to:
+  /// **'Reading for {base}'**
+  String factRubyReadingDialogTitle(String base);
+
+  /// Confirm button on the ruby reading dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get factRubyApply;
+
   /// Label for attaching an image
   ///
   /// In en, this message translates to:

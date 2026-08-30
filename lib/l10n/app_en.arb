@@ -484,6 +484,23 @@
   "@factRubyReadingHint": {
     "description": "Hint for the furigana field above kanji in the ruby fact editor"
   },
+  "factRubyMenuLabel": "Ruby",
+  "@factRubyMenuLabel": {
+    "description": "Selection toolbar action to wrap selected text as ruby"
+  },
+  "factRubyReadingDialogTitle": "Reading for {base}",
+  "@factRubyReadingDialogTitle": {
+    "description": "Title of the dialog that asks for a reading for selected base text",
+    "placeholders": {
+      "base": {
+        "type": "String"
+      }
+    }
+  },
+  "factRubyApply": "Done",
+  "@factRubyApply": {
+    "description": "Confirm button on the ruby reading dialog"
+  },
   "addFactAttachImage": "Image",
   "@addFactAttachImage": {
     "description": "Label for attaching an image"

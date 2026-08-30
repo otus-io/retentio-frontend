@@ -360,6 +360,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get factRubyReadingHint => 'Reading';
 
   @override
+  String get factRubyMenuLabel => 'Ruby';
+
+  @override
+  String factRubyReadingDialogTitle(String base) {
+    return 'Reading for $base';
+  }
+
+  @override
+  String get factRubyApply => 'Done';
+
+  @override
   String get addFactAttachImage => 'Image';
 
   @override

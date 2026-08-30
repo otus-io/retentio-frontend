@@ -354,6 +354,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get factRubyReadingHint => '読み';
 
   @override
+  String get factRubyMenuLabel => 'ルビ';
+
+  @override
+  String factRubyReadingDialogTitle(String base) {
+    return '$baseの読み';
+  }
+
+  @override
+  String get factRubyApply => '完了';
+
+  @override
   String get addFactAttachImage => '画像';
 
   @override

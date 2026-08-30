@@ -1,27 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/deck/card_widgets/card_wiki_ruby_layout.dart';
+import 'package:retentio/screen/deck/fact_add_composer/wiki_ruby_wrap_action.dart';
 import 'package:retentio/utils/wiki_ruby_markup.dart';
 
-const _kRubyTapPadding = EdgeInsets.symmetric(horizontal: 6, vertical: 8);
-const _kRubyTapMinWidth = 36.0;
-const _kRubyTapMinHeight = 44.0;
+const _kRubyTapPadding = EdgeInsets.symmetric(horizontal: 1, vertical: 2);
 const _kRubyTapRadius = 6.0;
 const _kRubyIdleFillAlpha = 0.07;
 const _kRubyReadingUnderlineAlpha = 0.45;
+const _kPlainFieldMinWidth = 4.0;
+const _kContinuationFieldMinWidth = 8.0;
+
+/// Theme input chrome (fill/borders) must be fully cleared — setting only
+/// [InputDecoration.border] still leaves enabled/focused borders and fill.
+const _kPlainSlotDecoration = InputDecoration(
+  isDense: true,
+  isCollapsed: true,
+  filled: false,
+  fillColor: Colors.transparent,
+  border: InputBorder.none,
+  enabledBorder: InputBorder.none,
+  focusedBorder: InputBorder.none,
+  disabledBorder: InputBorder.none,
+  errorBorder: InputBorder.none,
+  focusedErrorBorder: InputBorder.none,
+  contentPadding: EdgeInsets.zero,
+  hoverColor: Colors.transparent,
+);
 
 class _RubyEditSlot {
-  _RubyEditSlot.plain({required this.controller}) : kanji = null, focus = null;
+  _RubyEditSlot.plain({
+    required this.controller,
+    required this.focus,
+    this.isContinuation = false,
+  }) : kanji = null;
 
   _RubyEditSlot.ruby({
     required this.kanji,
     required this.controller,
     required this.focus,
-  });
+  }) : isContinuation = false;
 
   final String? kanji;
   final TextEditingController controller;
-  final FocusNode? focus;
+  final FocusNode focus;
+  final bool isContinuation;
   VoidCallback? focusListener;
 }
 
@@ -62,6 +85,7 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
       slot.controller.addListener(_syncToStorage);
       _attachRubyFocus(slot);
     }
+    _maybeFocusContinuation();
   }
 
   @override
@@ -71,16 +95,15 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
       slot.controller.removeListener(_syncToStorage);
       _detachRubyFocus(slot);
       slot.controller.dispose();
-      slot.focus?.dispose();
+      slot.focus.dispose();
     }
     super.dispose();
   }
 
   void _attachRubyFocus(_RubyEditSlot slot) {
-    final focus = slot.focus;
-    if (focus == null) return;
+    if (slot.kanji == null) return;
     void listener() {
-      if (focus.hasFocus) return;
+      if (slot.focus.hasFocus) return;
       if (!mounted) return;
       final index = _slots.indexOf(slot);
       if (index >= 0 && _editingRubyIndex == index) {
@@ -89,14 +112,13 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
     }
 
     slot.focusListener = listener;
-    focus.addListener(listener);
+    slot.focus.addListener(listener);
   }
 
   void _detachRubyFocus(_RubyEditSlot slot) {
-    final focus = slot.focus;
     final listener = slot.focusListener;
-    if (focus != null && listener != null) {
-      focus.removeListener(listener);
+    if (listener != null) {
+      slot.focus.removeListener(listener);
     }
     slot.focusListener = null;
   }
@@ -111,7 +133,7 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
       slot.controller.removeListener(_syncToStorage);
       _detachRubyFocus(slot);
       slot.controller.dispose();
-      slot.focus?.dispose();
+      slot.focus.dispose();
     }
     _slots = next;
     _trackedStorage = widget.storage.text;
@@ -121,14 +143,26 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
       _attachRubyFocus(slot);
     }
     setState(() {});
+    _maybeFocusContinuation();
+  }
+
+  void _maybeFocusContinuation() {
+    if (_slots.isEmpty) return;
+    final last = _slots.last;
+    if (!last.isContinuation || last.controller.text.isNotEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      last.focus.requestFocus();
+    });
   }
 
   List<_RubyEditSlot> _slotsFromStorage(String raw) {
-    return [
+    final slots = <_RubyEditSlot>[
       for (final piece in WikiRubyMarkup.decompose(raw))
         if (piece is WikiRubyComposePlain)
           _RubyEditSlot.plain(
             controller: TextEditingController(text: piece.text),
+            focus: FocusNode(),
           )
         else if (piece is WikiRubyComposeRuby)
           _RubyEditSlot.ruby(
@@ -137,6 +171,16 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
             focus: FocusNode(),
           ),
     ];
+    if (slots.isEmpty || slots.last.kanji != null) {
+      slots.add(
+        _RubyEditSlot.plain(
+          controller: TextEditingController(),
+          focus: FocusNode(),
+          isContinuation: true,
+        ),
+      );
+    }
+    return slots;
   }
 
   List<WikiRubyComposePiece> _composePieces() {
@@ -152,7 +196,7 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
     ];
   }
 
-  void _syncToStorage() {
+  void _syncToStorage({bool rebuildIfMarkupChanged = false}) {
     final next = WikiRubyMarkup.compose(_composePieces());
     if (next == _trackedStorage) return;
     _syncingStorage = true;
@@ -163,13 +207,36 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
       composing: TextRange.empty,
     );
     _syncingStorage = false;
+    if (rebuildIfMarkupChanged) {
+      _replaceSlots(_slotsFromStorage(next));
+    }
+  }
+
+  Future<void> _applyPlainWrap(
+    int index,
+    String reading, {
+    required int start,
+    required int end,
+  }) async {
+    final slot = _slots[index];
+    if (slot.kanji != null) return;
+    slot.controller.removeListener(_syncToStorage);
+    final ok = wikiRubyApplyWrapToController(
+      slot.controller,
+      reading,
+      start: start,
+      end: end,
+    );
+    slot.controller.addListener(_syncToStorage);
+    if (!ok) return;
+    _syncToStorage(rebuildIfMarkupChanged: true);
   }
 
   void _startEditingRuby(int index) {
     setState(() => _editingRubyIndex = index);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _slots[index].focus?.requestFocus();
+      _slots[index].focus.requestFocus();
     });
   }
 
@@ -181,13 +248,14 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
       }
     }
     setState(() => _editingRubyIndex = null);
-    _slots[fromIndex].focus?.unfocus();
+    _slots[fromIndex].focus.unfocus();
   }
 
   @override
   Widget build(BuildContext context) {
     final rubyStyle = wikiRubyReadingStyle(widget.baseStyle);
     final scheme = Theme.of(context).colorScheme;
+    final loc = AppLocalizations.of(context)!;
     final wrapAlignment = switch (widget.textAlign) {
       TextAlign.start || TextAlign.left => WrapAlignment.start,
       TextAlign.end || TextAlign.right => WrapAlignment.end,
@@ -204,7 +272,7 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
           runSpacing: 6,
           children: [
             for (var i = 0; i < _slots.length; i++)
-              _buildSlot(context, i, rubyStyle, scheme),
+              _buildSlot(context, i, rubyStyle, scheme, loc),
           ],
         ),
       ),
@@ -216,10 +284,77 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
     int index,
     TextStyle rubyStyle,
     ColorScheme scheme,
+    AppLocalizations loc,
   ) {
     final slot = _slots[index];
     if (slot.kanji == null) {
-      return Text(slot.controller.text, style: widget.baseStyle);
+      // Same outer shell + reading/base column as ruby cells so WrapCrossAlignment.end
+      // aligns kanji baselines (not the Material box edge).
+      final baseStyle = widget.baseStyle.copyWith(
+        color: scheme.onSurface,
+        height: 1.0,
+      );
+      final baseH = _lineHeight(baseStyle);
+      final readingH = _lineHeight(rubyStyle);
+      return _slotShell(
+        scheme: scheme,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 1),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              SizedBox(height: readingH),
+              IntrinsicWidth(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: slot.isContinuation
+                        ? _kContinuationFieldMinWidth
+                        : _kPlainFieldMinWidth,
+                  ),
+                  child: SizedBox(
+                    height: baseH,
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      child: TextField(
+                        controller: slot.controller,
+                        focusNode: slot.focus,
+                        style: baseStyle,
+                        strutStyle: StrutStyle.fromTextStyle(
+                          baseStyle,
+                          forceStrutHeight: true,
+                        ),
+                        cursorHeight: baseStyle.fontSize,
+                        textAlignVertical: TextAlignVertical.bottom,
+                        maxLines: 1,
+                        scrollPadding: EdgeInsets.zero,
+                        decoration: _kPlainSlotDecoration,
+                        contextMenuBuilder: (context, editableTextState) {
+                          return wikiRubySelectionToolbar(
+                            context: context,
+                            editableTextState: editableTextState,
+                            loc: loc,
+                            readingHint: widget.readingHint,
+                            onReadingChosen:
+                                (reading, {required start, required end}) =>
+                                    _applyPlainWrap(
+                                      index,
+                                      reading,
+                                      start: start,
+                                      end: end,
+                                    ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     final kanji = slot.kanji!;
@@ -231,13 +366,17 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
         : TextInputAction.next;
 
     if (!editing) {
-      return _rubyTapTarget(
+      return _slotShell(
         scheme: scheme,
         onTap: () => _startEditingRuby(index),
+        highlighted: false,
         child: wikiRubyCellWidget(
           kanji: kanji,
           reading: reading,
-          baseStyle: widget.baseStyle.copyWith(color: scheme.onSurface),
+          baseStyle: widget.baseStyle.copyWith(
+            color: scheme.onSurface,
+            height: 1.0,
+          ),
           rubyStyle: rubyStyle.copyWith(
             color: scheme.onSurface,
             decoration: TextDecoration.underline,
@@ -252,7 +391,7 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
 
     return FocusTraversalOrder(
       order: NumericFocusOrder(index.toDouble()),
-      child: _rubyTapTarget(
+      child: _slotShell(
         scheme: scheme,
         highlighted: true,
         child: Padding(
@@ -282,6 +421,8 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
                       borderSide: BorderSide(color: scheme.primary, width: 2),
                     ),
                     contentPadding: EdgeInsets.zero,
+                    filled: false,
+                    fillColor: Colors.transparent,
                   ),
                   textInputAction: textInputAction,
                   onSubmitted: (_) => _focusNextRuby(index),
@@ -289,7 +430,10 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
               ),
               Text(
                 kanji,
-                style: widget.baseStyle.copyWith(color: scheme.onSurface),
+                style: widget.baseStyle.copyWith(
+                  color: scheme.onSurface,
+                  height: 1.0,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -299,15 +443,18 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
     );
   }
 
-  Widget _rubyTapTarget({
+  /// Shared chrome for ruby + plain slots so box padding does not shift baselines.
+  Widget _slotShell({
     required ColorScheme scheme,
     required Widget child,
     VoidCallback? onTap,
     bool highlighted = false,
   }) {
-    final fill = highlighted
-        ? scheme.primary.withValues(alpha: _kRubyIdleFillAlpha * 2)
-        : scheme.primary.withValues(alpha: _kRubyIdleFillAlpha);
+    final fill = onTap != null || highlighted
+        ? scheme.primary.withValues(
+            alpha: highlighted ? _kRubyIdleFillAlpha * 2 : _kRubyIdleFillAlpha,
+          )
+        : Colors.transparent;
 
     return Material(
       color: fill,
@@ -315,13 +462,7 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(_kRubyTapRadius),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minWidth: _kRubyTapMinWidth,
-            minHeight: _kRubyTapMinHeight,
-          ),
-          child: Padding(padding: _kRubyTapPadding, child: child),
-        ),
+        child: Padding(padding: _kRubyTapPadding, child: child),
       ),
     );
   }
@@ -332,13 +473,13 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
     }
     return false;
   }
+
+  double _lineHeight(TextStyle style) {
+    final fontSize = style.fontSize ?? 16;
+    return fontSize * (style.height ?? 1.0);
+  }
 }
 
 /// Whether [text] should use the ruby reading editor instead of a plain field.
 bool wikiRubyContentUsesReadingEditor(String text) =>
     WikiRubyMarkup.looksLikeMarkup(text);
-
-/// Localized hints for [WikiRubyContentEditor].
-({String reading, String plain}) wikiRubyContentEditorHints(
-  AppLocalizations loc,
-) => (reading: loc.factRubyReadingHint, plain: loc.addFactContentHint);

@@ -27,4 +27,83 @@ void main() {
       expect(WikiRubyMarkup.compose([]), '');
     });
   });
+
+  group('WikiRubyMarkup.wrapSelection', () {
+    test('wraps the selected range with reading', () {
+      expect(
+        WikiRubyMarkup.wrapSelection(
+          text: '見せてください',
+          start: 0,
+          end: 1,
+          reading: 'み',
+        ),
+        '[[見|み]]せてください',
+      );
+    });
+
+    test('trims reading whitespace', () {
+      expect(
+        WikiRubyMarkup.wrapSelection(
+          text: '家',
+          start: 0,
+          end: 1,
+          reading: ' いえ ',
+        ),
+        '[[家|いえ]]',
+      );
+    });
+
+    test('returns null for empty range or blank reading', () {
+      expect(
+        WikiRubyMarkup.wrapSelection(text: '見', start: 0, end: 0, reading: 'み'),
+        isNull,
+      );
+      expect(
+        WikiRubyMarkup.wrapSelection(
+          text: '見',
+          start: 0,
+          end: 1,
+          reading: '  ',
+        ),
+        isNull,
+      );
+    });
+
+    test('returns null when selection or reading breaks delimiters', () {
+      expect(
+        WikiRubyMarkup.wrapSelection(
+          text: 'a|b',
+          start: 0,
+          end: 3,
+          reading: 'x',
+        ),
+        isNull,
+      );
+      expect(
+        WikiRubyMarkup.wrapSelection(
+          text: '見',
+          start: 0,
+          end: 1,
+          reading: 'み]',
+        ),
+        isNull,
+      );
+    });
+
+    test('returns null for out-of-range indexes', () {
+      expect(
+        WikiRubyMarkup.wrapSelection(
+          text: '見',
+          start: -1,
+          end: 1,
+          reading: 'み',
+        ),
+        isNull,
+      );
+      expect(
+        WikiRubyMarkup.wrapSelection(text: '見', start: 0, end: 2, reading: 'み'),
+        isNull,
+      );
+    });
+  });
 }
