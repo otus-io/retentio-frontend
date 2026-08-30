@@ -199,6 +199,36 @@ void main() {
       await tester.tap(find.text('中文'));
       await tester.pumpAndSettle();
       expect(find.widgetWithText(FilledButton, 'Next'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Previous'), findsNothing);
+    });
+
+    testWidgets('Previous is disabled when every scoreable column is checked', (
+      tester,
+    ) async {
+      useAdapter();
+      await pumpQaMode(tester);
+
+      await tester.tap(find.text('日文'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('中文'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Next'));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(FilledButton, 'Previous'), findsOneWidget);
+
+      await tester.tap(find.text('日文'));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(OutlinedButton, 'Previous'), findsOneWidget);
+      expect(
+        tester
+            .widget<OutlinedButton>(
+              find.widgetWithText(OutlinedButton, 'Previous'),
+            )
+            .onPressed,
+        isNull,
+      );
     });
 
     testWidgets('Next sends quality for checked columns and advances', (

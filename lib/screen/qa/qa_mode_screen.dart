@@ -467,7 +467,9 @@ class _QaFooter extends StatelessWidget {
                   variant: !ready && state.hasPrev
                       ? AppButtonVariant.primary
                       : AppButtonVariant.secondary,
-                  onPressed: state.hasPrev && !state.busy ? cubit.prev : null,
+                  onPressed: state.hasPrev && !ready && !state.busy
+                      ? cubit.prev
+                      : null,
                 ),
               ),
               const SizedBox(width: 8),
