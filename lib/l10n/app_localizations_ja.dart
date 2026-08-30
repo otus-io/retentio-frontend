@@ -351,6 +351,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get addFactContentHint => 'テキスト（メディアを追加する場合は省略可）';
 
   @override
+  String get factRubyReadingHint => '読み';
+
+  @override
   String get addFactAttachImage => '画像';
 
   @override

@@ -128,6 +128,18 @@ void main() {
     });
   });
 
+  group('isRemoteAudioUrl', () {
+    test('true for http(s) and api paths', () {
+      expect(isRemoteAudioUrl('https://cdn/a.m4a'), isTrue);
+      expect(isRemoteAudioUrl('/api/media/id'), isTrue);
+    });
+
+    test('false for local paths and bare media ids', () {
+      expect(isRemoteAudioUrl('/tmp/recording.m4a'), isFalse);
+      expect(isRemoteAudioUrl('media01'), isFalse);
+    });
+  });
+
   group('ensureAudioCached', () {
     late Directory dir;
 
@@ -158,6 +170,23 @@ void main() {
       );
 
       expect(out, path);
+      expect(downloads, 0);
+    });
+
+    test('returns existing local file path without downloading', () async {
+      var downloads = 0;
+      final path = '${dir.path}/local.m4a';
+      await File(path).writeAsBytes(List<int>.filled(32, 1));
+
+      final out = await ensureAudioCached(
+        path,
+        download: (url, p) async {
+          downloads += 1;
+          return p;
+        },
+      );
+
+      expect(out, File(path).absolute.path);
       expect(downloads, 0);
     });
 

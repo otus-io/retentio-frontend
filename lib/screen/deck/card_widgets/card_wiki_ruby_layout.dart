@@ -11,18 +11,30 @@ TextStyle wikiRubyReadingStyle(TextStyle base, {double? rubyFontSize}) =>
       height: 1.0,
     );
 
+Widget wikiRubyCellWidget({
+  required String kanji,
+  required String reading,
+  required TextStyle baseStyle,
+  required TextStyle rubyStyle,
+}) => Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 1),
+  child: Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.center,
+    mainAxisAlignment: MainAxisAlignment.end,
+    children: [
+      Text(reading, style: rubyStyle),
+      Text(kanji, style: baseStyle),
+    ],
+  ),
+);
+
 Widget _wikiRubyCell(WikiSegRuby seg, TextStyle base, TextStyle ruby) =>
-    Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 1),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Text(seg.reading, style: ruby),
-          Text(seg.kanji, style: base),
-        ],
-      ),
+    wikiRubyCellWidget(
+      kanji: seg.kanji,
+      reading: seg.reading,
+      baseStyle: base,
+      rubyStyle: ruby,
     );
 
 /// Inline widgets for composed surface `[pos, end)`, or null if a ruby unit is split.

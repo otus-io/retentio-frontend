@@ -480,6 +480,10 @@
   "@addFactContentHint": {
     "description": "Hint for entry text field"
   },
+  "factRubyReadingHint": "Reading",
+  "@factRubyReadingHint": {
+    "description": "Hint for the furigana field above kanji in the ruby fact editor"
+  },
   "addFactAttachImage": "Image",
   "@addFactAttachImage": {
     "description": "Label for attaching an image"

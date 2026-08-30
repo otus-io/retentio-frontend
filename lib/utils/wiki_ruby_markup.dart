@@ -43,12 +43,59 @@ class WikiRubyParseResult {
   }
 }
 
+sealed class WikiRubyComposePiece {
+  const WikiRubyComposePiece();
+}
+
+class WikiRubyComposePlain extends WikiRubyComposePiece {
+  const WikiRubyComposePlain(this.text);
+
+  final String text;
+}
+
+class WikiRubyComposeRuby extends WikiRubyComposePiece {
+  const WikiRubyComposeRuby({required this.kanji, required this.reading});
+
+  final String kanji;
+  final String reading;
+}
+
 abstract final class WikiRubyMarkup {
   WikiRubyMarkup._();
 
   static final RegExp _pair = RegExp(r'\[\[([^\]|]+)\|([^\]]+)\]\]');
 
   static bool looksLikeMarkup(String s) => _pair.hasMatch(s);
+
+  /// Ordered storage pieces for round-tripping wiki ruby markup.
+  static List<WikiRubyComposePiece> decompose(String input) {
+    final parsed = parse(input);
+    return [
+      for (final seg in parsed.segments)
+        if (seg is WikiSegPlain)
+          WikiRubyComposePlain(seg.text)
+        else if (seg is WikiSegRuby)
+          WikiRubyComposeRuby(kanji: seg.kanji, reading: seg.reading),
+    ];
+  }
+
+  /// Rebuilds `[[kanji|reading]]` storage from [pieces].
+  static String compose(List<WikiRubyComposePiece> pieces) {
+    final buf = StringBuffer();
+    for (final piece in pieces) {
+      switch (piece) {
+        case WikiRubyComposePlain(:final text):
+          buf.write(text);
+        case WikiRubyComposeRuby(:final kanji, :final reading):
+          if (kanji.isNotEmpty && reading.isNotEmpty) {
+            buf.write('[[$kanji|$reading]]');
+          } else {
+            buf.write(kanji);
+          }
+      }
+    }
+    return buf.toString();
+  }
 
   /// Parses [input] into ordered segments. Text outside pairs is plain (including
   /// stray `[[` without a closing `]]`).

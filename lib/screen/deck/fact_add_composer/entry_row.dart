@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/l10n/app_localizations.dart';
+import 'package:retentio/screen/deck/card_widgets/card_audio.dart';
 import 'package:retentio/screen/deck/fact_add_composer/attachment_chip.dart';
+import 'package:retentio/screen/deck/fact_add_composer/media_play_url.dart';
 import 'package:retentio/screen/deck/fact_add_composer/row_model.dart';
+import 'package:retentio/screen/deck/fact_add_composer/wiki_ruby_content_editor.dart';
 import 'package:retentio/services/apis/media_service.dart';
-import 'package:retentio/widgets/app_icon_button.dart';
 import 'package:retentio/widgets/app_input.dart';
 
 const _kAttachmentKindsOrder = <MediaSlotKind>[
@@ -18,7 +20,9 @@ const _kContentFieldPaddingNoMedia = EdgeInsets.fromLTRB(10, 8, 6, 10);
 const _kMediaChipWrapPadding = EdgeInsets.only(left: 6, top: 6);
 const _kMediaChipWrapSpacing = 2.0;
 const _kMediaChipIconSize = 18.0;
-const _kMediaChipClearConstraints = BoxConstraints(minWidth: 28, minHeight: 28);
+const _kMediaChipAudioControlSize = 28.0;
+const _kMediaChipClearConstraints = BoxConstraints(minWidth: 24, minHeight: 24);
+const _kMediaChipClearToAudioOffset = Offset(-6, 0);
 const _kCollapsedLabelPadding = EdgeInsets.symmetric(
   horizontal: 5,
   vertical: 4,
@@ -59,26 +63,39 @@ class AddFactEntryRow extends HookWidget {
         .where((k) => row.pathFor(k) != null)
         .toList(growable: false);
     final showMediaChips = activeKinds.isNotEmpty;
+    final hints = wikiRubyContentEditorHints(loc);
+    final useRubyEditor = wikiRubyContentUsesReadingEditor(row.content.text);
+    final fieldPadding = showMediaChips
+        ? _kContentFieldPaddingWithMedia
+        : _kContentFieldPaddingNoMedia;
 
-    final textField = AppInput(
-      controller: row.content,
-      focusNode: contentFocus,
-      style: theme.textTheme.bodyMedium,
-      enableInteractiveSelection: true,
-      contextMenuBuilder: (context, editableTextState) {
-        return AdaptiveTextSelectionToolbar.editableText(
-          editableTextState: editableTextState,
-        );
-      },
-      hint: loc.addFactContentHint,
-      isDense: true,
-      border: InputBorder.none,
-      contentPadding: showMediaChips
-          ? _kContentFieldPaddingWithMedia
-          : _kContentFieldPaddingNoMedia,
-      minLines: 1,
-      maxLines: 3,
-    );
+    final Widget textField;
+    if (useRubyEditor) {
+      textField = WikiRubyContentEditor(
+        storage: row.content,
+        baseStyle: theme.textTheme.bodyMedium ?? const TextStyle(),
+        readingHint: hints.reading,
+        contentPadding: fieldPadding,
+      );
+    } else {
+      textField = AppInput(
+        controller: row.content,
+        focusNode: contentFocus,
+        style: theme.textTheme.bodyMedium,
+        enableInteractiveSelection: true,
+        contextMenuBuilder: (context, editableTextState) {
+          return AdaptiveTextSelectionToolbar.editableText(
+            editableTextState: editableTextState,
+          );
+        },
+        hint: loc.addFactContentHint,
+        isDense: true,
+        border: InputBorder.none,
+        contentPadding: fieldPadding,
+        minLines: 1,
+        maxLines: 3,
+      );
+    }
 
     if (!showMediaChips) {
       return textField;
@@ -97,21 +114,34 @@ class AddFactEntryRow extends HookWidget {
               for (final kind in activeKinds)
                 Row(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Icon(
-                      addFactAttachmentChipIcon(kind),
-                      size: _kMediaChipIconSize,
-                      color: theme.colorScheme.primary,
+                    _buildAttachmentLeading(
+                      kind: kind,
+                      path: row.pathFor(kind)!,
+                      theme: theme,
                     ),
-                    AppIconButton(
-                      tooltip: loc.addFactClearAttachment,
-                      padding: EdgeInsets.zero,
-                      visualDensity: VisualDensity.compact,
-                      constraints: _kMediaChipClearConstraints,
-                      onPressed: () => onClearSlot(kind),
-                      icon: LucideIcons.x,
-                      size: _kMediaChipIconSize,
-                      color: theme.colorScheme.onSurfaceVariant,
+                    Transform.translate(
+                      offset: kind == MediaSlotKind.audio
+                          ? _kMediaChipClearToAudioOffset
+                          : Offset.zero,
+                      child: IconButton(
+                        tooltip: loc.addFactClearAttachment,
+                        onPressed: () => onClearSlot(kind),
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                        constraints: _kMediaChipClearConstraints,
+                        style: IconButton.styleFrom(
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          minimumSize: const Size(24, 24),
+                          padding: EdgeInsets.zero,
+                        ),
+                        icon: Icon(
+                          LucideIcons.x,
+                          size: _kMediaChipIconSize,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -120,6 +150,35 @@ class AddFactEntryRow extends HookWidget {
         ),
         Expanded(child: textField),
       ],
+    );
+  }
+
+  Widget _buildAttachmentLeading({
+    required MediaSlotKind kind,
+    required String path,
+    required ThemeData theme,
+  }) {
+    if (kind == MediaSlotKind.audio) {
+      final playUrl = attachmentAudioPlayUrl(path);
+      if (playUrl != null) {
+        return SizedBox(
+          width: _kMediaChipAudioControlSize,
+          height: _kMediaChipAudioControlSize,
+          child: FittedBox(
+            child: CardAudio(
+              audioUrl: playUrl,
+              color: theme.colorScheme.primary,
+              compact: true,
+            ),
+          ),
+        );
+      }
+    }
+
+    return Icon(
+      addFactAttachmentChipIcon(kind),
+      size: _kMediaChipIconSize,
+      color: theme.colorScheme.primary,
     );
   }
 

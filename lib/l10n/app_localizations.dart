@@ -760,6 +760,12 @@ abstract class AppLocalizations {
   /// **'Text (optional if you add media)'**
   String get addFactContentHint;
 
+  /// Hint for the furigana field above kanji in the ruby fact editor
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get factRubyReadingHint;
+
   /// Label for attaching an image
   ///
   /// In en, this message translates to:

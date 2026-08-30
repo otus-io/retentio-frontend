@@ -110,6 +110,7 @@
   "addFactRemoveRow": "删除该行",
   "addFactFieldNameHint": "字段名（可选）",
   "addFactContentHint": "文本（若已添加媒体可留空）",
+  "factRubyReadingHint": "读音",
   "addFactAttachImage": "图片",
   "addFactAttachVideo": "视频",
   "addFactAttachAudio": "音频",

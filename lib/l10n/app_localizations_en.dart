@@ -357,6 +357,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addFactContentHint => 'Text (optional if you add media)';
 
   @override
+  String get factRubyReadingHint => 'Reading';
+
+  @override
   String get addFactAttachImage => 'Image';
 
   @override

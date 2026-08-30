@@ -110,6 +110,7 @@
   "addFactRemoveRow": "行を削除",
   "addFactFieldNameHint": "フィールド名（任意）",
   "addFactContentHint": "テキスト（メディアを追加する場合は省略可）",
+  "factRubyReadingHint": "読み",
   "addFactAttachImage": "画像",
   "addFactAttachVideo": "動画",
   "addFactAttachAudio": "音声",

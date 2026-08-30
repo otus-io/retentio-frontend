@@ -351,6 +351,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get addFactContentHint => '文本（若已添加媒体可留空）';
 
   @override
+  String get factRubyReadingHint => '读音';
+
+  @override
   String get addFactAttachImage => '图片';
 
   @override
