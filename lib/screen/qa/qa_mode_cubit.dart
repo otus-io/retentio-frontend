@@ -42,7 +42,7 @@ class QaModeState {
   /// Deck columns included in this QA walk (entry indexes).
   final Set<int> activeColumnIndexes;
 
-  /// Columns the reviewer signs off on with the next Verified.
+  /// Columns signed off when advancing to the next fact.
   final Set<int> checkedIndexes;
 
   /// Deck-wide human verification counters; `null` when unavailable.
@@ -211,11 +211,13 @@ class QaModeCubit extends Cubit<QaModeState> {
     await _loadCurrentFact();
   }
 
-  Future<void> next() async {
+  Future<String?> next() async {
     if (state.checkedIndexes.isNotEmpty) {
-      await verify();
+      final error = await verify();
+      if (error != null) return error;
     }
     await goTo(state.index + 1);
+    return null;
   }
 
   Future<void> prev() => goTo(state.index - 1);

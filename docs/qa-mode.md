@@ -10,8 +10,8 @@ Human QA logs in, **imports** the catalog, **QA mode** (linear walk, not SRS). E
 1. Import → deck menu **QA mode** (`isImported` only).
 2. Walk facts (Prev/Next; optional 課). Show every column (label from `deck.fields`) with text/audio and a **checkbox**.
 3. Check the columns that are OK (headword, example, …). Unchecked = not signed off. Pre-check columns that already have `model: human` on GET quality.
-4. **Verified** sends quality **only for checked columns**. Confirm sheet shows that PUT JSON.
-5. **Bad column → Edit** that text/audio. `PATCH` overlay, then **immediately** `POST …/edit`. Do not PUT `human`/10 on a column until it is checked + Verified (or after author **accept**, then QA checks it).
+4. **Next** sends quality for checked columns, then advances. **Verified** is a status indicator only (filled when every scoreable column is checked).
+5. **Bad column → Edit** that text/audio. `PATCH` overlay, then **immediately** `POST …/edit`. Do not PUT `human`/10 on a column until it is checked and you advance with **Next** (or after author **accept**, then QA checks it).
 6. Report issue stays `POST …/report` (bugs only).
 
 ```mermaid
@@ -37,7 +37,7 @@ Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
-Quality is **already per entry index** (`"0"`, `"2"`, …). Checked columns → those keys only. For a checked column, include `text` and/or `audio` if that entry has them. Score **10**, `model: "human"`. Confirm sheet lists checked field names + JSON. Disable Verified if nothing is checked.
+Quality is **already per entry index** (`"0"`, `"2"`, …). Checked columns → those keys only. For a checked column, include `text` and/or `audio` if that entry has them. Score **10**, `model: "human"`. **Next** PUTs when any column is checked; **Verified** turns filled when every scoreable column is checked (not tappable).
 
 Example: reviewer checks 日文 (0) and 例句 (2), not 中文 (1) or 例句中文 (3):
 

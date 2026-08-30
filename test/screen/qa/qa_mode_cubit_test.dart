@@ -213,11 +213,23 @@ void main() {
       await startWalk(cubit);
       cubit.toggleColumn(0);
 
-      await cubit.next();
+      expect(await cubit.next(), isNull);
 
       expect(adapter.qualityPuts, hasLength(1));
       expect(cubit.state.index, 1);
       expect(cubit.state.checkedIndexes, isEmpty);
+      await cubit.close();
+    });
+
+    test('next returns the API message when verify fails', () async {
+      buildAdapter(qualityPutFails: true);
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await startWalk(cubit);
+      cubit.toggleColumn(0);
+
+      expect(await cubit.next(), 'fact not in pinned snapshot');
+      expect(cubit.state.index, 0);
+      expect(cubit.state.busy, isFalse);
       await cubit.close();
     });
 

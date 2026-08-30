@@ -184,7 +184,7 @@ void main() {
       expect(checkboxes.map((c) => c.value), [false, false]);
     });
 
-    testWidgets('Verified sends the checked columns after confirmation', (
+    testWidgets('Next sends quality for checked columns and advances', (
       tester,
     ) async {
       useAdapter();
@@ -194,12 +194,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('中文'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Verified'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Signing off: 日文, 中文'), findsOneWidget);
-
-      await tester.tap(find.widgetWithText(FilledButton, 'Verified').last);
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Next'));
       await tester.pumpAndSettle();
 
       expect(adapter.qualityPuts, hasLength(1));
@@ -207,11 +202,34 @@ void main() {
         (adapter.qualityPuts.first['entries'] as Map).keys,
         containsAll(<String>['0', '1']),
       );
-      expect(find.text('Quality saved'), findsOneWidget);
-      await tester.pump(const Duration(seconds: 2));
+      expect(find.text('second'), findsOneWidget);
+      expect(find.textContaining('Fact 2 / 2'), findsOneWidget);
     });
 
-    testWidgets('shows the API message when the PUT fails', (tester) async {
+    testWidgets('Verified is not tappable and fills when all columns checked', (
+      tester,
+    ) async {
+      useAdapter();
+      await pumpQaMode(tester);
+
+      expect(find.widgetWithText(OutlinedButton, 'Verified'), findsOneWidget);
+
+      await tester.tap(find.text('日文'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(OutlinedButton, 'Verified'), findsOneWidget);
+
+      await tester.tap(find.text('中文'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(FilledButton, 'Verified'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Verified'));
+      await tester.pumpAndSettle();
+      expect(adapter.qualityPuts, isEmpty);
+    });
+
+    testWidgets('shows the API message when the PUT fails on Next', (
+      tester,
+    ) async {
       useAdapter(qualityPutFails: true);
       await pumpQaMode(tester);
 
@@ -219,29 +237,12 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('中文'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Verified'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Verified').last);
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Next'));
       await tester.pumpAndSettle();
 
       expect(find.text('Fact is not in the pinned snapshot'), findsOneWidget);
+      expect(find.textContaining('Fact 1 / 2'), findsOneWidget);
       await tester.pump(const Duration(seconds: 2));
-    });
-
-    testWidgets('cancelling the confirm sheet sends nothing', (tester) async {
-      useAdapter();
-      await pumpQaMode(tester);
-
-      await tester.tap(find.text('日文'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('中文'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Verified'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Cancel'));
-      await tester.pumpAndSettle();
-
-      expect(adapter.qualityPuts, isEmpty);
     });
 
     testWidgets('Next walks to the next fact and disables empty columns', (

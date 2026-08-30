@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -85,28 +83,12 @@ class _QaModeView extends StatelessWidget {
         _fieldLabel(context, index);
   }
 
-  Future<void> _verify(BuildContext context, QaModeState state) async {
+  Future<void> _next(BuildContext context) async {
     final loc = AppLocalizations.of(context)!;
     final cubit = context.read<QaModeCubit>();
-    final checked = state.checkedIndexes.toList()..sort();
-    final confirmed = await showCommonBottomSheet<bool>(
-      context: context,
-      title: loc.qaVerifyConfirmTitle,
-      child: _QaVerifyConfirmSheet(
-        fields: checked.map((i) => _label(context, state, i)).toList(),
-        payload: const JsonEncoder.withIndent(
-          '  ',
-        ).convert({'entries': cubit.pendingPutEntries()}),
-      ),
-    );
-    if (confirmed != true || !context.mounted) return;
-    final error = await cubit.verify();
-    if (!context.mounted) return;
-    if (error == null) {
-      AppToast.success(context, loc.qaVerifySuccess);
-    } else {
-      AppToast.error(context, ApiErrorMessages.resolve(error, loc));
-    }
+    final error = await cubit.next();
+    if (!context.mounted || error == null) return;
+    AppToast.error(context, ApiErrorMessages.resolve(error, loc));
   }
 
   Future<void> _edit(BuildContext context, int entryIndex) async {
@@ -215,10 +197,7 @@ class _QaModeView extends StatelessWidget {
                     ],
                   ),
                 ),
-                _QaFooter(
-                  state: state,
-                  onVerify: () => _verify(context, state),
-                ),
+                _QaFooter(state: state, onNext: () => _next(context)),
               ],
             );
           },
@@ -465,15 +444,16 @@ class _QaColumnRow extends StatelessWidget {
 }
 
 class _QaFooter extends StatelessWidget {
-  const _QaFooter({required this.state, required this.onVerify});
+  const _QaFooter({required this.state, required this.onNext});
 
   final QaModeState state;
-  final VoidCallback onVerify;
+  final VoidCallback onNext;
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final cubit = context.read<QaModeCubit>();
+    final ready = state.canVerify;
     return Padding(
       padding: _kQaPadding,
       child: Column(
@@ -494,73 +474,26 @@ class _QaFooter extends StatelessWidget {
                   label: loc.next,
                   size: AppButtonSize.sm,
                   variant: AppButtonVariant.secondary,
-                  onPressed: state.hasNext && !state.busy ? cubit.next : null,
+                  onPressed: state.hasNext && !state.busy ? onNext : null,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          AppButton(
-            label: loc.qaModeVerify,
-            fullWidth: true,
-            isLoading: state.busy,
-            leading: const Icon(LucideIcons.badgeCheck),
-            onPressed: state.canVerify ? onVerify : null,
+          AbsorbPointer(
+            child: AppButton(
+              label: loc.qaModeVerify,
+              fullWidth: true,
+              isLoading: state.busy,
+              leading: const Icon(LucideIcons.badgeCheck),
+              onPressed: ready && !state.busy ? () {} : null,
+              variant: ready
+                  ? AppButtonVariant.primary
+                  : AppButtonVariant.secondary,
+            ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _QaVerifyConfirmSheet extends StatelessWidget {
-  const _QaVerifyConfirmSheet({required this.fields, required this.payload});
-
-  final List<String> fields;
-  final String payload;
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(loc.qaVerifyConfirmFields(fields.join(', '))),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: 0.2),
-            ),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(payload, style: theme.textTheme.bodySmall),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: AppButton(
-                label: loc.cancel,
-                size: AppButtonSize.sm,
-                variant: AppButtonVariant.ghost,
-                onPressed: () => Navigator.of(context).pop(false),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: AppButton(
-                label: loc.qaModeVerify,
-                size: AppButtonSize.sm,
-                onPressed: () => Navigator.of(context).pop(true),
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }
