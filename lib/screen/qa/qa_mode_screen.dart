@@ -53,7 +53,10 @@ class QaModeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<QaModeCubit>(
-      create: (_) => QaModeCubit(deckId: deck.id)..load(),
+      create: (_) => QaModeCubit(
+        deckId: deck.id,
+        deckFieldCount: deck.fields.isNotEmpty ? deck.fields.length : 1,
+      ),
       child: _QaModeView(deck: deck),
     );
   }
@@ -64,14 +67,22 @@ class _QaModeView extends StatelessWidget {
 
   final Deck deck;
 
-  String _label(BuildContext context, QaModeState state, int index) {
+  String _fieldLabel(BuildContext context, int index) {
     final loc = AppLocalizations.of(context)!;
+    if (index >= 0 && index < deck.fields.length) {
+      final name = deck.fields[index].trim();
+      if (name.isNotEmpty) return name;
+    }
+    return loc.addFactFieldFallback(index + 1);
+  }
+
+  String _label(BuildContext context, QaModeState state, int index) {
     return factEditInitialFieldName(
           index: index,
           deckFields: deck.fields,
           factFields: state.fact?.fields ?? const [],
         ) ??
-        loc.addFactFieldFallback(index + 1);
+        _fieldLabel(context, index);
   }
 
   Future<void> _verify(BuildContext context, QaModeState state) async {
@@ -131,10 +142,35 @@ class _QaModeView extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(loc.qaMode)),
+      appBar: AppBar(
+        title: Text(loc.qaMode),
+        actions: [
+          BlocBuilder<QaModeCubit, QaModeState>(
+            buildWhen: (prev, next) =>
+                prev.pickingColumns != next.pickingColumns ||
+                prev.activeColumnIndexes != next.activeColumnIndexes,
+            builder: (context, state) {
+              if (state.pickingColumns) return const SizedBox.shrink();
+              return AppIconButton(
+                icon: LucideIcons.columns3,
+                tooltip: loc.qaModeChooseColumns,
+                variant: AppIconButtonVariant.subtle,
+                onPressed: () =>
+                    context.read<QaModeCubit>().reopenColumnPicker(),
+              );
+            },
+          ),
+        ],
+      ),
       body: SafeArea(
         child: BlocBuilder<QaModeCubit, QaModeState>(
           builder: (context, state) {
+            if (state.pickingColumns) {
+              return _QaColumnPicker(
+                deck: deck,
+                fieldLabel: (index) => _fieldLabel(context, index),
+              );
+            }
             if (state.loading) {
               return const Center(child: CircularProgressIndicator());
             }
@@ -144,14 +180,22 @@ class _QaModeView extends StatelessWidget {
             if (state.factLoadFailed) {
               return _QaMessage(text: loc.qaModeFactLoadFailed);
             }
+            final visibleIndexes = [
+              for (var i = 0; i < state.entries.length; i++)
+                if (state.activeColumnIndexes.contains(i)) i,
+            ];
             return Column(
               children: [
-                _QaHeader(state: state),
+                _QaHeader(
+                  state: state,
+                  deck: deck,
+                  fieldLabel: (index) => _fieldLabel(context, index),
+                ),
                 Expanded(
                   child: ListView(
                     padding: _kQaPadding,
                     children: [
-                      for (var i = 0; i < state.entries.length; i++)
+                      for (final i in visibleIndexes)
                         _QaColumnRow(
                           entry: state.entries[i],
                           label: _label(context, state, i),
@@ -184,6 +228,118 @@ class _QaModeView extends StatelessWidget {
   }
 }
 
+class _QaColumnPicker extends StatefulWidget {
+  const _QaColumnPicker({required this.deck, required this.fieldLabel});
+
+  final Deck deck;
+  final String Function(int index) fieldLabel;
+
+  @override
+  State<_QaColumnPicker> createState() => _QaColumnPickerState();
+}
+
+class _QaColumnPickerState extends State<_QaColumnPicker> {
+  Set<int> _selected = const {};
+  bool _loading = true;
+
+  int get _columnCount =>
+      widget.deck.fields.isNotEmpty ? widget.deck.fields.length : 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPickerData();
+  }
+
+  Future<void> _loadPickerData() async {
+    final cubit = context.read<QaModeCubit>();
+    final fromWalk = cubit.state.activeColumnIndexes;
+    final selection = fromWalk.isNotEmpty
+        ? fromWalk
+        : await cubit.initialColumnSelection();
+    await cubit.refreshStats();
+    if (!mounted) return;
+    setState(() {
+      _selected = Set<int>.of(selection);
+      _loading = false;
+    });
+  }
+
+  void _toggle(int index) {
+    setState(() {
+      final next = Set<int>.of(_selected);
+      if (!next.remove(index)) {
+        next.add(index);
+      }
+      _selected = next;
+    });
+  }
+
+  Future<void> _start() async {
+    if (_selected.isEmpty) return;
+    await context.read<QaModeCubit>().startWalk(_selected);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return Padding(
+      padding: _kQaPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(loc.qaModeChooseColumns, style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Text(
+            loc.qaModeChooseColumnsHint,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: BlocBuilder<QaModeCubit, QaModeState>(
+              buildWhen: (prev, next) => prev.stats != next.stats,
+              builder: (context, state) {
+                return ListView(
+                  children: [
+                    for (var i = 0; i < _columnCount; i++)
+                      CheckboxListTile(
+                        value: _selected.contains(i),
+                        onChanged: (_) => _toggle(i),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(widget.fieldLabel(i)),
+                        secondary: Text(
+                          loc.qaModeColumnPercent(
+                            state.stats?.columnAt(i)?.completionPercent ?? 0,
+                          ),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+          AppButton(
+            label: loc.qaModeStartWalk,
+            fullWidth: true,
+            leading: const Icon(LucideIcons.play),
+            onPressed: _selected.isEmpty ? null : _start,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _QaMessage extends StatelessWidget {
   const _QaMessage({required this.text});
 
@@ -199,30 +355,54 @@ class _QaMessage extends StatelessWidget {
 }
 
 class _QaHeader extends StatelessWidget {
-  const _QaHeader({required this.state});
+  const _QaHeader({
+    required this.state,
+    required this.deck,
+    required this.fieldLabel,
+  });
 
   final QaModeState state;
+  final Deck deck;
+  final String Function(int index) fieldLabel;
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final stats = state.stats;
-    final parts = <String>[
-      loc.qaModeProgress(state.index + 1, state.factIds.length),
-      if (stats != null)
-        loc.qaModeVerifiedAspects(stats.verifiedAspects, stats.totalAspects),
-      loc.qaModeEdited(state.editedCount),
-    ];
+    final activeColumns = state.activeColumnIndexes.toList()..sort();
     return Padding(
       padding: _kQaPadding,
       child: Align(
         alignment: Alignment.centerLeft,
-        child: Text(
-          parts.join(' · '),
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(
+              loc.qaModeProgress(state.index + 1, state.factIds.length),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            for (final index in activeColumns)
+              Text(
+                loc.qaModeColumnComplete(
+                  fieldLabel(index),
+                  stats?.columnAt(index)?.completionPercent ?? 0,
+                ),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            Text(
+              loc.qaModeEdited(state.editedCount),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
       ),
     );

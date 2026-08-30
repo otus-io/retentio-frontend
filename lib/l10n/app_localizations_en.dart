@@ -1667,6 +1667,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qaModeColumnEmpty => 'Nothing to verify in this column';
 
   @override
+  String get qaModeChooseColumns => 'Choose columns';
+
+  @override
+  String get qaModeChooseColumnsHint =>
+      'Only selected columns appear during this QA walk. Your choice is remembered for this deck.';
+
+  @override
+  String get qaModeStartWalk => 'Start QA';
+
+  @override
+  String qaModeColumnComplete(String label, int percent) {
+    return '$label $percent%';
+  }
+
+  @override
+  String qaModeColumnPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
   String get qaModePrevious => 'Previous';
 
   @override

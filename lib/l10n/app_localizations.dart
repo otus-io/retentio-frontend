@@ -3076,6 +3076,36 @@ abstract class AppLocalizations {
   /// **'Nothing to verify in this column'**
   String get qaModeColumnEmpty;
 
+  /// No description provided for @qaModeChooseColumns.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose columns'**
+  String get qaModeChooseColumns;
+
+  /// No description provided for @qaModeChooseColumnsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only selected columns appear during this QA walk. Your choice is remembered for this deck.'**
+  String get qaModeChooseColumnsHint;
+
+  /// No description provided for @qaModeStartWalk.
+  ///
+  /// In en, this message translates to:
+  /// **'Start QA'**
+  String get qaModeStartWalk;
+
+  /// No description provided for @qaModeColumnComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'{label} {percent}%'**
+  String qaModeColumnComplete(String label, int percent);
+
+  /// No description provided for @qaModeColumnPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}%'**
+  String qaModeColumnPercent(int percent);
+
   /// No description provided for @qaModePrevious.
   ///
   /// In en, this message translates to:

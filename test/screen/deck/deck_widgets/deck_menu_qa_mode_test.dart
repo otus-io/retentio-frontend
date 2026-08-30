@@ -61,9 +61,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('QA mode'));
       await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Start QA'));
+      await tester.pumpAndSettle();
 
       expect(find.byType(QaModeScreen), findsOneWidget);
-      expect(find.text('headword'), findsOneWidget);
     });
 
     testWidgets('is hidden for a source deck', (tester) async {

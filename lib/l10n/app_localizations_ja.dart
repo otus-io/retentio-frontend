@@ -1571,6 +1571,26 @@ class AppLocalizationsJa extends AppLocalizations {
   String get qaModeColumnEmpty => 'この列に確認する内容はありません';
 
   @override
+  String get qaModeChooseColumns => '列を選ぶ';
+
+  @override
+  String get qaModeChooseColumnsHint =>
+      '選んだ列だけがこの QA ウォークに表示されます。選択はこのデッキ用に保存されます。';
+
+  @override
+  String get qaModeStartWalk => 'QA を開始';
+
+  @override
+  String qaModeColumnComplete(String label, int percent) {
+    return '$label $percent%';
+  }
+
+  @override
+  String qaModeColumnPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
   String get qaModePrevious => '前へ';
 
   @override

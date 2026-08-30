@@ -80,7 +80,16 @@ void main() {
     networkDioClient.dio.httpClientAdapter = adapter;
   }
 
-  Future<void> pumpQaMode(WidgetTester tester, {Deck? deck}) async {
+  Future<void> startQaWalk(WidgetTester tester) async {
+    await tester.tap(find.widgetWithText(FilledButton, 'Start QA'));
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> pumpQaMode(
+    WidgetTester tester, {
+    Deck? deck,
+    bool startWalk = true,
+  }) async {
     tester.view.physicalSize = const Size(1000, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -111,6 +120,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    if (startWalk) await startQaWalk(tester);
   }
 
   group('qaAudioUrl', () {
@@ -149,13 +159,24 @@ void main() {
 
   group('QaModeScreen', () {
     testWidgets('lists deck columns all unchecked by default', (tester) async {
-      useAdapter(stats: {'verified_aspects': 1, 'total_aspects': 3});
+      useAdapter(
+        stats: {
+          'verified_aspects': 1,
+          'total_aspects': 3,
+          'columns': {
+            '0': {'verified_aspects': 1, 'total_aspects': 2},
+            '1': {'verified_aspects': 0, 'total_aspects': 2},
+          },
+        },
+      );
       await pumpQaMode(tester);
 
       expect(find.text('日文'), findsOneWidget);
       expect(find.text('中文'), findsOneWidget);
       expect(find.text('headword'), findsOneWidget);
-      expect(find.text('Fact 1 / 2 · Verified 1/3 · Edited 0'), findsOneWidget);
+      expect(find.text('日文 50%'), findsOneWidget);
+      expect(find.text('中文 0%'), findsOneWidget);
+      expect(find.textContaining('Fact 1 / 2'), findsOneWidget);
 
       final checkboxes = tester
           .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
@@ -233,7 +254,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('second'), findsOneWidget);
-      expect(find.text('Fact 2 / 2 · Edited 0'), findsOneWidget);
+      expect(find.textContaining('Fact 2 / 2'), findsOneWidget);
       expect(find.text('Nothing to verify in this column'), findsOneWidget);
       final checkboxes = tester
           .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
@@ -269,7 +290,7 @@ void main() {
           'id': 'imp-1',
           'name': 'Imported deck',
           'rate': 30,
-          'fields': <String>[],
+          'fields': ['', ''],
           'min_interval': 60,
           'def_interval': 300,
           'max_interval': 86400,
@@ -280,6 +301,46 @@ void main() {
 
       expect(find.text('Field 1'), findsOneWidget);
       expect(find.text('Field 2'), findsOneWidget);
+    });
+
+    testWidgets('column picker shows completion percent for every column', (
+      tester,
+    ) async {
+      useAdapter(
+        stats: {
+          'columns': {
+            '0': {'verified_aspects': 1, 'total_aspects': 2},
+            '1': {'verified_aspects': 0, 'total_aspects': 2},
+          },
+        },
+      );
+      await pumpQaMode(tester, startWalk: false);
+
+      expect(find.text('50%'), findsOneWidget);
+      expect(find.text('0%'), findsOneWidget);
+    });
+
+    testWidgets('column picker limits the walk to selected columns', (
+      tester,
+    ) async {
+      useAdapter(
+        stats: {
+          'verified_aspects': 1,
+          'total_aspects': 2,
+          'columns': {
+            '0': {'verified_aspects': 1, 'total_aspects': 2},
+          },
+        },
+      );
+      await pumpQaMode(tester, startWalk: false);
+
+      await tester.tap(find.text('中文'));
+      await tester.pumpAndSettle();
+      await startQaWalk(tester);
+
+      expect(find.text('日文'), findsOneWidget);
+      expect(find.text('中文'), findsNothing);
+      expect(find.text('日文 50%'), findsOneWidget);
     });
 
     testWidgets('shows the API message when the fact_edit POST fails', (

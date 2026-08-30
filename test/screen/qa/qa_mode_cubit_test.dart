@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/core/network/network.dart';
 import 'package:retentio/features/contributions/pending_contributions_store.dart';
+import 'package:retentio/screen/qa/qa_column_prefs.dart';
 import 'package:retentio/screen/qa/qa_mode_cubit.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -52,12 +53,17 @@ void main() {
     buildAdapter();
   });
 
-  group('load', () {
+  Future<void> startWalk(
+    QaModeCubit cubit, {
+    Set<int> columns = const {0, 1},
+  }) => cubit.startWalk(columns);
+
+  group('startWalk', () {
     test('loads the first fact and deck counters', () async {
       buildAdapter(stats: {'verified_aspects': 2, 'total_aspects': 6});
-      final cubit = QaModeCubit(deckId: 'imp-1');
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
 
-      await cubit.load();
+      await startWalk(cubit);
 
       expect(cubit.state.loading, isFalse);
       expect(cubit.state.factIds, ['fact-1', 'fact-2']);
@@ -71,9 +77,9 @@ void main() {
 
     test('resumes just past the last verified fact', () async {
       buildAdapter(stats: {'last_fact_id': 'fact-1'});
-      final cubit = QaModeCubit(deckId: 'imp-1');
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
 
-      await cubit.load();
+      await startWalk(cubit);
 
       expect(cubit.state.index, 1);
       expect(cubit.state.entries.first.text, 'second');
@@ -83,9 +89,9 @@ void main() {
 
     test('stays on the last fact when it was the one verified', () async {
       buildAdapter(stats: {'last_fact_id': 'fact-2'});
-      final cubit = QaModeCubit(deckId: 'imp-1');
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
 
-      await cubit.load();
+      await startWalk(cubit);
 
       expect(cubit.state.index, 1);
       expect(cubit.state.hasNext, isFalse);
@@ -94,9 +100,9 @@ void main() {
 
     test('falls back to the first fact when the cursor is unknown', () async {
       buildAdapter(stats: {'last_fact_id': 'ghost'});
-      final cubit = QaModeCubit(deckId: 'imp-1');
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
 
-      await cubit.load();
+      await startWalk(cubit);
 
       expect(cubit.state.index, 0);
       expect(cubit.state.entries.first.text, 'headword');
@@ -117,16 +123,16 @@ void main() {
           },
         },
       );
-      final cubit = QaModeCubit(deckId: 'imp-1');
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
 
-      await cubit.load();
+      await startWalk(cubit);
 
       expect(cubit.state.checkedIndexes, isEmpty);
       expect(cubit.state.canVerify, isFalse);
       await cubit.close();
     });
 
-    test('renders the first fact after one page of ids', () async {
+    test('loads every id before painting the first fact', () async {
       final ids = [for (var i = 0; i < 450; i++) 'fact-$i'];
       adapter = FakeQaApiAdapter(
         factIds: ids,
@@ -138,31 +144,13 @@ void main() {
         },
       );
       networkDioClient.dio.httpClientAdapter = adapter;
-      final cubit = QaModeCubit(deckId: 'imp-1');
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
 
-      final firstPaint = cubit.stream.firstWhere(
-        (state) => !state.loading && state.fact != null,
-      );
-      final loaded = cubit.load();
+      await startWalk(cubit);
 
-      final painted = await firstPaint;
-      expect(painted.factIds, hasLength(50));
-      expect(adapter.factListOffsets, [0]);
-
-      await loaded;
       expect(cubit.state.factIds, hasLength(450));
-      expect(adapter.factListOffsets, [
-        0,
-        50,
-        100,
-        150,
-        200,
-        250,
-        300,
-        350,
-        400,
-        450,
-      ]);
+      expect(adapter.factIdsRequestCount, 1);
+      expect(cubit.state.entries.first.text, 'fact-0');
       await cubit.close();
     });
 
@@ -172,9 +160,9 @@ void main() {
           'fact-1': {'aud-1': 1},
         },
       );
-      final cubit = QaModeCubit(deckId: 'imp-1');
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
 
-      await cubit.load();
+      await startWalk(cubit);
 
       expect(cubit.state.mediaVersions, {'aud-1': 1});
       await cubit.close();
@@ -182,9 +170,9 @@ void main() {
 
     test('stays empty when the deck has no facts', () async {
       buildAdapter(factIds: const []);
-      final cubit = QaModeCubit(deckId: 'imp-1');
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
 
-      await cubit.load();
+      await startWalk(cubit);
 
       expect(cubit.state.loading, isFalse);
       expect(cubit.state.factIds, isEmpty);
@@ -194,9 +182,9 @@ void main() {
 
     test('flags a fact that cannot be loaded', () async {
       buildAdapter(factIds: const ['missing']);
-      final cubit = QaModeCubit(deckId: 'imp-1');
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
 
-      await cubit.load();
+      await startWalk(cubit);
 
       expect(cubit.state.factLoadFailed, isTrue);
       expect(cubit.state.canVerify, isFalse);
@@ -206,8 +194,8 @@ void main() {
 
   group('navigation', () {
     test('next and prev walk the fact list', () async {
-      final cubit = QaModeCubit(deckId: 'imp-1');
-      await cubit.load();
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await startWalk(cubit);
 
       await cubit.next();
       expect(cubit.state.index, 1);
@@ -221,8 +209,8 @@ void main() {
 
     test('auto-signs the checked columns before advancing', () async {
       buildAdapter(stats: {'verified_aspects': 0, 'total_aspects': 3});
-      final cubit = QaModeCubit(deckId: 'imp-1');
-      await cubit.load();
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await startWalk(cubit);
       cubit.toggleColumn(0);
 
       await cubit.next();
@@ -234,8 +222,8 @@ void main() {
     });
 
     test('ignores out-of-range targets', () async {
-      final cubit = QaModeCubit(deckId: 'imp-1');
-      await cubit.load();
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await startWalk(cubit);
 
       await cubit.prev();
       expect(cubit.state.index, 0);
@@ -248,8 +236,8 @@ void main() {
 
   group('toggleColumn', () {
     test('adds and removes a column', () async {
-      final cubit = QaModeCubit(deckId: 'imp-1');
-      await cubit.load();
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await startWalk(cubit);
 
       cubit.toggleColumn(1);
       expect(cubit.state.checkedIndexes, <int>{1});
@@ -269,8 +257,8 @@ void main() {
   group('verify', () {
     test('PUTs only checked columns and keeps them checked', () async {
       buildAdapter(stats: {'verified_aspects': 0, 'total_aspects': 3});
-      final cubit = QaModeCubit(deckId: 'imp-1');
-      await cubit.load();
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await startWalk(cubit);
       cubit.toggleColumn(0);
 
       expect(cubit.pendingPutEntries().keys, ['0']);
@@ -300,8 +288,8 @@ void main() {
           },
         },
       );
-      final cubit = QaModeCubit(deckId: 'imp-1');
-      await cubit.load();
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await startWalk(cubit);
       cubit.toggleColumn(0);
       cubit.toggleColumn(1);
 
@@ -313,8 +301,8 @@ void main() {
     });
 
     test('keeps state when the record cannot be re-read', () async {
-      final cubit = QaModeCubit(deckId: 'imp-1');
-      await cubit.load();
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await startWalk(cubit);
       cubit.toggleColumn(1);
 
       expect(await cubit.verify(), isNull);
@@ -327,8 +315,8 @@ void main() {
 
     test('returns the API message and clears busy on failure', () async {
       buildAdapter(qualityPutFails: true);
-      final cubit = QaModeCubit(deckId: 'imp-1');
-      await cubit.load();
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await startWalk(cubit);
       cubit.toggleColumn(0);
 
       expect(await cubit.verify(), 'fact not in pinned snapshot');
@@ -338,8 +326,8 @@ void main() {
     });
 
     test('does nothing without checked columns', () async {
-      final cubit = QaModeCubit(deckId: 'imp-1');
-      await cubit.load();
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await startWalk(cubit);
 
       expect(await cubit.verify(), isNull);
       expect(adapter.qualityPuts, isEmpty);
@@ -347,7 +335,7 @@ void main() {
     });
 
     test('does nothing before facts are loaded', () async {
-      final cubit = QaModeCubit(deckId: 'imp-1');
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
 
       expect(await cubit.verify(), isNull);
       expect(await cubit.submitEdit(), isNull);
@@ -358,8 +346,8 @@ void main() {
 
   group('submitEdit', () {
     test('sends the overlay as fact_edit and clears the outbox row', () async {
-      final cubit = QaModeCubit(deckId: 'imp-1');
-      await cubit.load();
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await startWalk(cubit);
       await PendingContributionsStore.of.upsert(
         deckId: 'imp-1',
         kind: PendingContributionKind.edit,
@@ -383,8 +371,8 @@ void main() {
 
     test('returns the API message when the POST fails', () async {
       buildAdapter(contributionFails: true);
-      final cubit = QaModeCubit(deckId: 'imp-1');
-      await cubit.load();
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await startWalk(cubit);
       await PendingContributionsStore.of.upsert(
         deckId: 'imp-1',
         kind: PendingContributionKind.edit,
@@ -401,6 +389,88 @@ void main() {
         hasLength(1),
       );
       expect(cubit.state.editedCount, 0);
+      await cubit.close();
+    });
+  });
+
+  group('refreshStats', () {
+    test('loads column stats into state', () async {
+      buildAdapter(
+        stats: {
+          'columns': {
+            '0': {'verified_aspects': 1, 'total_aspects': 4},
+          },
+        },
+      );
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+
+      await cubit.refreshStats();
+
+      expect(cubit.state.stats?.columnAt(0)?.completionPercent, 25);
+      await cubit.close();
+    });
+  });
+
+  group('column filter', () {
+    test('initialColumnSelection restores saved indexes', () async {
+      await QaColumnPrefs.save('imp-1', {1});
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      expect(await cubit.initialColumnSelection(), {1});
+      await cubit.close();
+    });
+
+    test('only active columns are required for verify', () async {
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await cubit.startWalk({0});
+
+      cubit.toggleColumn(0);
+      expect(cubit.state.canVerify, isTrue);
+
+      cubit.toggleColumn(1);
+      expect(cubit.state.checkedIndexes, <int>{0});
+      await cubit.close();
+    });
+
+    test('verify preserves quality on inactive columns', () async {
+      buildAdapter(
+        qualityByFactId: {
+          'fact-1': {
+            '1': {
+              'text': {'score': 10, 'model': 'human'},
+            },
+          },
+        },
+      );
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await cubit.startWalk({0});
+      cubit.toggleColumn(0);
+
+      await cubit.verify();
+
+      expect(adapter.qualityPuts.single['entries'], {
+        '0': {
+          'text': {'score': 10, 'model': 'human'},
+          'audio': {'score': 10, 'model': 'human'},
+        },
+        '1': {
+          'text': {'score': 10, 'model': 'human'},
+        },
+      });
+      await cubit.close();
+    });
+
+    test('reopenColumnPicker keeps walk position', () async {
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await startWalk(cubit);
+      await cubit.next();
+
+      cubit.reopenColumnPicker();
+      expect(cubit.state.pickingColumns, isTrue);
+      expect(cubit.state.index, 1);
+
+      await cubit.startWalk({0});
+      expect(cubit.state.pickingColumns, isFalse);
+      expect(cubit.state.index, 1);
       await cubit.close();
     });
   });

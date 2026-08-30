@@ -2056,6 +2056,20 @@
     "placeholders": { "count": { "type": "int" } }
   },
   "qaModeColumnEmpty": "Nothing to verify in this column",
+  "qaModeChooseColumns": "Choose columns",
+  "qaModeChooseColumnsHint": "Only selected columns appear during this QA walk. Your choice is remembered for this deck.",
+  "qaModeStartWalk": "Start QA",
+  "qaModeColumnComplete": "{label} {percent}%",
+  "@qaModeColumnComplete": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "percent": { "type": "int" }
+    }
+  },
+  "qaModeColumnPercent": "{percent}%",
+  "@qaModeColumnPercent": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
   "qaModePrevious": "Previous",
   "qaModeVerify": "Verified",
   "qaVerifyConfirmTitle": "Send verification",

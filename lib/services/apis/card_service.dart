@@ -233,39 +233,15 @@ class CardService {
     return res;
   }
 
-  /// Fact ids per page of [listFactIdsPage] / [listFactIds].
-  static const int factIdsPageSize = 50;
-
-  /// Loads one page of fact ids. Empty when the page is past the end or failed.
-  static Future<List<String>> listFactIdsPage(
-    String deckId, {
-    int offset = 0,
-  }) async {
-    final res = await ApiService.get(
-      Api.facts,
-      pathParams: {'id': deckId},
-      queryParams: {'limit': factIdsPageSize, 'offset': offset},
-    );
-    final data = res?.data;
-    if (data is! Map || data['facts'] is! List) return const [];
-    return [
-      for (final row in data['facts'] as List)
-        if (row is Map && row['id'] != null) row['id'].toString(),
-    ];
-  }
-
-  /// Loads fact ids for a deck (paged). Used to detect newly added facts.
+  /// Full fact-id list via `GET …/facts/ids`. Empty on failure.
   static Future<List<String>> listFactIds(String deckId) async {
-    final ids = <String>[];
-    var offset = 0;
-    while (true) {
-      final page = await listFactIdsPage(deckId, offset: offset);
-      ids.addAll(page);
-      if (page.length < factIdsPageSize) break;
-      offset += page.length;
-      if (offset > 10000) break;
-    }
-    return ids;
+    final res = await ApiService.get(Api.factIds, pathParams: {'id': deckId});
+    final data = res?.data;
+    if (data is! Map || data['fact_ids'] is! List) return const [];
+    return [
+      for (final id in data['fact_ids'] as List)
+        if (id != null) id.toString(),
+    ];
   }
 
   /// Adds one or more facts (`facts`, optional `template` per API contract).

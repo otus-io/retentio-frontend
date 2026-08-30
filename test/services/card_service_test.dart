@@ -125,6 +125,28 @@ class _FakeDeckDetailHttpClientAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+/// Serves a fixed `data` payload for `GET …/facts/ids`.
+class _FactIdsPayloadAdapter implements HttpClientAdapter {
+  _FactIdsPayloadAdapter(this.data);
+
+  final Map<String, dynamic> data;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    if (options.method != 'GET' || !options.path.endsWith('/facts/ids')) {
+      return _jsonResponse({'code': -1, 'msg': 'not found', 'data': null}, 404);
+    }
+    return _jsonResponse({'code': 0, 'msg': 'ok', 'data': data}, 200);
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
 /// Serves GET `/api/decks/{id}/cards` stats-only payloads and records the URI.
 class _FakeTaggedCardsStatsHttpClientAdapter implements HttpClientAdapter {
   Uri? lastUri;
@@ -421,22 +443,23 @@ void main() {
       networkDioClient.dio.httpClientAdapter = adapter;
     });
 
-    test('walks every page', () async {
+    test('loads every id in one request', () async {
       final ids = await CardService.listFactIds('deck-1');
 
       expect(ids, hasLength(450));
-      expect(adapter.factListOffsets, [
-        0,
-        50,
-        100,
-        150,
-        200,
-        250,
-        300,
-        350,
-        400,
-        450,
-      ]);
+      expect(adapter.factIdsRequestCount, 1);
+    });
+
+    test('skips null ids and answers empty on a bad payload', () async {
+      networkDioClient.dio.httpClientAdapter = _FactIdsPayloadAdapter({
+        'fact_ids': ['a', null, 'b'],
+      });
+      expect(await CardService.listFactIds('deck-1'), ['a', 'b']);
+
+      networkDioClient.dio.httpClientAdapter = _FactIdsPayloadAdapter({
+        'facts': [],
+      });
+      expect(await CardService.listFactIds('deck-1'), isEmpty);
     });
 
     test('answers empty when the list cannot be read', () async {

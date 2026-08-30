@@ -1569,6 +1569,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get qaModeColumnEmpty => '该列没有可核验的内容';
 
   @override
+  String get qaModeChooseColumns => '选择列';
+
+  @override
+  String get qaModeChooseColumnsHint => '本次 QA 只显示所选列。选择会为本卡组记住。';
+
+  @override
+  String get qaModeStartWalk => '开始 QA';
+
+  @override
+  String qaModeColumnComplete(String label, int percent) {
+    return '$label $percent%';
+  }
+
+  @override
+  String qaModeColumnPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
   String get qaModePrevious => '上一条';
 
   @override

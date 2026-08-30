@@ -149,7 +149,7 @@ Fail POST after a good PATCH: overlay is saved locally; toast; retry POST. Do no
 
 ## Queue / UI
 
-Fact ids come one page at a time (`listFactIdsPage`): the first page renders fact 1, the rest stream in behind it, since a whole-deck id walk costs one request per 50 facts. One row per entry (`FactContent` inline + checkbox, `deck.fields[i]`). Audio uses snapshot `media_versions` from `GET .../facts/{factId}` (`/api/media/{id}?v={pinned}`), not deck `source_version` (copy-on-write media often pins an older `v`). Cubit: `factIds`, `index`, `checkedEntryIndexes`, outside `DeckStudyBloc`.
+Fact ids come from one `GET …/facts/ids` (`CardService.listFactIds` → `data.fact_ids`). Before the walk, the reviewer picks which deck columns to include (saved per import deck in `SharedPreferences`); the picker lists every deck column with its deck-wide completion % from `GET …/quality/stats`. Only selected columns appear during the walk and count toward verify. Re-open the picker from the app bar to change columns mid-walk. Header shows fact progress, each active column’s completion %, and edited count. One row per active entry (`FactContent` inline + checkbox, `deck.fields[i]`). Audio uses snapshot `media_versions` from `GET .../facts/{factId}` (`/api/media/{id}?v={pinned}`), not deck `source_version` (copy-on-write media often pins an older `v`). Cubit: `factIds`, `index`, `activeColumnIndexes`, `checkedEntryIndexes`, outside `DeckStudyBloc`.
 
 ## Checklist
 

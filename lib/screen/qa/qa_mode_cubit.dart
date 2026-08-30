@@ -3,6 +3,7 @@ import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/features/contributions/pending_contributions_store.dart';
 import 'package:retentio/models/fact.dart';
 import 'package:retentio/models/fact_quality.dart';
+import 'package:retentio/screen/qa/qa_column_prefs.dart';
 import 'package:retentio/services/apis/card_service.dart';
 import 'package:retentio/services/apis/deck_catalog_service.dart';
 import 'package:retentio/services/apis/fact_quality_service.dart';
@@ -12,12 +13,14 @@ const String kQaEditMessage = 'QA edit';
 
 class QaModeState {
   const QaModeState({
-    this.loading = true,
+    this.loading = false,
+    this.pickingColumns = true,
     this.factIds = const [],
     this.index = 0,
     this.fact,
     this.quality,
     this.mediaVersions = const {},
+    this.activeColumnIndexes = const {},
     this.checkedIndexes = const {},
     this.stats,
     this.editedCount = 0,
@@ -25,6 +28,9 @@ class QaModeState {
   });
 
   final bool loading;
+
+  /// Column picker shown before the walk starts.
+  final bool pickingColumns;
   final List<String> factIds;
   final int index;
   final Fact? fact;
@@ -32,6 +38,9 @@ class QaModeState {
 
   /// Snapshot pin versions for media ids on the current fact (import decks).
   final Map<String, int> mediaVersions;
+
+  /// Deck columns included in this QA walk (entry indexes).
+  final Set<int> activeColumnIndexes;
 
   /// Columns the reviewer signs off on with the next Verified.
   final Set<int> checkedIndexes;
@@ -50,10 +59,11 @@ class QaModeState {
 
   bool get hasNext => index + 1 < factIds.length;
 
-  /// Columns with something to sign off on (text and/or audio present).
+  /// Active columns with something to sign off on (text and/or audio present).
   Set<int> get scoreableIndexes {
     final scoreable = <int>{};
     for (var i = 0; i < entries.length; i++) {
+      if (!activeColumnIndexes.contains(i)) continue;
       if (qaScoreableAspects(entries[i]).isNotEmpty) scoreable.add(i);
     }
     return scoreable;
@@ -65,25 +75,31 @@ class QaModeState {
     return scoreable.isNotEmpty && checkedIndexes.containsAll(scoreable);
   }
 
-  bool get factLoadFailed => !loading && factIds.isNotEmpty && fact == null;
+  bool get factLoadFailed =>
+      !loading && !pickingColumns && factIds.isNotEmpty && fact == null;
 
   QaModeState copyWith({
     bool? loading,
+    bool? pickingColumns,
     List<String>? factIds,
+    int? index,
     Fact? fact,
     FactQuality? quality,
     Map<String, int>? mediaVersions,
+    Set<int>? activeColumnIndexes,
     Set<int>? checkedIndexes,
     FactQualityStats? stats,
     int? editedCount,
     bool? busy,
   }) => QaModeState(
     loading: loading ?? this.loading,
+    pickingColumns: pickingColumns ?? this.pickingColumns,
     factIds: factIds ?? this.factIds,
-    index: index,
+    index: index ?? this.index,
     fact: fact ?? this.fact,
     quality: quality ?? this.quality,
     mediaVersions: mediaVersions ?? this.mediaVersions,
+    activeColumnIndexes: activeColumnIndexes ?? this.activeColumnIndexes,
     checkedIndexes: checkedIndexes ?? this.checkedIndexes,
     stats: stats ?? this.stats,
     editedCount: editedCount ?? this.editedCount,
@@ -95,60 +111,107 @@ class QaModeState {
 /// `fact_edit` submission. Kept out of the study bloc so a broken quality API
 /// only affects this screen.
 class QaModeCubit extends Cubit<QaModeState> {
-  QaModeCubit({required this.deckId}) : super(const QaModeState());
+  QaModeCubit({required this.deckId, required this.deckFieldCount})
+    : super(const QaModeState());
 
   final String deckId;
+  final int deckFieldCount;
 
-  /// Shows the first fact after one page of ids; the rest stream in behind it,
-  /// because a whole-deck id walk costs one request per 50 facts.
-  Future<void> load() async {
-    emit(QaModeState(editedCount: state.editedCount));
+  /// Loads a saved column pick, or every deck field when none is stored.
+  Future<Set<int>> initialColumnSelection() async {
+    final saved = await QaColumnPrefs.load(deckId);
+    final count = deckFieldCount > 0 ? deckFieldCount : 1;
+    final all = {for (var i = 0; i < count; i++) i};
+    if (saved == null || saved.isEmpty) return all;
+    return saved.where((i) => i >= 0 && i < count).toSet().isEmpty
+        ? all
+        : saved.where((i) => i >= 0 && i < count).toSet();
+  }
+
+  /// Locks the column filter for this walk and loads facts.
+  Future<void> startWalk(Set<int> activeColumnIndexes) async {
+    if (activeColumnIndexes.isEmpty || state.busy) return;
+    await QaColumnPrefs.save(deckId, activeColumnIndexes);
+    final resumeWalk = state.factIds.isNotEmpty;
+    emit(
+      QaModeState(
+        pickingColumns: false,
+        loading: true,
+        activeColumnIndexes: Set<int>.of(activeColumnIndexes),
+        factIds: resumeWalk ? state.factIds : const [],
+        index: resumeWalk ? state.index : 0,
+        stats: state.stats,
+        editedCount: state.editedCount,
+      ),
+    );
+    if (resumeWalk) {
+      await _loadCurrentFact();
+      await _refreshHeader();
+    } else {
+      await _loadFacts();
+    }
+  }
+
+  /// Re-opens the column picker without losing walk progress counters.
+  void reopenColumnPicker() {
+    if (state.busy) return;
+    emit(
+      QaModeState(
+        pickingColumns: true,
+        activeColumnIndexes: state.activeColumnIndexes,
+        factIds: state.factIds,
+        index: state.index,
+        stats: state.stats,
+        editedCount: state.editedCount,
+      ),
+    );
+  }
+
+  /// Loads deck quality stats for the column picker and walk header.
+  Future<void> refreshStats() async {
+    final stats = await FactQualityService.of.getDeckQualityStats(deckId);
+    if (isClosed) return;
+    emit(state.copyWith(stats: stats));
+  }
+
+  Future<void> _loadFacts() async {
     final resumeId = (await FactQualityService.of.getDeckQualityStats(
       deckId,
     ))?.lastFactId;
     if (isClosed) return;
-    // With a resume cursor we need the whole id list to locate it (it may sit
-    // past the first page); otherwise keep the one-page fast paint.
-    final ids = resumeId == null
-        ? await CardService.listFactIdsPage(deckId)
-        : await CardService.listFactIds(deckId);
+    final ids = await CardService.listFactIds(deckId);
     if (isClosed) return;
-    // The cursor marks the last verified fact (advanced server-side on verify);
-    // resume just past it so the reviewer picks up at the next unreviewed fact.
     final verifiedIndex = resumeId == null ? -1 : ids.indexOf(resumeId);
     final startIndex = verifiedIndex >= 0
         ? (verifiedIndex + 1).clamp(0, ids.length - 1)
         : 0;
     emit(
-      QaModeState(
-        loading: ids.isNotEmpty,
-        factIds: ids,
-        index: startIndex,
-        editedCount: state.editedCount,
-      ),
+      state.copyWith(loading: ids.isNotEmpty, factIds: ids, index: startIndex),
     );
-    if (ids.isEmpty) return;
+    if (ids.isEmpty) {
+      emit(state.copyWith(loading: false));
+      return;
+    }
     await _loadCurrentFact();
     await _refreshHeader();
-    if (resumeId == null) await _loadRemainingIds();
   }
 
   Future<void> goTo(int index) async {
     if (state.busy || index < 0 || index >= state.factIds.length) return;
     emit(
-      QaModeState(
-        factIds: state.factIds,
+      state.copyWith(
         index: index,
-        stats: state.stats,
-        editedCount: state.editedCount,
+        fact: null,
+        quality: null,
+        mediaVersions: const {},
+        checkedIndexes: const {},
+        loading: true,
       ),
     );
     await _loadCurrentFact();
   }
 
   Future<void> next() async {
-    // Auto sign-off: signing the checked columns is what advances the
-    // server-side resume cursor, so send it silently before walking forward.
     if (state.checkedIndexes.isNotEmpty) {
       await verify();
     }
@@ -158,7 +221,7 @@ class QaModeCubit extends Cubit<QaModeState> {
   Future<void> prev() => goTo(state.index - 1);
 
   void toggleColumn(int entryIndex) {
-    if (state.busy) return;
+    if (state.busy || !state.activeColumnIndexes.contains(entryIndex)) return;
     final checked = Set<int>.of(state.checkedIndexes);
     if (!checked.remove(entryIndex)) {
       checked.add(entryIndex);
@@ -166,14 +229,13 @@ class QaModeCubit extends Cubit<QaModeState> {
     emit(state.copyWith(checkedIndexes: checked));
   }
 
-  /// `entries` payload the next Verified would PUT (shown in the confirm sheet).
   Map<String, dynamic> pendingPutEntries() => qaMergedQualityEntries(
     quality: state.quality,
     entries: state.entries,
     checkedIndexes: state.checkedIndexes,
+    activeColumnIndexes: state.activeColumnIndexes,
   );
 
-  /// Signs off the checked columns. Returns the raw API error, or `null` when ok.
   Future<String?> verify() async {
     final factId = state.factId;
     if (factId == null || state.checkedIndexes.isEmpty) return null;
@@ -204,8 +266,6 @@ class QaModeCubit extends Cubit<QaModeState> {
     return null;
   }
 
-  /// Freezes the overlay just saved by the fact editor as a `fact_edit`
-  /// contribution (QA skips the outbox). Returns the raw API error, or `null`.
   Future<String?> submitEdit({int? entryIndex}) async {
     final factId = state.factId;
     if (factId == null) return null;
@@ -240,7 +300,10 @@ class QaModeCubit extends Cubit<QaModeState> {
 
   Future<void> _loadCurrentFact() async {
     final factId = state.factId;
-    if (factId == null) return;
+    if (factId == null) {
+      emit(state.copyWith(loading: false));
+      return;
+    }
     final detail = await CardService.getFactDetail(deckId, factId);
     final fact = detail?.fact;
     final mediaVersions = detail?.mediaVersions ?? const <String, int>{};
@@ -260,18 +323,6 @@ class QaModeCubit extends Cubit<QaModeState> {
         checkedIndexes: const {},
       ),
     );
-  }
-
-  Future<void> _loadRemainingIds() async {
-    var offset = state.factIds.length;
-    while (offset > 0 &&
-        offset % CardService.factIdsPageSize == 0 &&
-        offset <= 10000) {
-      final page = await CardService.listFactIdsPage(deckId, offset: offset);
-      if (isClosed || page.isEmpty) return;
-      offset += page.length;
-      emit(state.copyWith(factIds: [...state.factIds, ...page]));
-    }
   }
 
   Future<void> _refreshHeader() async {

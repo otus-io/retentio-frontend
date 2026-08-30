@@ -82,6 +82,35 @@ void main() {
       expect(stats.lastFactId, 'fact-9');
     });
 
+    test('reads per-column counters', () {
+      final stats = FactQualityStats.fromJson({
+        'columns': {
+          '0': {'verified_aspects': 1, 'total_aspects': 4},
+          '1': {'verified_aspects': 0, 'total_aspects': 2},
+        },
+      });
+
+      expect(stats.columnAt(0)?.completionPercent, 25);
+      expect(stats.columnAt(1)?.completionPercent, 0);
+      expect(stats.columnAt(2), isNull);
+    });
+  });
+
+  group('FactQualityColumnStats', () {
+    test('rounds completion percent', () {
+      const stats = FactQualityColumnStats(verifiedAspects: 1, totalAspects: 3);
+      expect(stats.completionPercent, 33);
+      expect(
+        const FactQualityColumnStats(
+          verifiedAspects: 0,
+          totalAspects: 0,
+        ).completionPercent,
+        0,
+      );
+    });
+  });
+
+  group('FactQualityStats.fromJson resume cursor', () {
     test('leaves the cursor null when missing or empty', () {
       expect(FactQualityStats.fromJson({}).lastFactId, isNull);
       expect(
@@ -198,6 +227,32 @@ void main() {
       );
 
       expect(merged, isEmpty);
+    });
+
+    test('preserves quality on inactive columns', () {
+      final quality = FactQuality.fromJson({
+        'entries': {
+          '0': {
+            'text': {'score': 10, 'model': 'human'},
+          },
+          '1': {
+            'text': {'score': 2, 'model': 'claude'},
+          },
+        },
+      });
+
+      final merged = qaMergedQualityEntries(
+        quality: quality,
+        entries: entries,
+        checkedIndexes: const {},
+        activeColumnIndexes: {0},
+      );
+
+      expect(merged, {
+        '1': {
+          'text': {'score': 2, 'model': 'claude'},
+        },
+      });
     });
   });
 }

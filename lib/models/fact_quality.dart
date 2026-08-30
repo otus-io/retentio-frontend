@@ -56,6 +56,7 @@ class FactQualityStats {
     required this.verifiedAspects,
     required this.totalAspects,
     this.lastFactId,
+    this.columns = const {},
   });
 
   final int verifiedAspects;
@@ -64,14 +65,51 @@ class FactQualityStats {
   /// Server-stored QA resume cursor; `null` when never verified.
   final String? lastFactId;
 
+  /// Entry index → human-verification progress for that column.
+  final Map<int, FactQualityColumnStats> columns;
+
+  FactQualityColumnStats? columnAt(int index) => columns[index];
+
   factory FactQualityStats.fromJson(Map<String, dynamic> json) {
     final resume = json['last_fact_id']?.toString();
+    final columns = <int, FactQualityColumnStats>{};
+    final rawColumns = json['columns'];
+    if (rawColumns is Map) {
+      rawColumns.forEach((key, value) {
+        final index = int.tryParse(key.toString());
+        if (index == null || index < 0 || value is! Map) return;
+        columns[index] = FactQualityColumnStats.fromJson(
+          Map<String, dynamic>.from(value),
+        );
+      });
+    }
     return FactQualityStats(
       verifiedAspects: _toInt(json['verified_aspects']) ?? 0,
       totalAspects: _toInt(json['total_aspects']) ?? 0,
       lastFactId: (resume != null && resume.isNotEmpty) ? resume : null,
+      columns: columns,
     );
   }
+}
+
+/// Per-column human-verification counters from quality stats.
+class FactQualityColumnStats {
+  const FactQualityColumnStats({
+    required this.verifiedAspects,
+    required this.totalAspects,
+  });
+
+  final int verifiedAspects;
+  final int totalAspects;
+
+  int get completionPercent =>
+      totalAspects == 0 ? 0 : ((verifiedAspects * 100) / totalAspects).round();
+
+  factory FactQualityColumnStats.fromJson(Map<String, dynamic> json) =>
+      FactQualityColumnStats(
+        verifiedAspects: _toInt(json['verified_aspects']) ?? 0,
+        totalAspects: _toInt(json['total_aspects']) ?? 0,
+      );
 }
 
 /// Aspects a reviewer can sign off on for one column; empty when nothing to score.
@@ -89,9 +127,20 @@ Map<String, dynamic> qaMergedQualityEntries({
   FactQuality? quality,
   required List<FactEntry> entries,
   required Set<int> checkedIndexes,
+  Set<int>? activeColumnIndexes,
 }) {
   final merged = <String, dynamic>{};
   for (var i = 0; i < entries.length; i++) {
+    if (activeColumnIndexes != null && !activeColumnIndexes.contains(i)) {
+      final preserved = quality?.aspectsAt(i) ?? const {};
+      if (preserved.isNotEmpty) {
+        merged['$i'] = {
+          for (final entry in preserved.entries)
+            entry.key: entry.value.toJson(),
+        };
+      }
+      continue;
+    }
     final aspects = <String, FactQualityAspect>{};
     if (checkedIndexes.contains(i)) {
       for (final aspect in qaScoreableAspects(entries[i])) {

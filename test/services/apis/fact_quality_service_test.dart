@@ -37,7 +37,7 @@ void main() {
             },
           },
         },
-        stats: {'verified_aspects': 3, 'total_aspects': 8},
+        stats: {'verified_aspects': 3, 'total_aspects': 8, 'columns': {}},
       ),
     );
   });
@@ -46,6 +46,7 @@ void main() {
     test('point at the documented endpoints', () {
       expect(Api.factQuality, '/api/decks/{id}/facts/{factId}/quality');
       expect(Api.deckQualityStats, '/api/decks/{id}/quality/stats');
+      expect(Api.factIds, '/api/decks/{id}/facts/ids');
     });
   });
 

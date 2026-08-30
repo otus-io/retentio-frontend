@@ -1261,6 +1261,20 @@
     "placeholders": { "count": { "type": "int" } }
   },
   "qaModeColumnEmpty": "该列没有可核验的内容",
+  "qaModeChooseColumns": "选择列",
+  "qaModeChooseColumnsHint": "本次 QA 只显示所选列。选择会为本卡组记住。",
+  "qaModeStartWalk": "开始 QA",
+  "qaModeColumnComplete": "{label} {percent}%",
+  "@qaModeColumnComplete": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "percent": { "type": "int" }
+    }
+  },
+  "qaModeColumnPercent": "{percent}%",
+  "@qaModeColumnPercent": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
   "qaModePrevious": "上一条",
   "qaModeVerify": "已核验",
   "qaVerifyConfirmTitle": "发送核验",

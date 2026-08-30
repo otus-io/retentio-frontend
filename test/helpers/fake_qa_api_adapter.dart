@@ -1,10 +1,9 @@
 import 'dart:convert';
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 
-/// Serves the endpoints QA mode talks to: fact list, fact detail, fact quality,
+/// Serves the endpoints QA mode talks to: fact ids, fact detail, fact quality,
 /// deck quality stats, and the `fact_edit` contribution POST.
 class FakeQaApiAdapter implements HttpClientAdapter {
   FakeQaApiAdapter({
@@ -38,8 +37,8 @@ class FakeQaApiAdapter implements HttpClientAdapter {
   final List<Map<String, dynamic>> contributionPosts = [];
   final List<String> factPatches = [];
 
-  /// `offset` of every fact list request, in order.
-  final List<int> factListOffsets = [];
+  /// How many times `GET …/facts/ids` was hit.
+  int factIdsRequestCount = 0;
 
   @override
   Future<ResponseBody> fetch(
@@ -97,19 +96,9 @@ class FakeQaApiAdapter implements HttpClientAdapter {
       return _ok({'contribution_id': 'cont-1'}, statusCode: 201);
     }
 
-    if (method == 'GET' && path.endsWith('/facts')) {
-      final query = options.queryParameters;
-      final limit = int.tryParse('${query['limit']}') ?? factIds.length;
-      final offset = int.tryParse('${query['offset']}') ?? 0;
-      factListOffsets.add(offset);
-      final page = offset >= factIds.length
-          ? const <String>[]
-          : factIds.sublist(offset, min(offset + limit, factIds.length));
-      return _ok({
-        'facts': [
-          for (final id in page) {'id': id},
-        ],
-      });
+    if (method == 'GET' && path.endsWith('/facts/ids')) {
+      factIdsRequestCount++;
+      return _ok({'fact_ids': factIds});
     }
 
     if (method == 'GET' && path.contains('/facts/')) {
