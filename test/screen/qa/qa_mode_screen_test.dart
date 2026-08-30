@@ -184,6 +184,23 @@ void main() {
       expect(checkboxes.map((c) => c.value), [false, false]);
     });
 
+    testWidgets('Next stays disabled until every scoreable column is checked', (
+      tester,
+    ) async {
+      useAdapter();
+      await pumpQaMode(tester);
+
+      expect(find.widgetWithText(OutlinedButton, 'Next'), findsOneWidget);
+
+      await tester.tap(find.text('日文'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(OutlinedButton, 'Next'), findsOneWidget);
+
+      await tester.tap(find.text('中文'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(FilledButton, 'Next'), findsOneWidget);
+    });
+
     testWidgets('Next sends quality for checked columns and advances', (
       tester,
     ) async {
@@ -194,7 +211,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('中文'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Next'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Next'));
       await tester.pumpAndSettle();
 
       expect(adapter.qualityPuts, hasLength(1));
@@ -237,7 +254,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('中文'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Next'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Next'));
       await tester.pumpAndSettle();
 
       expect(find.text('Fact is not in the pinned snapshot'), findsOneWidget);
@@ -251,7 +268,11 @@ void main() {
       useAdapter();
       await pumpQaMode(tester);
 
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Next'));
+      await tester.tap(find.text('日文'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('中文'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Next'));
       await tester.pumpAndSettle();
 
       expect(find.text('second'), findsOneWidget);

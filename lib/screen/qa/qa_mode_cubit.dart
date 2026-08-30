@@ -75,6 +75,15 @@ class QaModeState {
     return scoreable.isNotEmpty && checkedIndexes.containsAll(scoreable);
   }
 
+  /// Whether the walk may advance: every scoreable column is checked, or none
+  /// need verification on this fact.
+  bool get canAdvance {
+    if (fact == null || busy) return false;
+    final scoreable = scoreableIndexes;
+    if (scoreable.isEmpty) return true;
+    return checkedIndexes.containsAll(scoreable);
+  }
+
   bool get factLoadFailed =>
       !loading && !pickingColumns && factIds.isNotEmpty && fact == null;
 
@@ -212,7 +221,8 @@ class QaModeCubit extends Cubit<QaModeState> {
   }
 
   Future<String?> next() async {
-    if (state.checkedIndexes.isNotEmpty) {
+    if (!state.canAdvance) return null;
+    if (state.canVerify) {
       final error = await verify();
       if (error != null) return error;
     }

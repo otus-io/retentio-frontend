@@ -453,7 +453,7 @@ class _QaFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final cubit = context.read<QaModeCubit>();
-    final ready = state.canVerify;
+    final ready = state.canAdvance;
     return Padding(
       padding: _kQaPadding,
       child: Column(
@@ -464,7 +464,9 @@ class _QaFooter extends StatelessWidget {
                 child: AppButton(
                   label: loc.qaModePrevious,
                   size: AppButtonSize.sm,
-                  variant: AppButtonVariant.secondary,
+                  variant: !ready && state.hasPrev
+                      ? AppButtonVariant.primary
+                      : AppButtonVariant.secondary,
                   onPressed: state.hasPrev && !state.busy ? cubit.prev : null,
                 ),
               ),
@@ -473,8 +475,12 @@ class _QaFooter extends StatelessWidget {
                 child: AppButton(
                   label: loc.next,
                   size: AppButtonSize.sm,
-                  variant: AppButtonVariant.secondary,
-                  onPressed: state.hasNext && !state.busy ? onNext : null,
+                  variant: ready
+                      ? AppButtonVariant.primary
+                      : AppButtonVariant.secondary,
+                  onPressed: state.hasNext && ready && !state.busy
+                      ? onNext
+                      : null,
                 ),
               ),
             ],

@@ -196,6 +196,8 @@ void main() {
     test('next and prev walk the fact list', () async {
       final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
       await startWalk(cubit);
+      cubit.toggleColumn(0);
+      cubit.toggleColumn(1);
 
       await cubit.next();
       expect(cubit.state.index, 1);
@@ -207,11 +209,36 @@ void main() {
       await cubit.close();
     });
 
+    test(
+      'next does not advance until every scoreable column is checked',
+      () async {
+        final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+        await startWalk(cubit);
+        expect(cubit.state.canAdvance, isFalse);
+
+        expect(await cubit.next(), isNull);
+        expect(cubit.state.index, 0);
+        expect(adapter.qualityPuts, isEmpty);
+
+        cubit.toggleColumn(0);
+        expect(cubit.state.canAdvance, isFalse);
+        expect(await cubit.next(), isNull);
+        expect(cubit.state.index, 0);
+
+        cubit.toggleColumn(1);
+        expect(cubit.state.canAdvance, isTrue);
+        await cubit.next();
+        expect(cubit.state.index, 1);
+        await cubit.close();
+      },
+    );
+
     test('auto-signs the checked columns before advancing', () async {
       buildAdapter(stats: {'verified_aspects': 0, 'total_aspects': 3});
       final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
       await startWalk(cubit);
       cubit.toggleColumn(0);
+      cubit.toggleColumn(1);
 
       expect(await cubit.next(), isNull);
 
@@ -226,6 +253,7 @@ void main() {
       final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
       await startWalk(cubit);
       cubit.toggleColumn(0);
+      cubit.toggleColumn(1);
 
       expect(await cubit.next(), 'fact not in pinned snapshot');
       expect(cubit.state.index, 0);
@@ -474,6 +502,8 @@ void main() {
     test('reopenColumnPicker keeps walk position', () async {
       final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
       await startWalk(cubit);
+      cubit.toggleColumn(0);
+      cubit.toggleColumn(1);
       await cubit.next();
 
       cubit.reopenColumnPicker();
