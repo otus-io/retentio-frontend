@@ -20,14 +20,13 @@ import 'package:retentio/widgets/common_bottom_sheet.dart';
 const _kQaPadding = EdgeInsets.symmetric(horizontal: 16, vertical: 12);
 const _kQaMessagePadding = EdgeInsets.all(24);
 
-/// Playable URL for a pinned snapshot audio id.
+/// Playable URL for a fact entry audio id (or absolute/relative URL).
 ///
-/// Prefer [mediaVersions] (snapshot `media_versions` for this id). Falling back
-/// to [sourceVersion] is wrong when the blob was copy-on-write at an older
-/// publish (curl evidence: `?v=1` 200, `?v=19` 404).
+/// Snapshot / published media: use [mediaVersions] pin → `/api/media/{id}?v=…`.
+/// Overlay / working-copy media (e.g. QA just uploaded): omit `v` — a deck
+/// [sourceVersion] fallback 404s because fresh uploads have no published blob.
 String? qaAudioUrl({
   required String audioId,
-  required int sourceVersion,
   Map<String, int> mediaVersions = const {},
 }) {
   final id = audioId.trim();
@@ -38,8 +37,10 @@ String? qaAudioUrl({
     return id;
   }
   final pinned = mediaVersions[id];
-  final resolved = (pinned != null && pinned > 0) ? pinned : sourceVersion;
-  return resolved > 0 ? '/api/media/$id?v=$resolved' : '/api/media/$id';
+  if (pinned != null && pinned > 0) {
+    return '/api/media/$id?v=$pinned';
+  }
+  return '/api/media/$id';
 }
 
 /// Human QA walk over an imported deck: sign off columns, edit the bad ones.
@@ -184,7 +185,6 @@ class _QaModeView extends StatelessWidget {
                           label: _label(context, state, i),
                           audioUrl: qaAudioUrl(
                             audioId: state.entries[i].audio,
-                            sourceVersion: deck.sourceVersion,
                             mediaVersions: state.mediaVersions,
                           ),
                           checked: state.checkedIndexes.contains(i),

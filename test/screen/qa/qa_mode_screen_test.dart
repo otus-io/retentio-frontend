@@ -124,35 +124,33 @@ void main() {
   }
 
   group('qaAudioUrl', () {
-    test('builds a snapshot media URL and passes absolute ones through', () {
-      expect(qaAudioUrl(audioId: ' ', sourceVersion: 15), isNull);
-      expect(
-        qaAudioUrl(audioId: 'aud1', sourceVersion: 15),
-        '/api/media/aud1?v=15',
-      );
-      expect(qaAudioUrl(audioId: 'aud1', sourceVersion: 0), '/api/media/aud1');
-      expect(
-        qaAudioUrl(audioId: '/api/media/aud1', sourceVersion: 15),
-        '/api/media/aud1',
-      );
-      expect(
-        qaAudioUrl(audioId: 'https://cdn/aud1', sourceVersion: 15),
-        'https://cdn/aud1',
-      );
-      expect(
-        qaAudioUrl(audioId: 'http://cdn/aud1', sourceVersion: 15),
-        'http://cdn/aud1',
-      );
+    test('builds a media URL and passes absolute ones through', () {
+      expect(qaAudioUrl(audioId: ' '), isNull);
+      expect(qaAudioUrl(audioId: 'aud1'), '/api/media/aud1');
+      expect(qaAudioUrl(audioId: '/api/media/aud1'), '/api/media/aud1');
+      expect(qaAudioUrl(audioId: 'https://cdn/aud1'), 'https://cdn/aud1');
+      expect(qaAudioUrl(audioId: 'http://cdn/aud1'), 'http://cdn/aud1');
     });
 
-    test('prefers pinned media_versions over deck sourceVersion', () {
+    test('uses pinned media_versions when present', () {
       expect(
         qaAudioUrl(
           audioId: 'eloc-00gqha52-2-21359-6677192576',
-          sourceVersion: 19,
           mediaVersions: {'eloc-00gqha52-2-21359-6677192576': 1},
         ),
         '/api/media/eloc-00gqha52-2-21359-6677192576?v=1',
+      );
+    });
+
+    test('omits v for overlay ids not in media_versions', () {
+      // Fresh QA upload is owner working copy; ?v=sourceVersion would 404.
+      expect(
+        qaAudioUrl(audioId: 'newaud0001', mediaVersions: {'oldsnap001': 1}),
+        '/api/media/newaud0001',
+      );
+      expect(
+        qaAudioUrl(audioId: 'newaud0001', mediaVersions: {'newaud0001': 0}),
+        '/api/media/newaud0001',
       );
     });
   });
