@@ -45,6 +45,21 @@ void main() {
       expect(find.text('さん'), findsOneWidget);
     });
 
+    testWidgets('empty-base reading [[|み]] still renders on cards', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: wikiRubyWrappedText(text: 'あ[[|み]]い', baseStyle: base),
+          ),
+        ),
+      );
+      expect(find.text('み'), findsOneWidget);
+      expect(find.text('あ'), findsOneWidget);
+      expect(find.text('い'), findsOneWidget);
+    });
+
     testWidgets('Chinese pinyin appears above hanzi', (tester) async {
       await tester.pumpWidget(
         MaterialApp(

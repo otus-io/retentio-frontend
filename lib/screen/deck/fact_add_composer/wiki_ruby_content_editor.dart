@@ -870,7 +870,9 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
       textDirection: TextDirection.ltr,
       maxLines: 1,
     )..layout();
-    return painter.width.clamp(_kPlainFieldMinWidth, double.infinity);
+    final width = painter.width;
+    painter.dispose();
+    return width.clamp(_kPlainFieldMinWidth, double.infinity);
   }
 }
 

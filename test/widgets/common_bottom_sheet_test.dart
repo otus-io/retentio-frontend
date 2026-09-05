@@ -186,6 +186,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(DraggableScrollableSheet), findsNothing);
+      expect(find.byKey(const Key('sheet_drag_handle')), findsNothing);
       final sizedBoxes = tester.widgetList<SizedBox>(
         find.descendant(
           of: find.byType(BottomSheet),

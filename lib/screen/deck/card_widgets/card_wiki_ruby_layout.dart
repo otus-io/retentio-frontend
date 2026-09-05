@@ -47,6 +47,9 @@ Widget _wikiRubyCell(WikiSegRuby seg, TextStyle base, TextStyle ruby) {
 }
 
 /// Inline widgets for composed surface `[pos, end)`, or null if a ruby unit is split.
+///
+/// Zero-width [WikiSegRuby] segments (empty-base `[[|reading]]`) are emitted at
+/// their anchor index so card layout can still show the reading.
 List<Widget>? wikiRubyRowWidgetsForRange(
   WikiRubyParseResult parsed,
   int pos,
@@ -56,6 +59,18 @@ List<Widget>? wikiRubyRowWidgetsForRange(
 ) {
   final out = <Widget>[];
   var p = pos;
+
+  void addZeroWidthRubiesAt(int at) {
+    for (final seg in parsed.segments) {
+      if (seg is WikiSegRuby &&
+          seg.composedStart == at &&
+          seg.composedEnd == at) {
+        out.add(_wikiRubyCell(seg, base, ruby));
+      }
+    }
+  }
+
+  addZeroWidthRubiesAt(p);
   while (p < end) {
     final seg = parsed.segmentAt(p);
     if (seg == null) return null;
@@ -72,6 +87,7 @@ List<Widget>? wikiRubyRowWidgetsForRange(
     } else {
       return null;
     }
+    addZeroWidthRubiesAt(p);
   }
   return out;
 }

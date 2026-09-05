@@ -57,6 +57,7 @@ Future<T?> showCommonBottomSheet<T>({
   final resolvedExpand = fullScreen || expandSheet;
   final resolvedUseSafeArea = fullScreen || useSafeArea;
   final resolvedEnableDrag = fullScreen ? false : enableDrag;
+  final resolvedShowHandle = showDragHandle ?? resolvedEnableDrag;
   final resolvedSheetAnimationStyle = sheetAnimationStyle;
 
   return showModalBottomSheet<T>(
@@ -68,6 +69,18 @@ Future<T?> showCommonBottomSheet<T>({
       final titleStyle = theme.textTheme.titleLarge;
       final handleColor = scheme.outline.withValues(
         alpha: _kSheetHandleOpacity,
+      );
+      final handle = Center(
+        child: Container(
+          key: const Key('sheet_drag_handle'),
+          width: _kSheetHandleWidth,
+          height: _kSheetHandleHeight,
+          margin: const EdgeInsets.only(bottom: _kSheetHandleBottomMargin),
+          decoration: BoxDecoration(
+            color: handleColor,
+            borderRadius: BorderRadius.circular(_kSheetHandleRadius),
+          ),
+        ),
       );
       // Outer inset lifts the sheet above the keyboard without shrinking a
       // DraggableScrollableSheet (these paths have none).
@@ -100,21 +113,7 @@ Future<T?> showCommonBottomSheet<T>({
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Center(
-                                child: Container(
-                                  width: _kSheetHandleWidth,
-                                  height: _kSheetHandleHeight,
-                                  margin: const EdgeInsets.only(
-                                    bottom: _kSheetHandleBottomMargin,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: handleColor,
-                                    borderRadius: BorderRadius.circular(
-                                      _kSheetHandleRadius,
-                                    ),
-                                  ),
-                                ),
-                              ),
+                              if (resolvedShowHandle) handle,
                               if (title != null && title.isNotEmpty)
                                 Text(title, style: titleStyle),
                               const SizedBox(height: _kSheetTitleGapFullScreen),
@@ -173,21 +172,7 @@ Future<T?> showCommonBottomSheet<T>({
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Center(
-                              child: Container(
-                                width: _kSheetHandleWidth,
-                                height: _kSheetHandleHeight,
-                                margin: const EdgeInsets.only(
-                                  bottom: _kSheetHandleBottomMargin,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: handleColor,
-                                  borderRadius: BorderRadius.circular(
-                                    _kSheetHandleRadius,
-                                  ),
-                                ),
-                              ),
-                            ),
+                            if (resolvedShowHandle) handle,
                             if (title != null && title.isNotEmpty)
                               Text(
                                 title,
@@ -242,21 +227,7 @@ Future<T?> showCommonBottomSheet<T>({
                           mainAxisSize: MainAxisSize.max,
                           children: [
                             // Drag indicator.
-                            Center(
-                              child: Container(
-                                width: _kSheetHandleWidth,
-                                height: _kSheetHandleHeight,
-                                margin: const EdgeInsets.only(
-                                  bottom: _kSheetHandleBottomMargin,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: handleColor,
-                                  borderRadius: BorderRadius.circular(
-                                    _kSheetHandleRadius,
-                                  ),
-                                ),
-                              ),
-                            ),
+                            if (resolvedShowHandle) handle,
                             Center(
                               child: Text(
                                 title ?? '',

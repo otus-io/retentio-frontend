@@ -67,7 +67,7 @@ Widget wikiRubySelectionToolbar({
         scheduleRubyWrap(start: start, end: end);
       }
 
-      final rubyButton = _WikiRubyToolbarButton(
+      final rubyButton = WikiRubyToolbarButton(
         label: loc.factRubyMenuLabel,
         onActivate: onRubyActivate,
       );
@@ -87,22 +87,70 @@ Widget wikiRubySelectionToolbar({
   );
 }
 
-/// Ruby menu row: [onPointerDown] runs before selection can collapse and rebuild
-/// the toolbar without the Ruby action (macOS/iOS selection menu race).
-class _WikiRubyToolbarButton extends StatelessWidget {
-  const _WikiRubyToolbarButton({required this.label, required this.onActivate});
+/// Ruby menu row: arms on pointer-down (before selection collapse) but fires at
+/// most once per gesture and drops a pending activate on cancel.
+@visibleForTesting
+class WikiRubyToolbarButton extends StatefulWidget {
+  const WikiRubyToolbarButton({
+    super.key,
+    required this.label,
+    required this.onActivate,
+  });
 
   final String label;
   final VoidCallback onActivate;
 
   @override
+  State<WikiRubyToolbarButton> createState() => WikiRubyToolbarButtonState();
+}
+
+@visibleForTesting
+class WikiRubyToolbarButtonState extends State<WikiRubyToolbarButton> {
+  int? _pointer;
+  bool _pending = false;
+  bool _fired = false;
+
+  void _arm(int pointer) {
+    if (_pointer != null) return;
+    _pointer = pointer;
+    _pending = true;
+    _fired = false;
+    // Defer one frame so pointer-cancel in the same gesture can abort.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _pointer != pointer || !_pending || _fired) return;
+      _fire();
+    });
+  }
+
+  void _fire() {
+    if (_fired || !_pending) return;
+    _fired = true;
+    _pending = false;
+    widget.onActivate();
+  }
+
+  void _cancel(int pointer) {
+    if (_pointer != pointer) return;
+    _pending = false;
+    _pointer = null;
+  }
+
+  void _complete(int pointer) {
+    if (_pointer != pointer) return;
+    if (_pending && !_fired) _fire();
+    _pointer = null;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final visual = AdaptiveTextSelectionToolbar.getAdaptiveButtons(context, [
-      ContextMenuButtonItem(label: label, onPressed: onActivate),
+      ContextMenuButtonItem(label: widget.label, onPressed: widget.onActivate),
     ]).first;
     return Listener(
       behavior: HitTestBehavior.opaque,
-      onPointerDown: (_) => onActivate(),
+      onPointerDown: (event) => _arm(event.pointer),
+      onPointerCancel: (event) => _cancel(event.pointer),
+      onPointerUp: (event) => _complete(event.pointer),
       child: AbsorbPointer(child: visual),
     );
   }

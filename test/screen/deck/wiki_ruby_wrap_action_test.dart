@@ -174,4 +174,38 @@ void main() {
     expect(find.text('Reading for 見'), findsNothing);
     expect(controller.text, '[[見|]]せて');
   });
+
+  testWidgets('toolbar button activates once per gesture and skips cancel', (
+    tester,
+  ) async {
+    var activations = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: WikiRubyToolbarButton(
+            label: 'Ruby',
+            onActivate: () => activations++,
+          ),
+        ),
+      ),
+    );
+
+    final center = tester.getCenter(find.text('Ruby'));
+    final gesture = await tester.startGesture(center);
+    // Cancel before the deferred frame callback runs.
+    await gesture.cancel();
+    await tester.pump();
+    expect(activations, 0);
+
+    final gesture2 = await tester.startGesture(center);
+    await gesture2.up();
+    await tester.pump();
+    expect(activations, 1);
+
+    // Second complete gesture can activate again.
+    final gesture3 = await tester.startGesture(center);
+    await gesture3.up();
+    await tester.pump();
+    expect(activations, 2);
+  });
 }

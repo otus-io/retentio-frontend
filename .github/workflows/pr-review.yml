@@ -13,9 +13,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Job 1: Auto-fill PR description (only on opened)
+  # Job 1: Claude narrative on open; Diff size on open and every push
   summarize:
-    if: github.event.pull_request.draft == false && github.event.action == 'opened'
+    if: github.event.pull_request.draft == false && (github.event.action == 'opened' || github.event.action == 'synchronize')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -31,6 +31,7 @@ jobs:
             const pull_number = context.payload.pull_request.number;
             const prTitle = context.payload.pull_request.title;
             const prBody = context.payload.pull_request.body || '';
+            const isOpen = context.payload.action === 'opened';
 
             const hasContent = prBody.includes('[x]') ||
               (prBody.includes('## Description') &&
@@ -104,7 +105,8 @@ jobs:
 
             let body = prBody;
 
-            if (!hasContent) {
+            // Narrative Claude fill only when the PR is first opened and empty.
+            if (isOpen && !hasContent) {
               if (!process.env.ANTHROPIC_API_KEY) {
                 core.setFailed('ANTHROPIC_API_KEY secret is not set.');
                 return;
@@ -205,7 +207,7 @@ jobs:
                 body = body.replace(/\n{3,}/g, '\n\n').trim();
                 console.log(`PR #${pull_number} description auto-filled by Claude`);
               }
-            } else {
+            } else if (isOpen) {
               console.log('PR body already has content, skipping Claude auto-fill');
             }
 
