@@ -267,14 +267,15 @@ class QaModeCubit extends Cubit<QaModeState> {
       factId: factId,
     );
     if (isClosed) return null;
+    await _refreshHeader();
+    if (isClosed) return null;
     if (quality == null) {
-      emit(state.copyWith(busy: false));
+      emit(state.copyWith(busy: false, checkedIndexes: const {}));
     } else {
       emit(
         state.copyWith(busy: false, quality: quality, checkedIndexes: const {}),
       );
     }
-    await _refreshHeader();
     return null;
   }
 

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -152,24 +151,6 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
     try {
       final path = await ensureAudioCached(audioUrl);
       if (path == null) {
-        // #region agent log
-        try {
-          File(
-            '/Users/qktrn/otusio/.cursor/debug-d87415.log',
-          ).writeAsStringSync(
-            '${jsonEncode({
-              'sessionId': 'd87415',
-              'hypothesisId': 'B',
-              'location': 'audio_player.dart:_loadAudio',
-              'message': 'audio cache failed',
-              'data': {'audioUrl': audioUrl},
-              'timestamp': DateTime.now().millisecondsSinceEpoch,
-            })}\n',
-            mode: FileMode.append,
-            flush: true,
-          );
-        } catch (_) {}
-        // #endregion
         logger.e('音频缓存失败');
         if (ref.mounted) {
           state = state.copyWith(loadFailed: true);

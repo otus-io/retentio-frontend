@@ -481,7 +481,7 @@ class _QaFooter extends StatelessWidget {
                   variant: ready
                       ? AppButtonVariant.primary
                       : AppButtonVariant.secondary,
-                  onPressed: state.hasNext && ready && !state.busy
+                  onPressed: (state.hasNext || ready) && !state.busy
                       ? onNext
                       : null,
                 ),

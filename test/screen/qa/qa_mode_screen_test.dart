@@ -253,6 +253,30 @@ void main() {
       expect(find.textContaining('Fact 2 / 2'), findsOneWidget);
     });
 
+    testWidgets('Next verifies the last fact without requiring hasNext', (
+      tester,
+    ) async {
+      useAdapter(factIds: const ['fact-1']);
+      await pumpQaMode(tester);
+
+      expect(find.textContaining('Fact 1 / 1'), findsOneWidget);
+
+      await tester.tap(find.text('日文'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('中文'));
+      await tester.pumpAndSettle();
+
+      final next = find.widgetWithText(FilledButton, 'Next');
+      expect(next, findsOneWidget);
+      expect(tester.widget<FilledButton>(next).onPressed, isNotNull);
+
+      await tester.tap(next);
+      await tester.pumpAndSettle();
+
+      expect(adapter.qualityPuts, hasLength(1));
+      expect(find.textContaining('Fact 1 / 1'), findsOneWidget);
+    });
+
     testWidgets('Verified is not tappable and fills when all columns checked', (
       tester,
     ) async {

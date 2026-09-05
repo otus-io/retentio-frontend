@@ -248,6 +248,23 @@ void main() {
       await cubit.close();
     });
 
+    test('next verifies the last fact without advancing', () async {
+      buildAdapter(factIds: const ['fact-1']);
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await startWalk(cubit);
+      cubit.toggleColumn(0);
+      cubit.toggleColumn(1);
+
+      expect(cubit.state.hasNext, isFalse);
+      expect(await cubit.next(), isNull);
+
+      expect(adapter.qualityPuts, hasLength(1));
+      expect(cubit.state.index, 0);
+      expect(cubit.state.checkedIndexes, isEmpty);
+      expect(cubit.state.busy, isFalse);
+      await cubit.close();
+    });
+
     test('next returns the API message when verify fails', () async {
       buildAdapter(qualityPutFails: true);
       final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
@@ -340,7 +357,7 @@ void main() {
       await cubit.close();
     });
 
-    test('keeps state when the record cannot be re-read', () async {
+    test('clears checkboxes when the record cannot be re-read', () async {
       final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
       await startWalk(cubit);
       cubit.toggleColumn(1);
@@ -348,7 +365,7 @@ void main() {
       expect(await cubit.verify(), isNull);
 
       expect(cubit.state.quality, isNull);
-      expect(cubit.state.checkedIndexes, <int>{1});
+      expect(cubit.state.checkedIndexes, isEmpty);
       expect(cubit.state.busy, isFalse);
       await cubit.close();
     });
