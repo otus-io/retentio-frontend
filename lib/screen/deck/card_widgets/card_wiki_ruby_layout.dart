@@ -29,13 +29,22 @@ Widget wikiRubyCellWidget({
   ),
 );
 
-Widget _wikiRubyCell(WikiSegRuby seg, TextStyle base, TextStyle ruby) =>
-    wikiRubyCellWidget(
-      kanji: seg.kanji,
-      reading: seg.reading,
-      baseStyle: base,
-      rubyStyle: ruby,
-    );
+Widget _wikiRubyCell(WikiSegRuby seg, TextStyle base, TextStyle ruby) {
+  // Pending empty reading (inline add) renders as plain base on cards.
+  if (seg.reading.isEmpty) {
+    return Text(seg.kanji, style: base);
+  }
+  // Pending empty base (cleared kanji) renders reading as plain.
+  if (seg.kanji.isEmpty) {
+    return Text(seg.reading, style: base);
+  }
+  return wikiRubyCellWidget(
+    kanji: seg.kanji,
+    reading: seg.reading,
+    baseStyle: base,
+    rubyStyle: ruby,
+  );
+}
 
 /// Inline widgets for composed surface `[pos, end)`, or null if a ruby unit is split.
 List<Widget>? wikiRubyRowWidgetsForRange(

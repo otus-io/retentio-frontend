@@ -14,12 +14,28 @@ void main() {
       expect(WikiRubyMarkup.compose(pieces), raw);
     });
 
-    test('compose omits invalid ruby when reading is empty', () {
+    test('compose keeps pending empty reading markup', () {
       final out = WikiRubyMarkup.compose([
         const WikiRubyComposeRuby(kanji: '建', reading: ''),
         const WikiRubyComposePlain('ます'),
       ]);
-      expect(out, '建ます');
+      expect(out, '[[建|]]ます');
+    });
+
+    test('compose keeps pending empty base markup', () {
+      final out = WikiRubyMarkup.compose([
+        const WikiRubyComposeRuby(kanji: '', reading: 'み'),
+        const WikiRubyComposePlain('せて'),
+      ]);
+      expect(out, '[[|み]]せて');
+    });
+
+    test('compose drops ruby when both sides are empty', () {
+      final out = WikiRubyMarkup.compose([
+        const WikiRubyComposeRuby(kanji: '', reading: ''),
+        const WikiRubyComposePlain('せて'),
+      ]);
+      expect(out, 'せて');
     });
 
     test('decompose empty string yields empty compose pieces', () {
@@ -53,10 +69,15 @@ void main() {
       );
     });
 
-    test('returns null for empty range or blank reading', () {
+    test('wraps with empty reading for inline add', () {
       expect(
-        WikiRubyMarkup.wrapSelection(text: '見', start: 0, end: 0, reading: 'み'),
-        isNull,
+        WikiRubyMarkup.wrapSelection(
+          text: '見せて',
+          start: 0,
+          end: 1,
+          reading: '',
+        ),
+        '[[見|]]せて',
       );
       expect(
         WikiRubyMarkup.wrapSelection(
@@ -65,6 +86,13 @@ void main() {
           end: 1,
           reading: '  ',
         ),
+        '[[見|]]',
+      );
+    });
+
+    test('returns null for empty range', () {
+      expect(
+        WikiRubyMarkup.wrapSelection(text: '見', start: 0, end: 0, reading: 'み'),
         isNull,
       );
     });

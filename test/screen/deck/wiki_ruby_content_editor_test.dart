@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/l10n/app_localizations.dart';
@@ -42,21 +43,116 @@ void main() {
     expect(find.textContaining('[['), findsNothing);
   });
 
-  testWidgets('tap ruby opens reading editor and updates storage', (
+  testWidgets('tap ruby reading opens reading editor and updates storage', (
     tester,
   ) async {
     final storage = TextEditingController(text: '[[建|た]]てます');
     addTearDown(storage.dispose);
     await pumpEditor(tester, storage: storage);
 
-    await tester.tap(find.text('建'));
+    final readingField = find.byWidgetPredicate(
+      (w) => w is TextField && w.controller?.text == 'た',
+    );
+    await tester.tap(readingField);
     await tester.pumpAndSettle();
 
-    expect(find.byType(TextField), findsWidgets);
-    await tester.enterText(find.byType(TextField).first, 'たて');
+    await tester.enterText(readingField, 'たて');
     await tester.pump();
 
     expect(storage.text, '[[建|たて]]てます');
+  });
+
+  testWidgets('ruby base kanji is editable and updates storage', (
+    tester,
+  ) async {
+    final storage = TextEditingController(text: '[[建|た]]てます');
+    addTearDown(storage.dispose);
+    await pumpEditor(tester, storage: storage);
+
+    final kanjiField = find.byWidgetPredicate(
+      (w) => w is TextField && w.controller?.text == '建',
+    );
+    expect(kanjiField, findsOneWidget);
+
+    await tester.tap(kanjiField);
+    await tester.pumpAndSettle();
+    await tester.enterText(kanjiField, '立');
+    await tester.pump();
+
+    expect(storage.text, '[[立|た]]てます');
+  });
+
+  testWidgets('clearing base keeps ruby; second backspace removes it', (
+    tester,
+  ) async {
+    final storage = TextEditingController(text: 'あ[[見|み]]い');
+    addTearDown(storage.dispose);
+    await pumpEditor(tester, storage: storage);
+
+    final kanjiField = find.byWidgetPredicate(
+      (w) => w is TextField && w.controller?.text == '見',
+    );
+    await tester.tap(kanjiField);
+    await tester.pumpAndSettle();
+    await tester.enterText(kanjiField, '');
+    await tester.pump();
+
+    // First clear: ruby markup kept with empty base.
+    expect(storage.text, 'あ[[|み]]い');
+    expect(tester.takeException(), isNull);
+
+    final emptyBase = find.byWidgetPredicate(
+      (w) =>
+          w is TextField &&
+          w.controller?.text.isEmpty == true &&
+          w.focusNode?.hasFocus == true,
+    );
+    expect(emptyBase, findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+    await tester.pump();
+    await tester.pump();
+
+    expect(storage.text, 'あい');
+    expect(storage.selection.baseOffset, 1);
+    expect(find.textContaining('[['), findsNothing);
+
+    final focused = tester
+        .widgetList<TextField>(find.byType(TextField))
+        .where((f) => f.focusNode?.hasFocus == true);
+    expect(focused, isNotEmpty);
+    expect(focused.single.controller?.text, 'あい');
+    expect(focused.single.controller?.selection.baseOffset, 1);
+  });
+
+  testWidgets('clearing reading then blur keeps base as plain', (tester) async {
+    final storage = TextEditingController(text: '[[見|み]]');
+    addTearDown(storage.dispose);
+    await pumpEditor(tester, storage: storage);
+
+    await tester.tap(find.text('み'));
+    await tester.pumpAndSettle();
+
+    final readingField = find.byWidgetPredicate(
+      (w) =>
+          w is TextField &&
+          w.controller?.text == 'み' &&
+          w.focusNode?.hasFocus == true,
+    );
+    await tester.enterText(readingField, '');
+    await tester.pump();
+
+    // Still pending while focused.
+    expect(storage.text, '[[見|]]');
+
+    // Blur → dissolve to plain base.
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(storage.text, '見');
+    expect(find.textContaining('[['), findsNothing);
   });
 
   testWidgets('tab moves from one ruby reading to the next', (tester) async {
@@ -64,7 +160,10 @@ void main() {
     addTearDown(storage.dispose);
     await pumpEditor(tester, storage: storage);
 
-    await tester.tap(find.text('見'));
+    final firstReading = find.byWidgetPredicate(
+      (w) => w is TextField && w.controller?.text == 'み',
+    );
+    await tester.tap(firstReading);
     await tester.pumpAndSettle();
 
     await tester.testTextInput.receiveAction(TextInputAction.next);
@@ -74,6 +173,26 @@ void main() {
         .widgetList<TextField>(find.byType(TextField))
         .where((f) => f.focusNode?.hasFocus == true);
     expect(focused.single.controller?.text, 'くだ');
+  });
+
+  testWidgets('ruby reading field is always editable without tapping kanji', (
+    tester,
+  ) async {
+    final storage = TextEditingController(text: '[[見|み]]');
+    addTearDown(storage.dispose);
+    await pumpEditor(tester, storage: storage);
+
+    final readingField = find.byWidgetPredicate(
+      (w) => w is TextField && w.controller?.text == 'み',
+    );
+    expect(readingField, findsOneWidget);
+
+    await tester.tap(readingField);
+    await tester.pumpAndSettle();
+    await tester.enterText(readingField, 'みせ');
+    await tester.pump();
+
+    expect(storage.text, '[[見|みせ]]');
   });
 
   testWidgets('keeps short ruby sentence on one compact row', (tester) async {
@@ -273,7 +392,7 @@ void main() {
     expect(storage.text, '[[見|み]]せて');
   });
 
-  testWidgets('Ruby toolbar on plain segment wraps and rebuilds slots', (
+  testWidgets('inline wrap focuses empty reading without dialog', (
     tester,
   ) async {
     final storage = TextEditingController(text: '[[見|み]]下さい');
@@ -305,18 +424,111 @@ void main() {
     await tester.tap(find.text('Ruby'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Reading for 下'), findsOneWidget);
-    await tester.enterText(find.byType(TextField).last, 'くだ');
-    await tester.tap(find.text('Done'));
-    await tester.pumpAndSettle();
+    expect(find.text('Reading for 下'), findsNothing);
+    expect(storage.text, '[[見|み]][[下|]]さい');
+
+    final pendingReading = find.byWidgetPredicate(
+      (w) =>
+          w is TextField &&
+          w.controller?.text.isEmpty == true &&
+          w.focusNode?.hasFocus == true &&
+          w.decoration?.hintText == 'Reading',
+    );
+    expect(pendingReading, findsOneWidget);
+    await tester.enterText(pendingReading, 'くだ');
+    await tester.pump();
 
     expect(storage.text, '[[見|み]][[下|くだ]]さい');
     expect(find.text('下'), findsOneWidget);
     expect(find.text('くだ'), findsOneWidget);
   });
 
+  testWidgets('focus maximizes one side and shrinks the other', (tester) async {
+    final storage = TextEditingController(text: '[[見|み]]');
+    addTearDown(storage.dispose);
+    const baseStyle = TextStyle(fontSize: 20);
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: WikiRubyContentEditor(
+            storage: storage,
+            baseStyle: baseStyle,
+            readingHint: 'Reading',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    TextField readingField() => tester.widget<TextField>(
+      find.byWidgetPredicate(
+        (w) => w is TextField && w.controller?.text == 'み',
+      ),
+    );
+    TextField baseField() => tester.widget<TextField>(
+      find.byWidgetPredicate(
+        (w) => w is TextField && w.controller?.text == '見',
+      ),
+    );
+
+    expect(readingField().style?.fontSize, closeTo(11, 0.01));
+    expect(baseField().style?.fontSize, closeTo(20, 0.01));
+
+    readingField().focusNode!.requestFocus();
+    await tester.pumpAndSettle();
+
+    expect(
+      readingField().style?.fontSize,
+      closeTo(20 * kWikiRubyFocusedReadingScale, 0.01),
+    );
+    expect(
+      baseField().style?.fontSize,
+      closeTo(20 * kWikiRubyShrunkBaseScale, 0.01),
+    );
+
+    baseField().focusNode!.requestFocus();
+    await tester.pumpAndSettle();
+
+    expect(readingField().style?.fontSize, closeTo(11, 0.01));
+    expect(baseField().style?.fontSize, closeTo(20, 0.01));
+  });
+
+  testWidgets('backspace at start of reading focuses base end', (tester) async {
+    final storage = TextEditingController(text: '[[見|み]]');
+    addTearDown(storage.dispose);
+    await pumpEditor(tester, storage: storage);
+
+    final readingField = find.byWidgetPredicate(
+      (w) => w is TextField && w.controller?.text == 'み',
+    );
+    await tester.tap(readingField);
+    await tester.pumpAndSettle();
+
+    final reading = tester.widget<TextField>(readingField);
+    reading.controller!.selection = const TextSelection.collapsed(offset: 0);
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+    await tester.pumpAndSettle();
+
+    final focused = tester
+        .widgetList<TextField>(find.byType(TextField))
+        .where((f) => f.focusNode?.hasFocus == true);
+    expect(focused.single.controller?.text, '見');
+    expect(storage.text, '[[見|み]]');
+  });
+
   test('wikiRubyContentUsesReadingEditor detects markup', () {
     expect(wikiRubyContentUsesReadingEditor('[[甲|a]]'), isTrue);
+    expect(wikiRubyContentUsesReadingEditor('[[甲|]]'), isTrue);
     expect(wikiRubyContentUsesReadingEditor('hello'), isFalse);
   });
 }

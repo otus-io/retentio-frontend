@@ -37,6 +37,27 @@ const _kFieldNameContentPadding = EdgeInsets.fromLTRB(0, 0, 0, 6);
 const _kRowSpacing = 8.0;
 const _kContentContainerRadius = 12.0;
 const _kContentContainerAlpha = 0.52;
+const _kContentEditFontScale = 1.32;
+const _kContentBaseFallbackSize = 14.0;
+
+/// Enlarged content style used for fact composer fields (always on).
+@visibleForTesting
+TextStyle addFactEntryContentEditStyle(
+  TextStyle base, {
+  double fallbackSize = _kContentBaseFallbackSize,
+}) {
+  final size = base.fontSize ?? fallbackSize;
+  return base.copyWith(fontSize: size * _kContentEditFontScale);
+}
+
+/// Ensures [base] has an explicit font size before applying edit scale.
+@visibleForTesting
+TextStyle addFactEntryContentBaseStyle(
+  TextStyle base, {
+  double fallbackSize = _kContentBaseFallbackSize,
+}) {
+  return base.copyWith(fontSize: base.fontSize ?? fallbackSize);
+}
 
 class AddFactEntryRow extends HookWidget {
   const AddFactEntryRow({
@@ -58,6 +79,7 @@ class AddFactEntryRow extends HookWidget {
     ThemeData theme,
     AppLocalizations loc, {
     required FocusNode contentFocus,
+    required TextStyle contentStyle,
   }) {
     final row = this.row;
     final activeKinds = _kAttachmentKindsOrder
@@ -73,7 +95,7 @@ class AddFactEntryRow extends HookWidget {
     if (useRubyEditor) {
       textField = WikiRubyContentEditor(
         storage: row.content,
-        baseStyle: theme.textTheme.bodyMedium ?? const TextStyle(),
+        baseStyle: contentStyle,
         readingHint: loc.factRubyReadingHint,
         contentPadding: fieldPadding,
       );
@@ -81,18 +103,17 @@ class AddFactEntryRow extends HookWidget {
       textField = AppInput(
         controller: row.content,
         focusNode: contentFocus,
-        style: theme.textTheme.bodyMedium,
+        style: contentStyle,
         enableInteractiveSelection: true,
         contextMenuBuilder: (context, editableTextState) {
           return wikiRubySelectionToolbar(
             context: context,
             editableTextState: editableTextState,
             loc: loc,
-            readingHint: loc.factRubyReadingHint,
-            onReadingChosen: (reading, {required start, required end}) async {
+            onRubyWrap: ({required start, required end}) async {
               wikiRubyApplyWrapToController(
                 row.content,
-                reading,
+                '',
                 start: start,
                 end: end,
               );
@@ -201,6 +222,20 @@ class AddFactEntryRow extends HookWidget {
     useListenable(row.content);
     useListenable(fieldNameFocus);
 
+    final useRubyEditor = wikiRubyContentUsesReadingEditor(row.content.text);
+    final wasRubyEditor = useRef(useRubyEditor);
+    useEffect(() {
+      if (wasRubyEditor.value && !useRubyEditor) {
+        // Last ruby removed — hand focus to the plain field at storage caret.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+          contentFocus.requestFocus();
+        });
+      }
+      wasRubyEditor.value = useRubyEditor;
+      return null;
+    }, [useRubyEditor, contentFocus]);
+
     useEffect(() {
       void onFieldNameFocusChange() {
         if (!fieldNameFocus.hasFocus) {
@@ -236,6 +271,11 @@ class AddFactEntryRow extends HookWidget {
       color: scheme.onSurfaceVariant,
       fontSize: collapsedFontSize,
       fontWeight: FontWeight.w600,
+    );
+    final contentStyle = addFactEntryContentEditStyle(
+      addFactEntryContentBaseStyle(
+        theme.textTheme.bodyMedium ?? const TextStyle(),
+      ),
     );
 
     return Column(
@@ -289,7 +329,12 @@ class AddFactEntryRow extends HookWidget {
             border: Border.all(color: outlineColor),
             borderRadius: BorderRadius.circular(_kContentContainerRadius),
           ),
-          child: _buildContentField(theme, loc, contentFocus: contentFocus),
+          child: _buildContentField(
+            theme,
+            loc,
+            contentFocus: contentFocus,
+            contentStyle: contentStyle,
+          ),
         ),
       ],
     );

@@ -13,7 +13,6 @@ const double _kSheetTitleGapFullScreen = 28;
 const double _kSheetTitleGapDraggable = 48;
 const double _kSheetTitleGapCompact = 20;
 const double _kSheetHandleOpacity = 0.6;
-const double _kSheetFullScreenMinChildSize = 0.35;
 const double _kSheetBarrierOpacity = 0.44;
 
 Future<T?> showCommonBottomSheet<T>({
@@ -54,9 +53,10 @@ Future<T?> showCommonBottomSheet<T>({
 }) {
   final resolvedInitial = fullScreen ? 1.0 : initialChildSize;
   final resolvedMax = fullScreen ? 1.0 : maxChildSize;
-  final resolvedMin = fullScreen ? _kSheetFullScreenMinChildSize : minChildSize;
+  final resolvedMin = fullScreen ? 1.0 : minChildSize;
   final resolvedExpand = fullScreen || expandSheet;
   final resolvedUseSafeArea = fullScreen || useSafeArea;
+  final resolvedEnableDrag = fullScreen ? false : enableDrag;
   final resolvedSheetAnimationStyle = sheetAnimationStyle;
 
   return showModalBottomSheet<T>(
@@ -72,53 +72,63 @@ Future<T?> showCommonBottomSheet<T>({
       // Outer inset lifts the sheet above the keyboard without shrinking a
       // DraggableScrollableSheet (these paths have none).
       if (fullScreen) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: keyboardBottom),
-          child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(_kSheetTopRadius),
-            ),
-            child: Material(
-              color: scheme.surface,
-              child: RepaintBoundary(
-                child: DismissKeyboardOnTap(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.only(
-                      left: _kSheetHorizontalPadding,
-                      top: _kSheetTopPadding,
-                      right: _kSheetHorizontalPadding,
-                      bottom: _kSheetBottomPadding,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.max,
-                      children: [
-                        Center(
-                          child: Container(
-                            width: _kSheetHandleWidth,
-                            height: _kSheetHandleHeight,
-                            margin: const EdgeInsets.only(
-                              bottom: _kSheetHandleBottomMargin,
-                            ),
-                            decoration: BoxDecoration(
-                              color: handleColor,
-                              borderRadius: BorderRadius.circular(
-                                _kSheetHandleRadius,
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final sheetHeight = constraints.maxHeight.isFinite
+                ? constraints.maxHeight
+                : MediaQuery.sizeOf(context).height;
+            return Padding(
+              padding: EdgeInsets.only(bottom: keyboardBottom),
+              child: SizedBox(
+                height: sheetHeight,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(_kSheetTopRadius),
+                  ),
+                  child: Material(
+                    color: scheme.surface,
+                    child: RepaintBoundary(
+                      child: DismissKeyboardOnTap(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.only(
+                            left: _kSheetHorizontalPadding,
+                            top: _kSheetTopPadding,
+                            right: _kSheetHorizontalPadding,
+                            bottom: _kSheetBottomPadding,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Center(
+                                child: Container(
+                                  width: _kSheetHandleWidth,
+                                  height: _kSheetHandleHeight,
+                                  margin: const EdgeInsets.only(
+                                    bottom: _kSheetHandleBottomMargin,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: handleColor,
+                                    borderRadius: BorderRadius.circular(
+                                      _kSheetHandleRadius,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                              if (title != null && title.isNotEmpty)
+                                Text(title, style: titleStyle),
+                              const SizedBox(height: _kSheetTitleGapFullScreen),
+                              child,
+                            ],
                           ),
                         ),
-                        if (title != null && title.isNotEmpty)
-                          Text(title, style: titleStyle),
-                        const SizedBox(height: _kSheetTitleGapFullScreen),
-                        child,
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       }
 
@@ -291,7 +301,7 @@ Future<T?> showCommonBottomSheet<T>({
     isScrollControlled: isScrollControlled,
     useRootNavigator: useRootNavigator,
     isDismissible: isDismissible,
-    enableDrag: enableDrag,
+    enableDrag: resolvedEnableDrag,
     useSafeArea: resolvedUseSafeArea,
     transitionAnimationController: transitionAnimationController,
     sheetAnimationStyle: resolvedSheetAnimationStyle,

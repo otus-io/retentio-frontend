@@ -76,6 +76,7 @@ class CardMenu extends StatelessWidget {
                 showCommonBottomSheet(
                   context: context,
                   fullScreen: true,
+                  enableDrag: false,
                   title: loc.editFact,
                   child: BlocProvider<TagManagerCubit>(
                     create: (_) =>

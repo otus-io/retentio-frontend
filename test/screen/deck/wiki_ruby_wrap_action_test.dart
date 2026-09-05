@@ -18,24 +18,24 @@ void main() {
       expect(controller.text, '[[見|み]]せてください');
     });
 
-    test('returns false when selection is collapsed', () {
-      final controller = TextEditingController(text: '見');
-      addTearDown(controller.dispose);
-      controller.selection = const TextSelection.collapsed(offset: 0);
-
-      expect(wikiRubyApplyWrapToController(controller, 'み'), isFalse);
-      expect(controller.text, '見');
-    });
-
-    test('returns false when reading is blank', () {
-      final controller = TextEditingController(text: '見');
+    test('wraps with empty reading for inline add', () {
+      final controller = TextEditingController(text: '見せて');
       addTearDown(controller.dispose);
       controller.selection = const TextSelection(
         baseOffset: 0,
         extentOffset: 1,
       );
 
-      expect(wikiRubyApplyWrapToController(controller, '  '), isFalse);
+      expect(wikiRubyApplyWrapToController(controller, ''), isTrue);
+      expect(controller.text, '[[見|]]せて');
+    });
+
+    test('returns false when selection is collapsed', () {
+      final controller = TextEditingController(text: '見');
+      addTearDown(controller.dispose);
+      controller.selection = const TextSelection.collapsed(offset: 0);
+
+      expect(wikiRubyApplyWrapToController(controller, 'み'), isFalse);
       expect(controller.text, '見');
     });
 
@@ -50,163 +50,6 @@ void main() {
       );
       expect(controller.text, '[[見|み]]せて');
     });
-  });
-
-  testWidgets('reading dialog returns trimmed reading on Done', (tester) async {
-    String? result;
-    await tester.pumpWidget(
-      MaterialApp(
-        locale: const Locale('en'),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: TextButton(
-              onPressed: () async {
-                result = await showWikiRubyReadingDialog(
-                  context,
-                  baseText: '見',
-                  readingHint: 'Reading',
-                );
-              },
-              child: const Text('Open'),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('Open'));
-    await tester.pumpAndSettle();
-    expect(find.text('Reading for 見'), findsOneWidget);
-
-    await tester.enterText(find.byType(TextField), ' み ');
-    await tester.tap(find.text('Done'));
-    await tester.pumpAndSettle();
-
-    expect(result, 'み');
-  });
-
-  testWidgets('reading dialog cancel returns null', (tester) async {
-    var completed = false;
-    String? result = 'unset';
-    await tester.pumpWidget(
-      MaterialApp(
-        locale: const Locale('en'),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: TextButton(
-              onPressed: () async {
-                result = await showWikiRubyReadingDialog(
-                  context,
-                  baseText: '見',
-                  readingHint: 'Reading',
-                );
-                completed = true;
-              },
-              child: const Text('Open'),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('Open'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Cancel'));
-    await tester.pumpAndSettle();
-
-    expect(completed, isTrue);
-    expect(result, isNull);
-  });
-
-  testWidgets('reading dialog Done with blank reading returns null', (
-    tester,
-  ) async {
-    String? result = 'unset';
-    await tester.pumpWidget(
-      MaterialApp(
-        locale: const Locale('en'),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: TextButton(
-              onPressed: () async {
-                result = await showWikiRubyReadingDialog(
-                  context,
-                  baseText: '見',
-                  readingHint: 'Reading',
-                );
-              },
-              child: const Text('Open'),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('Open'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Done'));
-    await tester.pumpAndSettle();
-
-    expect(result, isNull);
-  });
-
-  testWidgets('reading dialog submits from keyboard Done', (tester) async {
-    String? result;
-    await tester.pumpWidget(
-      MaterialApp(
-        locale: const Locale('en'),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: TextButton(
-              onPressed: () async {
-                result = await showWikiRubyReadingDialog(
-                  context,
-                  baseText: '見',
-                  readingHint: 'Reading',
-                );
-              },
-              child: const Text('Open'),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('Open'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'み');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
-
-    expect(result, 'み');
   });
 
   testWidgets('selection toolbar omits Ruby when selection is collapsed', (
@@ -233,8 +76,7 @@ void main() {
                 context: context,
                 editableTextState: editableTextState,
                 loc: AppLocalizations.of(context)!,
-                readingHint: 'Reading',
-                onReadingChosen: (_, {required start, required end}) async {},
+                onRubyWrap: ({required start, required end}) async {},
               );
             },
           ),
@@ -258,7 +100,7 @@ void main() {
     expect(find.text('Ruby'), findsNothing);
   });
 
-  testWidgets('Ruby from toolbar shows dialog above a bottom sheet', (
+  testWidgets('Ruby from toolbar wraps with empty reading (no dialog)', (
     tester,
   ) async {
     final controller = TextEditingController(text: '見せて');
@@ -289,16 +131,14 @@ void main() {
                           context: context,
                           editableTextState: editableTextState,
                           loc: AppLocalizations.of(context)!,
-                          readingHint: 'Reading',
-                          onReadingChosen:
-                              (reading, {required start, required end}) async {
-                                wikiRubyApplyWrapToController(
-                                  controller,
-                                  reading,
-                                  start: start,
-                                  end: end,
-                                );
-                              },
+                          onRubyWrap: ({required start, required end}) async {
+                            wikiRubyApplyWrapToController(
+                              controller,
+                              '',
+                              start: start,
+                              end: end,
+                            );
+                          },
                         );
                       },
                     ),
@@ -328,14 +168,10 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Ruby'));
-    await tester.pump(); // schedule post-frame callback
+    await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Reading for 見'), findsOneWidget);
-    await tester.enterText(find.byType(TextField).last, 'み');
-    await tester.tap(find.text('Done'));
-    await tester.pumpAndSettle();
-
-    expect(controller.text, '[[見|み]]せて');
+    expect(find.text('Reading for 見'), findsNothing);
+    expect(controller.text, '[[見|]]せて');
   });
 }

@@ -63,7 +63,8 @@ class WikiRubyComposeRuby extends WikiRubyComposePiece {
 abstract final class WikiRubyMarkup {
   WikiRubyMarkup._();
 
-  static final RegExp _pair = RegExp(r'\[\[([^\]|]+)\|([^\]]+)\]\]');
+  /// Allows empty reading (`[[見|]]`) and empty base (`[[|み]]`) for pending edit.
+  static final RegExp _pair = RegExp(r'\[\[([^\]|]*)\|([^\]]*)\]\]');
 
   static bool looksLikeMarkup(String s) => _pair.hasMatch(s);
 
@@ -80,6 +81,11 @@ abstract final class WikiRubyMarkup {
   }
 
   /// Rebuilds `[[kanji|reading]]` storage from [pieces].
+  ///
+  /// - Both sides non-empty → `[[kanji|reading]]`
+  /// - Empty reading, non-empty kanji → `[[kanji|]]` (pending inline reading)
+  /// - Empty kanji, non-empty reading → `[[|reading]]` (base cleared; ruby kept)
+  /// - Both empty → write nothing
   static String compose(List<WikiRubyComposePiece> pieces) {
     final buf = StringBuffer();
     for (final piece in pieces) {
@@ -87,11 +93,10 @@ abstract final class WikiRubyMarkup {
         case WikiRubyComposePlain(:final text):
           buf.write(text);
         case WikiRubyComposeRuby(:final kanji, :final reading):
-          if (kanji.isNotEmpty && reading.isNotEmpty) {
-            buf.write('[[$kanji|$reading]]');
-          } else {
-            buf.write(kanji);
+          if (kanji.isEmpty && reading.isEmpty) {
+            continue;
           }
+          buf.write('[[$kanji|$reading]]');
       }
     }
     return buf.toString();
@@ -99,8 +104,9 @@ abstract final class WikiRubyMarkup {
 
   /// Wraps `text[start:end]` as `[[selection|reading]]`.
   ///
-  /// Returns null when the range is empty/invalid, [reading] is blank, or
-  /// either side would break wiki ruby delimiters (`[`, `]`, `|`).
+  /// [reading] may be blank for inline-empty-reading add. Returns null when the
+  /// range is empty/invalid or either side would break wiki ruby delimiters
+  /// (`[`, `]`, `|`).
   static String? wrapSelection({
     required String text,
     required int start,
@@ -110,8 +116,9 @@ abstract final class WikiRubyMarkup {
     if (start < 0 || end > text.length || start >= end) return null;
     final kanji = text.substring(start, end);
     final trimmedReading = reading.trim();
-    if (kanji.isEmpty || trimmedReading.isEmpty) return null;
-    if (_breaksRubyDelimiters(kanji) || _breaksRubyDelimiters(trimmedReading)) {
+    if (kanji.isEmpty) return null;
+    if (_breaksRubyDelimiters(kanji) ||
+        (trimmedReading.isNotEmpty && _breaksRubyDelimiters(trimmedReading))) {
       return null;
     }
     return text.replaceRange(start, end, '[[$kanji|$trimmedReading]]');
@@ -135,10 +142,12 @@ abstract final class WikiRubyMarkup {
       }
       final kanji = m.group(1) ?? '';
       final reading = m.group(2) ?? '';
-      if (kanji.isNotEmpty && reading.isNotEmpty) {
+      if (kanji.isNotEmpty || reading.isNotEmpty) {
         final start = composedLen;
-        composedLen += kanji.length;
-        composedBuf.write(kanji);
+        if (kanji.isNotEmpty) {
+          composedLen += kanji.length;
+          composedBuf.write(kanji);
+        }
         segments.add(
           WikiSegRuby(
             kanji: kanji,

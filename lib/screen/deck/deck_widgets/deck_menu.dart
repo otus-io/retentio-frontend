@@ -109,9 +109,8 @@ class DeckMenu extends StatelessWidget {
                   showCommonBottomSheet<void>(
                     context: context,
                     title: loc.addFact,
-                    initialChildSize: 0.88,
-                    minChildSize: 0.45,
-                    maxChildSize: 0.95,
+                    fullScreen: true,
+                    enableDrag: false,
                     child: BlocProvider<TagManagerCubit>(
                       create: (_) =>
                           TagManagerCubit(usedOn: 'fact', deckId: deck.id)
