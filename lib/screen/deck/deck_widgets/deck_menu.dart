@@ -13,6 +13,7 @@ import 'package:retentio/screen/decks/bloc/deck_create_cubit.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_add.dart';
+import 'package:retentio/screen/qa/qa_mode_screen.dart';
 import 'package:retentio/screen/decks/widgets/deck_create.dart';
 import 'package:retentio/theme/theme_tokens.dart';
 import 'package:retentio/widgets/app_button.dart';
@@ -108,9 +109,8 @@ class DeckMenu extends StatelessWidget {
                   showCommonBottomSheet<void>(
                     context: context,
                     title: loc.addFact,
-                    initialChildSize: 0.88,
-                    minChildSize: 0.45,
-                    maxChildSize: 0.95,
+                    fullScreen: true,
+                    enableDrag: false,
                     child: BlocProvider<TagManagerCubit>(
                       create: (_) =>
                           TagManagerCubit(usedOn: 'fact', deckId: deck.id)
@@ -263,6 +263,23 @@ class DeckMenu extends StatelessWidget {
                 );
               },
               icon: LucideIcons.refreshCw,
+              itemTheme: PullDownMenuItemTheme(
+                textStyle: menuItemStyle(scheme.onSurface),
+                onPressedBackgroundColor: scheme.surfaceContainerHighest,
+              ),
+            ),
+            PullDownMenuItem(
+              title: loc.qaMode,
+              onTap: () async {
+                await Future<void>.delayed(const Duration(milliseconds: 10));
+                if (!context.mounted) return;
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => QaModeScreen(deck: deck),
+                  ),
+                );
+              },
+              icon: LucideIcons.badgeCheck,
               itemTheme: PullDownMenuItemTheme(
                 textStyle: menuItemStyle(scheme.onSurface),
                 onPressedBackgroundColor: scheme.surfaceContainerHighest,

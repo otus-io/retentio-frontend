@@ -120,12 +120,13 @@ class NetworkDioClient {
 
   Future<ApiResponse?> put(
     String url, {
+    Map<String, dynamic>? params,
     Map<String, dynamic>? pathParams,
   }) async {
     _assertConfigured();
     url = _buildFinalUrl(url, pathParams);
     try {
-      final response = await _dio.put(url);
+      final response = await _dio.put(url, data: params);
       final res = response.data as Map<String, dynamic>?;
       if (res == null) return null;
       return ApiResponse.fromJson(res);

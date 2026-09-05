@@ -84,14 +84,16 @@ class ApiService {
     return response;
   }
 
-  /// 通用 PUT 请求（无 body，用于幂等关联操作）
+  /// 通用 PUT 请求（用于幂等关联操作，可选 body）
   static Future<ApiResponse?> put(
     String endpoint, {
     Map<String, String>? pathParams,
+    Map<String, dynamic>? body,
   }) {
     return networkDioClient.put(
       endpoint,
       pathParams: pathParams?.map((k, v) => MapEntry(k, v as dynamic)),
+      params: body,
     );
   }
 

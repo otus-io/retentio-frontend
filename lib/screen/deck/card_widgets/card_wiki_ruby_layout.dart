@@ -11,21 +11,45 @@ TextStyle wikiRubyReadingStyle(TextStyle base, {double? rubyFontSize}) =>
       height: 1.0,
     );
 
-Widget _wikiRubyCell(WikiSegRuby seg, TextStyle base, TextStyle ruby) =>
-    Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 1),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Text(seg.reading, style: ruby),
-          Text(seg.kanji, style: base),
-        ],
-      ),
-    );
+Widget wikiRubyCellWidget({
+  required String kanji,
+  required String reading,
+  required TextStyle baseStyle,
+  required TextStyle rubyStyle,
+}) => Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 1),
+  child: Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.center,
+    mainAxisAlignment: MainAxisAlignment.end,
+    children: [
+      Text(reading, style: rubyStyle),
+      Text(kanji, style: baseStyle),
+    ],
+  ),
+);
+
+Widget _wikiRubyCell(WikiSegRuby seg, TextStyle base, TextStyle ruby) {
+  // Pending empty reading (inline add) renders as plain base on cards.
+  if (seg.reading.isEmpty) {
+    return Text(seg.kanji, style: base);
+  }
+  // Pending empty base (cleared kanji) renders reading as plain.
+  if (seg.kanji.isEmpty) {
+    return Text(seg.reading, style: base);
+  }
+  return wikiRubyCellWidget(
+    kanji: seg.kanji,
+    reading: seg.reading,
+    baseStyle: base,
+    rubyStyle: ruby,
+  );
+}
 
 /// Inline widgets for composed surface `[pos, end)`, or null if a ruby unit is split.
+///
+/// Zero-width [WikiSegRuby] segments (empty-base `[[|reading]]`) are emitted at
+/// their anchor index so card layout can still show the reading.
 List<Widget>? wikiRubyRowWidgetsForRange(
   WikiRubyParseResult parsed,
   int pos,
@@ -35,6 +59,18 @@ List<Widget>? wikiRubyRowWidgetsForRange(
 ) {
   final out = <Widget>[];
   var p = pos;
+
+  void addZeroWidthRubiesAt(int at) {
+    for (final seg in parsed.segments) {
+      if (seg is WikiSegRuby &&
+          seg.composedStart == at &&
+          seg.composedEnd == at) {
+        out.add(_wikiRubyCell(seg, base, ruby));
+      }
+    }
+  }
+
+  addZeroWidthRubiesAt(p);
   while (p < end) {
     final seg = parsed.segmentAt(p);
     if (seg == null) return null;
@@ -51,6 +87,7 @@ List<Widget>? wikiRubyRowWidgetsForRange(
     } else {
       return null;
     }
+    addZeroWidthRubiesAt(p);
   }
   return out;
 }

@@ -30,6 +30,7 @@ void main() {
       expect(Api.facts, '/api/decks/{id}/facts');
       expect(Api.factsWithOperation, '/api/decks/{id}/facts/{operation}');
       expect(Api.fact, '/api/decks/{id}/facts/{factId}');
+      expect(Api.factIds, '/api/decks/{id}/facts/ids');
     });
 
     test('media paths', () {

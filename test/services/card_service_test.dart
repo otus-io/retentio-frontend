@@ -8,6 +8,8 @@ import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/apis/card_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../helpers/fake_qa_api_adapter.dart';
+
 class _FakeCardHttpClientAdapter implements HttpClientAdapter {
   @override
   Future<ResponseBody> fetch(
@@ -114,6 +116,28 @@ class _FakeDeckDetailHttpClientAdapter implements HttpClientAdapter {
     final deckId = options.path.split('/api/decks/').last;
     final data = dataByDeckId[deckId];
     if (options.method != 'GET' || data == null) {
+      return _jsonResponse({'code': -1, 'msg': 'not found', 'data': null}, 404);
+    }
+    return _jsonResponse({'code': 0, 'msg': 'ok', 'data': data}, 200);
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+/// Serves a fixed `data` payload for `GET …/facts/ids`.
+class _FactIdsPayloadAdapter implements HttpClientAdapter {
+  _FactIdsPayloadAdapter(this.data);
+
+  final Map<String, dynamic> data;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    if (options.method != 'GET' || !options.path.endsWith('/facts/ids')) {
       return _jsonResponse({'code': -1, 'msg': 'not found', 'data': null}, 404);
     }
     return _jsonResponse({'code': 0, 'msg': 'ok', 'data': data}, 200);
@@ -399,6 +423,51 @@ void main() {
       expect(adapter.lastUri?.queryParameters['stats_only'], 'true');
       expect(stats?.totalCards, 3);
       expect(stats?.dueCards, 2);
+    });
+  });
+
+  group('CardService.listFactIds', () {
+    late FakeQaApiAdapter adapter;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      await ApiService.clearToken();
+
+      networkDioClient.configure(
+        baseUrl: 'http://localhost',
+        options: BaseOptions(),
+      );
+      adapter = FakeQaApiAdapter(
+        factIds: [for (var i = 0; i < 450; i++) 'fact-$i'],
+      );
+      networkDioClient.dio.httpClientAdapter = adapter;
+    });
+
+    test('loads every id in one request', () async {
+      final ids = await CardService.listFactIds('deck-1');
+
+      expect(ids, hasLength(450));
+      expect(adapter.factIdsRequestCount, 1);
+    });
+
+    test('skips null ids and answers empty on a bad payload', () async {
+      networkDioClient.dio.httpClientAdapter = _FactIdsPayloadAdapter({
+        'fact_ids': ['a', null, 'b'],
+      });
+      expect(await CardService.listFactIds('deck-1'), ['a', 'b']);
+
+      networkDioClient.dio.httpClientAdapter = _FactIdsPayloadAdapter({
+        'facts': [],
+      });
+      expect(await CardService.listFactIds('deck-1'), isEmpty);
+    });
+
+    test('answers empty when the list cannot be read', () async {
+      networkDioClient.dio.httpClientAdapter = _FakeDeckDetailHttpClientAdapter(
+        const {},
+      );
+
+      expect(await CardService.listFactIds('deck-1'), isEmpty);
     });
   });
 }

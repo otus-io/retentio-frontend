@@ -152,5 +152,53 @@ void main() {
         expect(find.byKey(const Key('sheet_field')), findsOneWidget);
       },
     );
+
+    testWidgets('fullScreen sheet fills viewport and is not draggable', (
+      tester,
+    ) async {
+      _setViewLogicalSize(tester, const Size(400, 800));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                return Center(
+                  child: TextButton(
+                    onPressed: () {
+                      showCommonBottomSheet<void>(
+                        context: context,
+                        title: 'Add fact',
+                        fullScreen: true,
+                        child: const Text('Composer body'),
+                      );
+                    },
+                    child: const Text('Open'),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DraggableScrollableSheet), findsNothing);
+      expect(find.byKey(const Key('sheet_drag_handle')), findsNothing);
+      final sizedBoxes = tester.widgetList<SizedBox>(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.byType(SizedBox),
+        ),
+      );
+      expect(
+        sizedBoxes.any((box) => box.height != null && box.height! >= 790),
+        isTrue,
+        reason: 'fullScreen sheet should fill the viewport edge-to-edge',
+      );
+      expect(find.byType(SafeArea), findsWidgets);
+    });
   });
 }

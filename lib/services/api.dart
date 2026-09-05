@@ -22,6 +22,13 @@ class Api {
   static const String factsWithOperation = '/api/decks/{id}/facts/{operation}';
   static const String fact = '/api/decks/{id}/facts/{factId}';
 
+  /// Full unpaged id list (`data.fact_ids`) for QA and post-create detection.
+  static const String factIds = '/api/decks/{id}/facts/ids';
+
+  // Fact quality (QA mode)
+  static const String factQuality = '/api/decks/{id}/facts/{factId}/quality';
+  static const String deckQualityStats = '/api/decks/{id}/quality/stats';
+
   static const String media = '/api/media';
   static const String mediaById = '/api/media/{id}';
 
