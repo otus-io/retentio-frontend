@@ -194,9 +194,11 @@ void main() {
         ),
       );
       expect(
-        sizedBoxes.any((box) => box.height != null && box.height! >= 700),
+        sizedBoxes.any((box) => box.height != null && box.height! >= 790),
         isTrue,
+        reason: 'fullScreen sheet should fill the viewport edge-to-edge',
       );
+      expect(find.byType(SafeArea), findsWidgets);
     });
   });
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/core/network/network.dart';
@@ -256,7 +258,14 @@ void main() {
       cubit.toggleColumn(1);
 
       expect(cubit.state.hasNext, isFalse);
-      expect(await cubit.next(), isNull);
+
+      final hold = Completer<void>();
+      adapter.statsHold = hold.future;
+      final pending = cubit.next();
+      await adapter.waitUntilStatsHold;
+      expect(cubit.state.busy, isTrue);
+      hold.complete();
+      expect(await pending, isNull);
 
       expect(adapter.qualityPuts, hasLength(1));
       expect(cubit.state.index, 0);
@@ -369,6 +378,33 @@ void main() {
       expect(cubit.state.busy, isFalse);
       await cubit.close();
     });
+
+    test(
+      'clears busy when header refresh fails after a successful PUT',
+      () async {
+        buildAdapter(
+          qualityByFactId: {
+            'fact-1': {
+              '0': {
+                'text': {'score': 10, 'model': 'human'},
+              },
+            },
+          },
+        );
+        final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+        await startWalk(cubit);
+        cubit.toggleColumn(0);
+        cubit.debugFailNextRefreshHeader = true;
+
+        expect(await cubit.verify(), isNull);
+
+        expect(adapter.qualityPuts, hasLength(1));
+        expect(cubit.state.busy, isFalse);
+        expect(cubit.state.checkedIndexes, isEmpty);
+        expect(cubit.state.quality, isNotNull);
+        await cubit.close();
+      },
+    );
 
     test('returns the API message and clears busy on failure', () async {
       buildAdapter(qualityPutFails: true);

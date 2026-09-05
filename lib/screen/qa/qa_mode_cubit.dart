@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/features/contributions/pending_contributions_store.dart';
@@ -125,6 +126,10 @@ class QaModeCubit extends Cubit<QaModeState> {
 
   final String deckId;
   final int deckFieldCount;
+
+  /// When true, the next [_refreshHeader] throws (cleared after throw).
+  @visibleForTesting
+  bool debugFailNextRefreshHeader = false;
 
   /// Loads a saved column pick, or every deck field when none is stored.
   Future<Set<int>> initialColumnSelection() async {
@@ -262,19 +267,30 @@ class QaModeCubit extends Cubit<QaModeState> {
       if (!isClosed) emit(state.copyWith(busy: false));
       return rawApiErrorMessage(e);
     }
-    final quality = await FactQualityService.of.getFactQuality(
-      deckId: deckId,
-      factId: factId,
-    );
-    if (isClosed) return null;
-    await _refreshHeader();
-    if (isClosed) return null;
-    if (quality == null) {
-      emit(state.copyWith(busy: false, checkedIndexes: const {}));
-    } else {
-      emit(
-        state.copyWith(busy: false, quality: quality, checkedIndexes: const {}),
+    FactQuality? quality;
+    try {
+      quality = await FactQualityService.of.getFactQuality(
+        deckId: deckId,
+        factId: factId,
       );
+      if (isClosed) return null;
+      await _refreshHeader();
+    } catch (_) {
+      // Put already succeeded; busy/checks cleared in finally.
+    } finally {
+      if (!isClosed) {
+        if (quality != null) {
+          emit(
+            state.copyWith(
+              busy: false,
+              quality: quality,
+              checkedIndexes: const {},
+            ),
+          );
+        } else {
+          emit(state.copyWith(busy: false, checkedIndexes: const {}));
+        }
+      }
     }
     return null;
   }
@@ -339,6 +355,10 @@ class QaModeCubit extends Cubit<QaModeState> {
   }
 
   Future<void> _refreshHeader() async {
+    if (debugFailNextRefreshHeader) {
+      debugFailNextRefreshHeader = false;
+      throw StateError('qa header refresh failed');
+    }
     final stats = await FactQualityService.of.getDeckQualityStats(deckId);
     final sent = await PendingContributionsStore.of.listSent(deckId);
     if (isClosed) return;

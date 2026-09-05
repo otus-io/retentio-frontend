@@ -83,18 +83,24 @@ jobs:
             }
             const line = (label, c) =>
               `- **${label}:** ${c.files} files, +${c.add} / −${c.del}`;
+            const DIFF_SIZE_START = '<!-- diff-size:start -->';
+            const DIFF_SIZE_END = '<!-- diff-size:end -->';
             const diffSizeSection = [
+              DIFF_SIZE_START,
               '## Diff size',
               line('Tests', cats.test),
               line('Docs', cats.docs),
               line('Non-test code', cats.code),
               line('Other', cats.other),
-              line('Total', total)
+              line('Total', total),
+              DIFF_SIZE_END
             ].join('\n');
 
             const upsertDiffSize = (body) => {
               const without = (body || '')
-                .replace(/\n?## Diff size\n[\s\S]*?(?=\n## |\n<!--|$)/, '')
+                .replace(/\n?<!-- diff-size:start -->[\s\S]*?<!-- diff-size:end -->/g, '')
+                // Legacy unmarked Diff size: heading + metric bullets only.
+                .replace(/\n?## Diff size\n(?:- \*\*[^\n]*\n?)*/g, '')
                 .trim();
               const marker = '<!-- This is an auto-generated comment: release notes by coderabbit.ai -->';
               if (without.includes(marker)) {
@@ -104,108 +110,111 @@ jobs:
             };
 
             let body = prBody;
+            let failReason = null;
 
             // Narrative Claude fill only when the PR is first opened and empty.
+            // On Claude unavailability/failure, keep the original body and still
+            // run upsertDiffSize below; fail the job afterward if required.
             if (isOpen && !hasContent) {
               if (!process.env.ANTHROPIC_API_KEY) {
-                core.setFailed('ANTHROPIC_API_KEY secret is not set.');
-                return;
-              }
-
-              const { data: commits } = await github.rest.pulls.listCommits({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number,
-                per_page: 100
-              });
-              const commitMessages = commits.map(c => `- ${c.commit.message}`).join('\n');
-
-              const reviewable = files.filter(f =>
-                f.patch &&
-                !SKIP_PATTERNS.some(p => p.test(f.filename))
-              );
-
-              let diff = '';
-              for (const file of reviewable) {
-                diff += `=== ${file.filename} (${file.status}, +${file.additions} -${file.deletions}) ===\n${file.patch}\n\n`;
-              }
-              if (diff.length > MAX_DIFF_SIZE) {
-                diff = diff.substring(0, MAX_DIFF_SIZE) + '\n\n... (diff truncated)';
-              }
-
-              const prompt = [
-                'Auto-fill a PR description. Analyze the title, commits, and diff below.',
-                '',
-                `PR Title: ${prTitle}`,
-                '',
-                'Commits:',
-                commitMessages,
-                '',
-                'Diff:',
-                diff,
-                '',
-                'Return ONLY markdown with these sections (do NOT add any text before the first ## header):',
-                '',
-                '## What type of PR is this?',
-                'Mark applicable types with [x]: feat, fix, docs, refactor, test, ci, chore',
-                '(Use format: - [x] `type` - Description)',
-                '',
-                '## Description',
-                '2-4 sentences on what changed and why.',
-                '',
-                '## Changes Overview',
-                'Brief bullet summary of files or areas changed.',
-                '',
-                '## How Has This Been Tested?',
-                'Mark applicable with [x]: Unit tests, Manual testing, N/A',
-                '(Use format: - [x] Item)',
-                '',
-                '## Checklist',
-                'Mark applicable with [x]: code style, self-review, tests added, tests pass, docs updated, i18n (en + zh ARB)',
-                '(Use format: - [x] Item)'
-              ].join('\n');
-
-              let apiResult;
-              try {
-                const resp = await fetch('https://api.anthropic.com/v1/messages', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': process.env.ANTHROPIC_API_KEY,
-                    'anthropic-version': '2023-06-01'
-                  },
-                  body: JSON.stringify({
-                    model: 'claude-sonnet-4-5-20250929',
-                    max_tokens: 2048,
-                    messages: [{ role: 'user', content: prompt }]
-                  })
-                });
-                if (!resp.ok) {
-                  const errorText = await resp.text();
-                  throw new Error(`HTTP ${resp.status}: ${errorText}`);
-                }
-                apiResult = await resp.json();
-              } catch (e) {
-                core.setFailed(`Claude API request failed: ${e.message}`);
-                return;
-              }
-
-              body = apiResult.content?.[0]?.text;
-              if (!body) {
-                core.warning('Empty response from Claude API; writing Diff size only');
-                body = prBody;
+                failReason = 'ANTHROPIC_API_KEY secret is not set.';
               } else {
-                const firstHeaderIdx = body.search(/^## /m);
-                if (firstHeaderIdx > 0) {
-                  const preamble = body.substring(0, firstHeaderIdx).trim();
-                  body = body.substring(firstHeaderIdx);
-                  if (preamble) {
-                    body = body.replace(/(## Description[^\n]*\n)/, `$1\n${preamble}\n`);
+                const { data: commits } = await github.rest.pulls.listCommits({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number,
+                  per_page: 100
+                });
+                const commitMessages = commits.map(c => `- ${c.commit.message}`).join('\n');
+
+                const reviewable = files.filter(f =>
+                  f.patch &&
+                  !SKIP_PATTERNS.some(p => p.test(f.filename))
+                );
+
+                let diff = '';
+                for (const file of reviewable) {
+                  diff += `=== ${file.filename} (${file.status}, +${file.additions} -${file.deletions}) ===\n${file.patch}\n\n`;
+                }
+                if (diff.length > MAX_DIFF_SIZE) {
+                  diff = diff.substring(0, MAX_DIFF_SIZE) + '\n\n... (diff truncated)';
+                }
+
+                const prompt = [
+                  'Auto-fill a PR description. Analyze the title, commits, and diff below.',
+                  '',
+                  `PR Title: ${prTitle}`,
+                  '',
+                  'Commits:',
+                  commitMessages,
+                  '',
+                  'Diff:',
+                  diff,
+                  '',
+                  'Return ONLY markdown with these sections (do NOT add any text before the first ## header):',
+                  '',
+                  '## What type of PR is this?',
+                  'Mark applicable types with [x]: feat, fix, docs, refactor, test, ci, chore',
+                  '(Use format: - [x] `type` - Description)',
+                  '',
+                  '## Description',
+                  '2-4 sentences on what changed and why.',
+                  '',
+                  '## Changes Overview',
+                  'Brief bullet summary of files or areas changed.',
+                  '',
+                  '## How Has This Been Tested?',
+                  'Mark applicable with [x]: Unit tests, Manual testing, N/A',
+                  '(Use format: - [x] Item)',
+                  '',
+                  '## Checklist',
+                  'Mark applicable with [x]: code style, self-review, tests added, tests pass, docs updated, i18n (en + zh ARB)',
+                  '(Use format: - [x] Item)'
+                ].join('\n');
+
+                let apiResult;
+                try {
+                  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'x-api-key': process.env.ANTHROPIC_API_KEY,
+                      'anthropic-version': '2023-06-01'
+                    },
+                    body: JSON.stringify({
+                      model: 'claude-sonnet-4-5-20250929',
+                      max_tokens: 2048,
+                      messages: [{ role: 'user', content: prompt }]
+                    })
+                  });
+                  if (!resp.ok) {
+                    const errorText = await resp.text();
+                    throw new Error(`HTTP ${resp.status}: ${errorText}`);
+                  }
+                  apiResult = await resp.json();
+                } catch (e) {
+                  failReason = `Claude API request failed: ${e.message}`;
+                }
+
+                if (!failReason) {
+                  body = apiResult.content?.[0]?.text;
+                  if (!body) {
+                    core.warning('Empty response from Claude API; writing Diff size only');
+                    body = prBody;
+                  } else {
+                    const firstHeaderIdx = body.search(/^## /m);
+                    if (firstHeaderIdx > 0) {
+                      const preamble = body.substring(0, firstHeaderIdx).trim();
+                      body = body.substring(firstHeaderIdx);
+                      if (preamble) {
+                        body = body.replace(/(## Description[^\n]*\n)/, `$1\n${preamble}\n`);
+                      }
+                    }
+                    body = body.replace(/^- \[ \] .+\n?/gm, '');
+                    body = body.replace(/\n{3,}/g, '\n\n').trim();
+                    console.log(`PR #${pull_number} description auto-filled by Claude`);
                   }
                 }
-                body = body.replace(/^- \[ \] .+\n?/gm, '');
-                body = body.replace(/\n{3,}/g, '\n\n').trim();
-                console.log(`PR #${pull_number} description auto-filled by Claude`);
               }
             } else if (isOpen) {
               console.log('PR body already has content, skipping Claude auto-fill');
@@ -221,6 +230,10 @@ jobs:
             });
 
             console.log(`PR #${pull_number} Diff size section updated`);
+
+            if (failReason) {
+              core.setFailed(failReason);
+            }
 
   # Job 2: Claude Code review
   review:

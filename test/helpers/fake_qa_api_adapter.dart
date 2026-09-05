@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -40,6 +41,21 @@ class FakeQaApiAdapter implements HttpClientAdapter {
   /// How many times `GET …/facts/ids` was hit.
   int factIdsRequestCount = 0;
 
+  /// Optional gate awaited before answering `GET …/quality/stats`.
+  /// Used by tests to assert busy stays true during header refresh.
+  Future<void>? statsHold;
+
+  Completer<void>? _statsHoldStarted;
+
+  /// Completes the first time [statsHold] is awaited (if set).
+  Future<void> get waitUntilStatsHold {
+    final existing = _statsHoldStarted;
+    if (existing != null) return existing.future;
+    final next = Completer<void>();
+    _statsHoldStarted = next;
+    return next.future;
+  }
+
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
@@ -50,6 +66,12 @@ class FakeQaApiAdapter implements HttpClientAdapter {
     final method = options.method;
 
     if (method == 'GET' && path.endsWith('/quality/stats')) {
+      final hold = statsHold;
+      if (hold != null) {
+        final started = _statsHoldStarted ??= Completer<void>();
+        if (!started.isCompleted) started.complete();
+        await hold;
+      }
       final data = stats;
       if (data == null) return _error('Quality stats not found', 404);
       return _ok(data);
