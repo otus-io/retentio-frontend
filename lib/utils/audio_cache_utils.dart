@@ -10,6 +10,20 @@ const int kMinAudioFileBytesForPlayback = 256;
 
 typedef AudioDownloadFn = Future<String?> Function(String url, String path);
 
+bool isRemoteAudioUrl(String url) {
+  final value = url.trim();
+  return value.startsWith('http://') ||
+      value.startsWith('https://') ||
+      value.startsWith('/api/');
+}
+
+String localFilePathFromAudioRef(String url) {
+  if (url.startsWith('file://')) {
+    return Uri.parse(url).toFilePath();
+  }
+  return url;
+}
+
 String cacheFileNameForAudioUrl(String audioUrl) {
   final uri = Uri.parse(audioUrl);
   var path = uri.path;
@@ -47,6 +61,14 @@ Future<String?> ensureAudioCached(
 }) async {
   final url = audioUrl.trim();
   if (url.isEmpty) return null;
+
+  if (!isRemoteAudioUrl(url)) {
+    final localPath = localFilePathFromAudioRef(url);
+    final localFile = File(localPath);
+    if (localFile.existsSync()) {
+      return localFile.absolute.path;
+    }
+  }
 
   final path = await (cachePath ?? localAudioCachePath)(url);
   final cacheFile = File(path);

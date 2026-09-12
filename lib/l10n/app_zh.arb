@@ -110,6 +110,10 @@
   "addFactRemoveRow": "删除该行",
   "addFactFieldNameHint": "字段名（可选）",
   "addFactContentHint": "文本（若已添加媒体可留空）",
+  "factRubyReadingHint": "读音",
+  "factRubyMenuLabel": "注音",
+  "factRubyReadingDialogTitle": "{base}的读音",
+  "factRubyApply": "完成",
   "addFactAttachImage": "图片",
   "addFactAttachVideo": "视频",
   "addFactAttachAudio": "音频",
@@ -1245,6 +1249,45 @@
   },
   "pendingDismissSelected": "忽略所选",
   "pendingClearAll": "清空全部",
+  "qaMode": "QA 模式",
+  "qaModeEmpty": "该导入卡组没有可校验的词条。",
+  "qaModeFactLoadFailed": "无法加载该词条。",
+  "qaModeProgress": "词条 {current} / {total}",
+  "@qaModeProgress": {
+    "placeholders": { "current": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "qaModeVerifiedAspects": "已核验 {verified}/{total}",
+  "@qaModeVerifiedAspects": {
+    "placeholders": { "verified": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "qaModeEdited": "已编辑 {count}",
+  "@qaModeEdited": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "qaModeColumnEmpty": "该列没有可核验的内容",
+  "qaModeChooseColumns": "选择列",
+  "qaModeChooseColumnsHint": "本次 QA 只显示所选列。选择会为本卡组记住。",
+  "qaModeStartWalk": "开始 QA",
+  "qaModeColumnComplete": "{label} {percent}%",
+  "@qaModeColumnComplete": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "percent": { "type": "int" }
+    }
+  },
+  "qaModeColumnPercent": "{percent}%",
+  "@qaModeColumnPercent": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
+  "qaModePrevious": "上一条",
+  "qaModeVerify": "已核验",
+  "qaVerifyConfirmTitle": "发送核验",
+  "qaVerifyConfirmFields": "将核验：{fields}",
+  "@qaVerifyConfirmFields": {
+    "placeholders": { "fields": { "type": "String" } }
+  },
+  "qaVerifySuccess": "质量已保存",
+  "qaEditSubmitted": "编辑已发送给作者",
   "pendingStaged": "已加入未发送贡献",
   "pendingSendSuccess": "{count, plural, =1{已发送 1 条贡献} other{已发送 {count} 条贡献}}",
   "@pendingSendSuccess": {

@@ -351,6 +351,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String get addFactContentHint => '文本（若已添加媒体可留空）';
 
   @override
+  String get factRubyReadingHint => '读音';
+
+  @override
+  String get factRubyMenuLabel => '注音';
+
+  @override
+  String factRubyReadingDialogTitle(String base) {
+    return '$base的读音';
+  }
+
+  @override
+  String get factRubyApply => '完成';
+
+  @override
   String get addFactAttachImage => '图片';
 
   @override
@@ -1540,6 +1554,72 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pendingClearAll => '清空全部';
+
+  @override
+  String get qaMode => 'QA 模式';
+
+  @override
+  String get qaModeEmpty => '该导入卡组没有可校验的词条。';
+
+  @override
+  String get qaModeFactLoadFailed => '无法加载该词条。';
+
+  @override
+  String qaModeProgress(int current, int total) {
+    return '词条 $current / $total';
+  }
+
+  @override
+  String qaModeVerifiedAspects(int verified, int total) {
+    return '已核验 $verified/$total';
+  }
+
+  @override
+  String qaModeEdited(int count) {
+    return '已编辑 $count';
+  }
+
+  @override
+  String get qaModeColumnEmpty => '该列没有可核验的内容';
+
+  @override
+  String get qaModeChooseColumns => '选择列';
+
+  @override
+  String get qaModeChooseColumnsHint => '本次 QA 只显示所选列。选择会为本卡组记住。';
+
+  @override
+  String get qaModeStartWalk => '开始 QA';
+
+  @override
+  String qaModeColumnComplete(String label, int percent) {
+    return '$label $percent%';
+  }
+
+  @override
+  String qaModeColumnPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
+  String get qaModePrevious => '上一条';
+
+  @override
+  String get qaModeVerify => '已核验';
+
+  @override
+  String get qaVerifyConfirmTitle => '发送核验';
+
+  @override
+  String qaVerifyConfirmFields(String fields) {
+    return '将核验：$fields';
+  }
+
+  @override
+  String get qaVerifySuccess => '质量已保存';
+
+  @override
+  String get qaEditSubmitted => '编辑已发送给作者';
 
   @override
   String get pendingStaged => '已加入未发送贡献';

@@ -480,6 +480,27 @@
   "@addFactContentHint": {
     "description": "Hint for entry text field"
   },
+  "factRubyReadingHint": "Reading",
+  "@factRubyReadingHint": {
+    "description": "Hint for the furigana field above kanji in the ruby fact editor"
+  },
+  "factRubyMenuLabel": "Ruby",
+  "@factRubyMenuLabel": {
+    "description": "Selection toolbar action to wrap selected text as ruby"
+  },
+  "factRubyReadingDialogTitle": "Reading for {base}",
+  "@factRubyReadingDialogTitle": {
+    "description": "Title of the dialog that asks for a reading for selected base text",
+    "placeholders": {
+      "base": {
+        "type": "String"
+      }
+    }
+  },
+  "factRubyApply": "Done",
+  "@factRubyApply": {
+    "description": "Confirm button on the ruby reading dialog"
+  },
   "addFactAttachImage": "Image",
   "@addFactAttachImage": {
     "description": "Label for attaching an image"
@@ -2040,6 +2061,45 @@
   },
   "pendingDismissSelected": "Dismiss selected",
   "pendingClearAll": "Clear all",
+  "qaMode": "QA mode",
+  "qaModeEmpty": "This imported deck has no facts to review.",
+  "qaModeFactLoadFailed": "Could not load this fact.",
+  "qaModeProgress": "Fact {current} / {total}",
+  "@qaModeProgress": {
+    "placeholders": { "current": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "qaModeVerifiedAspects": "Verified {verified}/{total}",
+  "@qaModeVerifiedAspects": {
+    "placeholders": { "verified": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "qaModeEdited": "Edited {count}",
+  "@qaModeEdited": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "qaModeColumnEmpty": "Nothing to verify in this column",
+  "qaModeChooseColumns": "Choose columns",
+  "qaModeChooseColumnsHint": "Only selected columns appear during this QA walk. Your choice is remembered for this deck.",
+  "qaModeStartWalk": "Start QA",
+  "qaModeColumnComplete": "{label} {percent}%",
+  "@qaModeColumnComplete": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "percent": { "type": "int" }
+    }
+  },
+  "qaModeColumnPercent": "{percent}%",
+  "@qaModeColumnPercent": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
+  "qaModePrevious": "Previous",
+  "qaModeVerify": "Verified",
+  "qaVerifyConfirmTitle": "Send verification",
+  "qaVerifyConfirmFields": "Signing off: {fields}",
+  "@qaVerifyConfirmFields": {
+    "placeholders": { "fields": { "type": "String" } }
+  },
+  "qaVerifySuccess": "Quality saved",
+  "qaEditSubmitted": "Edit sent to the author",
   "pendingStaged": "Saved to unsent contributions",
   "pendingSendSuccess": "{count, plural, =1{Sent 1 contribution} other{Sent {count} contributions}}",
   "@pendingSendSuccess": {

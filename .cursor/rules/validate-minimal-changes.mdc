@@ -24,6 +24,7 @@ alwaysApply: true
 5. **Do not change tests to pass** — Fix production code when behavior is wrong. Edit tests only when the test is wrong or the user asked for test changes.
 6. **Flutter tests** — Placement and patterns: `.cursor/rules/testing.mdc` and `.cursor/rules/flutter-frontend.mdc`.
 7. **Validate after** — Run relevant checks for the change scope: `dart format`, `flutter analyze`, `flutter test`. If a check fails, fix within the same scope; do not expand to “clean up” nearby code.
+8. **100% coverage on new code** — For all new code changes, test coverage must be 100%. Cover every new or changed executable line, branch, and error path in the change set. Do not finish until coverage of the diff is complete. Do not require raising coverage of untouched pre-existing code.
 
 **Question-only or review-only:** answer without editing unless the user asked for code changes.
 
@@ -54,4 +55,5 @@ Bug fix: reproduce (test or steps), then fix. Refactor: tests pass before and af
 [ ] Minimal, surgical diff — no unrelated changes
 [ ] Failures fixed in prod code, not by weakening tests
 [ ] Post-change validation run or N/A explained
+[ ] New/changed code has 100% test coverage
 ```

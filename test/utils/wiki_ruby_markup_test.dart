@@ -46,18 +46,22 @@ void main() {
       expect(p.segments.single, isA<WikiSegPlain>());
     });
 
-    test(
-      'empty base or reading treats match as literal plain via group(0)',
-      () {
-        final p = WikiRubyMarkup.parse('[[|x]]');
-        expect(p.composed, '[[|x]]');
-        expect(p.segments.single, isA<WikiSegPlain>());
+    test('empty base is pending ruby; both-empty match is plain', () {
+      final p = WikiRubyMarkup.parse('[[|]]');
+      expect(p.composed, '[[|]]');
+      expect(p.segments.single, isA<WikiSegPlain>());
 
-        final p2 = WikiRubyMarkup.parse('[[a|]]');
-        expect(p2.composed, '[[a|]]');
-        expect(p2.segments.single, isA<WikiSegPlain>());
-      },
-    );
+      final p2 = WikiRubyMarkup.parse('[[a|]]');
+      expect(p2.composed, 'a');
+      expect(p2.segments.single, isA<WikiSegRuby>());
+      expect((p2.segments.single as WikiSegRuby).reading, isEmpty);
+
+      final p3 = WikiRubyMarkup.parse('[[|み]]');
+      expect(p3.composed, '');
+      expect(p3.segments.single, isA<WikiSegRuby>());
+      expect((p3.segments.single as WikiSegRuby).kanji, isEmpty);
+      expect((p3.segments.single as WikiSegRuby).reading, 'み');
+    });
 
     test('segmentAt returns correct segment for composed index', () {
       final p = WikiRubyMarkup.parse('[[ab|cd]]e');

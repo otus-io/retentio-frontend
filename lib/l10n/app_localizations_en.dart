@@ -357,6 +357,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addFactContentHint => 'Text (optional if you add media)';
 
   @override
+  String get factRubyReadingHint => 'Reading';
+
+  @override
+  String get factRubyMenuLabel => 'Ruby';
+
+  @override
+  String factRubyReadingDialogTitle(String base) {
+    return 'Reading for $base';
+  }
+
+  @override
+  String get factRubyApply => 'Done';
+
+  @override
   String get addFactAttachImage => 'Image';
 
   @override
@@ -1638,6 +1652,73 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pendingClearAll => 'Clear all';
+
+  @override
+  String get qaMode => 'QA mode';
+
+  @override
+  String get qaModeEmpty => 'This imported deck has no facts to review.';
+
+  @override
+  String get qaModeFactLoadFailed => 'Could not load this fact.';
+
+  @override
+  String qaModeProgress(int current, int total) {
+    return 'Fact $current / $total';
+  }
+
+  @override
+  String qaModeVerifiedAspects(int verified, int total) {
+    return 'Verified $verified/$total';
+  }
+
+  @override
+  String qaModeEdited(int count) {
+    return 'Edited $count';
+  }
+
+  @override
+  String get qaModeColumnEmpty => 'Nothing to verify in this column';
+
+  @override
+  String get qaModeChooseColumns => 'Choose columns';
+
+  @override
+  String get qaModeChooseColumnsHint =>
+      'Only selected columns appear during this QA walk. Your choice is remembered for this deck.';
+
+  @override
+  String get qaModeStartWalk => 'Start QA';
+
+  @override
+  String qaModeColumnComplete(String label, int percent) {
+    return '$label $percent%';
+  }
+
+  @override
+  String qaModeColumnPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
+  String get qaModePrevious => 'Previous';
+
+  @override
+  String get qaModeVerify => 'Verified';
+
+  @override
+  String get qaVerifyConfirmTitle => 'Send verification';
+
+  @override
+  String qaVerifyConfirmFields(String fields) {
+    return 'Signing off: $fields';
+  }
+
+  @override
+  String get qaVerifySuccess => 'Quality saved';
+
+  @override
+  String get qaEditSubmitted => 'Edit sent to the author';
 
   @override
   String get pendingStaged => 'Saved to unsent contributions';
