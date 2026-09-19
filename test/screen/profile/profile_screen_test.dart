@@ -53,6 +53,29 @@ void main() {
       expect(find.byIcon(LucideIcons.globe), findsOneWidget);
     });
 
+    testWidgets('opens review statistics from the profile list', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildTestableWidget(
+          ProfileScreen(
+            statisticsBuilder: (_) => const Scaffold(
+              body: Center(child: Text('Statistics destination')),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(ProfileScreen));
+      final loc = AppLocalizations.of(context)!;
+      expect(find.text(loc.statistics), findsOneWidget);
+
+      await tester.tap(find.text(loc.statistics));
+      await tester.pumpAndSettle();
+      expect(find.text('Statistics destination'), findsOneWidget);
+    });
+
     testWidgets('tapping logout shows confirmation dialog', (tester) async {
       await tester.pumpWidget(buildTestableWidget(const ProfileScreen()));
       await tester.pumpAndSettle();
@@ -73,6 +96,11 @@ void main() {
       await tester.pumpWidget(buildTestableWidget(const ProfileScreen()));
       await tester.pumpAndSettle();
 
+      await tester.scrollUntilVisible(
+        find.text('Rete v2.3.4'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Rete v2.3.4'), findsOneWidget);
     });
 
@@ -81,7 +109,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
-      expect(tiles, hasLength(4));
+      expect(tiles, hasLength(5));
       for (final tile in tiles) {
         expect(
           tile.trailing,

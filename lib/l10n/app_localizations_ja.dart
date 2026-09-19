@@ -462,6 +462,68 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tags => 'タグ';
 
   @override
+  String get statistics => '統計';
+
+  @override
+  String get statisticsAllDecks => 'すべてのデッキ';
+
+  @override
+  String get statisticsDeckFilter => 'デッキ';
+
+  @override
+  String statisticsRangeDays(int count) {
+    return '$count日';
+  }
+
+  @override
+  String get statisticsPeriodReviews => '期間内の復習';
+
+  @override
+  String get statisticsTodayReviews => '今日の復習';
+
+  @override
+  String get statisticsActiveDays => '学習した日';
+
+  @override
+  String get statisticsDailyAverage => '1日平均';
+
+  @override
+  String get statisticsDailyActivity => '日別の復習';
+
+  @override
+  String get statisticsWeekdayDistribution => '曜日別の復習';
+
+  @override
+  String get statisticsUtcNote => '日付と日の区切りは UTC です。';
+
+  @override
+  String get statisticsNoDecks => 'デッキを作成すると復習活動の記録が始まります。';
+
+  @override
+  String get statisticsNoActivity => 'この期間には復習記録がありません。';
+
+  @override
+  String get statisticsLoadFailed => '復習統計を読み込めませんでした。';
+
+  @override
+  String get statisticsRefreshFailed => '更新できませんでした。前回のデータを表示しています。';
+
+  @override
+  String statisticsReviewsCount(int count) {
+    return '$count回の復習';
+  }
+
+  @override
+  String statisticsDailyChartSemantics(String details) {
+    return 'UTC の日別復習活動：$details';
+  }
+
+  @override
+  String statisticsWeekdayChartSemantics(String details) {
+    return 'UTC の曜日別復習回数：$details';
+  }
+
+  @override
   String get tagLabel => 'タグ';
 
   @override

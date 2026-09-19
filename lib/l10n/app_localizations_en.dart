@@ -475,6 +475,70 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tags => 'Tags';
 
   @override
+  String get statistics => 'Statistics';
+
+  @override
+  String get statisticsAllDecks => 'All decks';
+
+  @override
+  String get statisticsDeckFilter => 'Deck';
+
+  @override
+  String statisticsRangeDays(int count) {
+    return '$count days';
+  }
+
+  @override
+  String get statisticsPeriodReviews => 'Reviews in period';
+
+  @override
+  String get statisticsTodayReviews => 'Reviews today';
+
+  @override
+  String get statisticsActiveDays => 'Active days';
+
+  @override
+  String get statisticsDailyAverage => 'Daily average';
+
+  @override
+  String get statisticsDailyActivity => 'Daily activity';
+
+  @override
+  String get statisticsWeekdayDistribution => 'Reviews by weekday';
+
+  @override
+  String get statisticsUtcNote => 'Dates and day boundaries use UTC.';
+
+  @override
+  String get statisticsNoDecks =>
+      'Create a deck to start tracking review activity.';
+
+  @override
+  String get statisticsNoActivity => 'No review activity in this period.';
+
+  @override
+  String get statisticsLoadFailed => 'Could not load review statistics.';
+
+  @override
+  String get statisticsRefreshFailed =>
+      'Update failed. Showing previously loaded data.';
+
+  @override
+  String statisticsReviewsCount(int count) {
+    return '$count reviews';
+  }
+
+  @override
+  String statisticsDailyChartSemantics(String details) {
+    return 'Daily review activity in UTC: $details';
+  }
+
+  @override
+  String statisticsWeekdayChartSemantics(String details) {
+    return 'Reviews by UTC weekday: $details';
+  }
+
+  @override
   String get tagLabel => 'Tag';
 
   @override

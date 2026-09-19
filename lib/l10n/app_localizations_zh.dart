@@ -462,6 +462,68 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tags => '标签';
 
   @override
+  String get statistics => '统计';
+
+  @override
+  String get statisticsAllDecks => '全部卡组';
+
+  @override
+  String get statisticsDeckFilter => '卡组';
+
+  @override
+  String statisticsRangeDays(int count) {
+    return '$count 天';
+  }
+
+  @override
+  String get statisticsPeriodReviews => '期间复习';
+
+  @override
+  String get statisticsTodayReviews => '今日复习';
+
+  @override
+  String get statisticsActiveDays => '活跃天数';
+
+  @override
+  String get statisticsDailyAverage => '日均复习';
+
+  @override
+  String get statisticsDailyActivity => '每日复习趋势';
+
+  @override
+  String get statisticsWeekdayDistribution => '星期分布';
+
+  @override
+  String get statisticsUtcNote => '日期和每日边界均以 UTC 计算。';
+
+  @override
+  String get statisticsNoDecks => '创建卡组后即可开始记录复习活动。';
+
+  @override
+  String get statisticsNoActivity => '该时间段内暂无复习记录。';
+
+  @override
+  String get statisticsLoadFailed => '无法加载复习统计。';
+
+  @override
+  String get statisticsRefreshFailed => '更新失败，当前显示上次加载的数据。';
+
+  @override
+  String statisticsReviewsCount(int count) {
+    return '$count 次复习';
+  }
+
+  @override
+  String statisticsDailyChartSemantics(String details) {
+    return 'UTC 每日复习活动：$details';
+  }
+
+  @override
+  String statisticsWeekdayChartSemantics(String details) {
+    return '按 UTC 星期统计的复习次数：$details';
+  }
+
+  @override
   String get tagLabel => '标签';
 
   @override

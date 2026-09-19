@@ -634,6 +634,36 @@
     "description": "Font sheet tab for card back typography"
   },
   "tags": "Tags",
+  "statistics": "Statistics",
+  "statisticsAllDecks": "All decks",
+  "statisticsDeckFilter": "Deck",
+  "statisticsRangeDays": "{count} days",
+  "@statisticsRangeDays": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "statisticsPeriodReviews": "Reviews in period",
+  "statisticsTodayReviews": "Reviews today",
+  "statisticsActiveDays": "Active days",
+  "statisticsDailyAverage": "Daily average",
+  "statisticsDailyActivity": "Daily activity",
+  "statisticsWeekdayDistribution": "Reviews by weekday",
+  "statisticsUtcNote": "Dates and day boundaries use UTC.",
+  "statisticsNoDecks": "Create a deck to start tracking review activity.",
+  "statisticsNoActivity": "No review activity in this period.",
+  "statisticsLoadFailed": "Could not load review statistics.",
+  "statisticsRefreshFailed": "Update failed. Showing previously loaded data.",
+  "statisticsReviewsCount": "{count} reviews",
+  "@statisticsReviewsCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "statisticsDailyChartSemantics": "Daily review activity in UTC: {details}",
+  "@statisticsDailyChartSemantics": {
+    "placeholders": {"details": {"type": "String"}}
+  },
+  "statisticsWeekdayChartSemantics": "Reviews by UTC weekday: {details}",
+  "@statisticsWeekdayChartSemantics": {
+    "placeholders": {"details": {"type": "String"}}
+  },
   "@tags": {
     "description": "Tags section label"
   },
