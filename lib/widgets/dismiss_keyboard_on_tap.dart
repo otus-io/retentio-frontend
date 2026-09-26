@@ -58,6 +58,9 @@ class _DismissKeyboardOnTapState extends State<DismissKeyboardOnTap> {
   }
 
   void _onPointerUp(PointerUpEvent event) {
+    // Up events are routed to the hit path cached at pointer-down, so they
+    // can arrive after this widget was disposed mid-gesture.
+    if (!mounted) return;
     final before = _focusAtDown;
     if (event.pointer != _pointer || before == null) return;
     _reset();
@@ -68,6 +71,7 @@ class _DismissKeyboardOnTapState extends State<DismissKeyboardOnTap> {
     // the next frame — and make sure one is scheduled.
     SchedulerBinding.instance.ensureVisualUpdate();
     SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final after = FocusManager.instance.primaryFocus;
       if (after == null) return;
       // Focus moved (e.g. another field) — keep the new focus.

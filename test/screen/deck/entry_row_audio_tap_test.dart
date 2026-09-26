@@ -3,18 +3,22 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:riverpod/misc.dart' show Override;
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/deck/card_widgets/card_audio.dart';
 import 'package:retentio/screen/deck/fact_add_composer/entry_row.dart';
 import 'package:retentio/screen/deck/fact_add_composer/row_model.dart';
+import 'package:retentio/screen/deck/providers/audio_player.dart';
 import 'package:retentio/services/apis/media_service.dart';
 
 Widget _harness(
   AddFactRowModel row, {
   ValueChanged<MediaSlotKind>? onClearSlot,
+  List<Override> overrides = const [],
 }) {
   final theme = ThemeData.light();
   return ProviderScope(
+    overrides: overrides,
     child: MaterialApp(
       locale: const Locale('en'),
       localizationsDelegates: const [
@@ -82,6 +86,48 @@ void main() {
     final audioTop = tester.getTopLeft(find.byType(CardAudio)).dy;
     final textTop = tester.getTopLeft(find.byType(EditableText)).dy;
     expect(audioTop, lessThan(textTop));
+  });
+
+  testWidgets('tapping a ready play button plays without focusing text', (
+    tester,
+  ) async {
+    final row = AddFactRowModel(initialFieldName: 'JP');
+    addTearDown(row.dispose);
+    row.content.text = 'headword';
+    row.audioPath = 'aud001';
+    final fake = _ReadyAudioPlayer();
+
+    await tester.pumpWidget(
+      _harness(row, overrides: [audioPlayerProvider.overrideWith(() => fake)]),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(LucideIcons.volume2));
+    await tester.pumpAndSettle();
+
+    expect(fake.playPauseCalls, 1);
+    final editable = tester.widget<EditableText>(find.byType(EditableText));
+    expect(editable.focusNode.hasFocus, isFalse);
+  });
+
+  testWidgets('tapping clear removes audio without focusing text', (
+    tester,
+  ) async {
+    final row = AddFactRowModel(initialFieldName: 'JP');
+    addTearDown(row.dispose);
+    row.content.text = 'headword';
+    row.audioPath = 'aud001';
+    final cleared = <MediaSlotKind>[];
+
+    await tester.pumpWidget(_harness(row, onClearSlot: cleared.add));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(LucideIcons.x));
+    await tester.pumpAndSettle();
+
+    expect(cleared, [MediaSlotKind.audio]);
+    final editable = tester.widget<EditableText>(find.byType(EditableText));
+    expect(editable.focusNode.hasFocus, isFalse);
   });
 
   testWidgets('tapping empty space beside audio focuses the text end', (
@@ -269,6 +315,16 @@ void main() {
       expect(row.content.selection.baseOffset, 11);
     },
   );
+}
+
+class _ReadyAudioPlayer extends AudioPlayerNotifier {
+  var playPauseCalls = 0;
+
+  @override
+  AudioPlayerState build() => AudioPlayerState(isReady: true);
+
+  @override
+  Future<void> playPause() async => playPauseCalls++;
 }
 
 class _MediaTargetToggleHarness extends StatefulWidget {

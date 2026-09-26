@@ -150,6 +150,9 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
       await finishVoiceRecording();
       return;
     }
+    // Captured before the awaits below so focus changes during the permission
+    // prompt or prepare step cannot redirect the clip.
+    final target = targetRowIndexForMedia();
     await prepareForExternalMicRecording();
     final permitted = await voiceRecorder.hasPermission();
     if (!permitted) {
@@ -172,7 +175,7 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
         ),
         path: filePath,
       );
-      _recordingTargetRow = targetRowIndexForMedia();
+      _recordingTargetRow = target;
       if (mounted) setState(() => isRecordingVoice = true);
     } catch (_) {
       if (mounted) showComposerSnack(loc.addFactRecordingFailed);

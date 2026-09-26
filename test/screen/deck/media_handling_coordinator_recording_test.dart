@@ -12,12 +12,16 @@ import 'package:retentio/services/apis/media_service.dart';
 import '../../helpers/path_provider_mock.dart';
 
 class _FakeRecorder extends Fake implements AudioRecorder {
-  _FakeRecorder(this.outputPath);
+  _FakeRecorder(this.outputPath, {this.onPermission});
 
   final String outputPath;
+  final VoidCallback? onPermission;
 
   @override
-  Future<bool> hasPermission({bool request = true}) async => true;
+  Future<bool> hasPermission({bool request = true}) async {
+    onPermission?.call();
+    return true;
+  }
 
   @override
   Future<void> start(RecordConfig config, {required String path}) async {}
@@ -170,6 +174,25 @@ void main() {
 
     // Lock released: the target follows focus again.
     expect(state.targetRowIndexForMedia(), 2);
+  });
+
+  testWidgets('recording target is captured before the permission await', (
+    tester,
+  ) async {
+    late _RecordingHarnessState state;
+    final recorder = _FakeRecorder(
+      clipPath,
+      // Focus moves while the permission prompt is up.
+      onPermission: () => state.focusRow(2),
+    );
+    state = await _pump(tester, recorder);
+
+    await _focusAndSync(tester, state, 1);
+    await tester.runAsync(state.toggleVoiceRecording);
+    await tester.pump();
+
+    expect(state.isRecordingVoice, isTrue);
+    expect(state.targetRowIndexForMedia(), 1);
   });
 
   testWidgets('cancelling a recording releases the locked target', (

@@ -115,6 +115,35 @@ void main() {
     expect(focus.hasFocus, isFalse);
   });
 
+  testWidgets('pointer up after dispose mid-gesture is ignored', (
+    tester,
+  ) async {
+    await _pumpFocusedFieldWithBlank(tester);
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('blank')),
+    );
+
+    // Sheet closes while the finger is still down.
+    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+    await gesture.up();
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('dispose before the post-frame check skips it', (tester) async {
+    await _pumpFocusedFieldWithBlank(tester);
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('blank')),
+    );
+    await gesture.up();
+
+    // Unmount in the same frame the post-frame focus check runs.
+    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('pointerHitsEditable is false for empty hit targets', (
     tester,
   ) async {

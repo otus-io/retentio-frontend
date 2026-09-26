@@ -209,6 +209,8 @@ class AddFactEntryRow extends HookWidget {
                       size: _kMediaChipIconSize,
                       color: theme.colorScheme.primary,
                     ),
+                  // Raw IconButton: AppIconButton enforces a 44px minimum, but
+                  // this clear control must stay compact (28×28).
                   IconButton(
                     tooltip: loc.addFactClearAttachment,
                     onPressed: () => onClearSlot(MediaSlotKind.audio),
@@ -254,6 +256,8 @@ class AddFactEntryRow extends HookWidget {
                           size: _kMediaChipIconSize,
                           color: theme.colorScheme.primary,
                         ),
+                        // Raw IconButton: AppIconButton enforces a 44px
+                        // minimum, but this clear control must stay 28×28.
                         IconButton(
                           tooltip: loc.addFactClearAttachment,
                           onPressed: () => onClearSlot(kind),
