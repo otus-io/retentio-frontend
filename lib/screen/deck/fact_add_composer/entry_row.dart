@@ -185,19 +185,24 @@ class AddFactEntryRow extends HookWidget {
               ],
             ),
           ),
-        if (audioPlayUrl != null)
+        if (audioPath != null)
           Padding(
             padding: _kMediaChipWrapPadding,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Expanded(
-                  child: CardAudio(
+                if (audioPlayUrl != null)
+                  CardAudio(
                     audioUrl: audioPlayUrl,
                     color: theme.colorScheme.primary,
-                    compact: false,
+                    compact: true,
+                  )
+                else
+                  Icon(
+                    addFactAttachmentChipIcon(MediaSlotKind.audio),
+                    size: _kMediaChipIconSize,
+                    color: theme.colorScheme.primary,
                   ),
-                ),
                 IconButton(
                   tooltip: loc.addFactClearAttachment,
                   onPressed: () => onClearSlot(MediaSlotKind.audio),

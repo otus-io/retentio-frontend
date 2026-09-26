@@ -309,7 +309,6 @@ class _FactAddState extends ConsumerState<FactAdd>
     final mediaTarget = targetRowIndexForMedia();
     for (var i = 0; i < _rows.length; i++) {
       final row = _rows[i];
-      final hasAudio = (row.audioPath ?? '').trim().isNotEmpty;
       yield Padding(
         key: row.hostKey,
         padding: _kEntryRowBottomPadding,
@@ -320,7 +319,9 @@ class _FactAddState extends ConsumerState<FactAdd>
           theme: theme,
           outlineColor: outline,
           isRecordingTarget: _recordingVoice && i == mediaTarget,
-          isMediaTarget: i == mediaTarget && (_recordingVoice || !hasAudio),
+          // Highlight follows the sticky media target even when the row already
+          // has audio, so focusing / blank-tapping that row is visible.
+          isMediaTarget: i == mediaTarget,
           onClearSlot: (kind) {
             setState(() {
               row.clearSlot(kind);

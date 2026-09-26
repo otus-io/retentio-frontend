@@ -393,9 +393,6 @@ class _FactEditState extends ConsumerState<FactEdit>
     final mediaTarget = targetRowIndexForMedia();
     for (var i = 0; i < rows.length; i++) {
       final model = rows[i];
-      final hasAudio =
-          (model.row.audioPath ?? '').trim().isNotEmpty ||
-          (model.existingAudioId ?? '').trim().isNotEmpty;
       yield Padding(
         key: model.row.hostKey,
         padding: _kEditEntryRowBottomPadding,
@@ -406,7 +403,9 @@ class _FactEditState extends ConsumerState<FactEdit>
           theme: theme,
           outlineColor: outline,
           isRecordingTarget: _recordingVoice && i == mediaTarget,
-          isMediaTarget: i == mediaTarget && (_recordingVoice || !hasAudio),
+          // Highlight follows the sticky media target even when the row already
+          // has audio, so focusing / blank-tapping that row is visible.
+          isMediaTarget: i == mediaTarget,
           onClearSlot: (kind) {
             setState(() {
               model.row.clearSlot(kind);

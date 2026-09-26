@@ -9,7 +9,13 @@ void main() {
   Future<void> pumpEditor(
     WidgetTester tester, {
     required TextEditingController storage,
+    double? width,
   }) async {
+    final editor = WikiRubyContentEditor(
+      storage: storage,
+      baseStyle: const TextStyle(fontSize: 16),
+      readingHint: 'Reading',
+    );
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('en'),
@@ -21,16 +27,58 @@ void main() {
         ],
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
-          body: WikiRubyContentEditor(
-            storage: storage,
-            baseStyle: const TextStyle(fontSize: 16),
-            readingHint: 'Reading',
-          ),
+          body: width == null ? editor : SizedBox(width: width, child: editor),
         ),
       ),
     );
     await tester.pumpAndSettle();
   }
+
+  Future<void> tapBlankAfterText(WidgetTester tester) async {
+    final rect = tester.getRect(find.byType(WikiRubyContentEditor));
+    await tester.tapAt(rect.centerRight - const Offset(4, 0));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('tapping blank space after plain text focuses its end', (
+    tester,
+  ) async {
+    final storage = TextEditingController(text: '[[皆|みな]]さん');
+    addTearDown(storage.dispose);
+    await pumpEditor(tester, storage: storage, width: 400);
+
+    await tapBlankAfterText(tester);
+
+    final tail = tester.widget<TextField>(
+      find.byWidgetPredicate(
+        (w) => w is TextField && w.controller?.text == 'さん',
+      ),
+    );
+    expect(tail.focusNode!.hasFocus, isTrue);
+    expect(
+      tail.controller!.selection,
+      const TextSelection.collapsed(offset: 2),
+    );
+  });
+
+  testWidgets('tapping blank space after trailing ruby focuses continuation', (
+    tester,
+  ) async {
+    final storage = TextEditingController(text: '[[皆|みな]]');
+    addTearDown(storage.dispose);
+    await pumpEditor(tester, storage: storage, width: 400);
+
+    await tapBlankAfterText(tester);
+
+    final continuation = tester.widget<TextField>(
+      find.byWidgetPredicate((w) => w is TextField && w.controller?.text == ''),
+    );
+    expect(continuation.focusNode!.hasFocus, isTrue);
+    expect(
+      continuation.controller!.selection,
+      const TextSelection.collapsed(offset: 0),
+    );
+  });
 
   testWidgets('shows card-like ruby without raw markup', (tester) async {
     final storage = TextEditingController(text: '[[皆|みな]]さん');

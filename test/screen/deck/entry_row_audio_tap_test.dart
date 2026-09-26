@@ -7,8 +7,12 @@ import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/deck/card_widgets/card_audio.dart';
 import 'package:retentio/screen/deck/fact_add_composer/entry_row.dart';
 import 'package:retentio/screen/deck/fact_add_composer/row_model.dart';
+import 'package:retentio/services/apis/media_service.dart';
 
-Widget _harness(AddFactRowModel row) {
+Widget _harness(
+  AddFactRowModel row, {
+  ValueChanged<MediaSlotKind>? onClearSlot,
+}) {
   final theme = ThemeData.light();
   return ProviderScope(
     child: MaterialApp(
@@ -29,7 +33,7 @@ Widget _harness(AddFactRowModel row) {
             loc: lookupAppLocalizations(const Locale('en')),
             theme: theme,
             outlineColor: Colors.grey,
-            onClearSlot: (_) {},
+            onClearSlot: onClearSlot ?? (_) {},
           ),
         ),
       ),
@@ -61,7 +65,7 @@ void main() {
     },
   );
 
-  testWidgets('audio attachment shows a full player above the text field', (
+  testWidgets('audio attachment shows a compact player above the text field', (
     tester,
   ) async {
     final row = AddFactRowModel(initialFieldName: 'JP');
@@ -73,11 +77,30 @@ void main() {
     await tester.pumpAndSettle();
 
     final audio = tester.widget<CardAudio>(find.byType(CardAudio));
-    expect(audio.compact, isFalse);
+    expect(audio.compact, isTrue);
 
     final audioTop = tester.getTopLeft(find.byType(CardAudio)).dy;
     final textTop = tester.getTopLeft(find.byType(EditableText)).dy;
     expect(audioTop, lessThan(textTop));
+  });
+
+  testWidgets('unplayable audio path still shows an icon and clear button', (
+    tester,
+  ) async {
+    final row = AddFactRowModel(initialFieldName: 'JP');
+    addTearDown(row.dispose);
+    row.content.text = 'headword';
+    row.audioPath = '   ';
+    final cleared = <MediaSlotKind>[];
+
+    await tester.pumpWidget(_harness(row, onClearSlot: cleared.add));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CardAudio), findsNothing);
+    expect(find.byIcon(LucideIcons.audioLines), findsOneWidget);
+
+    await tester.tap(find.byIcon(LucideIcons.x));
+    expect(cleared, [MediaSlotKind.audio]);
   });
 
   testWidgets('recording target shows hint and highlight on the chosen row', (
