@@ -29,6 +29,10 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
   /// focused so a recording still attaches to the field the user was editing.
   int _stickyMediaTargetRow = 0;
 
+  /// Row locked in when recording starts, so tapping another field mid-record
+  /// neither moves the recording hint nor redirects the finished clip.
+  int? _recordingTargetRow;
+
   bool get voiceRecordingAvailable =>
       !kIsWeb && (Platform.isIOS || Platform.isAndroid);
 
@@ -60,6 +64,8 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
   }
 
   int targetRowIndexForMedia() {
+    final locked = _recordingTargetRow;
+    if (locked != null) return locked;
     final focused = addFactFocusedHostRowIndex(
       focusContext: FocusManager.instance.primaryFocus?.context,
       hostKeys: mediaTargetHostKeys,
@@ -149,6 +155,7 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
         ),
         path: filePath,
       );
+      _recordingTargetRow = targetRowIndexForMedia();
       if (mounted) setState(() => isRecordingVoice = true);
     } catch (_) {
       if (mounted) showComposerSnack(loc.addFactRecordingFailed);
@@ -156,6 +163,15 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
   }
 
   Future<void> finishVoiceRecording() async {
+    try {
+      await _stopAndAttachRecording();
+    } finally {
+      // Keep the lock if a new recording already started during the attach.
+      if (!isRecordingVoice) _recordingTargetRow = null;
+    }
+  }
+
+  Future<void> _stopAndAttachRecording() async {
     final loc = AppLocalizations.of(context)!;
     String? outPath;
     try {
@@ -181,6 +197,7 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
 
   Future<void> cancelVoiceRecording() async {
     if (!isRecordingVoice) return;
+    _recordingTargetRow = null;
     try {
       await voiceRecorder.cancel();
     } catch (_) {}

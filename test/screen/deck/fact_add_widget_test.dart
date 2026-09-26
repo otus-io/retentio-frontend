@@ -58,6 +58,46 @@ void main() {
       },
     );
 
+    testWidgets('saving resets the media target to the first row', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      final interceptor = attachFakeFactApiInterceptor();
+      addTearDown(() {
+        detachFakeFactApiInterceptor(interceptor);
+        tearDownTestEnvironment();
+      });
+
+      final deck = sampleDeck();
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          Scaffold(body: FactAdd(deck: deck)),
+          overrides: [
+            deckListProvider.overrideWith(() => FakeDeckListNotifier([deck])),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final textFields = find.byType(TextField);
+      await tester.enterText(textFields.at(0), 'Hello');
+      // Focusing the second row makes it the sticky media target.
+      await tester.enterText(textFields.at(1), 'World');
+      await tester.pump();
+
+      await tester.tap(find.text('Save fact'));
+      await tester.pumpAndSettle();
+      expect(interceptor.addFactsCount, 1);
+
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+      final dynamic state = tester.state(find.byType(FactAdd));
+      expect(state.targetRowIndexForMedia(), 0);
+
+      AppToast.dismiss();
+      await tester.pumpAndSettle();
+    });
+
     testWidgets(
       'tap outside only unfocuses and does not clear form while recording',
       (tester) async {

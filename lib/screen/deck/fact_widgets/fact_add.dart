@@ -158,6 +158,7 @@ class _FactAddState extends ConsumerState<FactAdd>
 
   void _resetForm() {
     if (!mounted) return;
+    pinMediaTargetRow(0);
     final oldRows = List<AddFactRowModel>.from(_rows);
     setState(() {
       _rows
