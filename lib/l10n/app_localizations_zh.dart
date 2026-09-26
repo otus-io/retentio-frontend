@@ -389,6 +389,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get addFactStopRecordingTooltip => '停止录音并将音频附加到该字段';
 
   @override
+  String get addFactRecordingTargetHint => '正在录制到此字段…';
+
+  @override
   String get addFactMicPermissionDenied => '录音需要麦克风权限。';
 
   @override

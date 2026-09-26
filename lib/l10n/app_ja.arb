@@ -122,6 +122,7 @@
   "addFactGalleryMediaTooltip": "ライブラリから写真または動画を選択。長押しで削除。",
   "addFactRecordAudioTooltip": "マイクで録音。もう一度タップで停止して添付。録音中に長押しで破棄。",
   "addFactStopRecordingTooltip": "録音を停止してこのフィールドに音声を添付",
+  "addFactRecordingTargetHint": "このフィールドに録音中…",
   "addFactMicPermissionDenied": "録音にはマイクへのアクセスが必要です。",
   "addFactRecordingFailed": "録音できませんでした。もう一度お試しください。",
   "addFactSubmit": "項目を保存",

@@ -25,17 +25,44 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
   bool get targetRowHasAttachment;
   void clearTargetRowAttachment();
 
+  /// Last row that had focus inside its host — used when the mic/toolbar is
+  /// focused so a recording still attaches to the field the user was editing.
+  int _stickyMediaTargetRow = 0;
+
   bool get voiceRecordingAvailable =>
       !kIsWeb && (Platform.isIOS || Platform.isAndroid);
 
   /// Pause underlying card/deck audio so the microphone can own the session.
   Future<void> prepareForExternalMicRecording() async {}
 
+  /// Pins media attach/record to [index] (e.g. after clearing that row's audio).
+  void pinMediaTargetRow(int index) {
+    final last = mediaTargetHostKeys.length - 1;
+    if (last < 0) {
+      _stickyMediaTargetRow = 0;
+      return;
+    }
+    if (index < 0) {
+      _stickyMediaTargetRow = 0;
+      return;
+    }
+    _stickyMediaTargetRow = index > last ? last : index;
+  }
+
   int targetRowIndexForMedia() {
-    return addFactTargetRowIndexForMedia(
+    final focused = addFactFocusedHostRowIndex(
       focusContext: FocusManager.instance.primaryFocus?.context,
       hostKeys: mediaTargetHostKeys,
     );
+    if (focused != null) {
+      _stickyMediaTargetRow = focused;
+      return focused;
+    }
+    final last = mediaTargetHostKeys.length - 1;
+    if (last < 0) return 0;
+    if (_stickyMediaTargetRow > last) _stickyMediaTargetRow = last;
+    if (_stickyMediaTargetRow < 0) _stickyMediaTargetRow = 0;
+    return _stickyMediaTargetRow;
   }
 
   Future<void> tryAttachPickedPath(String path) async {

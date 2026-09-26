@@ -90,7 +90,9 @@ class _FactAddState extends ConsumerState<FactAdd>
   }
 
   void _onFocusChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    targetRowIndexForMedia();
+    setState(() {});
   }
 
   @override
@@ -303,7 +305,10 @@ class _FactAddState extends ConsumerState<FactAdd>
     ThemeData theme,
     Color outline,
   ) sync* {
-    for (final row in _rows) {
+    final mediaTarget = targetRowIndexForMedia();
+    for (var i = 0; i < _rows.length; i++) {
+      final row = _rows[i];
+      final hasAudio = (row.audioPath ?? '').trim().isNotEmpty;
       yield Padding(
         key: row.hostKey,
         padding: _kEntryRowBottomPadding,
@@ -313,8 +318,15 @@ class _FactAddState extends ConsumerState<FactAdd>
           loc: loc,
           theme: theme,
           outlineColor: outline,
+          isRecordingTarget: _recordingVoice && i == mediaTarget,
+          isMediaTarget: i == mediaTarget && (_recordingVoice || !hasAudio),
           onClearSlot: (kind) {
-            setState(() => row.clearSlot(kind));
+            setState(() {
+              row.clearSlot(kind);
+              if (kind == MediaSlotKind.audio) {
+                pinMediaTargetRow(i);
+              }
+            });
           },
         ),
       );

@@ -832,6 +832,12 @@ abstract class AppLocalizations {
   /// **'Stop recording and attach audio to this field'**
   String get addFactStopRecordingTooltip;
 
+  /// Shown on the entry row that will receive the in-progress mic recording
+  ///
+  /// In en, this message translates to:
+  /// **'Recording for this field…'**
+  String get addFactRecordingTargetHint;
+
   /// Snackbar when user denies mic permission for add-fact recording
   ///
   /// In en, this message translates to:

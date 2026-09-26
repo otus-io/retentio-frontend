@@ -16,14 +16,16 @@ const _kAttachmentKindsOrder = <MediaSlotKind>[
   MediaSlotKind.video,
   MediaSlotKind.audio,
 ];
-const _kContentFieldPaddingWithMedia = EdgeInsets.fromLTRB(2, 8, 6, 10);
+const _kContentFieldPaddingWithMedia = EdgeInsets.fromLTRB(10, 4, 6, 10);
 const _kContentFieldPaddingNoMedia = EdgeInsets.fromLTRB(10, 8, 6, 10);
-const _kMediaChipWrapPadding = EdgeInsets.only(left: 6, top: 6);
+const _kMediaChipWrapPadding = EdgeInsets.fromLTRB(6, 6, 6, 0);
 const _kMediaChipWrapSpacing = 2.0;
 const _kMediaChipIconSize = 18.0;
 const _kMediaChipAudioControlSize = 28.0;
-const _kMediaChipClearConstraints = BoxConstraints(minWidth: 24, minHeight: 24);
-const _kMediaChipClearToAudioOffset = Offset(-6, 0);
+const _kMediaChipClearConstraints = BoxConstraints.tightFor(
+  width: 28,
+  height: 28,
+);
 const _kCollapsedLabelPadding = EdgeInsets.symmetric(
   horizontal: 5,
   vertical: 4,
@@ -39,6 +41,10 @@ const _kContentContainerRadius = 12.0;
 const _kContentContainerAlpha = 0.52;
 const _kContentEditFontScale = 1.32;
 const _kContentBaseFallbackSize = 14.0;
+const _kRecordingTargetBorderWidth = 2.0;
+const _kRecordingTargetFillAlpha = 0.18;
+const _kRecordingPlaceholderPadding = EdgeInsets.fromLTRB(10, 10, 10, 6);
+const _kRecordingPlaceholderIconSize = 18.0;
 
 /// Enlarged content style used for fact composer fields (always on).
 @visibleForTesting
@@ -67,6 +73,9 @@ class AddFactEntryRow extends HookWidget {
     required this.theme,
     required this.outlineColor,
     required this.onClearSlot,
+    this.autofocus = false,
+    this.isRecordingTarget = false,
+    this.isMediaTarget = false,
   });
 
   final AddFactRowModel row;
@@ -74,6 +83,13 @@ class AddFactEntryRow extends HookWidget {
   final ThemeData theme;
   final Color outlineColor;
   final void Function(MediaSlotKind kind) onClearSlot;
+  final bool autofocus;
+
+  /// True while the mic is recording and this row will receive the clip.
+  final bool isRecordingTarget;
+
+  /// True when this row is the sticky media target (recording or cleared for re-record).
+  final bool isMediaTarget;
 
   Widget _buildContentField(
     ThemeData theme,
@@ -103,6 +119,7 @@ class AddFactEntryRow extends HookWidget {
       textField = AppInput(
         controller: row.content,
         focusNode: contentFocus,
+        autofocus: autofocus,
         style: contentStyle,
         enableInteractiveSelection: true,
         contextMenuBuilder: (context, editableTextState) {
@@ -128,35 +145,108 @@ class AddFactEntryRow extends HookWidget {
       );
     }
 
-    if (!showMediaChips) {
+    // Note: [isMediaTarget] intentionally does not gate this early return. Its
+    // highlight is drawn by the outer container border/fill, so keeping the
+    // content subtree stable here avoids reparenting (and losing the tap
+    // cursor) when a plain row becomes the media target.
+    if (!showMediaChips && !isRecordingTarget) {
       return textField;
     }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final audioPath = row.audioPath;
+    final audioPlayUrl = attachmentAudioPlayUrl(audioPath);
+    final nonAudioKinds = activeKinds
+        .where((k) => k != MediaSlotKind.audio)
+        .toList(growable: false);
+
+    // Media above the field: full audio player for verify-before-save, then
+    // other chips. Keeps IconButton hit targets off the text editor.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Padding(
-          padding: _kMediaChipWrapPadding,
-          child: Wrap(
-            spacing: _kMediaChipWrapSpacing,
-            runSpacing: _kMediaChipWrapSpacing,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              for (final kind in activeKinds)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _buildAttachmentLeading(
-                      kind: kind,
-                      path: row.pathFor(kind)!,
-                      theme: theme,
+        if (isRecordingTarget)
+          Padding(
+            padding: _kRecordingPlaceholderPadding,
+            child: Row(
+              children: [
+                Icon(
+                  LucideIcons.mic,
+                  size: _kRecordingPlaceholderIconSize,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    loc.addFactRecordingTargetHint,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
                     ),
-                    Transform.translate(
-                      offset: kind == MediaSlotKind.audio
-                          ? _kMediaChipClearToAudioOffset
-                          : Offset.zero,
-                      child: IconButton(
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (audioPlayUrl != null)
+          Padding(
+            padding: _kMediaChipWrapPadding,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: CardAudio(
+                    audioUrl: audioPlayUrl,
+                    color: theme.colorScheme.primary,
+                    compact: false,
+                  ),
+                ),
+                IconButton(
+                  tooltip: loc.addFactClearAttachment,
+                  onPressed: () => onClearSlot(MediaSlotKind.audio),
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                  constraints: _kMediaChipClearConstraints,
+                  style: IconButton.styleFrom(
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    minimumSize: const Size(
+                      _kMediaChipAudioControlSize,
+                      _kMediaChipAudioControlSize,
+                    ),
+                    maximumSize: const Size(
+                      _kMediaChipAudioControlSize,
+                      _kMediaChipAudioControlSize,
+                    ),
+                    padding: EdgeInsets.zero,
+                  ),
+                  icon: Icon(
+                    LucideIcons.x,
+                    size: _kMediaChipIconSize,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (nonAudioKinds.isNotEmpty)
+          Padding(
+            padding: _kMediaChipWrapPadding,
+            child: Wrap(
+              spacing: _kMediaChipWrapSpacing,
+              runSpacing: _kMediaChipWrapSpacing,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                for (final kind in nonAudioKinds)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(
+                        addFactAttachmentChipIcon(kind),
+                        size: _kMediaChipIconSize,
+                        color: theme.colorScheme.primary,
+                      ),
+                      IconButton(
                         tooltip: loc.addFactClearAttachment,
                         onPressed: () => onClearSlot(kind),
                         padding: EdgeInsets.zero,
@@ -164,7 +254,14 @@ class AddFactEntryRow extends HookWidget {
                         constraints: _kMediaChipClearConstraints,
                         style: IconButton.styleFrom(
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          minimumSize: const Size(24, 24),
+                          minimumSize: const Size(
+                            _kMediaChipAudioControlSize,
+                            _kMediaChipAudioControlSize,
+                          ),
+                          maximumSize: const Size(
+                            _kMediaChipAudioControlSize,
+                            _kMediaChipAudioControlSize,
+                          ),
                           padding: EdgeInsets.zero,
                         ),
                         icon: Icon(
@@ -173,43 +270,13 @@ class AddFactEntryRow extends HookWidget {
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-            ],
-          ),
-        ),
-        Expanded(child: textField),
-      ],
-    );
-  }
-
-  Widget _buildAttachmentLeading({
-    required MediaSlotKind kind,
-    required String path,
-    required ThemeData theme,
-  }) {
-    if (kind == MediaSlotKind.audio) {
-      final playUrl = attachmentAudioPlayUrl(path);
-      if (playUrl != null) {
-        return SizedBox(
-          width: _kMediaChipAudioControlSize,
-          height: _kMediaChipAudioControlSize,
-          child: FittedBox(
-            child: CardAudio(
-              audioUrl: playUrl,
-              color: theme.colorScheme.primary,
-              compact: true,
+                    ],
+                  ),
+              ],
             ),
           ),
-        );
-      }
-    }
-
-    return Icon(
-      addFactAttachmentChipIcon(kind),
-      size: _kMediaChipIconSize,
-      color: theme.colorScheme.primary,
+        textField,
+      ],
     );
   }
 
@@ -235,6 +302,15 @@ class AddFactEntryRow extends HookWidget {
       wasRubyEditor.value = useRubyEditor;
       return null;
     }, [useRubyEditor, contentFocus]);
+
+    useEffect(() {
+      if (!autofocus || useRubyEditor) return null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        contentFocus.requestFocus();
+      });
+      return null;
+    }, [autofocus, useRubyEditor, contentFocus]);
 
     useEffect(() {
       void onFieldNameFocusChange() {
@@ -323,10 +399,19 @@ class AddFactEntryRow extends HookWidget {
         const SizedBox(height: _kRowSpacing),
         Container(
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest.withValues(
-              alpha: _kContentContainerAlpha,
+            color: isMediaTarget || isRecordingTarget
+                ? scheme.primary.withValues(alpha: _kRecordingTargetFillAlpha)
+                : scheme.surfaceContainerHighest.withValues(
+                    alpha: _kContentContainerAlpha,
+                  ),
+            border: Border.all(
+              color: isMediaTarget || isRecordingTarget
+                  ? scheme.primary
+                  : outlineColor,
+              width: isMediaTarget || isRecordingTarget
+                  ? _kRecordingTargetBorderWidth
+                  : 1,
             ),
-            border: Border.all(color: outlineColor),
             borderRadius: BorderRadius.circular(_kContentContainerRadius),
           ),
           child: _buildContentField(
