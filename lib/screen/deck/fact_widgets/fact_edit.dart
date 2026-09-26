@@ -405,7 +405,6 @@ class _FactEditState extends ConsumerState<FactEdit>
           loc: loc,
           theme: theme,
           outlineColor: outline,
-          autofocus: i == 0,
           isRecordingTarget: _recordingVoice && i == mediaTarget,
           isMediaTarget: i == mediaTarget && (_recordingVoice || !hasAudio),
           onClearSlot: (kind) {

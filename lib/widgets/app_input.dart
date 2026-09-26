@@ -44,7 +44,6 @@ class AppInput extends StatefulWidget {
     this.enableInteractiveSelection,
     this.decorationBuilder,
     this.autofillHints,
-    this.autofocus = false,
   });
 
   final TextEditingController? controller;
@@ -85,7 +84,6 @@ class AppInput extends StatefulWidget {
   final bool? enableInteractiveSelection;
   final InputDecoration Function(InputDecoration decoration)? decorationBuilder;
   final Iterable<String>? autofillHints;
-  final bool autofocus;
 
   @override
   State<AppInput> createState() => _AppInputState();
@@ -204,7 +202,6 @@ class _AppInputState extends State<AppInput> {
       onSubmitted: widget.onSubmitted,
       maxLength: widget.maxLength,
       autofillHints: widget.autofillHints,
-      autofocus: widget.autofocus,
       decoration:
           widget.decorationBuilder?.call(baseDecoration) ?? baseDecoration,
     );

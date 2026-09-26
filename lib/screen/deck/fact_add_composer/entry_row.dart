@@ -73,7 +73,6 @@ class AddFactEntryRow extends HookWidget {
     required this.theme,
     required this.outlineColor,
     required this.onClearSlot,
-    this.autofocus = false,
     this.isRecordingTarget = false,
     this.isMediaTarget = false,
   });
@@ -83,7 +82,6 @@ class AddFactEntryRow extends HookWidget {
   final ThemeData theme;
   final Color outlineColor;
   final void Function(MediaSlotKind kind) onClearSlot;
-  final bool autofocus;
 
   /// True while the mic is recording and this row will receive the clip.
   final bool isRecordingTarget;
@@ -119,9 +117,6 @@ class AddFactEntryRow extends HookWidget {
       textField = AppInput(
         controller: row.content,
         focusNode: contentFocus,
-        // Autofocus is driven by the post-frame useEffect below (single
-        // request); the native TextField autofocus is intentionally omitted to
-        // avoid a duplicate focus request on first build.
         style: contentStyle,
         enableInteractiveSelection: true,
         contextMenuBuilder: (context, editableTextState) {
@@ -304,15 +299,6 @@ class AddFactEntryRow extends HookWidget {
       wasRubyEditor.value = useRubyEditor;
       return null;
     }, [useRubyEditor, contentFocus]);
-
-    useEffect(() {
-      if (!autofocus || useRubyEditor) return null;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
-        contentFocus.requestFocus();
-      });
-      return null;
-    }, [autofocus, useRubyEditor, contentFocus]);
 
     useEffect(() {
       void onFieldNameFocusChange() {

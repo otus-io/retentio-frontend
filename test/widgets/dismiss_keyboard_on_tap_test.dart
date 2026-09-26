@@ -53,6 +53,68 @@ void main() {
     expect(focus.hasFocus, isFalse);
   });
 
+  testWidgets('drag from blank space does not dismiss the keyboard', (
+    tester,
+  ) async {
+    final focus = await _pumpFocusedFieldWithBlank(tester);
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('blank')),
+    );
+    await gesture.moveBy(const Offset(0, 50));
+    await gesture.up();
+    await tester.pump();
+
+    expect(focus.hasFocus, isTrue);
+  });
+
+  testWidgets('cancelled pointer does not dismiss the keyboard', (
+    tester,
+  ) async {
+    final focus = await _pumpFocusedFieldWithBlank(tester);
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('blank')),
+    );
+    await gesture.cancel();
+    await tester.pump();
+
+    expect(focus.hasFocus, isTrue);
+  });
+
+  testWidgets('small jitter within touch slop still counts as a tap', (
+    tester,
+  ) async {
+    final focus = await _pumpFocusedFieldWithBlank(tester);
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('blank')),
+    );
+    await gesture.moveBy(const Offset(0, 2));
+    await gesture.up();
+    await tester.pump();
+
+    expect(focus.hasFocus, isFalse);
+  });
+
+  testWidgets('only the most recent pointer is tracked', (tester) async {
+    final focus = await _pumpFocusedFieldWithBlank(tester);
+    final blank = tester.getCenter(find.text('blank'));
+
+    final first = await tester.startGesture(blank, pointer: 1);
+    final second = await tester.startGesture(blank, pointer: 2);
+
+    // Events from the superseded pointer are ignored.
+    await first.moveBy(const Offset(0, 50));
+    await first.cancel();
+    await tester.pump();
+    expect(focus.hasFocus, isTrue);
+
+    await second.up();
+    await tester.pump();
+    expect(focus.hasFocus, isFalse);
+  });
+
   testWidgets('pointerHitsEditable is false for empty hit targets', (
     tester,
   ) async {
@@ -78,4 +140,29 @@ void main() {
     final viewId = tester.view.viewId;
     expect(DismissKeyboardOnTap.pointerHitsEditable(field, viewId), isTrue);
   });
+}
+
+Future<FocusNode> _pumpFocusedFieldWithBlank(WidgetTester tester) async {
+  final focus = FocusNode();
+  addTearDown(focus.dispose);
+
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: DismissKeyboardOnTap(
+          child: Column(
+            children: [
+              TextField(focusNode: focus),
+              const SizedBox(height: 80, width: 200, child: Text('blank')),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+
+  await tester.tap(find.byType(TextField));
+  await tester.pump();
+  expect(focus.hasFocus, isTrue);
+  return focus;
 }

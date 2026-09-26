@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:record/record.dart';
 import 'package:retentio/screen/deck/fact_add_composer/media_handling_coordinator.dart';
@@ -68,7 +69,9 @@ class _PinHarnessState extends State<_PinHarness>
 
 void main() {
   testWidgets('pinMediaTargetRow sticks when no row has focus', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: _PinHarness()));
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: _PinHarness())),
+    );
     final state = tester.state<_PinHarnessState>(find.byType(_PinHarness));
 
     FocusManager.instance.primaryFocus?.unfocus();
@@ -87,7 +90,9 @@ void main() {
   testWidgets('refreshMediaTargetFromFocus persists the focused row', (
     tester,
   ) async {
-    await tester.pumpWidget(const MaterialApp(home: _PinHarness()));
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: _PinHarness())),
+    );
     final state = tester.state<_PinHarnessState>(find.byType(_PinHarness));
 
     // Focus row 1 and sync sticky from focus.
@@ -105,7 +110,9 @@ void main() {
   testWidgets(
     'refreshMediaTargetFromFocus is a no-op when nothing is focused',
     (tester) async {
-      await tester.pumpWidget(const MaterialApp(home: _PinHarness()));
+      await tester.pumpWidget(
+        const ProviderScope(child: MaterialApp(home: _PinHarness())),
+      );
       final state = tester.state<_PinHarnessState>(find.byType(_PinHarness));
 
       state.pinMediaTargetRow(2);
@@ -120,7 +127,9 @@ void main() {
   testWidgets('targetRowIndexForMedia read does not persist the focused row', (
     tester,
   ) async {
-    await tester.pumpWidget(const MaterialApp(home: _PinHarness()));
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: _PinHarness())),
+    );
     final state = tester.state<_PinHarnessState>(find.byType(_PinHarness));
 
     // Establish sticky row 0 via pin.
@@ -141,7 +150,9 @@ void main() {
   testWidgets('pinMediaTargetRow with no host keys resets to 0', (
     tester,
   ) async {
-    await tester.pumpWidget(const MaterialApp(home: _EmptyPinHarness()));
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: _EmptyPinHarness())),
+    );
     final state = tester.state<_EmptyPinHarnessState>(
       find.byType(_EmptyPinHarness),
     );
