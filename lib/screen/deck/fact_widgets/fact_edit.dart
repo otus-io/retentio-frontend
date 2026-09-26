@@ -104,7 +104,7 @@ class _FactEditState extends ConsumerState<FactEdit>
   void _onFocusChanged() {
     if (!mounted) return;
     // Keep sticky media target in sync while focus moves to the toolbar/mic.
-    targetRowIndexForMedia();
+    refreshMediaTargetFromFocus();
     setState(() {});
   }
 

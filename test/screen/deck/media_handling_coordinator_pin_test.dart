@@ -14,6 +14,7 @@ class _PinHarness extends StatefulWidget {
 class _PinHarnessState extends State<_PinHarness>
     with MediaHandlingCoordinator<_PinHarness> {
   final _keys = <GlobalKey>[GlobalKey(), GlobalKey(), GlobalKey()];
+  final _focusNodes = <FocusNode>[FocusNode(), FocusNode(), FocusNode()];
   final _recorder = AudioRecorder();
   var _recording = false;
 
@@ -43,6 +44,9 @@ class _PinHarnessState extends State<_PinHarness>
 
   @override
   void dispose() {
+    for (final node in _focusNodes) {
+      node.dispose();
+    }
     _recorder.dispose();
     super.dispose();
   }
@@ -50,7 +54,14 @@ class _PinHarnessState extends State<_PinHarness>
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: [for (final key in _keys) SizedBox(key: key, height: 1)],
+      children: [
+        for (var i = 0; i < _keys.length; i++)
+          SizedBox(
+            key: _keys[i],
+            height: 1,
+            child: Focus(focusNode: _focusNodes[i], child: const SizedBox()),
+          ),
+      ],
     );
   }
 }
@@ -70,6 +81,60 @@ void main() {
     expect(state.targetRowIndexForMedia(), 2);
 
     state.pinMediaTargetRow(-1);
+    expect(state.targetRowIndexForMedia(), 0);
+  });
+
+  testWidgets('refreshMediaTargetFromFocus persists the focused row', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MaterialApp(home: _PinHarness()));
+    final state = tester.state<_PinHarnessState>(find.byType(_PinHarness));
+
+    // Focus row 1 and sync sticky from focus.
+    state._focusNodes[1].requestFocus();
+    await tester.pump();
+    expect(state.targetRowIndexForMedia(), 1);
+    state.refreshMediaTargetFromFocus();
+
+    // With focus cleared, the sticky target remembers row 1.
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+    expect(state.targetRowIndexForMedia(), 1);
+  });
+
+  testWidgets(
+    'refreshMediaTargetFromFocus is a no-op when nothing is focused',
+    (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: _PinHarness()));
+      final state = tester.state<_PinHarnessState>(find.byType(_PinHarness));
+
+      state.pinMediaTargetRow(2);
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+
+      state.refreshMediaTargetFromFocus();
+      expect(state.targetRowIndexForMedia(), 2);
+    },
+  );
+
+  testWidgets('targetRowIndexForMedia read does not persist the focused row', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MaterialApp(home: _PinHarness()));
+    final state = tester.state<_PinHarnessState>(find.byType(_PinHarness));
+
+    // Establish sticky row 0 via pin.
+    state.pinMediaTargetRow(0);
+
+    // Focus row 2 and only READ — the read must not mutate sticky.
+    state._focusNodes[2].requestFocus();
+    await tester.pump();
+    expect(state.targetRowIndexForMedia(), 2);
+
+    // Clearing focus falls back to the still-unchanged sticky (0), proving the
+    // read had no write side-effect.
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
     expect(state.targetRowIndexForMedia(), 0);
   });
 

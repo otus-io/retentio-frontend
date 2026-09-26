@@ -91,7 +91,7 @@ class _FactAddState extends ConsumerState<FactAdd>
 
   void _onFocusChanged() {
     if (!mounted) return;
-    targetRowIndexForMedia();
+    refreshMediaTargetFromFocus();
     setState(() {});
   }
 

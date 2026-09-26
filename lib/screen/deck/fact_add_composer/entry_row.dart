@@ -119,7 +119,9 @@ class AddFactEntryRow extends HookWidget {
       textField = AppInput(
         controller: row.content,
         focusNode: contentFocus,
-        autofocus: autofocus,
+        // Autofocus is driven by the post-frame useEffect below (single
+        // request); the native TextField autofocus is intentionally omitted to
+        // avoid a duplicate focus request on first build.
         style: contentStyle,
         enableInteractiveSelection: true,
         contextMenuBuilder: (context, editableTextState) {

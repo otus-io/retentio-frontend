@@ -49,19 +49,26 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
     _stickyMediaTargetRow = index > last ? last : index;
   }
 
+  /// Updates the sticky media target from the focused row. Call on focus
+  /// changes (not during build) so [targetRowIndexForMedia] stays a pure read.
+  void refreshMediaTargetFromFocus() {
+    final focused = addFactFocusedHostRowIndex(
+      focusContext: FocusManager.instance.primaryFocus?.context,
+      hostKeys: mediaTargetHostKeys,
+    );
+    if (focused != null) _stickyMediaTargetRow = focused;
+  }
+
   int targetRowIndexForMedia() {
     final focused = addFactFocusedHostRowIndex(
       focusContext: FocusManager.instance.primaryFocus?.context,
       hostKeys: mediaTargetHostKeys,
     );
-    if (focused != null) {
-      _stickyMediaTargetRow = focused;
-      return focused;
-    }
+    if (focused != null) return focused;
     final last = mediaTargetHostKeys.length - 1;
     if (last < 0) return 0;
-    if (_stickyMediaTargetRow > last) _stickyMediaTargetRow = last;
-    if (_stickyMediaTargetRow < 0) _stickyMediaTargetRow = 0;
+    if (_stickyMediaTargetRow < 0) return 0;
+    if (_stickyMediaTargetRow > last) return last;
     return _stickyMediaTargetRow;
   }
 
