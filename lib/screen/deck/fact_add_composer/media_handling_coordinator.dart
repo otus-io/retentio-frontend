@@ -29,6 +29,10 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
   /// focused so a recording still attaches to the field the user was editing.
   int _stickyMediaTargetRow = 0;
 
+  /// Explicit pin (e.g. after clearing that row's audio). Wins over live focus
+  /// until focus moves to a different host row.
+  int? _pinnedMediaTargetRow;
+
   /// Row locked in when recording starts, so tapping another field mid-record
   /// neither moves the recording hint nor redirects the finished clip.
   int? _recordingTargetRow;
@@ -44,13 +48,12 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
     final last = mediaTargetHostKeys.length - 1;
     if (last < 0) {
       _stickyMediaTargetRow = 0;
+      _pinnedMediaTargetRow = null;
       return;
     }
-    if (index < 0) {
-      _stickyMediaTargetRow = 0;
-      return;
-    }
-    _stickyMediaTargetRow = index > last ? last : index;
+    final clamped = index < 0 ? 0 : (index > last ? last : index);
+    _stickyMediaTargetRow = clamped;
+    _pinnedMediaTargetRow = clamped;
   }
 
   /// Updates the sticky media target from the focused row. Call on focus
@@ -60,19 +63,33 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
       focusContext: FocusManager.instance.primaryFocus?.context,
       hostKeys: mediaTargetHostKeys,
     );
-    if (focused != null) _stickyMediaTargetRow = focused;
+    if (focused == null) return;
+    final pinned = _pinnedMediaTargetRow;
+    if (pinned != null && focused != pinned) {
+      // User moved focus to another row — follow them and drop the pin.
+      _pinnedMediaTargetRow = null;
+    }
+    _stickyMediaTargetRow = focused;
   }
 
   int targetRowIndexForMedia() {
     final locked = _recordingTargetRow;
     if (locked != null) return locked;
+    final last = mediaTargetHostKeys.length - 1;
+    if (last < 0) return 0;
+
+    final pinned = _pinnedMediaTargetRow;
+    if (pinned != null) {
+      if (pinned < 0) return 0;
+      if (pinned > last) return last;
+      return pinned;
+    }
+
     final focused = addFactFocusedHostRowIndex(
       focusContext: FocusManager.instance.primaryFocus?.context,
       hostKeys: mediaTargetHostKeys,
     );
     if (focused != null) return focused;
-    final last = mediaTargetHostKeys.length - 1;
-    if (last < 0) return 0;
     if (_stickyMediaTargetRow < 0) return 0;
     if (_stickyMediaTargetRow > last) return last;
     return _stickyMediaTargetRow;

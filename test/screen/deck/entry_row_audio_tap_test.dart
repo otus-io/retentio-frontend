@@ -84,6 +84,53 @@ void main() {
     expect(audioTop, lessThan(textTop));
   });
 
+  testWidgets('tapping empty space beside audio focuses the text end', (
+    tester,
+  ) async {
+    final row = AddFactRowModel(initialFieldName: 'JP');
+    addTearDown(row.dispose);
+    row.content.text = 'headword';
+    row.audioPath = 'aud001';
+
+    await tester.pumpWidget(_harness(row));
+    await tester.pumpAndSettle();
+
+    final audioRect = tester.getRect(find.byType(CardAudio));
+    // Empty strip to the right of play + clear, still inside the content box.
+    await tester.tapAt(Offset(audioRect.right + 48, audioRect.center.dy));
+    await tester.pumpAndSettle();
+
+    final editable = tester.widget<EditableText>(find.byType(EditableText));
+    expect(editable.focusNode.hasFocus, isTrue);
+    expect(
+      editable.controller.selection,
+      const TextSelection.collapsed(offset: 8),
+    );
+  });
+
+  testWidgets('requestContentFocus moves caret to the end of the text', (
+    tester,
+  ) async {
+    final row = AddFactRowModel(initialFieldName: 'JP');
+    addTearDown(row.dispose);
+    row.content.text = 'headword';
+    row.audioPath = 'aud001';
+
+    await tester.pumpWidget(_harness(row));
+    await tester.pumpAndSettle();
+
+    expect(row.requestContentFocus, isNotNull);
+    row.requestContentFocus!();
+    await tester.pumpAndSettle();
+
+    final editable = tester.widget<EditableText>(find.byType(EditableText));
+    expect(editable.focusNode.hasFocus, isTrue);
+    expect(
+      editable.controller.selection,
+      const TextSelection.collapsed(offset: 8),
+    );
+  });
+
   testWidgets('unplayable audio path still shows an icon and clear button', (
     tester,
   ) async {

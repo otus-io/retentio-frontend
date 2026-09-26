@@ -80,10 +80,10 @@ class WikiRubyContentEditor extends StatefulWidget {
   final TextAlign textAlign;
 
   @override
-  State<WikiRubyContentEditor> createState() => _WikiRubyContentEditorState();
+  State<WikiRubyContentEditor> createState() => WikiRubyContentEditorState();
 }
 
-class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
+class WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
   late List<_RubyEditSlot> _slots;
   bool _syncingStorage = false;
   bool _mutatingSlots = false;
@@ -606,7 +606,7 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
         Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: _focusEnd,
+            onTap: focusEnd,
           ),
         ),
         Padding(
@@ -629,8 +629,9 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
   }
 
   /// [_slotsFromStorage] always ends with a plain slot, so this is the caret
-  /// position after the last character.
-  void _focusEnd() {
+  /// position after the last character. Also used when the parent row box is
+  /// tapped outside a slot (e.g. empty space beside the audio control).
+  void focusEnd() {
     final last = _slots.last;
     final controller = last.controller;
     controller.selection = TextSelection.collapsed(

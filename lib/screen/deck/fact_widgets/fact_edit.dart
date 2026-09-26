@@ -414,6 +414,12 @@ class _FactEditState extends ConsumerState<FactEdit>
                 pinMediaTargetRow(i);
               }
             });
+            if (kind == MediaSlotKind.audio) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                model.row.requestContentFocus?.call();
+              });
+            }
           },
         ),
       );

@@ -329,6 +329,12 @@ class _FactAddState extends ConsumerState<FactAdd>
                 pinMediaTargetRow(i);
               }
             });
+            if (kind == MediaSlotKind.audio) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                row.requestContentFocus?.call();
+              });
+            }
           },
         ),
       );

@@ -94,6 +94,7 @@ class AddFactEntryRow extends HookWidget {
     AppLocalizations loc, {
     required FocusNode contentFocus,
     required TextStyle contentStyle,
+    GlobalKey<WikiRubyContentEditorState>? rubyEditorKey,
   }) {
     final row = this.row;
     final activeKinds = _kAttachmentKindsOrder
@@ -108,6 +109,7 @@ class AddFactEntryRow extends HookWidget {
     final Widget textField;
     if (useRubyEditor) {
       textField = WikiRubyContentEditor(
+        key: rubyEditorKey,
         storage: row.content,
         baseStyle: contentStyle,
         readingHint: loc.factRubyReadingHint,
@@ -156,129 +158,134 @@ class AddFactEntryRow extends HookWidget {
         .where((k) => k != MediaSlotKind.audio)
         .toList(growable: false);
 
-    // Media above the field: full audio player for verify-before-save, then
-    // other chips. Keeps IconButton hit targets off the text editor.
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (isRecordingTarget)
-          Padding(
-            padding: _kRecordingPlaceholderPadding,
-            child: Row(
-              children: [
-                Icon(
-                  LucideIcons.mic,
-                  size: _kRecordingPlaceholderIconSize,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    loc.addFactRecordingTargetHint,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        if (audioPath != null)
-          Padding(
-            padding: _kMediaChipWrapPadding,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (audioPlayUrl != null)
-                  CardAudio(
-                    audioUrl: audioPlayUrl,
-                    color: theme.colorScheme.primary,
-                    compact: true,
-                  )
-                else
+    // Opaque so empty space beside the audio control (and other dead areas in
+    // the box) still receive taps; play/clear/text children win the arena when
+    // hit directly.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => row.requestContentFocus?.call(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isRecordingTarget)
+            Padding(
+              padding: _kRecordingPlaceholderPadding,
+              child: Row(
+                children: [
                   Icon(
-                    addFactAttachmentChipIcon(MediaSlotKind.audio),
-                    size: _kMediaChipIconSize,
+                    LucideIcons.mic,
+                    size: _kRecordingPlaceholderIconSize,
                     color: theme.colorScheme.primary,
                   ),
-                IconButton(
-                  tooltip: loc.addFactClearAttachment,
-                  onPressed: () => onClearSlot(MediaSlotKind.audio),
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                  constraints: _kMediaChipClearConstraints,
-                  style: IconButton.styleFrom(
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    minimumSize: const Size(
-                      _kMediaChipAudioControlSize,
-                      _kMediaChipAudioControlSize,
-                    ),
-                    maximumSize: const Size(
-                      _kMediaChipAudioControlSize,
-                      _kMediaChipAudioControlSize,
-                    ),
-                    padding: EdgeInsets.zero,
-                  ),
-                  icon: Icon(
-                    LucideIcons.x,
-                    size: _kMediaChipIconSize,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        if (nonAudioKinds.isNotEmpty)
-          Padding(
-            padding: _kMediaChipWrapPadding,
-            child: Wrap(
-              spacing: _kMediaChipWrapSpacing,
-              runSpacing: _kMediaChipWrapSpacing,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                for (final kind in nonAudioKinds)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Icon(
-                        addFactAttachmentChipIcon(kind),
-                        size: _kMediaChipIconSize,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      loc.addFactRecordingTargetHint,
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
                       ),
-                      IconButton(
-                        tooltip: loc.addFactClearAttachment,
-                        onPressed: () => onClearSlot(kind),
-                        padding: EdgeInsets.zero,
-                        visualDensity: VisualDensity.compact,
-                        constraints: _kMediaChipClearConstraints,
-                        style: IconButton.styleFrom(
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          minimumSize: const Size(
-                            _kMediaChipAudioControlSize,
-                            _kMediaChipAudioControlSize,
-                          ),
-                          maximumSize: const Size(
-                            _kMediaChipAudioControlSize,
-                            _kMediaChipAudioControlSize,
-                          ),
-                          padding: EdgeInsets.zero,
-                        ),
-                        icon: Icon(
-                          LucideIcons.x,
-                          size: _kMediaChipIconSize,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-              ],
+                ],
+              ),
             ),
-          ),
-        textField,
-      ],
+          if (audioPath != null)
+            Padding(
+              padding: _kMediaChipWrapPadding,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (audioPlayUrl != null)
+                    CardAudio(
+                      audioUrl: audioPlayUrl,
+                      color: theme.colorScheme.primary,
+                      compact: true,
+                    )
+                  else
+                    Icon(
+                      addFactAttachmentChipIcon(MediaSlotKind.audio),
+                      size: _kMediaChipIconSize,
+                      color: theme.colorScheme.primary,
+                    ),
+                  IconButton(
+                    tooltip: loc.addFactClearAttachment,
+                    onPressed: () => onClearSlot(MediaSlotKind.audio),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                    constraints: _kMediaChipClearConstraints,
+                    style: IconButton.styleFrom(
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      minimumSize: const Size(
+                        _kMediaChipAudioControlSize,
+                        _kMediaChipAudioControlSize,
+                      ),
+                      maximumSize: const Size(
+                        _kMediaChipAudioControlSize,
+                        _kMediaChipAudioControlSize,
+                      ),
+                      padding: EdgeInsets.zero,
+                    ),
+                    icon: Icon(
+                      LucideIcons.x,
+                      size: _kMediaChipIconSize,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (nonAudioKinds.isNotEmpty)
+            Padding(
+              padding: _kMediaChipWrapPadding,
+              child: Wrap(
+                spacing: _kMediaChipWrapSpacing,
+                runSpacing: _kMediaChipWrapSpacing,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  for (final kind in nonAudioKinds)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(
+                          addFactAttachmentChipIcon(kind),
+                          size: _kMediaChipIconSize,
+                          color: theme.colorScheme.primary,
+                        ),
+                        IconButton(
+                          tooltip: loc.addFactClearAttachment,
+                          onPressed: () => onClearSlot(kind),
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          constraints: _kMediaChipClearConstraints,
+                          style: IconButton.styleFrom(
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            minimumSize: const Size(
+                              _kMediaChipAudioControlSize,
+                              _kMediaChipAudioControlSize,
+                            ),
+                            maximumSize: const Size(
+                              _kMediaChipAudioControlSize,
+                              _kMediaChipAudioControlSize,
+                            ),
+                            padding: EdgeInsets.zero,
+                          ),
+                          icon: Icon(
+                            LucideIcons.x,
+                            size: _kMediaChipIconSize,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          textField,
+        ],
+      ),
     );
   }
 
@@ -290,8 +297,30 @@ class AddFactEntryRow extends HookWidget {
     final fieldNameTextTick = useListenable(row.fieldName);
     useListenable(row.content);
     useListenable(fieldNameFocus);
+    final rubyEditorKey = useMemoized(
+      GlobalKey<WikiRubyContentEditorState>.new,
+    );
 
     final useRubyEditor = wikiRubyContentUsesReadingEditor(row.content.text);
+    useEffect(() {
+      void focusContentEnd() {
+        if (wikiRubyContentUsesReadingEditor(row.content.text)) {
+          rubyEditorKey.currentState?.focusEnd();
+          return;
+        }
+        final text = row.content.text;
+        row.content.selection = TextSelection.collapsed(offset: text.length);
+        contentFocus.requestFocus();
+      }
+
+      row.requestContentFocus = focusContentEnd;
+      return () {
+        if (identical(row.requestContentFocus, focusContentEnd)) {
+          row.requestContentFocus = null;
+        }
+      };
+    }, [contentFocus, rubyEditorKey, row]);
+
     final wasRubyEditor = useRef(useRubyEditor);
     useEffect(() {
       if (wasRubyEditor.value && !useRubyEditor) {
@@ -412,6 +441,7 @@ class AddFactEntryRow extends HookWidget {
             loc,
             contentFocus: contentFocus,
             contentStyle: contentStyle,
+            rubyEditorKey: rubyEditorKey,
           ),
         ),
       ],

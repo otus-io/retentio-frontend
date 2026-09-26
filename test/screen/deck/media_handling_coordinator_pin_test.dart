@@ -124,6 +124,69 @@ void main() {
     },
   );
 
+  testWidgets('pinMediaTargetRow wins over an already-focused row', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: _PinHarness())),
+    );
+    final state = tester.state<_PinHarnessState>(find.byType(_PinHarness));
+
+    state._focusNodes[0].requestFocus();
+    await tester.pump();
+    state.refreshMediaTargetFromFocus();
+    expect(state.targetRowIndexForMedia(), 0);
+
+    // Clearing audio on another row must move the media target immediately,
+    // even while the caret is still on row 0.
+    state.pinMediaTargetRow(2);
+    expect(state.targetRowIndexForMedia(), 2);
+  });
+
+  testWidgets(
+    'refreshMediaTargetFromFocus drops pin when focus moves elsewhere',
+    (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: MaterialApp(home: _PinHarness())),
+      );
+      final state = tester.state<_PinHarnessState>(find.byType(_PinHarness));
+
+      state._focusNodes[0].requestFocus();
+      await tester.pump();
+      state.refreshMediaTargetFromFocus();
+
+      state.pinMediaTargetRow(2);
+      expect(state.targetRowIndexForMedia(), 2);
+
+      // User taps another field — follow focus and clear the pin.
+      state._focusNodes[1].requestFocus();
+      await tester.pump();
+      state.refreshMediaTargetFromFocus();
+      expect(state.targetRowIndexForMedia(), 1);
+    },
+  );
+
+  testWidgets(
+    'refreshMediaTargetFromFocus keeps pin when focus is on the pinned row',
+    (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: MaterialApp(home: _PinHarness())),
+      );
+      final state = tester.state<_PinHarnessState>(find.byType(_PinHarness));
+
+      state.pinMediaTargetRow(2);
+      state._focusNodes[2].requestFocus();
+      await tester.pump();
+      state.refreshMediaTargetFromFocus();
+      expect(state.targetRowIndexForMedia(), 2);
+
+      // Pin still holds if focus leaves the hosts entirely.
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+      expect(state.targetRowIndexForMedia(), 2);
+    },
+  );
+
   testWidgets('targetRowIndexForMedia read does not persist the focused row', (
     tester,
   ) async {
@@ -132,8 +195,13 @@ void main() {
     );
     final state = tester.state<_PinHarnessState>(find.byType(_PinHarness));
 
-    // Establish sticky row 0 via pin.
-    state.pinMediaTargetRow(0);
+    // Establish sticky row 0 via focus sync (not pin — pin forces the target).
+    state._focusNodes[0].requestFocus();
+    await tester.pump();
+    state.refreshMediaTargetFromFocus();
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+    expect(state.targetRowIndexForMedia(), 0);
 
     // Focus row 2 and only READ — the read must not mutate sticky.
     state._focusNodes[2].requestFocus();
