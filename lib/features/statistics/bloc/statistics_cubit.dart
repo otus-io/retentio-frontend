@@ -49,9 +49,11 @@ class StatisticsCubit extends Cubit<StatisticsState> {
   final LoadDecks _loadDecks;
   final LoadReviewStats _loadReviewStats;
   final Map<(String, int), ReviewStatsSeries> _cache = {};
+  (String?, int)? _failedSelection;
   int _requestId = 0;
 
   Future<void> loadInitial() async {
+    _failedSelection = null;
     final requestId = ++_requestId;
     emit(const StatisticsState());
     try {
@@ -103,6 +105,7 @@ class StatisticsCubit extends Cubit<StatisticsState> {
     required String? deckId,
     required int days,
   }) async {
+    _failedSelection = null;
     final requestId = ++_requestId;
     final current = state;
     final decks = current.decks;
@@ -134,19 +137,34 @@ class StatisticsCubit extends Cubit<StatisticsState> {
       );
     } catch (error) {
       if (requestId != _requestId || isClosed) return;
+      _failedSelection = (deckId, days);
       emit(
         StatisticsState(
           decks: decks,
-          selectedDeckId: deckId,
-          rangeDays: days,
-          status: StatisticsStatus.error,
-          error: rawApiErrorMessage(error),
+          selectedDeckId: current.selectedDeckId,
+          rangeDays: current.rangeDays,
+          series: current.series,
+          status: StatisticsStatus.loaded,
+          refreshError: rawApiErrorMessage(error),
         ),
       );
     }
   }
 
+  Future<void> retry() async {
+    final failedSelection = _failedSelection;
+    if (failedSelection != null) {
+      await _loadChangedSelection(
+        deckId: failedSelection.$1,
+        days: failedSelection.$2,
+      );
+      return;
+    }
+    await refresh();
+  }
+
   Future<void> refresh() async {
+    _failedSelection = null;
     final current = state;
     final requestId = ++_requestId;
     if (current.series == null) {

@@ -4,11 +4,6 @@ class ReviewDay {
   final DateTime day;
   final int count;
 
-  String get apiDay =>
-      '${day.year.toString().padLeft(4, '0')}'
-      '${day.month.toString().padLeft(2, '0')}'
-      '${day.day.toString().padLeft(2, '0')}';
-
   factory ReviewDay.fromJson(Map<String, dynamic> json) {
     final rawDay = json['day'];
     final rawCount = json['count'];

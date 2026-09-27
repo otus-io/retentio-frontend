@@ -89,7 +89,7 @@ class _StatisticsBody extends StatelessWidget {
               else ...[
                 if (state.refreshError != null) ...[
                   _RefreshWarning(
-                    onRetry: context.read<StatisticsCubit>().refresh,
+                    onRetry: context.read<StatisticsCubit>().retry,
                   ),
                   const SizedBox(height: AppThemeTokens.spaceLg),
                 ],

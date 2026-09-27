@@ -86,6 +86,66 @@ void main() {
     await cubit.close();
   });
 
+  test(
+    'restores the visible range and retries a failed range change',
+    () async {
+      var failSevenDays = true;
+      final cubit = StatisticsCubit(
+        loadDecks: () async => [_deck('a')],
+        loadReviewStats: (deckId, days) async {
+          if (days == 7 && failSevenDays) throw Exception('offline');
+          return _series(days, 2);
+        },
+      );
+      await _waitForLoaded(cubit);
+      final previousSeries = cubit.state.series;
+
+      await cubit.selectRange(7);
+
+      expect(cubit.state.status, StatisticsStatus.loaded);
+      expect(cubit.state.rangeDays, 30);
+      expect(cubit.state.series, same(previousSeries));
+      expect(cubit.state.refreshError, 'offline');
+
+      failSevenDays = false;
+      await cubit.retry();
+
+      expect(cubit.state.rangeDays, 7);
+      expect(cubit.state.series?.days, hasLength(7));
+      expect(cubit.state.refreshError, isNull);
+      await cubit.close();
+    },
+  );
+
+  test('restores the visible deck and retries a failed deck change', () async {
+    var failDeckB = false;
+    final cubit = StatisticsCubit(
+      loadDecks: () async => [_deck('a'), _deck('b')],
+      loadReviewStats: (deckId, days) async {
+        if (deckId == 'b' && failDeckB) throw Exception('offline');
+        return _series(days, deckId == 'a' ? 1 : 2);
+      },
+    );
+    await _waitForLoaded(cubit);
+    final previousSeries = cubit.state.series;
+
+    failDeckB = true;
+    await cubit.refresh();
+    await cubit.selectDeck('b');
+
+    expect(cubit.state.selectedDeckId, isNull);
+    expect(cubit.state.series, same(previousSeries));
+    expect(cubit.state.refreshError, 'offline');
+
+    failDeckB = false;
+    await cubit.retry();
+
+    expect(cubit.state.selectedDeckId, 'b');
+    expect(cubit.state.series?.days.first.count, 2);
+    expect(cubit.state.refreshError, isNull);
+    await cubit.close();
+  });
+
   test('ignores an older response after the range changes again', () async {
     final pendingSeven = Completer<ReviewStatsSeries>();
     final cubit = StatisticsCubit(
