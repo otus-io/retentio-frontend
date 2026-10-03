@@ -11,6 +11,8 @@ typedef LoadReviewStats =
 
 enum StatisticsStatus { loading, loaded, error }
 
+const _unset = Object();
+
 class StatisticsState {
   const StatisticsState({
     this.decks = const [],
@@ -33,6 +35,34 @@ class StatisticsState {
   final String? refreshError;
 
   bool get hasDecks => decks.isNotEmpty;
+
+  StatisticsState copyWith({
+    List<Deck>? decks,
+    Object? selectedDeckId = _unset,
+    int? rangeDays,
+    Object? series = _unset,
+    StatisticsStatus? status,
+    bool? isRefreshing,
+    Object? error = _unset,
+    Object? refreshError = _unset,
+  }) {
+    return StatisticsState(
+      decks: decks ?? this.decks,
+      selectedDeckId: identical(selectedDeckId, _unset)
+          ? this.selectedDeckId
+          : selectedDeckId as String?,
+      rangeDays: rangeDays ?? this.rangeDays,
+      series: identical(series, _unset)
+          ? this.series
+          : series as ReviewStatsSeries?,
+      status: status ?? this.status,
+      isRefreshing: isRefreshing ?? this.isRefreshing,
+      error: identical(error, _unset) ? this.error : error as String?,
+      refreshError: identical(refreshError, _unset)
+          ? this.refreshError
+          : refreshError as String?,
+    );
+  }
 }
 
 class StatisticsCubit extends Cubit<StatisticsState> {
@@ -70,9 +100,8 @@ class StatisticsCubit extends Cubit<StatisticsState> {
       );
       if (requestId != _requestId || isClosed) return;
       emit(
-        StatisticsState(
+        state.copyWith(
           decks: decks,
-          rangeDays: state.rangeDays,
           series: series,
           status: StatisticsStatus.loaded,
         ),
@@ -80,9 +109,7 @@ class StatisticsCubit extends Cubit<StatisticsState> {
     } catch (error) {
       if (requestId != _requestId || isClosed) return;
       emit(
-        StatisticsState(
-          decks: state.decks,
-          rangeDays: state.rangeDays,
+        state.copyWith(
           status: StatisticsStatus.error,
           error: rawApiErrorMessage(error),
         ),
@@ -108,43 +135,42 @@ class StatisticsCubit extends Cubit<StatisticsState> {
     _failedSelection = null;
     final requestId = ++_requestId;
     final current = state;
-    final decks = current.decks;
     emit(
-      StatisticsState(
-        decks: decks,
+      current.copyWith(
         selectedDeckId: deckId,
         rangeDays: days,
-        series: current.series,
         status: StatisticsStatus.loaded,
         isRefreshing: true,
+        error: null,
+        refreshError: null,
       ),
     );
     try {
       final series = await _loadSelection(
-        decks: decks,
+        decks: current.decks,
         selectedDeckId: deckId,
         days: days,
       );
       if (requestId != _requestId || isClosed) return;
       emit(
-        StatisticsState(
-          decks: decks,
+        current.copyWith(
           selectedDeckId: deckId,
           rangeDays: days,
           series: series,
           status: StatisticsStatus.loaded,
+          isRefreshing: false,
+          error: null,
+          refreshError: null,
         ),
       );
     } catch (error) {
       if (requestId != _requestId || isClosed) return;
       _failedSelection = (deckId, days);
       emit(
-        StatisticsState(
-          decks: decks,
-          selectedDeckId: current.selectedDeckId,
-          rangeDays: current.rangeDays,
-          series: current.series,
+        current.copyWith(
           status: StatisticsStatus.loaded,
+          isRefreshing: false,
+          error: null,
           refreshError: rawApiErrorMessage(error),
         ),
       );
@@ -173,13 +199,11 @@ class StatisticsCubit extends Cubit<StatisticsState> {
     _failedSelection = null;
     final requestId = ++_requestId;
     emit(
-      StatisticsState(
-        decks: current.decks,
-        selectedDeckId: current.selectedDeckId,
-        rangeDays: current.rangeDays,
-        series: current.series,
+      current.copyWith(
         status: StatisticsStatus.loaded,
         isRefreshing: true,
+        error: null,
+        refreshError: null,
       ),
     );
     try {
@@ -196,23 +220,21 @@ class StatisticsCubit extends Cubit<StatisticsState> {
       );
       if (requestId != _requestId || isClosed) return;
       emit(
-        StatisticsState(
-          decks: current.decks,
-          selectedDeckId: current.selectedDeckId,
-          rangeDays: current.rangeDays,
+        current.copyWith(
           series: series,
           status: StatisticsStatus.loaded,
+          isRefreshing: false,
+          error: null,
+          refreshError: null,
         ),
       );
     } catch (error) {
       if (requestId != _requestId || isClosed) return;
       emit(
-        StatisticsState(
-          decks: current.decks,
-          selectedDeckId: current.selectedDeckId,
-          rangeDays: current.rangeDays,
-          series: current.series,
+        current.copyWith(
           status: StatisticsStatus.loaded,
+          isRefreshing: false,
+          error: null,
           refreshError: rawApiErrorMessage(error),
         ),
       );

@@ -6,6 +6,62 @@ import 'package:retentio/models/deck.dart';
 import 'package:retentio/models/review_stats.dart';
 
 void main() {
+  test('copyWith keeps omitted fields and replaces nullable ones', () {
+    final decks = [_deck('a')];
+    final series = _series(7, 1);
+    final original = StatisticsState(
+      decks: decks,
+      selectedDeckId: 'a',
+      rangeDays: 7,
+      series: series,
+      status: StatisticsStatus.loaded,
+      isRefreshing: true,
+      error: 'load',
+      refreshError: 'refresh',
+    );
+
+    final unchanged = original.copyWith();
+    expect(unchanged.decks, same(decks));
+    expect(unchanged.selectedDeckId, 'a');
+    expect(unchanged.rangeDays, 7);
+    expect(unchanged.series, same(series));
+    expect(unchanged.status, StatisticsStatus.loaded);
+    expect(unchanged.isRefreshing, isTrue);
+    expect(unchanged.error, 'load');
+    expect(unchanged.refreshError, 'refresh');
+
+    final replaced = original.copyWith(
+      decks: [_deck('b')],
+      selectedDeckId: 'b',
+      rangeDays: 30,
+      series: _series(30, 2),
+      status: StatisticsStatus.error,
+      isRefreshing: false,
+      error: 'offline',
+      refreshError: 'stale',
+    );
+    expect(replaced.decks.single.id, 'b');
+    expect(replaced.selectedDeckId, 'b');
+    expect(replaced.rangeDays, 30);
+    expect(replaced.series?.days, hasLength(30));
+    expect(replaced.status, StatisticsStatus.error);
+    expect(replaced.isRefreshing, isFalse);
+    expect(replaced.error, 'offline');
+    expect(replaced.refreshError, 'stale');
+
+    final cleared = replaced.copyWith(
+      selectedDeckId: null,
+      series: null,
+      error: null,
+      refreshError: null,
+    );
+    expect(cleared.selectedDeckId, isNull);
+    expect(cleared.series, isNull);
+    expect(cleared.error, isNull);
+    expect(cleared.refreshError, isNull);
+    expect(cleared.decks.single.id, 'b');
+  });
+
   test('defaults to all decks and 30 days, aggregating exact dates', () async {
     final cubit = StatisticsCubit(
       loadDecks: () async => [_deck('a'), _deck('b')],
