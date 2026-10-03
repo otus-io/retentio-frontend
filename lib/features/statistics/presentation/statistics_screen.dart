@@ -466,7 +466,8 @@ class _WeekdayChart extends StatelessWidget {
     final loc = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).toLanguageTag();
     final weekdayFormat = DateFormat.E(locale);
-    final monday = DateTime.utc(2026, 9, 14);
+    // 2024-01-01 is a Monday, so index 0 matches weekdayTotals.
+    final monday = DateTime.utc(2024, 1, 1);
     final labels = List.generate(
       7,
       (index) => weekdayFormat.format(monday.add(Duration(days: index))),
@@ -673,7 +674,12 @@ class _RefreshWarning extends StatelessWidget {
                 style: TextStyle(color: scheme.onErrorContainer),
               ),
             ),
-            TextButton(onPressed: onRetry, child: Text(loc.retry)),
+            AppButton(
+              label: loc.retry,
+              onPressed: onRetry,
+              variant: AppButtonVariant.ghost,
+              size: AppButtonSize.sm,
+            ),
           ],
         ),
       ),
