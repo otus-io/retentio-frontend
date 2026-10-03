@@ -189,6 +189,90 @@ void main() {
     await request;
     await cubit.close();
   });
+
+  test('reloads when retrying before any series exists', () async {
+    var decks = <Deck>[];
+    final cubit = StatisticsCubit(
+      loadDecks: () async => decks,
+      loadReviewStats: (deckId, days) async => _series(days, 2),
+    );
+    await _waitForLoaded(cubit);
+    expect(cubit.state.series, isNull);
+
+    decks = [_deck('a')];
+    await cubit.retry();
+
+    expect(cubit.state.status, StatisticsStatus.loaded);
+    expect(cubit.state.series?.days, hasLength(30));
+    expect(cubit.state.series?.days.first.count, 2);
+    await cubit.close();
+  });
+
+  test('refreshes the selected deck and replaces cached counts', () async {
+    var count = 1;
+    final cubit = StatisticsCubit(
+      loadDecks: () async => [_deck('a'), _deck('b')],
+      loadReviewStats: (deckId, days) async => _series(days, count),
+    );
+    await _waitForLoaded(cubit);
+    await cubit.selectDeck('b');
+
+    count = 5;
+    await cubit.refresh();
+
+    expect(cubit.state.selectedDeckId, 'b');
+    expect(cubit.state.rangeDays, 30);
+    expect(cubit.state.isRefreshing, isFalse);
+    expect(cubit.state.refreshError, isNull);
+    expect(cubit.state.series?.days.first.count, 5);
+    await cubit.close();
+  });
+
+  test('ignores a refresh that finishes after a newer request', () async {
+    final refreshGate = Completer<ReviewStatsSeries>();
+    var phase = 'initial';
+    final cubit = StatisticsCubit(
+      loadDecks: () async => [_deck('a')],
+      loadReviewStats: (deckId, days) {
+        if (phase == 'refresh') return refreshGate.future;
+        return Future.value(_series(days, days == 7 ? 4 : 1));
+      },
+    );
+    await _waitForLoaded(cubit);
+
+    phase = 'refresh';
+    final refreshRequest = cubit.refresh();
+    await Future<void>.delayed(Duration.zero);
+    phase = 'range';
+    await cubit.selectRange(7);
+    refreshGate.complete(_series(30, 9));
+    await refreshRequest;
+
+    expect(cubit.state.rangeDays, 7);
+    expect(cubit.state.series?.days.first.count, 4);
+    expect(cubit.state.isRefreshing, isFalse);
+    await cubit.close();
+  });
+
+  test('drops a refresh result after the cubit is closed', () async {
+    final refreshGate = Completer<ReviewStatsSeries>();
+    var refreshing = false;
+    final cubit = StatisticsCubit(
+      loadDecks: () async => [_deck('a')],
+      loadReviewStats: (deckId, days) =>
+          refreshing ? refreshGate.future : Future.value(_series(days, 1)),
+    );
+    await _waitForLoaded(cubit);
+
+    refreshing = true;
+    final refreshRequest = cubit.refresh();
+    await Future<void>.delayed(Duration.zero);
+    await cubit.close();
+    refreshGate.complete(_series(30, 9));
+    await refreshRequest;
+
+    expect(cubit.isClosed, isTrue);
+  });
 }
 
 Future<void> _waitForLoaded(StatisticsCubit cubit) async {

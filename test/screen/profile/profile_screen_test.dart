@@ -6,6 +6,7 @@ import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/screen/profile/profile_screen.dart';
 
 import '../../helpers/fake_profile_api_interceptor.dart';
+import '../../helpers/fake_statistics_api_interceptor.dart';
 import '../../helpers/test_wrapper.dart';
 
 void main() {
@@ -74,6 +75,24 @@ void main() {
       await tester.tap(find.text(loc.statistics));
       await tester.pumpAndSettle();
       expect(find.text('Statistics destination'), findsOneWidget);
+    });
+
+    testWidgets('opens the statistics screen when no builder is injected', (
+      tester,
+    ) async {
+      final interceptor = attachFakeStatisticsApiInterceptor();
+      addTearDown(() => detachFakeStatisticsApiInterceptor(interceptor));
+
+      await tester.pumpWidget(buildTestableWidget(const ProfileScreen()));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(ProfileScreen));
+      final loc = AppLocalizations.of(context)!;
+      await tester.tap(find.text(loc.statistics));
+      await tester.pumpAndSettle();
+
+      expect(find.text(loc.statistics), findsWidgets);
+      expect(find.text(loc.statisticsAllDecks), findsOneWidget);
     });
 
     testWidgets('tapping logout shows confirmation dialog', (tester) async {
