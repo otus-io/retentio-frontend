@@ -228,6 +228,38 @@ void main() {
     await cubit.close();
   });
 
+  test('leaves an in-flight selection change running', () async {
+    final pendingSeven = Completer<ReviewStatsSeries>();
+    var loads = 0;
+    final cubit = StatisticsCubit(
+      loadDecks: () async => [_deck('a')],
+      loadReviewStats: (deckId, days) {
+        loads++;
+        if (days == 7) return pendingSeven.future;
+        return Future.value(_series(days, 1));
+      },
+    );
+    await _waitForLoaded(cubit);
+    final loadsAfterInitial = loads;
+
+    final rangeRequest = cubit.selectRange(7);
+    await Future<void>.delayed(Duration.zero);
+    expect(cubit.state.isRefreshing, isTrue);
+
+    await cubit.refresh();
+    expect(loads, loadsAfterInitial + 1);
+    expect(cubit.state.rangeDays, 7);
+
+    pendingSeven.complete(_series(7, 4));
+    await rangeRequest;
+
+    expect(cubit.state.rangeDays, 7);
+    expect(cubit.state.series?.days, hasLength(7));
+    expect(cubit.state.series?.days.first.count, 4);
+    expect(cubit.state.isRefreshing, isFalse);
+    await cubit.close();
+  });
+
   test('ignores a refresh that finishes after a newer request', () async {
     final refreshGate = Completer<ReviewStatsSeries>();
     var phase = 'initial';

@@ -164,13 +164,14 @@ class StatisticsCubit extends Cubit<StatisticsState> {
   }
 
   Future<void> refresh() async {
-    _failedSelection = null;
     final current = state;
-    final requestId = ++_requestId;
+    if (current.isRefreshing) return;
     if (current.series == null) {
       await loadInitial();
       return;
     }
+    _failedSelection = null;
+    final requestId = ++_requestId;
     emit(
       StatisticsState(
         decks: current.decks,
