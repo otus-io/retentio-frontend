@@ -533,6 +533,10 @@
   "@addFactStopRecordingTooltip": {
     "description": "Add-fact toolbar: finish voice recording"
   },
+  "addFactRecordingTargetHint": "Recording for this field…",
+  "@addFactRecordingTargetHint": {
+    "description": "Shown on the entry row that will receive the in-progress mic recording"
+  },
   "addFactMicPermissionDenied": "Microphone access is required to record audio.",
   "@addFactMicPermissionDenied": {
     "description": "Snackbar when user denies mic permission for add-fact recording"

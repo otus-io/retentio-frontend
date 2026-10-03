@@ -16,14 +16,16 @@ const _kAttachmentKindsOrder = <MediaSlotKind>[
   MediaSlotKind.video,
   MediaSlotKind.audio,
 ];
-const _kContentFieldPaddingWithMedia = EdgeInsets.fromLTRB(2, 8, 6, 10);
+const _kContentFieldPaddingWithMedia = EdgeInsets.fromLTRB(10, 4, 6, 10);
 const _kContentFieldPaddingNoMedia = EdgeInsets.fromLTRB(10, 8, 6, 10);
-const _kMediaChipWrapPadding = EdgeInsets.only(left: 6, top: 6);
+const _kMediaChipWrapPadding = EdgeInsets.fromLTRB(6, 6, 6, 0);
 const _kMediaChipWrapSpacing = 2.0;
 const _kMediaChipIconSize = 18.0;
 const _kMediaChipAudioControlSize = 28.0;
-const _kMediaChipClearConstraints = BoxConstraints(minWidth: 24, minHeight: 24);
-const _kMediaChipClearToAudioOffset = Offset(-6, 0);
+const _kMediaChipClearConstraints = BoxConstraints.tightFor(
+  width: 28,
+  height: 28,
+);
 const _kCollapsedLabelPadding = EdgeInsets.symmetric(
   horizontal: 5,
   vertical: 4,
@@ -39,6 +41,10 @@ const _kContentContainerRadius = 12.0;
 const _kContentContainerAlpha = 0.52;
 const _kContentEditFontScale = 1.32;
 const _kContentBaseFallbackSize = 14.0;
+const _kRecordingTargetBorderWidth = 2.0;
+const _kRecordingTargetFillAlpha = 0.18;
+const _kRecordingPlaceholderPadding = EdgeInsets.fromLTRB(10, 10, 10, 6);
+const _kRecordingPlaceholderIconSize = 18.0;
 
 /// Enlarged content style used for fact composer fields (always on).
 @visibleForTesting
@@ -67,6 +73,8 @@ class AddFactEntryRow extends HookWidget {
     required this.theme,
     required this.outlineColor,
     required this.onClearSlot,
+    this.isRecordingTarget = false,
+    this.isMediaTarget = false,
   });
 
   final AddFactRowModel row;
@@ -75,11 +83,18 @@ class AddFactEntryRow extends HookWidget {
   final Color outlineColor;
   final void Function(MediaSlotKind kind) onClearSlot;
 
+  /// True while the mic is recording and this row will receive the clip.
+  final bool isRecordingTarget;
+
+  /// True when this row is the sticky media target (recording or cleared for re-record).
+  final bool isMediaTarget;
+
   Widget _buildContentField(
     ThemeData theme,
     AppLocalizations loc, {
     required FocusNode contentFocus,
     required TextStyle contentStyle,
+    GlobalKey<WikiRubyContentEditorState>? rubyEditorKey,
   }) {
     final row = this.row;
     final activeKinds = _kAttachmentKindsOrder
@@ -94,6 +109,7 @@ class AddFactEntryRow extends HookWidget {
     final Widget textField;
     if (useRubyEditor) {
       textField = WikiRubyContentEditor(
+        key: rubyEditorKey,
         storage: row.content,
         baseStyle: contentStyle,
         readingHint: loc.factRubyReadingHint,
@@ -128,88 +144,152 @@ class AddFactEntryRow extends HookWidget {
       );
     }
 
-    if (!showMediaChips) {
+    // Note: [isMediaTarget] intentionally does not gate this early return. Its
+    // highlight is drawn by the outer container border/fill, so keeping the
+    // content subtree stable here avoids reparenting (and losing the tap
+    // cursor) when a plain row becomes the media target.
+    if (!showMediaChips && !isRecordingTarget) {
       return textField;
     }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: _kMediaChipWrapPadding,
-          child: Wrap(
-            spacing: _kMediaChipWrapSpacing,
-            runSpacing: _kMediaChipWrapSpacing,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              for (final kind in activeKinds)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _buildAttachmentLeading(
-                      kind: kind,
-                      path: row.pathFor(kind)!,
-                      theme: theme,
-                    ),
-                    Transform.translate(
-                      offset: kind == MediaSlotKind.audio
-                          ? _kMediaChipClearToAudioOffset
-                          : Offset.zero,
-                      child: IconButton(
-                        tooltip: loc.addFactClearAttachment,
-                        onPressed: () => onClearSlot(kind),
-                        padding: EdgeInsets.zero,
-                        visualDensity: VisualDensity.compact,
-                        constraints: _kMediaChipClearConstraints,
-                        style: IconButton.styleFrom(
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          minimumSize: const Size(24, 24),
-                          padding: EdgeInsets.zero,
-                        ),
-                        icon: Icon(
-                          LucideIcons.x,
-                          size: _kMediaChipIconSize,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+    final audioPath = row.audioPath;
+    final audioPlayUrl = attachmentAudioPlayUrl(audioPath);
+    final nonAudioKinds = activeKinds
+        .where((k) => k != MediaSlotKind.audio)
+        .toList(growable: false);
+
+    // Opaque so empty space beside the audio control (and other dead areas in
+    // the box) still receive taps; play/clear/text children win the arena when
+    // hit directly.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => row.requestContentFocus?.call(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isRecordingTarget)
+            Padding(
+              padding: _kRecordingPlaceholderPadding,
+              child: Row(
+                children: [
+                  Icon(
+                    LucideIcons.mic,
+                    size: _kRecordingPlaceholderIconSize,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      loc.addFactRecordingTargetHint,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ],
-                ),
-            ],
-          ),
-        ),
-        Expanded(child: textField),
-      ],
-    );
-  }
-
-  Widget _buildAttachmentLeading({
-    required MediaSlotKind kind,
-    required String path,
-    required ThemeData theme,
-  }) {
-    if (kind == MediaSlotKind.audio) {
-      final playUrl = attachmentAudioPlayUrl(path);
-      if (playUrl != null) {
-        return SizedBox(
-          width: _kMediaChipAudioControlSize,
-          height: _kMediaChipAudioControlSize,
-          child: FittedBox(
-            child: CardAudio(
-              audioUrl: playUrl,
-              color: theme.colorScheme.primary,
-              compact: true,
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      }
-    }
-
-    return Icon(
-      addFactAttachmentChipIcon(kind),
-      size: _kMediaChipIconSize,
-      color: theme.colorScheme.primary,
+          if (audioPath != null)
+            Padding(
+              padding: _kMediaChipWrapPadding,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (audioPlayUrl != null)
+                    CardAudio(
+                      audioUrl: audioPlayUrl,
+                      color: theme.colorScheme.primary,
+                      compact: true,
+                    )
+                  else
+                    Icon(
+                      addFactAttachmentChipIcon(MediaSlotKind.audio),
+                      size: _kMediaChipIconSize,
+                      color: theme.colorScheme.primary,
+                    ),
+                  // Raw IconButton: AppIconButton enforces a 44px minimum, but
+                  // this clear control must stay compact (28×28).
+                  IconButton(
+                    tooltip: loc.addFactClearAttachment,
+                    onPressed: () => onClearSlot(MediaSlotKind.audio),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                    constraints: _kMediaChipClearConstraints,
+                    style: IconButton.styleFrom(
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      minimumSize: const Size(
+                        _kMediaChipAudioControlSize,
+                        _kMediaChipAudioControlSize,
+                      ),
+                      maximumSize: const Size(
+                        _kMediaChipAudioControlSize,
+                        _kMediaChipAudioControlSize,
+                      ),
+                      padding: EdgeInsets.zero,
+                    ),
+                    icon: Icon(
+                      LucideIcons.x,
+                      size: _kMediaChipIconSize,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (nonAudioKinds.isNotEmpty)
+            Padding(
+              padding: _kMediaChipWrapPadding,
+              child: Wrap(
+                spacing: _kMediaChipWrapSpacing,
+                runSpacing: _kMediaChipWrapSpacing,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  for (final kind in nonAudioKinds)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(
+                          addFactAttachmentChipIcon(kind),
+                          size: _kMediaChipIconSize,
+                          color: theme.colorScheme.primary,
+                        ),
+                        // Raw IconButton: AppIconButton enforces a 44px
+                        // minimum, but this clear control must stay 28×28.
+                        IconButton(
+                          tooltip: loc.addFactClearAttachment,
+                          onPressed: () => onClearSlot(kind),
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          constraints: _kMediaChipClearConstraints,
+                          style: IconButton.styleFrom(
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            minimumSize: const Size(
+                              _kMediaChipAudioControlSize,
+                              _kMediaChipAudioControlSize,
+                            ),
+                            maximumSize: const Size(
+                              _kMediaChipAudioControlSize,
+                              _kMediaChipAudioControlSize,
+                            ),
+                            padding: EdgeInsets.zero,
+                          ),
+                          icon: Icon(
+                            LucideIcons.x,
+                            size: _kMediaChipIconSize,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          textField,
+        ],
+      ),
     );
   }
 
@@ -221,8 +301,30 @@ class AddFactEntryRow extends HookWidget {
     final fieldNameTextTick = useListenable(row.fieldName);
     useListenable(row.content);
     useListenable(fieldNameFocus);
+    final rubyEditorKey = useMemoized(
+      GlobalKey<WikiRubyContentEditorState>.new,
+    );
 
     final useRubyEditor = wikiRubyContentUsesReadingEditor(row.content.text);
+    useEffect(() {
+      void focusContentEnd() {
+        if (wikiRubyContentUsesReadingEditor(row.content.text)) {
+          rubyEditorKey.currentState?.focusEnd();
+          return;
+        }
+        final text = row.content.text;
+        row.content.selection = TextSelection.collapsed(offset: text.length);
+        contentFocus.requestFocus();
+      }
+
+      row.requestContentFocus = focusContentEnd;
+      return () {
+        if (identical(row.requestContentFocus, focusContentEnd)) {
+          row.requestContentFocus = null;
+        }
+      };
+    }, [contentFocus, rubyEditorKey, row]);
+
     final wasRubyEditor = useRef(useRubyEditor);
     useEffect(() {
       if (wasRubyEditor.value && !useRubyEditor) {
@@ -323,10 +425,19 @@ class AddFactEntryRow extends HookWidget {
         const SizedBox(height: _kRowSpacing),
         Container(
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest.withValues(
-              alpha: _kContentContainerAlpha,
+            color: isMediaTarget || isRecordingTarget
+                ? scheme.primary.withValues(alpha: _kRecordingTargetFillAlpha)
+                : scheme.surfaceContainerHighest.withValues(
+                    alpha: _kContentContainerAlpha,
+                  ),
+            border: Border.all(
+              color: isMediaTarget || isRecordingTarget
+                  ? scheme.primary
+                  : outlineColor,
+              width: isMediaTarget || isRecordingTarget
+                  ? _kRecordingTargetBorderWidth
+                  : 1,
             ),
-            border: Border.all(color: outlineColor),
             borderRadius: BorderRadius.circular(_kContentContainerRadius),
           ),
           child: _buildContentField(
@@ -334,6 +445,7 @@ class AddFactEntryRow extends HookWidget {
             loc,
             contentFocus: contentFocus,
             contentStyle: contentStyle,
+            rubyEditorKey: rubyEditorKey,
           ),
         ),
       ],

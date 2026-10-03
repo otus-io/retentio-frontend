@@ -102,7 +102,10 @@ class _FactEditState extends ConsumerState<FactEdit>
   }
 
   void _onFocusChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    // Keep sticky media target in sync while focus moves to the toolbar/mic.
+    refreshMediaTargetFromFocus();
+    setState(() {});
   }
 
   Future<void> _loadFact() async {
@@ -387,7 +390,9 @@ class _FactEditState extends ConsumerState<FactEdit>
     Color outline,
   ) sync* {
     final rows = _rows!;
-    for (final model in rows) {
+    final mediaTarget = targetRowIndexForMedia();
+    for (var i = 0; i < rows.length; i++) {
+      final model = rows[i];
       yield Padding(
         key: model.row.hostKey,
         padding: _kEditEntryRowBottomPadding,
@@ -397,11 +402,24 @@ class _FactEditState extends ConsumerState<FactEdit>
           loc: loc,
           theme: theme,
           outlineColor: outline,
+          isRecordingTarget: _recordingVoice && i == mediaTarget,
+          // Highlight follows the sticky media target even when the row already
+          // has audio, so focusing / blank-tapping that row is visible.
+          isMediaTarget: i == mediaTarget,
           onClearSlot: (kind) {
             setState(() {
               model.row.clearSlot(kind);
               model.clearExistingFor(kind);
+              if (kind == MediaSlotKind.audio) {
+                pinMediaTargetRow(i);
+              }
             });
+            if (kind == MediaSlotKind.audio) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                model.row.requestContentFocus?.call();
+              });
+            }
           },
         ),
       );

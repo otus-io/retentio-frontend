@@ -389,6 +389,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get addFactStopRecordingTooltip => '録音を停止してこのフィールドに音声を添付';
 
   @override
+  String get addFactRecordingTargetHint => 'このフィールドに録音中…';
+
+  @override
   String get addFactMicPermissionDenied => '録音にはマイクへのアクセスが必要です。';
 
   @override

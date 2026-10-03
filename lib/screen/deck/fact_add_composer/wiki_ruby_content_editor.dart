@@ -80,10 +80,10 @@ class WikiRubyContentEditor extends StatefulWidget {
   final TextAlign textAlign;
 
   @override
-  State<WikiRubyContentEditor> createState() => _WikiRubyContentEditorState();
+  State<WikiRubyContentEditor> createState() => WikiRubyContentEditorState();
 }
 
-class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
+class WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
   late List<_RubyEditSlot> _slots;
   bool _syncingStorage = false;
   bool _mutatingSlots = false;
@@ -599,21 +599,45 @@ class _WikiRubyContentEditorState extends State<WikiRubyContentEditor> {
       _ => WrapAlignment.center,
     };
 
-    return Padding(
-      padding: widget.contentPadding,
-      child: FocusTraversalGroup(
-        child: Wrap(
-          alignment: wrapAlignment,
-          crossAxisAlignment: WrapCrossAlignment.end,
-          spacing: 0,
-          runSpacing: 6,
-          children: [
-            for (var i = 0; i < _slots.length; i++)
-              _buildSlot(context, i, rubyStyle, scheme, loc),
-          ],
+    // Slots are only as wide as their text; the backdrop catches taps on the
+    // blank space around them without competing with the slot fields.
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: focusEnd,
+          ),
         ),
-      ),
+        Padding(
+          padding: widget.contentPadding,
+          child: FocusTraversalGroup(
+            child: Wrap(
+              alignment: wrapAlignment,
+              crossAxisAlignment: WrapCrossAlignment.end,
+              spacing: 0,
+              runSpacing: 6,
+              children: [
+                for (var i = 0; i < _slots.length; i++)
+                  _buildSlot(context, i, rubyStyle, scheme, loc),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
+  }
+
+  /// [_slotsFromStorage] always ends with a plain slot, so this is the caret
+  /// position after the last character. Also used when the parent row box is
+  /// tapped outside a slot (e.g. empty space beside the audio control).
+  void focusEnd() {
+    final last = _slots.last;
+    final controller = last.controller;
+    controller.selection = TextSelection.collapsed(
+      offset: controller.text.length,
+    );
+    last.focus.requestFocus();
   }
 
   Widget _buildSlot(

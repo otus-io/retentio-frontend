@@ -27,6 +27,10 @@ class AddFactRowModel {
   /// Bounds this row’s fields for focus detection (media target, minus button).
   final GlobalKey hostKey;
 
+  /// Focuses this row’s content field (plain or ruby) at the end of the text.
+  /// Wired by [AddFactEntryRow] while mounted.
+  VoidCallback? requestContentFocus;
+
   /// Up to one file per kind per row (API entry supports image + video + audio).
   String? imagePath;
   String? videoPath;

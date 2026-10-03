@@ -25,17 +25,74 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
   bool get targetRowHasAttachment;
   void clearTargetRowAttachment();
 
+  /// Last row that had focus inside its host — used when the mic/toolbar is
+  /// focused so a recording still attaches to the field the user was editing.
+  int _stickyMediaTargetRow = 0;
+
+  /// Explicit pin (e.g. after clearing that row's audio). Wins over live focus
+  /// until focus moves to a different host row.
+  int? _pinnedMediaTargetRow;
+
+  /// Row locked in when recording starts, so tapping another field mid-record
+  /// neither moves the recording hint nor redirects the finished clip.
+  int? _recordingTargetRow;
+
   bool get voiceRecordingAvailable =>
       !kIsWeb && (Platform.isIOS || Platform.isAndroid);
 
   /// Pause underlying card/deck audio so the microphone can own the session.
   Future<void> prepareForExternalMicRecording() async {}
 
-  int targetRowIndexForMedia() {
-    return addFactTargetRowIndexForMedia(
+  /// Pins media attach/record to [index] (e.g. after clearing that row's audio).
+  void pinMediaTargetRow(int index) {
+    final last = mediaTargetHostKeys.length - 1;
+    if (last < 0) {
+      _stickyMediaTargetRow = 0;
+      _pinnedMediaTargetRow = null;
+      return;
+    }
+    final clamped = index < 0 ? 0 : (index > last ? last : index);
+    _stickyMediaTargetRow = clamped;
+    _pinnedMediaTargetRow = clamped;
+  }
+
+  /// Updates the sticky media target from the focused row. Call on focus
+  /// changes (not during build) so [targetRowIndexForMedia] stays a pure read.
+  void refreshMediaTargetFromFocus() {
+    final focused = addFactFocusedHostRowIndex(
       focusContext: FocusManager.instance.primaryFocus?.context,
       hostKeys: mediaTargetHostKeys,
     );
+    if (focused == null) return;
+    final pinned = _pinnedMediaTargetRow;
+    if (pinned != null && focused != pinned) {
+      // User moved focus to another row — follow them and drop the pin.
+      _pinnedMediaTargetRow = null;
+    }
+    _stickyMediaTargetRow = focused;
+  }
+
+  int targetRowIndexForMedia() {
+    final locked = _recordingTargetRow;
+    if (locked != null) return locked;
+    final last = mediaTargetHostKeys.length - 1;
+    if (last < 0) return 0;
+
+    final pinned = _pinnedMediaTargetRow;
+    if (pinned != null) {
+      if (pinned < 0) return 0;
+      if (pinned > last) return last;
+      return pinned;
+    }
+
+    final focused = addFactFocusedHostRowIndex(
+      focusContext: FocusManager.instance.primaryFocus?.context,
+      hostKeys: mediaTargetHostKeys,
+    );
+    if (focused != null) return focused;
+    if (_stickyMediaTargetRow < 0) return 0;
+    if (_stickyMediaTargetRow > last) return last;
+    return _stickyMediaTargetRow;
   }
 
   Future<void> tryAttachPickedPath(String path) async {
@@ -93,6 +150,9 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
       await finishVoiceRecording();
       return;
     }
+    // Captured before the awaits below so focus changes during the permission
+    // prompt or prepare step cannot redirect the clip.
+    final target = targetRowIndexForMedia();
     await prepareForExternalMicRecording();
     final permitted = await voiceRecorder.hasPermission();
     if (!permitted) {
@@ -115,6 +175,7 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
         ),
         path: filePath,
       );
+      _recordingTargetRow = target;
       if (mounted) setState(() => isRecordingVoice = true);
     } catch (_) {
       if (mounted) showComposerSnack(loc.addFactRecordingFailed);
@@ -122,6 +183,15 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
   }
 
   Future<void> finishVoiceRecording() async {
+    try {
+      await _stopAndAttachRecording();
+    } finally {
+      // Keep the lock if a new recording already started during the attach.
+      if (!isRecordingVoice) _recordingTargetRow = null;
+    }
+  }
+
+  Future<void> _stopAndAttachRecording() async {
     final loc = AppLocalizations.of(context)!;
     String? outPath;
     try {
@@ -147,6 +217,7 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
 
   Future<void> cancelVoiceRecording() async {
     if (!isRecordingVoice) return;
+    _recordingTargetRow = null;
     try {
       await voiceRecorder.cancel();
     } catch (_) {}

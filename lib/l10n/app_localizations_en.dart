@@ -399,6 +399,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Stop recording and attach audio to this field';
 
   @override
+  String get addFactRecordingTargetHint => 'Recording for this field…';
+
+  @override
   String get addFactMicPermissionDenied =>
       'Microphone access is required to record audio.';
 

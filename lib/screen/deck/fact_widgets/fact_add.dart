@@ -90,7 +90,9 @@ class _FactAddState extends ConsumerState<FactAdd>
   }
 
   void _onFocusChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    refreshMediaTargetFromFocus();
+    setState(() {});
   }
 
   @override
@@ -156,6 +158,7 @@ class _FactAddState extends ConsumerState<FactAdd>
 
   void _resetForm() {
     if (!mounted) return;
+    pinMediaTargetRow(0);
     final oldRows = List<AddFactRowModel>.from(_rows);
     setState(() {
       _rows
@@ -303,7 +306,9 @@ class _FactAddState extends ConsumerState<FactAdd>
     ThemeData theme,
     Color outline,
   ) sync* {
-    for (final row in _rows) {
+    final mediaTarget = targetRowIndexForMedia();
+    for (var i = 0; i < _rows.length; i++) {
+      final row = _rows[i];
       yield Padding(
         key: row.hostKey,
         padding: _kEntryRowBottomPadding,
@@ -313,8 +318,23 @@ class _FactAddState extends ConsumerState<FactAdd>
           loc: loc,
           theme: theme,
           outlineColor: outline,
+          isRecordingTarget: _recordingVoice && i == mediaTarget,
+          // Highlight follows the sticky media target even when the row already
+          // has audio, so focusing / blank-tapping that row is visible.
+          isMediaTarget: i == mediaTarget,
           onClearSlot: (kind) {
-            setState(() => row.clearSlot(kind));
+            setState(() {
+              row.clearSlot(kind);
+              if (kind == MediaSlotKind.audio) {
+                pinMediaTargetRow(i);
+              }
+            });
+            if (kind == MediaSlotKind.audio) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                row.requestContentFocus?.call();
+              });
+            }
           },
         ),
       );
