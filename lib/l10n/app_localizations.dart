@@ -970,6 +970,114 @@ abstract class AppLocalizations {
   /// **'Tags'**
   String get tags;
 
+  /// No description provided for @statistics.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get statistics;
+
+  /// No description provided for @statisticsAllDecks.
+  ///
+  /// In en, this message translates to:
+  /// **'All decks'**
+  String get statisticsAllDecks;
+
+  /// No description provided for @statisticsDeckFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Deck'**
+  String get statisticsDeckFilter;
+
+  /// No description provided for @statisticsRangeDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days'**
+  String statisticsRangeDays(int count);
+
+  /// No description provided for @statisticsPeriodReviews.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews in period'**
+  String get statisticsPeriodReviews;
+
+  /// No description provided for @statisticsTodayReviews.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews today'**
+  String get statisticsTodayReviews;
+
+  /// No description provided for @statisticsActiveDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Active days'**
+  String get statisticsActiveDays;
+
+  /// No description provided for @statisticsDailyAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily average'**
+  String get statisticsDailyAverage;
+
+  /// No description provided for @statisticsDailyActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily activity'**
+  String get statisticsDailyActivity;
+
+  /// No description provided for @statisticsWeekdayDistribution.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews by weekday'**
+  String get statisticsWeekdayDistribution;
+
+  /// No description provided for @statisticsUtcNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Dates and day boundaries use UTC.'**
+  String get statisticsUtcNote;
+
+  /// No description provided for @statisticsNoDecks.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a deck to start tracking review activity.'**
+  String get statisticsNoDecks;
+
+  /// No description provided for @statisticsNoActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'No review activity in this period.'**
+  String get statisticsNoActivity;
+
+  /// No description provided for @statisticsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load review statistics.'**
+  String get statisticsLoadFailed;
+
+  /// No description provided for @statisticsRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Update failed. Showing previously loaded data.'**
+  String get statisticsRefreshFailed;
+
+  /// No description provided for @statisticsReviewsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} reviews'**
+  String statisticsReviewsCount(int count);
+
+  /// No description provided for @statisticsDailyChartSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily review activity in UTC: {details}'**
+  String statisticsDailyChartSemantics(String details);
+
+  /// No description provided for @statisticsWeekdayChartSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews by UTC weekday: {details}'**
+  String statisticsWeekdayChartSemantics(String details);
+
   /// Single tag label
   ///
   /// In en, this message translates to:

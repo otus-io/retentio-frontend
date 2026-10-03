@@ -83,6 +83,10 @@ Tabs: **Decks** | **Discover** | **Profile**
 - [ ] Change language: English / 日本語 / 简体中文 — strings update app-wide
 - [ ] Change theme: Light / Dark / Sepia / System — applies immediately
 - [ ] Theme persists after app restart
+- [ ] Statistics row opens the review statistics screen
+- [ ] Statistics defaults to All decks / 30 days; 7 / 30 / 90 / 365 day filters reload correctly
+- [ ] Deck filter switches between the complete aggregate and one deck
+- [ ] Metrics, daily activity, weekday distribution, UTC note, empty/error/retry states are correct
 - [ ] Tags row opens Tags screen
 - [ ] Logout: Cancel keeps session; Confirm logs out
 - [ ] App version label visible at bottom

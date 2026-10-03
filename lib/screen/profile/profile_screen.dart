@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:retentio/core/error/api_error_messages.dart';
+import 'package:retentio/features/statistics/presentation/statistics_screen.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/providers/locale_provider.dart';
 import 'package:retentio/providers/theme_provider.dart';
@@ -23,7 +24,9 @@ const _kChevronSize = 16.0;
 const _kSubtitleAlpha = 0.76;
 
 class ProfileScreen extends HookConsumerWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({super.key, this.statisticsBuilder});
+
+  final WidgetBuilder? statisticsBuilder;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -123,6 +126,22 @@ class ProfileScreen extends HookConsumerWidget {
                                 ref,
                                 currentTheme,
                                 loc,
+                              ),
+                            ),
+                            Divider(
+                              height: dividerTheme.space ?? 1,
+                              indent: _kDividerHorizontalInset,
+                              endIndent: _kDividerHorizontalInset,
+                            ),
+                            _ProfileTileWidget(
+                              icon: LucideIcons.chartNoAxesColumnIncreasing,
+                              title: loc.statistics,
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder:
+                                      statisticsBuilder ??
+                                      (_) => const StatisticsScreen(),
+                                ),
                               ),
                             ),
                             Divider(
