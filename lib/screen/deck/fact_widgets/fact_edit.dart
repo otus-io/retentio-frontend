@@ -1,5 +1,4 @@
 import 'dart:async' show unawaited;
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,6 +15,7 @@ import 'package:retentio/models/tag.dart';
 import 'package:retentio/screen/deck/deck_widgets/pending_contributions_outbox_sheet.dart';
 import 'package:retentio/screen/deck/fact_add_composer/entry_row.dart';
 import 'package:retentio/screen/deck/fact_add_composer/fact_edit_logic.dart';
+import 'package:retentio/screen/deck/fact_add_composer/media_play_url.dart';
 import 'package:retentio/screen/deck/fact_add_composer/media_handling_coordinator.dart';
 import 'package:retentio/screen/deck/providers/card_audio_mic_handoff.dart';
 import 'package:retentio/screen/deck/fact_add_composer/toolbars.dart';
@@ -220,8 +220,7 @@ class _FactEditState extends ConsumerState<FactEdit>
     final existingId = row.existingFor(kind);
     if (path == null || path.trim().isEmpty) return existingId;
 
-    final file = File(path);
-    if (await file.exists()) {
+    if (await absoluteAttachmentExists(path)) {
       return MediaService.upload(
         deckId: widget.deck.id,
         filePath: path,

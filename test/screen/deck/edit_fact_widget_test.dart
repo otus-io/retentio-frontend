@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -199,17 +201,12 @@ void main() {
 
       await tester.ensureVisible(find.byType(AppButton));
       await tester.pumpAndSettle();
-      // Save checks File.exists on the audio slot, which needs the real
-      // async zone. Wait until the PATCH lands instead of a fixed 400ms.
-      await tester.runAsync(() async {
-        await tester.tap(find.byType(AppButton));
-        final deadline = DateTime.now().add(const Duration(seconds: 5));
-        while (interceptor.patchFactCount == 0 &&
-            DateTime.now().isBefore(deadline)) {
-          await Future<void>.delayed(const Duration(milliseconds: 20));
-        }
-      });
+      final patched = Completer<void>();
+      interceptor.onPatch = patched.complete;
+      await tester.tap(find.byType(AppButton));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(patched.isCompleted, isTrue);
 
       expect(interceptor.patchFactCount, 1);
       final body = interceptor.lastPatchData as Map;

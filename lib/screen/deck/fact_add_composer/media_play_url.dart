@@ -18,11 +18,22 @@ String? attachmentAudioPlayUrl(
       value.startsWith('/api/')) {
     return value;
   }
+  // Recordings and picked files are absolute paths. Media ids are not, so
+  // playback does not stat the disk during build.
   final file = File(value);
-  if (file.existsSync()) return file.absolute.path;
+  if (file.isAbsolute) return file.absolute.path;
   final pinned = mediaVersions[value];
   if (pinned != null && pinned > 0) {
     return '/api/media/${Uri.encodeComponent(value)}?v=$pinned';
   }
   return DeckContribution.ownedMediaUrl(value);
+}
+
+/// True when [path] is an absolute local file that exists.
+///
+/// Media ids are not absolute, so they do not touch the disk.
+Future<bool> absoluteAttachmentExists(String path) async {
+  final file = File(path);
+  if (!file.isAbsolute) return false;
+  return file.exists();
 }

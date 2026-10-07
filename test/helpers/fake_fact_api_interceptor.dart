@@ -23,6 +23,9 @@ class FakeFactApiInterceptor extends Interceptor {
   int addFactsCount = 0;
   dynamic lastPatchData;
 
+  /// Completes a test wait when the fact PATCH is handled.
+  void Function()? onPatch;
+
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     final uri = options.uri.toString();
@@ -64,6 +67,7 @@ class FakeFactApiInterceptor extends Interceptor {
     if (options.method == 'PATCH' && uri.contains('/facts/')) {
       patchFactCount++;
       lastPatchData = options.data;
+      onPatch?.call();
       handler.resolve(
         Response(
           requestOptions: options,
