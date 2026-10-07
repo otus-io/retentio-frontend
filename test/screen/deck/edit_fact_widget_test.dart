@@ -199,10 +199,13 @@ void main() {
 
       await tester.ensureVisible(find.byType(AppButton));
       await tester.pumpAndSettle();
-      // Save checks File.exists on the audio slot, which needs real async.
+      // Save checks File.exists on the audio slot, which needs the real
+      // async zone. Wait until the PATCH lands instead of a fixed 400ms.
       await tester.runAsync(() async {
         await tester.tap(find.byType(AppButton));
-        for (var i = 0; i < 20 && interceptor.patchFactCount == 0; i++) {
+        final deadline = DateTime.now().add(const Duration(seconds: 5));
+        while (interceptor.patchFactCount == 0 &&
+            DateTime.now().isBefore(deadline)) {
           await Future<void>.delayed(const Duration(milliseconds: 20));
         }
       });

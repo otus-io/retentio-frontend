@@ -4,12 +4,14 @@ import 'package:retentio/core/network/network.dart';
 /// Intercepts fact load/update/add API calls for [FactEdit] / [FactAdd] tests.
 class FakeFactApiInterceptor extends Interceptor {
   FakeFactApiInterceptor({
-    this.factEntries = const [
-      {'text': 'Alpha'},
-      {'text': 'Beta'},
-    ],
+    List<Map<String, dynamic>>? factEntries,
     this.mediaVersions,
-  });
+  }) : factEntries = factEntries ?? _defaultFactEntries;
+
+  static const _defaultFactEntries = <Map<String, dynamic>>[
+    {'text': 'Alpha'},
+    {'text': 'Beta'},
+  ];
 
   final List<Map<String, dynamic>> factEntries;
 
@@ -83,12 +85,10 @@ FakeFactApiInterceptor attachFakeFactApiInterceptor({
   List<Map<String, dynamic>>? factEntries,
   Map<String, int>? mediaVersions,
 }) {
-  final interceptor = factEntries == null
-      ? FakeFactApiInterceptor(mediaVersions: mediaVersions)
-      : FakeFactApiInterceptor(
-          factEntries: factEntries,
-          mediaVersions: mediaVersions,
-        );
+  final interceptor = FakeFactApiInterceptor(
+    factEntries: factEntries,
+    mediaVersions: mediaVersions,
+  );
   networkDioClient.dio.interceptors.add(interceptor);
   return interceptor;
 }

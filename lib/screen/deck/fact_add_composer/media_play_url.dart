@@ -22,7 +22,7 @@ String? attachmentAudioPlayUrl(
   if (file.existsSync()) return file.absolute.path;
   final pinned = mediaVersions[value];
   if (pinned != null && pinned > 0) {
-    return '/api/media/$value?v=$pinned';
+    return '/api/media/${Uri.encodeComponent(value)}?v=$pinned';
   }
   return DeckContribution.ownedMediaUrl(value);
 }

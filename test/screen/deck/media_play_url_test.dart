@@ -45,6 +45,13 @@ void main() {
       );
     });
 
+    test('encodes reserved characters in a pinned media id', () {
+      expect(
+        attachmentAudioPlayUrl('a/b?c', mediaVersions: const {'a/b?c': 2}),
+        '/api/media/a%2Fb%3Fc?v=2',
+      );
+    });
+
     test('omits v for ids without a positive pin', () {
       expect(
         attachmentAudioPlayUrl('media02', mediaVersions: const {'media01': 1}),

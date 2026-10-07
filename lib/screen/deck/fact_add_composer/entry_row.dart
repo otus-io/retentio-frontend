@@ -91,6 +91,7 @@ class AddFactEntryRow extends HookWidget {
   final bool isMediaTarget;
 
   /// Import snapshot pins (media id → version) for playing existing audio.
+  /// Image and video slots are not pinned here, so only audio appends `?v=`.
   final Map<String, int> mediaVersions;
 
   Widget _buildContentField(
