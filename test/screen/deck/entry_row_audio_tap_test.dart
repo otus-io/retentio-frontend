@@ -15,6 +15,7 @@ Widget _harness(
   AddFactRowModel row, {
   ValueChanged<MediaSlotKind>? onClearSlot,
   List<Override> overrides = const [],
+  Map<String, int> mediaVersions = const {},
 }) {
   final theme = ThemeData.light();
   return ProviderScope(
@@ -38,6 +39,7 @@ Widget _harness(
             theme: theme,
             outlineColor: Colors.grey,
             onClearSlot: onClearSlot ?? (_) {},
+            mediaVersions: mediaVersions,
           ),
         ),
       ),
@@ -86,6 +88,20 @@ void main() {
     final audioTop = tester.getTopLeft(find.byType(CardAudio)).dy;
     final textTop = tester.getTopLeft(find.byType(EditableText)).dy;
     expect(audioTop, lessThan(textTop));
+  });
+
+  testWidgets('pinned audio id plays the snapshot version', (tester) async {
+    final row = AddFactRowModel(initialFieldName: 'JP');
+    addTearDown(row.dispose);
+    row.content.text = 'headword';
+    row.audioPath = 'aud001';
+
+    await tester.pumpWidget(_harness(row, mediaVersions: const {'aud001': 1}));
+    await tester.pumpAndSettle();
+
+    final audio = tester.widget<CardAudio>(find.byType(CardAudio));
+    expect(audio.audioUrl, '/api/media/aud001?v=1');
+    expect(row.audioPath, 'aud001');
   });
 
   testWidgets('tapping a ready play button plays without focusing text', (

@@ -1,5 +1,4 @@
 import 'dart:async' show unawaited;
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,6 +15,7 @@ import 'package:retentio/models/tag.dart';
 import 'package:retentio/screen/deck/deck_widgets/pending_contributions_outbox_sheet.dart';
 import 'package:retentio/screen/deck/fact_add_composer/entry_row.dart';
 import 'package:retentio/screen/deck/fact_add_composer/fact_edit_logic.dart';
+import 'package:retentio/screen/deck/fact_add_composer/media_play_url.dart';
 import 'package:retentio/screen/deck/fact_add_composer/media_handling_coordinator.dart';
 import 'package:retentio/screen/deck/providers/card_audio_mic_handoff.dart';
 import 'package:retentio/screen/deck/fact_add_composer/toolbars.dart';
@@ -63,6 +63,7 @@ class _FactEditState extends ConsumerState<FactEdit>
   bool _submitting = false;
   String? _error;
   Fact? _loaded;
+  Map<String, int> _mediaVersions = const {};
   Deck? _deckForFields;
   List<FactEditRowModel>? _rows;
 
@@ -119,8 +120,14 @@ class _FactEditState extends ConsumerState<FactEdit>
         .catchError((_) => <Tag>[]);
 
     Fact? fact;
+    var mediaVersions = const <String, int>{};
     try {
-      fact = await CardService.getFact(widget.deck.id, widget.factId);
+      final detail = await CardService.getFactDetail(
+        widget.deck.id,
+        widget.factId,
+      );
+      fact = detail?.fact;
+      mediaVersions = detail?.mediaVersions ?? const {};
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -157,6 +164,7 @@ class _FactEditState extends ConsumerState<FactEdit>
 
     setState(() {
       _loaded = fact;
+      _mediaVersions = mediaVersions;
       _deckForFields = deckForFields;
       _rows = rows;
       _loading = false;
@@ -212,8 +220,7 @@ class _FactEditState extends ConsumerState<FactEdit>
     final existingId = row.existingFor(kind);
     if (path == null || path.trim().isEmpty) return existingId;
 
-    final file = File(path);
-    if (await file.exists()) {
+    if (await absoluteAttachmentExists(path)) {
       return MediaService.upload(
         deckId: widget.deck.id,
         filePath: path,
@@ -406,6 +413,7 @@ class _FactEditState extends ConsumerState<FactEdit>
           // Highlight follows the sticky media target even when the row already
           // has audio, so focusing / blank-tapping that row is visible.
           isMediaTarget: i == mediaTarget,
+          mediaVersions: _mediaVersions,
           onClearSlot: (kind) {
             setState(() {
               model.row.clearSlot(kind);

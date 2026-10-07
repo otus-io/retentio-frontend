@@ -3,9 +3,28 @@ import 'package:retentio/core/network/network.dart';
 
 /// Intercepts fact load/update/add API calls for [FactEdit] / [FactAdd] tests.
 class FakeFactApiInterceptor extends Interceptor {
+  FakeFactApiInterceptor({
+    List<Map<String, dynamic>>? factEntries,
+    this.mediaVersions,
+  }) : factEntries = factEntries ?? _defaultFactEntries;
+
+  static const _defaultFactEntries = <Map<String, dynamic>>[
+    {'text': 'Alpha'},
+    {'text': 'Beta'},
+  ];
+
+  final List<Map<String, dynamic>> factEntries;
+
+  /// Snapshot `media_versions` for the GET fact response (omitted when null).
+  final Map<String, int>? mediaVersions;
+
   int getFactCount = 0;
   int patchFactCount = 0;
   int addFactsCount = 0;
+  dynamic lastPatchData;
+
+  /// Completes a test wait when the fact PATCH is handled.
+  void Function()? onPatch;
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -36,13 +55,8 @@ class FakeFactApiInterceptor extends Interceptor {
           data: {
             'code': 0,
             'data': {
-              'fact': {
-                'id': 'fact-test-1',
-                'entries': [
-                  {'text': 'Alpha'},
-                  {'text': 'Beta'},
-                ],
-              },
+              'fact': {'id': 'fact-test-1', 'entries': factEntries},
+              'media_versions': ?mediaVersions,
             },
           },
         ),
@@ -52,6 +66,8 @@ class FakeFactApiInterceptor extends Interceptor {
 
     if (options.method == 'PATCH' && uri.contains('/facts/')) {
       patchFactCount++;
+      lastPatchData = options.data;
+      onPatch?.call();
       handler.resolve(
         Response(
           requestOptions: options,
@@ -69,8 +85,14 @@ class FakeFactApiInterceptor extends Interceptor {
   }
 }
 
-FakeFactApiInterceptor attachFakeFactApiInterceptor() {
-  final interceptor = FakeFactApiInterceptor();
+FakeFactApiInterceptor attachFakeFactApiInterceptor({
+  List<Map<String, dynamic>>? factEntries,
+  Map<String, int>? mediaVersions,
+}) {
+  final interceptor = FakeFactApiInterceptor(
+    factEntries: factEntries,
+    mediaVersions: mediaVersions,
+  );
   networkDioClient.dio.interceptors.add(interceptor);
   return interceptor;
 }
