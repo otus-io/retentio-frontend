@@ -3,9 +3,23 @@ import 'package:retentio/core/network/network.dart';
 
 /// Intercepts fact load/update/add API calls for [FactEdit] / [FactAdd] tests.
 class FakeFactApiInterceptor extends Interceptor {
+  FakeFactApiInterceptor({
+    this.factEntries = const [
+      {'text': 'Alpha'},
+      {'text': 'Beta'},
+    ],
+    this.mediaVersions,
+  });
+
+  final List<Map<String, dynamic>> factEntries;
+
+  /// Snapshot `media_versions` for the GET fact response (omitted when null).
+  final Map<String, int>? mediaVersions;
+
   int getFactCount = 0;
   int patchFactCount = 0;
   int addFactsCount = 0;
+  dynamic lastPatchData;
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -36,13 +50,8 @@ class FakeFactApiInterceptor extends Interceptor {
           data: {
             'code': 0,
             'data': {
-              'fact': {
-                'id': 'fact-test-1',
-                'entries': [
-                  {'text': 'Alpha'},
-                  {'text': 'Beta'},
-                ],
-              },
+              'fact': {'id': 'fact-test-1', 'entries': factEntries},
+              'media_versions': ?mediaVersions,
             },
           },
         ),
@@ -52,6 +61,7 @@ class FakeFactApiInterceptor extends Interceptor {
 
     if (options.method == 'PATCH' && uri.contains('/facts/')) {
       patchFactCount++;
+      lastPatchData = options.data;
       handler.resolve(
         Response(
           requestOptions: options,
@@ -69,8 +79,16 @@ class FakeFactApiInterceptor extends Interceptor {
   }
 }
 
-FakeFactApiInterceptor attachFakeFactApiInterceptor() {
-  final interceptor = FakeFactApiInterceptor();
+FakeFactApiInterceptor attachFakeFactApiInterceptor({
+  List<Map<String, dynamic>>? factEntries,
+  Map<String, int>? mediaVersions,
+}) {
+  final interceptor = factEntries == null
+      ? FakeFactApiInterceptor(mediaVersions: mediaVersions)
+      : FakeFactApiInterceptor(
+          factEntries: factEntries,
+          mediaVersions: mediaVersions,
+        );
   networkDioClient.dio.interceptors.add(interceptor);
   return interceptor;
 }

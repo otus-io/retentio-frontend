@@ -75,6 +75,7 @@ class AddFactEntryRow extends HookWidget {
     required this.onClearSlot,
     this.isRecordingTarget = false,
     this.isMediaTarget = false,
+    this.mediaVersions = const {},
   });
 
   final AddFactRowModel row;
@@ -88,6 +89,9 @@ class AddFactEntryRow extends HookWidget {
 
   /// True when this row is the sticky media target (recording or cleared for re-record).
   final bool isMediaTarget;
+
+  /// Import snapshot pins (media id → version) for playing existing audio.
+  final Map<String, int> mediaVersions;
 
   Widget _buildContentField(
     ThemeData theme,
@@ -153,7 +157,10 @@ class AddFactEntryRow extends HookWidget {
     }
 
     final audioPath = row.audioPath;
-    final audioPlayUrl = attachmentAudioPlayUrl(audioPath);
+    final audioPlayUrl = attachmentAudioPlayUrl(
+      audioPath,
+      mediaVersions: mediaVersions,
+    );
     final nonAudioKinds = activeKinds
         .where((k) => k != MediaSlotKind.audio)
         .toList(growable: false);

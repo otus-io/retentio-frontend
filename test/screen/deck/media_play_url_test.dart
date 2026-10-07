@@ -37,5 +37,23 @@ void main() {
     test('maps bare media id to owned media URL', () {
       expect(attachmentAudioPlayUrl('media01'), '/api/media/media01');
     });
+
+    test('appends snapshot pin for pinned media id', () {
+      expect(
+        attachmentAudioPlayUrl('media01', mediaVersions: const {'media01': 1}),
+        '/api/media/media01?v=1',
+      );
+    });
+
+    test('omits v for ids without a positive pin', () {
+      expect(
+        attachmentAudioPlayUrl('media02', mediaVersions: const {'media01': 1}),
+        '/api/media/media02',
+      );
+      expect(
+        attachmentAudioPlayUrl('media01', mediaVersions: const {'media01': 0}),
+        '/api/media/media01',
+      );
+    });
   });
 }
