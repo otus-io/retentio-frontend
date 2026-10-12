@@ -22,6 +22,7 @@ class AuthRepositoryImpl implements AuthRepository {
     if (token is String && token.isNotEmpty) {
       await _localAuthDataSource.saveToken(token);
       await _localAuthDataSource.saveLoginFlag(true);
+      await _localAuthDataSource.saveUsername(username);
       return AuthSession(token: token, isLoggedIn: true);
     }
 
