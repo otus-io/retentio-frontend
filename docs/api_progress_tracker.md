@@ -41,7 +41,7 @@
 | 接口 | 说明 | 前端 | 后端 |
 | --- | --- | --- | --- |
 | `POST /api/decks/{id}/facts/{operation}` | 添加词条 (append/prepend/shuffle/spread) | ❌ | ✅ |
-| `GET /api/decks/{id}/facts` | 获取所有词条 | ❌ | ✅ |
+| `GET /api/decks/{id}/facts` | 获取所有词条（离线下载分页拉取 limit/offset） | ✅ | ✅ |
 | `GET /api/decks/{id}/facts/{factId}` | 获取单个词条 | ❌ | ✅ |
 | `PATCH /api/decks/{id}/facts/{factId}` | 更新词条 | ❌ | ✅ |
 | `DELETE /api/decks/{id}/facts/{factId}` | 删除词条 | ❌ | ✅ |
@@ -52,8 +52,8 @@
 | 接口 | 说明 | 前端 | 后端 |
 | --- | --- | --- | --- |
 | `GET /api/decks/{id}/card` | 获取最紧急卡片；无卡片时 `data.card` 可能为 `[]`（非对象），客户端解析为无卡片 / Next due card; empty deck may return `data.card` as `[]` (parsed as no card) | ❌ | ✅ |
-| `PATCH /api/decks/{id}/card` | 更新卡片间隔或可见性（按 card_id 查找，支持 last_review 离线同步） | ❌ | ✅ |
-| `GET /api/decks/{id}/cards` | 获取卡片统计（总数、隐藏数量、隐藏事实）；学习页标签筛选时传 `tag_id` 获取标签维度进度 | ✅ | ✅ |
+| `PATCH /api/decks/{id}/card` | 更新卡片间隔或可见性（按 card_id 查找，支持 last_review 离线同步；离线队列上传带 `Idempotency-Key`，后端暂未支持） | ✅ | ✅ |
+| `GET /api/decks/{id}/cards` | 获取卡片统计（总数、隐藏数量、隐藏事实）；学习页标签筛选时传 `tag_id` 获取标签维度进度；离线下载时缓存全部卡片 | ✅ | ✅ |
 | `POST /api/decks/{id}/reschedule` | 假期模式：按天数平移卡片复习计划 | ❌ | ✅ |
 
 ### 排行榜 / 游戏化
@@ -70,7 +70,7 @@
 | --- | --- | --- | --- |
 | `POST /api/media` | 上传媒体文件 | ❌ | ✅ |
 | `GET /api/media` | 列出用户媒体（支持 since/limit/offset） | ❌ | ✅ |
-| `GET /api/media/{id}` | 下载媒体文件 | ❌ | ✅ |
+| `GET /api/media/{id}` | 下载媒体文件（离线下载缓存到本地） | ✅ | ✅ |
 | `GET /api/media/{id}/meta` | 获取媒体元数据 | ❌ | ✅ |
 | `DELETE /api/media/{id}` | 删除媒体 | ❌ | ✅ |
 
