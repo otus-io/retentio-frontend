@@ -47,6 +47,10 @@ class _StudyApiAdapter implements HttpClientAdapter {
         return _json({'msg': 'unauthorized'}, 401);
       case 'gone':
         return _json({'msg': 'card not found'}, 404);
+      case 'gone-message':
+        return _json({'message': 'card not found'}, 404);
+      case 'proxy':
+        return ResponseBody.fromString('<html>Not Found</html>', 404);
       default:
         throw const SocketException('offline');
     }
@@ -94,6 +98,7 @@ void main() {
       expect(request.headers['Idempotency-Key'], 'op-1');
       expect(result.httpStatus, 200);
       expect(result.isSuccess, isTrue);
+      expect(result.isApiError, isFalse);
       expect(result.data, {
         'last_review': 10,
         'due_date': 70,
@@ -115,8 +120,27 @@ void main() {
         expect(result.isSuccess, isFalse);
         expect(result.message, message);
         expect(result.data, isNull);
+        expect(result.isApiError, isTrue);
       });
     }
+
+    test('flags a 404 with a `message` envelope as an API error', () async {
+      final result = await source.patchCard('deck-1', {
+        'card_id': 'gone-message',
+      }, operationId: 'op-msg');
+
+      expect(result.httpStatus, 404);
+      expect(result.isApiError, isTrue);
+    });
+
+    test('does not flag a 404 without an API envelope', () async {
+      final result = await source.patchCard('deck-1', {
+        'card_id': 'proxy',
+      }, operationId: 'op-proxy');
+
+      expect(result.httpStatus, 404);
+      expect(result.isApiError, isFalse);
+    });
 
     test('maps a network error to a null status', () async {
       final result = await source.patchCard('deck-1', {
@@ -125,6 +149,7 @@ void main() {
 
       expect(result.httpStatus, isNull);
       expect(result.isSuccess, isFalse);
+      expect(result.isApiError, isFalse);
     });
 
     test('treats statuses outside 2xx as failure', () {

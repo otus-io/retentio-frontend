@@ -183,7 +183,7 @@ class OfflineSyncService {
           ),
         );
         return _OpOutcome.failed;
-      case 404:
+      case 404 when result.isApiError:
         await _store.removeOperation(op.operationId);
         await _store.deleteCard(op.deckId, op.cardId);
         return _OpOutcome.removed;

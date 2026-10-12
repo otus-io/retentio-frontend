@@ -79,6 +79,7 @@ class _FakeRemote implements StudySyncRemoteDataSource {
   final statusByOp = <String, int?>{};
   final dataByOp = <String, Map<String, dynamic>?>{};
   final messageByOp = <String, String>{};
+  final apiErrorOps = <String>{};
   final counts = <String, OfflineDeckCounts>{};
   Completer<void>? gate;
 
@@ -105,6 +106,7 @@ class _FakeRemote implements StudySyncRemoteDataSource {
       httpStatus: status,
       data: dataByOp[operationId],
       message: messageByOp[operationId],
+      isApiError: apiErrorOps.contains(operationId),
     );
   }
 
@@ -494,11 +496,12 @@ void main() {
     expect(store.ops['a']!.lastError, 'HTTP 400');
   });
 
-  test('404 removes the op and the local card, then continues', () async {
+  test('API 404 removes the op and the local card, then continues', () async {
     store.cards['c1'] = _card('c1');
     store.cards['c2'] = _card('c2');
     queue([_review('a', 1), _review('b', 2, cardId: 'c2')]);
     remote.statusByOp['a'] = 404;
+    remote.apiErrorOps.add('a');
 
     final result = await service().flush(force: true);
 
@@ -506,6 +509,21 @@ void main() {
     expect(store.cards.keys, ['c2']);
     expect(store.ops, isEmpty);
     expect(remote.patched, ['a', 'b']);
+  });
+
+  test('404 without an API envelope keeps the card and retries', () async {
+    store.cards['c1'] = _card('c1');
+    queue([_review('a', 1)]);
+    remote.statusByOp['a'] = 404;
+
+    final result = await service().flush(force: true);
+
+    expect(result.status, OfflineSyncStatus.partial);
+    expect(store.cards.keys, ['c1']);
+    final op = store.ops['a']!;
+    expect(op.status, StudySyncStatus.pending);
+    expect(op.nextRetryAt, _now + 30);
+    expect(op.lastError, 'HTTP 404');
   });
 
   group('retryable errors', () {

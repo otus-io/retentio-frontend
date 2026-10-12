@@ -15,7 +15,12 @@ typedef DeckDetailFn = Future<Deck> Function(String deckId);
 
 /// Typed outcome of one `PATCH /api/decks/{id}/card`.
 class StudyPatchResult {
-  const StudyPatchResult({this.httpStatus, this.data, this.message});
+  const StudyPatchResult({
+    this.httpStatus,
+    this.data,
+    this.message,
+    this.isApiError = false,
+  });
 
   /// Null when no response was received (network error).
   final int? httpStatus;
@@ -23,6 +28,10 @@ class StudyPatchResult {
   /// `last_review`/`due_date`/`new_interval` or `hidden_status`.
   final Map<String, dynamic>? data;
   final String? message;
+
+  /// The error body is the API JSON envelope (`msg`/`message`), so the status
+  /// came from the API rather than a gateway or proxy.
+  final bool isApiError;
 
   bool get isSuccess =>
       httpStatus != null && httpStatus! >= 200 && httpStatus! < 300;
@@ -67,11 +76,15 @@ class StudySyncRemoteDataSource {
     final res = await _patchFn(deckId, body, {'Idempotency-Key': operationId});
     final error = res?.exception;
     final data = res?.data;
+    final errorBody = error?.response?.data;
     return StudyPatchResult(
       // Dio only resolves (no exception) for 2xx under the default validateStatus.
       httpStatus: error == null ? 200 : error.response?.statusCode,
       data: data is Map ? Map<String, dynamic>.from(data) : null,
       message: res?.msg,
+      isApiError:
+          errorBody is Map &&
+          (errorBody.containsKey('msg') || errorBody.containsKey('message')),
     );
   }
 
