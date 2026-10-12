@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:retentio/core/network/network.dart';
@@ -34,6 +35,7 @@ void main() {
   setUp(() async {
     dir = Directory.systemTemp.createTempSync('offline_session');
     await setupTestEnvironment();
+    FlutterSecureStorage.setMockInitialValues({});
     Hive.init(dir.path);
   });
 

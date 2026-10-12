@@ -6,6 +6,7 @@ import 'package:retentio/core/network/connectivity_service.dart';
 import 'package:retentio/features/auth/data/datasources/local_auth_data_source.dart';
 import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/features/offline_learning/data/datasources/hive_offline_learning_store.dart';
+import 'package:retentio/features/offline_learning/data/datasources/offline_store_cipher.dart';
 import 'package:retentio/features/offline_learning/data/datasources/study_sync_remote_data_source.dart';
 import 'package:retentio/features/offline_learning/data/offline_package_downloader.dart';
 import 'package:retentio/features/offline_learning/data/repositories/offline_first_deck_study_repository.dart';
@@ -128,8 +129,11 @@ class OfflineLearningSessions {
     );
   }
 
-  static Future<OfflineLearningStore> _openHiveStore(String accountId) =>
-      HiveOfflineLearningStore.open(accountId: accountId);
+  static Future<OfflineLearningStore> _openHiveStore(String accountId) async =>
+      HiveOfflineLearningStore.open(
+        accountId: accountId,
+        cipher: await offlineStoreCipher(),
+      );
 
   static Future<String> _appDocumentsDir() async =>
       (await getApplicationDocumentsDirectory()).path;
