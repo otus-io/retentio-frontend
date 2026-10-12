@@ -288,6 +288,39 @@ void main() {
     },
   );
 
+  test('keeps deck counters and tags written during the download', () async {
+    const stored = OfflineDeck(id: 'd1', name: 'Old', fields: []);
+    store.decks['d1'] = stored.copyWith(downloadedAt: 10);
+    final downloader = OfflinePackageDownloader(
+      store: store,
+      mediaRootDir: tmp.path,
+      fetchDeck: (_) async => _deck,
+      fetchFactsPage: (_, _, _) async =>
+          const OfflineFactsPage(facts: [], hasMore: false),
+      fetchCards: (_) async {
+        store.decks['d1'] = stored.copyWith(
+          downloadedAt: 10,
+          totalReviews: 70,
+          totalReviewsToday: 7,
+          lastSyncedAt: 30,
+          tags: const [Tag(id: 't9', name: 'new', description: '')],
+        );
+        return [];
+      },
+      nowSec: () => 1000,
+    );
+
+    await downloader.download('d1');
+
+    final deck = store.decks['d1']!;
+    expect(deck.name, 'Deck');
+    expect(deck.sourceVersion, 3);
+    expect(deck.downloadedAt, 10);
+    expect([deck.totalReviews, deck.totalReviewsToday], [70, 7]);
+    expect(deck.lastSyncedAt, 30);
+    expect(deck.tags.single.id, 't9');
+  });
+
   test('re-download keeps dirty cards and cards with queued ops', () async {
     store.cards['dirty'] = _card('dirty', lastReview: 77).copyWith(dirty: true);
     store.cards['queued'] = _card('queued', lastReview: 66);

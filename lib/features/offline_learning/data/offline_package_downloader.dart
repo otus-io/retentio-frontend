@@ -4,6 +4,7 @@ import 'package:retentio/features/offline_learning/data/remote_offline_package_d
 import 'package:retentio/features/offline_learning/domain/entities/offline_deck.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_fact.dart';
 import 'package:retentio/features/offline_learning/domain/repositories/offline_learning_store.dart';
+import 'package:retentio/models/deck.dart';
 import 'package:retentio/services/index.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/apis/deck_service.dart';
@@ -55,13 +56,16 @@ class OfflinePackageDownloader {
 
   Future<bool> _download(String deckId) async {
     try {
-      final deck = await _buildDeck(deckId);
-      final facts = await _syncFacts(deckId, deck);
+      final remote = await _fetchDeck(deckId);
+      final facts = await _syncFacts(
+        deckId,
+        _buildDeck(deckId, remote, await _store.getDeck(deckId)),
+      );
       await _seedCards(deckId);
       await _downloadFactMedia(deckId, facts);
-      await _store.putDeck(
-        deck.isReady ? deck : deck.copyWith(downloadedAt: _nowSec()),
-      );
+      // Re-read: sync flushes and tag loads may have written the row meanwhile.
+      final local = await _store.getDeck(deckId);
+      await _store.putDeck(_buildDeck(deckId, remote, local));
       return true;
     } catch (e, s) {
       logger.e('Offline download failed for deck=$deckId: $e', stackTrace: s);
@@ -69,24 +73,23 @@ class OfflinePackageDownloader {
     }
   }
 
-  Future<OfflineDeck> _buildDeck(String deckId) async {
-    final remote = await _fetchDeck(deckId);
-    final local = await _store.getDeck(deckId);
-    return OfflineDeck(
-      id: deckId,
-      name: remote.name,
-      fields: remote.fields,
-      rate: remote.rate,
-      sourceDeckId: remote.sourceDeckId,
-      sourceVersion: remote.sourceVersion,
-      totalReviews: local?.totalReviews ?? remote.stats.totalReviews,
-      totalReviewsToday:
-          local?.totalReviewsToday ?? remote.stats.totalReviewsToday,
-      downloadedAt: local?.downloadedAt ?? 0,
-      lastSyncedAt: local?.lastSyncedAt ?? 0,
-      tags: local?.tags ?? const [],
-    );
-  }
+  OfflineDeck _buildDeck(String deckId, Deck remote, OfflineDeck? local) =>
+      OfflineDeck(
+        id: deckId,
+        name: remote.name,
+        fields: remote.fields,
+        rate: remote.rate,
+        sourceDeckId: remote.sourceDeckId,
+        sourceVersion: remote.sourceVersion,
+        totalReviews: local?.totalReviews ?? remote.stats.totalReviews,
+        totalReviewsToday:
+            local?.totalReviewsToday ?? remote.stats.totalReviewsToday,
+        downloadedAt: local != null && local.isReady
+            ? local.downloadedAt
+            : _nowSec(),
+        lastSyncedAt: local?.lastSyncedAt ?? 0,
+        tags: local?.tags ?? const [],
+      );
 
   Future<List<OfflineFact>> _syncFacts(String deckId, OfflineDeck deck) async {
     final imported = deck.sourceDeckId.isNotEmpty;
