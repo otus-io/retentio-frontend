@@ -236,7 +236,9 @@ void main() {
   test(
     'downloads audio and image, skips video, json and cached media',
     () async {
-      store.media['cached'] = '/old/cached';
+      final cachedPath = '${tmp.path}/old/cached';
+      File(cachedPath).createSync(recursive: true);
+      store.media['cached'] = cachedPath;
       final ok = await build(
         pages: [
           [
@@ -258,11 +260,49 @@ void main() {
       final audPath = '${tmp.path}/d1/aud';
       expect(store.media['aud'], audPath);
       expect(store.media['img'], '${tmp.path}/d1/img');
-      expect(store.media['cached'], '/old/cached');
+      expect(store.media['cached'], cachedPath);
       expect(File(audPath).existsSync(), isTrue);
       expect(File('$audPath.part').existsSync(), isFalse);
     },
   );
+
+  test('re-downloads media whose cached file is gone', () async {
+    store.media['aud'] = '${tmp.path}/gone/aud';
+
+    await build(
+      pages: [
+        [
+          _fact('f1', entries: const [FactEntry(audio: 'aud')]),
+        ],
+      ],
+    ).download('d1');
+
+    expect(downloadedUrls, ['/api/media/aud']);
+    expect(store.media['aud'], '${tmp.path}/d1/aud');
+  });
+
+  test('names media files by their sniffed format', () async {
+    final heads = <String, List<int>>{
+      '.png': [0x89, 0x50, 0x4E, 0x47],
+      '.jpg': [0xFF, 0xD8, 0xFF, 0xE0],
+      '.gif': [0x47, 0x49, 0x46, 0x38],
+      '.webp': [0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50],
+      '.wav': [0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x41, 0x56, 0x45],
+      '.mp3': [0x49, 0x44, 0x33, 4],
+      '.ogg': [0x4F, 0x67, 0x67, 0x53],
+      '.webm': [0x1A, 0x45, 0xDF, 0xA3],
+      '.m4a': [0, 0, 0, 0x20, 0x66, 0x74, 0x79, 0x70],
+      '': [0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 1, 2, 3, 4],
+    };
+    for (final MapEntry(key: ext, value: bytes) in heads.entries) {
+      final path = '${tmp.path}/sniff$ext.bin';
+      File(path).writeAsBytesSync(bytes);
+      expect(await mediaFileExtension(path), ext);
+    }
+    final frameSync = '${tmp.path}/frame.bin';
+    File(frameSync).writeAsBytesSync([0xFF, 0xFB, 0x90]);
+    expect(await mediaFileExtension(frameSync), '.mp3');
+  });
 
   test('media failures still return true', () async {
     final pages = [

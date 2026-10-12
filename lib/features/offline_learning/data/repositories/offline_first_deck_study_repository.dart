@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:retentio/core/network/connectivity_service.dart';
 import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_card.dart';
@@ -108,7 +110,7 @@ class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
     for (final e in fact.entries) {
       for (final id in [e.audio, e.image, e.video, e.json]) {
         final path = id.isEmpty ? null : await store.getMediaPath(id);
-        if (path != null) paths[id] = path;
+        if (path != null && await File(path).exists()) paths[id] = path;
       }
     }
     return buildOfflineCardDetail(

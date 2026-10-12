@@ -115,15 +115,40 @@ class OfflinePackageDownloader {
   }
 
   Future<void> _downloadOne(String deckId, String mediaId) async {
-    if (await _store.getMediaPath(mediaId) != null) return;
-    final path = '$_mediaRootDir/$deckId/$mediaId';
-    final tmpPath = '$path.part';
+    final cached = await _store.getMediaPath(mediaId);
+    if (cached != null && await File(cached).exists()) return;
+    final base = '$_mediaRootDir/$deckId/$mediaId';
+    final tmpPath = '$base.part';
     final url = Api.mediaById.replaceFirst('{id}', mediaId);
     final written = await _downloadMedia(url, tmpPath);
     if (written == null || written.isEmpty) {
       throw StateError('download returned no file');
     }
+    final path = '$base${await mediaFileExtension(tmpPath)}';
     await File(tmpPath).rename(path);
     await _store.putMediaPath(mediaId, path);
   }
+}
+
+/// File extension (with dot) sniffed from the file's leading bytes, or '' when
+/// the format is unknown. Players and image decoders rely on it.
+Future<String> mediaFileExtension(String path) async {
+  final file = await File(path).open();
+  final head = await file.read(12);
+  await file.close();
+  bool at(int offset, List<int> bytes) =>
+      head.length >= offset + bytes.length &&
+      [for (var i = 0; i < bytes.length; i++) head[offset + i]].join(',') ==
+          bytes.join(',');
+  const riff = [0x52, 0x49, 0x46, 0x46];
+  if (at(0, [0x89, 0x50, 0x4E, 0x47])) return '.png';
+  if (at(0, [0xFF, 0xD8, 0xFF])) return '.jpg';
+  if (at(0, [0x47, 0x49, 0x46, 0x38])) return '.gif';
+  if (at(0, riff) && at(8, [0x57, 0x45, 0x42, 0x50])) return '.webp';
+  if (at(0, riff) && at(8, [0x57, 0x41, 0x56, 0x45])) return '.wav';
+  if (at(0, [0x49, 0x44, 0x33]) || at(0, [0xFF, 0xFB])) return '.mp3';
+  if (at(0, [0x4F, 0x67, 0x67, 0x53])) return '.ogg';
+  if (at(0, [0x1A, 0x45, 0xDF, 0xA3])) return '.webm';
+  if (at(4, [0x66, 0x74, 0x79, 0x70])) return '.m4a';
+  return '';
 }

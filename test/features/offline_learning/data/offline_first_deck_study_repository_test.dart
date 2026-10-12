@@ -106,7 +106,9 @@ void main() {
         ],
       ),
     ]);
-    await store.putMediaPath('aud1', '/local/aud1');
+    final audio = File('${dir.path}/aud1.mp3')..createSync();
+    await store.putMediaPath('aud1', audio.path);
+    await store.putMediaPath('img1', '${dir.path}/deleted.png');
   }
 
   setUp(() async {
@@ -170,7 +172,10 @@ void main() {
     final card = result.cardDetail!.card;
     expect(card.id, 'c1');
     expect(card.front.single.field, 'Word');
-    expect(card.front.single.items.map((i) => i.value), ['猫', '/local/aud1']);
+    expect(card.front.single.items.map((i) => i.value), [
+      '猫',
+      '${dir.path}/aud1.mp3',
+    ]);
     expect(card.back.single.items.last.value, 'https://host/api/media/img1');
     expect(result.nextCardDetail!.card.id, 'c2');
     expect(result.refreshedCardsCount, isNull);
