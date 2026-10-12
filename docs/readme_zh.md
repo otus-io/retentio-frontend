@@ -61,6 +61,7 @@ flutter build ipa --release --dart-define=API_ENV=release
 
 | 文档 | 说明 |
 | ---- | ---- |
+| [knowledge_base_zh.md](knowledge_base_zh.md) | 客户端业务知识库（[English](knowledge_base.md)） |
 | [flutter_commands_zh.md](flutter_commands_zh.md) | Flutter CLI 命令（设备、运行、构建、`API_ENV`） |
 | [api_zh.md](api_zh.md) | 前端 API 用法（[English](api.md)） |
 | [frontend_tests_zh.md](frontend_tests_zh.md) | 测试命令与结构（[English](frontend_tests.md)） |

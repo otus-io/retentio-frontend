@@ -61,6 +61,7 @@ Extended reference: [docs/flutter_commands.md](docs/flutter_commands.md) ([中�
 
 | Document | Description |
 | -------- | ----------- |
+| [docs/knowledge_base.md](docs/knowledge_base.md) | Business rules of the client ([中文](docs/knowledge_base_zh.md)) |
 | [docs/flutter_commands.md](docs/flutter_commands.md) | Flutter CLI commands (devices, run, build, `API_ENV`) |
 | [docs/api.md](docs/api.md) | Frontend API usage ([中文](docs/api_zh.md)) |
 | [docs/frontend_tests.md](docs/frontend_tests.md) | Test commands and layout ([中文](docs/frontend_tests_zh.md)) |
