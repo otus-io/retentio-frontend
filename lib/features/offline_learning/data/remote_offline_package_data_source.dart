@@ -4,11 +4,16 @@ import 'package:retentio/models/deck.dart';
 import 'package:retentio/models/fact.dart';
 import 'package:retentio/services/index.dart';
 import 'package:retentio/services/apis/api_service.dart';
+import 'package:retentio/services/apis/card_service.dart';
 
 typedef FetchDeckFn = Future<Deck> Function(String deckId);
 typedef FetchFactsPageFn =
     Future<OfflineFactsPage> Function(String deckId, int limit, int offset);
 typedef FetchCardsFn = Future<List<OfflineCard>> Function(String deckId);
+
+/// Pinned media versions of one fact, or null when the lookup failed.
+typedef FetchMediaVersionsFn =
+    Future<Map<String, int>?> Function(String deckId, String factId);
 
 /// Returns the written path, or null/empty when the download failed.
 typedef DownloadMediaFn = Future<String?> Function(String url, String path);
@@ -33,6 +38,11 @@ Future<OfflineFactsPage> fetchOfflineFactsPage(
   return parseOfflineFactsPage(deckId, res?.data, limit: limit);
 }
 
+Future<Map<String, int>?> fetchOfflineMediaVersions(
+  String deckId,
+  String factId,
+) async => (await CardService.getFactDetail(deckId, factId))?.mediaVersions;
+
 Future<List<OfflineCard>> fetchOfflineCards(String deckId) async {
   final res = await ApiService.get(Api.cards, pathParams: {'id': deckId});
   return parseOfflineCards(deckId, res?.data);
@@ -49,11 +59,28 @@ OfflineFactsPage parseOfflineFactsPage(
   if (rawFacts is! List) {
     throw StateError('facts response is missing the facts list');
   }
+  final pageVersions = (data as Map)['media_versions'];
   final facts = [
     for (final f in rawFacts.whereType<Map>())
-      _parseFact(deckId, Map<String, dynamic>.from(f)),
+      _withListedVersions(
+        _parseFact(deckId, Map<String, dynamic>.from(f)),
+        f['media_versions'] ?? pageVersions,
+      ),
   ];
   return OfflineFactsPage(facts: facts, hasMore: rawFacts.length >= limit);
+}
+
+/// The list endpoint is not documented to return `media_versions`; use them
+/// when present, otherwise leave the fact unresolved.
+OfflineFact _withListedVersions(OfflineFact fact, dynamic raw) {
+  if (raw is! Map) return fact;
+  final versions = <String, int>{};
+  for (final id in fact.mediaIds) {
+    final value = raw[id];
+    final v = value is num ? value.toInt() : int.tryParse('$value');
+    if (v != null && v > 0) versions[id] = v;
+  }
+  return fact.withMediaVersions(versions);
 }
 
 OfflineFact _parseFact(String deckId, Map<String, dynamic> json) => OfflineFact(

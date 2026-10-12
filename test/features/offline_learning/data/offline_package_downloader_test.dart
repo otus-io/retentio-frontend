@@ -107,12 +107,14 @@ void main() {
   late Directory tmp;
   late List<int> factOffsets;
   late List<String> downloadedUrls;
+  late List<String> versionLookups;
 
   setUp(() async {
     store = _FakeStore();
     tmp = await Directory.systemTemp.createTemp('offline_dl_test');
     factOffsets = [];
     downloadedUrls = [];
+    versionLookups = [];
   });
 
   tearDown(() => tmp.delete(recursive: true));
@@ -130,6 +132,7 @@ void main() {
     List<OfflineCard> remoteCards = const [],
     Object? cardsError,
     DownloadMediaFn? downloadMedia,
+    FetchMediaVersionsFn? fetchMediaVersions,
   }) => OfflinePackageDownloader(
     store: store,
     mediaRootDir: tmp.path,
@@ -149,6 +152,12 @@ void main() {
       return remoteCards;
     },
     downloadMedia: downloadMedia ?? writeMedia,
+    fetchMediaVersions:
+        fetchMediaVersions ??
+        (deckId, factId) async {
+          versionLookups.add(factId);
+          return const {};
+        },
     nowSec: () => 1000,
   );
 
@@ -285,6 +294,199 @@ void main() {
       expect(File('$audPath.part').existsSync(), isFalse);
     },
   );
+
+  test('imported deck downloads listed media at the pinned version', () async {
+    final page = parseOfflineFactsPage('d1', {
+      'facts': [
+        {
+          'id': 'f1',
+          'entries': [
+            {'audio': 'aud', 'image': 'ovl'},
+          ],
+          'media_versions': {'aud': 4},
+        },
+      ],
+    }, limit: 200);
+
+    await build(pages: [page.facts]).download('d1');
+
+    expect(downloadedUrls, ['/api/media/aud?v=4', '/api/media/ovl']);
+    expect(versionLookups, isEmpty);
+    expect(store.media['aud?v=4'], '${tmp.path}/d1/aud_v=4');
+    expect(store.media['ovl'], '${tmp.path}/d1/ovl');
+    expect(store.facts['f1']!.mediaVersions, {'aud': 4});
+  });
+
+  group('imported deck media versions', () {
+    FetchMediaVersionsFn lookup(Map<String, Map<String, int>?> byFact) =>
+        (deckId, factId) async {
+          expect(deckId, 'd1');
+          versionLookups.add(factId);
+          return byFact[factId];
+        };
+
+    test('looks up only facts with media and pins their downloads', () async {
+      final ok = await build(
+        pages: [
+          [
+            _fact(
+              'f1',
+              entries: const [FactEntry(audio: 'aud', video: 'vid')],
+            ),
+            _fact('f2', entries: const [FactEntry(text: 'no media')]),
+            _fact('f3', entries: const [FactEntry(image: 'ovl')]),
+          ],
+        ],
+        fetchMediaVersions: lookup({
+          'f1': {'aud': 4, 'vid': 2},
+          'f3': {},
+        }),
+      ).download('d1');
+
+      expect(ok, isTrue);
+      expect(versionLookups, unorderedEquals(['f1', 'f3']));
+      expect(downloadedUrls, ['/api/media/aud?v=4', '/api/media/ovl']);
+      expect(store.facts['f1']!.mediaVersions, {'aud': 4, 'vid': 2});
+      expect(store.facts['f2']!.mediaVersions, isNull);
+      expect(store.facts['f3']!.mediaVersions, isEmpty);
+    });
+
+    test('runs at most four lookups at a time', () async {
+      var active = 0;
+      var peak = 0;
+      await build(
+        pages: [
+          [
+            for (var i = 0; i < 10; i++)
+              _fact('f$i', entries: [FactEntry(audio: 'a$i')]),
+          ],
+        ],
+        fetchMediaVersions: (_, factId) async {
+          versionLookups.add(factId);
+          peak = ++active > peak ? active : peak;
+          await Future<void>.delayed(Duration.zero);
+          active--;
+          return {};
+        },
+      ).download('d1');
+
+      expect(versionLookups, hasLength(10));
+      expect(peak, OfflinePackageDownloader.versionLookupConcurrency);
+    });
+
+    test('reuses stored versions of the same snapshot and media', () async {
+      store.decks['d1'] = const OfflineDeck(
+        id: 'd1',
+        name: 'Deck',
+        fields: [],
+        sourceDeckId: 'src',
+        sourceVersion: 3,
+      );
+      store.facts['f1'] = _fact(
+        'f1',
+        entries: const [FactEntry(audio: 'aud')],
+      ).withMediaVersions({'aud': 4});
+      store.facts['f2'] = _fact(
+        'f2',
+        entries: const [FactEntry(audio: 'old')],
+      ).withMediaVersions({'old': 1});
+      store.facts['f3'] = _fact('f3', entries: const [FactEntry(audio: 'a3')]);
+
+      await build(
+        pages: [
+          [
+            _fact('f1', entries: const [FactEntry(audio: 'aud')]),
+            _fact('f2', entries: const [FactEntry(audio: 'new')]),
+            _fact('f3', entries: const [FactEntry(audio: 'a3')]),
+          ],
+        ],
+        fetchMediaVersions: lookup({
+          'f2': {'new': 2},
+          'f3': {'a3': 3},
+        }),
+      ).download('d1');
+
+      expect(versionLookups, unorderedEquals(['f2', 'f3']));
+      expect(store.facts['f1']!.mediaVersions, {'aud': 4});
+      expect(downloadedUrls, [
+        '/api/media/aud?v=4',
+        '/api/media/new?v=2',
+        '/api/media/a3?v=3',
+      ]);
+    });
+
+    test('a new snapshot re-resolves and re-downloads pinned media', () async {
+      store.decks['d1'] = const OfflineDeck(
+        id: 'd1',
+        name: 'Deck',
+        fields: [],
+        sourceDeckId: 'src',
+        sourceVersion: 2,
+      );
+      store.facts['f1'] = _fact(
+        'f1',
+        entries: const [FactEntry(audio: 'aud')],
+      ).withMediaVersions({'aud': 4});
+      final oldPath = '${tmp.path}/d1/aud_v=4';
+      File(oldPath).createSync(recursive: true);
+      store.media['aud?v=4'] = oldPath;
+
+      await build(
+        pages: [
+          [
+            _fact('f1', entries: const [FactEntry(audio: 'aud')]),
+          ],
+        ],
+        fetchMediaVersions: lookup({
+          'f1': {'aud': 5},
+        }),
+      ).download('d1');
+
+      expect(versionLookups, ['f1']);
+      expect(downloadedUrls, ['/api/media/aud?v=5']);
+      expect(store.media['aud?v=5'], '${tmp.path}/d1/aud_v=5');
+    });
+
+    test(
+      'a failed lookup keeps the download and leaves media unpinned',
+      () async {
+        final ok = await build(
+          pages: [
+            [
+              _fact('f1', entries: const [FactEntry(audio: 'a1')]),
+              _fact('f2', entries: const [FactEntry(audio: 'a2')]),
+            ],
+          ],
+          fetchMediaVersions: (_, factId) async {
+            if (factId == 'f1') throw Exception('network');
+            return null;
+          },
+        ).download('d1');
+
+        expect(ok, isTrue);
+        expect(store.decks['d1']!.isReady, isTrue);
+        expect(downloadedUrls, ['/api/media/a1', '/api/media/a2']);
+        expect(store.facts['f1']!.mediaVersions, isNull);
+        expect(store.facts['f2']!.mediaVersions, isNull);
+      },
+    );
+
+    test('owned decks never look up versions', () async {
+      await build(
+        fetchDeck: (_) async =>
+            Deck.fromJson({'id': 'd1', 'name': 'Mine', 'fields': []}),
+        pages: [
+          [
+            _fact('f1', entries: const [FactEntry(audio: 'aud')]),
+          ],
+        ],
+      ).download('d1');
+
+      expect(versionLookups, isEmpty);
+      expect(downloadedUrls, ['/api/media/aud']);
+      expect(store.facts['f1']!.mediaVersions, isNull);
+    });
+  });
 
   test('re-downloads media whose cached file is gone', () async {
     store.media['aud'] = '${tmp.path}/gone/aud';
@@ -424,6 +626,45 @@ void main() {
       expect(page.facts[1].tagIds, isEmpty);
     });
 
+    test('parseOfflineFactsPage keeps listed media versions of the fact', () {
+      final page = parseOfflineFactsPage('d1', {
+        'facts': [
+          {
+            'id': 'f1',
+            'entries': [
+              {'audio': 'a', 'image': 'b', 'video': 'c', 'json': 'd'},
+              {'audio': 'e', 'image': 'f', 'video': 'g'},
+            ],
+            'media_versions': {
+              'a': 1,
+              'b': 2.0,
+              'c': '3',
+              'd': 'x',
+              'e': 0,
+              'f': -1,
+              'other': 9,
+            },
+          },
+          {
+            'id': 'f2',
+            'entries': [
+              {'audio': 'a'},
+            ],
+          },
+        ],
+        'media_versions': {'a': 7},
+      }, limit: 200);
+
+      expect(page.facts[0].mediaVersions, {'a': 1, 'b': 2, 'c': 3});
+      expect(page.facts[1].mediaVersions, {'a': 7});
+      final unlisted = parseOfflineFactsPage('d1', {
+        'facts': [
+          {'id': 'f1'},
+        ],
+      }, limit: 200);
+      expect(unlisted.facts.single.mediaVersions, isNull);
+    });
+
     test('parseOfflineFactsPage reports no more on a short page', () {
       final page = parseOfflineFactsPage('d1', {'facts': []}, limit: 200);
 
@@ -504,18 +745,49 @@ void main() {
       final path = store.media['m1']!;
       expect(File(path).readAsBytesSync(), [1, 2, 3]);
     });
+
+    test('imported deck fetches pinned versions per fact', () async {
+      final adapter = _FakeAdapter(imported: true);
+      networkDioClient.dio.httpClientAdapter = adapter;
+
+      final ok = await OfflinePackageDownloader(
+        store: store,
+        mediaRootDir: tmp.path,
+      ).download('d1');
+
+      expect(ok, isTrue);
+      expect(store.facts['f1']!.mediaVersions, {'m1': 7});
+      expect(adapter.mediaUris, ['/api/media/m1?v=7']);
+      expect(File(store.media['m1?v=7']!).readAsBytesSync(), [1, 2, 3]);
+    });
   });
 }
 
 class _FakeAdapter implements HttpClientAdapter {
+  _FakeAdapter({this.imported = false});
+
+  final bool imported;
+  final mediaUris = <String>[];
+
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
-    final path = options.path;
-    if (path == '/api/media/m1') return ResponseBody.fromBytes([1, 2, 3], 200);
+    final path = options.uri.path;
+    if (path == '/api/media/m1') {
+      mediaUris.add(
+        '$path${options.uri.hasQuery ? '?${options.uri.query}' : ''}',
+      );
+      return ResponseBody.fromBytes([1, 2, 3], 200);
+    }
+    if (path.endsWith('/facts/f1')) {
+      return _ok({
+        'fact': {'id': 'f1', 'entries': []},
+        'media_versions': {'m1': 7},
+      });
+    }
     if (path.endsWith('/facts')) {
       expect(options.queryParameters, {'limit': 200, 'offset': 0});
       return _ok({
@@ -544,6 +816,7 @@ class _FakeAdapter implements HttpClientAdapter {
       'id': 'd1',
       'name': 'Deck',
       'fields': ['A', 'B'],
+      if (imported) 'source_deck_id': 'src',
     });
   }
 

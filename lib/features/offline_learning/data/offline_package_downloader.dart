@@ -21,6 +21,7 @@ class OfflinePackageDownloader {
     FetchFactsPageFn? fetchFactsPage,
     FetchCardsFn? fetchCards,
     DownloadMediaFn? downloadMedia,
+    FetchMediaVersionsFn? fetchMediaVersions,
     int Function()? nowSec,
   }) : _store = store,
        _mediaRootDir = mediaRootDir,
@@ -28,9 +29,11 @@ class OfflinePackageDownloader {
        _fetchFactsPage = fetchFactsPage ?? fetchOfflineFactsPage,
        _fetchCards = fetchCards ?? fetchOfflineCards,
        _downloadMedia = downloadMedia ?? ApiService.downloadFile,
+       _fetchMediaVersions = fetchMediaVersions ?? fetchOfflineMediaVersions,
        _nowSec = nowSec ?? _defaultNowSec;
 
   static const int factsPageSize = 200;
+  static const int versionLookupConcurrency = 4;
 
   final OfflineLearningStore _store;
   final String _mediaRootDir;
@@ -38,6 +41,7 @@ class OfflinePackageDownloader {
   final FetchFactsPageFn _fetchFactsPage;
   final FetchCardsFn _fetchCards;
   final DownloadMediaFn _downloadMedia;
+  final FetchMediaVersionsFn _fetchMediaVersions;
   final int Function() _nowSec;
   final Map<String, Future<bool>> _inFlight = {};
 
@@ -51,7 +55,7 @@ class OfflinePackageDownloader {
   Future<bool> _download(String deckId) async {
     try {
       final deck = await _buildDeck(deckId);
-      final facts = await _syncFacts(deckId);
+      final facts = await _syncFacts(deckId, deck);
       await _seedCards(deckId);
       await _downloadFactMedia(deckId, facts);
       await _store.putDeck(
@@ -83,15 +87,82 @@ class OfflinePackageDownloader {
     );
   }
 
-  Future<List<OfflineFact>> _syncFacts(String deckId) async {
+  Future<List<OfflineFact>> _syncFacts(String deckId, OfflineDeck deck) async {
+    final imported = deck.sourceDeckId.isNotEmpty;
+    final stored = imported
+        ? await _factsAtSnapshot(deck)
+        : <String, OfflineFact>{};
     final all = <OfflineFact>[];
     OfflineFactsPage page;
     do {
       page = await _fetchFactsPage(deckId, factsPageSize, all.length);
-      await _store.putFacts(page.facts);
-      all.addAll(page.facts);
+      final facts = imported
+          ? await _pinMediaVersions(deckId, page.facts, stored)
+          : page.facts;
+      await _store.putFacts(facts);
+      all.addAll(facts);
     } while (page.hasMore && page.facts.isNotEmpty);
     return all;
+  }
+
+  /// Stored facts, when they were resolved against the same import snapshot.
+  Future<Map<String, OfflineFact>> _factsAtSnapshot(OfflineDeck deck) async {
+    final local = await _store.getDeck(deck.id);
+    if (local?.sourceVersion != deck.sourceVersion) return const {};
+    return {for (final f in await _store.getFacts(deck.id)) f.id: f};
+  }
+
+  /// Imported decks may only fetch the author's media at a pinned version.
+  /// A failed lookup leaves the fact unresolved (retried on the next sync).
+  Future<List<OfflineFact>> _pinMediaVersions(
+    String deckId,
+    List<OfflineFact> facts,
+    Map<String, OfflineFact> stored,
+  ) async {
+    final result = [...facts];
+    final pending = <int>[];
+    for (var i = 0; i < result.length; i++) {
+      final ids = result[i].mediaIds;
+      if (result[i].mediaVersions != null || ids.isEmpty) continue;
+      final old = stored[result[i].id];
+      final reusable =
+          old?.mediaVersions != null &&
+          old!.mediaIds.length == ids.length &&
+          old.mediaIds.containsAll(ids);
+      if (reusable) {
+        result[i] = result[i].withMediaVersions(old.mediaVersions);
+      } else {
+        pending.add(i);
+      }
+    }
+    var next = 0;
+    Future<void> worker() async {
+      while (next < pending.length) {
+        final i = pending[next++];
+        final fact = result[i];
+        result[i] = fact.withMediaVersions(await _lookupVersions(deckId, fact));
+      }
+    }
+
+    await Future.wait([
+      for (var w = 0; w < versionLookupConcurrency; w++) worker(),
+    ]);
+    return result;
+  }
+
+  Future<Map<String, int>?> _lookupVersions(
+    String deckId,
+    OfflineFact fact,
+  ) async {
+    try {
+      return await _fetchMediaVersions(deckId, fact.id);
+    } catch (e, s) {
+      logger.e(
+        'Offline media versions of ${fact.id} failed: $e',
+        stackTrace: s,
+      );
+      return null;
+    }
   }
 
   Future<void> _seedCards(String deckId) async {
@@ -108,32 +179,35 @@ class OfflinePackageDownloader {
     String deckId,
     List<OfflineFact> facts,
   ) async {
-    final mediaIds = {
+    final mediaKeys = {
       for (final f in facts)
-        for (final e in f.entries) ...[e.audio, e.image],
+        for (final e in f.entries) ...[
+          f.mediaKey(e.audio),
+          f.mediaKey(e.image),
+        ],
     }..remove('');
-    for (final mediaId in mediaIds) {
+    for (final key in mediaKeys) {
       try {
-        await _downloadOne(deckId, mediaId);
+        await _downloadOne(deckId, key);
       } catch (e, s) {
-        logger.e('Offline media $mediaId failed: $e', stackTrace: s);
+        logger.e('Offline media $key failed: $e', stackTrace: s);
       }
     }
   }
 
-  Future<void> _downloadOne(String deckId, String mediaId) async {
-    final cached = await _store.getMediaPath(mediaId);
+  Future<void> _downloadOne(String deckId, String mediaKey) async {
+    final cached = await _store.getMediaPath(mediaKey);
     if (cached != null && await File(cached).exists()) return;
-    final base = '$_mediaRootDir/$deckId/$mediaId';
+    final base = '$_mediaRootDir/$deckId/${mediaKey.replaceFirst('?', '_')}';
     final tmpPath = '$base.part';
-    final url = Api.mediaById.replaceFirst('{id}', mediaId);
+    final url = Api.mediaById.replaceFirst('{id}', mediaKey);
     final written = await _downloadMedia(url, tmpPath);
     if (written == null || written.isEmpty) {
       throw StateError('download returned no file');
     }
     final path = '$base${await mediaFileExtension(tmpPath)}';
     await File(tmpPath).rename(path);
-    await _store.putMediaPath(mediaId, path);
+    await _store.putMediaPath(mediaKey, path);
   }
 }
 
