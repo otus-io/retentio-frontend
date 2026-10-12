@@ -12,6 +12,8 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:retentio/core/di/app_service_locator.dart';
 import 'package:retentio/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:retentio/features/auth/presentation/bloc/auth_event.dart';
+import 'package:retentio/features/offline_learning/offline_learning_session.dart';
+import 'package:retentio/features/offline_learning/presentation/offline_study_lifecycle.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/pre_config.dart';
 import 'package:retentio/providers/auth_provider.dart';
@@ -123,7 +125,7 @@ class MainTabScreen extends ConsumerWidget {
             ),
     ];
 
-    return Scaffold(
+    final scaffold = Scaffold(
       body: IndexedStack(index: currentIndex, children: pages),
       bottomNavigationBar: AppNavigationBar(
         selectedIndex: currentIndex,
@@ -131,6 +133,11 @@ class MainTabScreen extends ConsumerWidget {
           ref.read(selectedTabIndexProvider.notifier).setIndex(index);
         },
       ),
+    );
+    if (!isLoggedIn) return scaffold;
+    return OfflineStudyLifecycle(
+      session: OfflineLearningSessions.instance.current(),
+      child: scaffold,
     );
   }
 }

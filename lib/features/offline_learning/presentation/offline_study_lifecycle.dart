@@ -5,20 +5,20 @@ import 'package:retentio/core/network/connectivity_service.dart';
 import 'package:retentio/features/offline_learning/offline_learning_session.dart';
 import 'package:retentio/utils/log.dart';
 
-/// Keeps a deck's offline data fresh while its study screen is open: flushes
-/// the review queue and refreshes the download on open, and flushes again when
-/// the app is paused or resumed, the network comes back, or the screen closes.
+/// Flushes the offline review queue when mounted, when the app is paused or
+/// resumed, when the network comes back, and when unmounted. With a [deckId],
+/// also refreshes that deck's offline download when mounted.
 class OfflineStudyLifecycle extends StatefulWidget {
   const OfflineStudyLifecycle({
     super.key,
     required this.session,
-    required this.deckId,
+    this.deckId,
     required this.child,
     this.networkRestored,
   });
 
   final Future<OfflineLearningSession?> session;
-  final String deckId;
+  final String? deckId;
   final Widget child;
 
   /// Defaults to [onNetworkRestored].
@@ -42,7 +42,7 @@ class _OfflineStudyLifecycleState extends State<OfflineStudyLifecycle>
     );
     _run((s) async {
       await s.sync.flush(force: true);
-      await s.downloader.download(widget.deckId);
+      if (widget.deckId case final deckId?) await s.downloader.download(deckId);
     });
   }
 
