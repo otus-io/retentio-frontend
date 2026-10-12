@@ -55,6 +55,10 @@ class OfflineDeckCatalog {
     ];
   }
 
+  /// Drops the offline copy of a deck deleted on the server.
+  Future<void> remove(String deckId) async =>
+      (await _session())?.removeDeck(deckId);
+
   static Deck _deck(Map<String, dynamic> json, DeckStats stats) =>
       Deck.fromJson({...json, 'stats': stats.toJson()});
 

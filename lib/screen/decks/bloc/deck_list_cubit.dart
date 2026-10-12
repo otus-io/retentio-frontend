@@ -4,6 +4,7 @@ import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/features/offline_learning/data/offline_deck_catalog.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/services/apis/deck_service.dart';
+import 'package:retentio/utils/log.dart';
 
 class DeckListState {
   const DeckListState({
@@ -63,7 +64,14 @@ class DeckListCubit extends Cubit<DeckListState> {
   }
 
   Future<void> deleteDeck(Deck deck) async {
-    await DeckService.of.deleteDeck(deck.id);
+    final res = await DeckService.of.deleteDeck(deck.id);
+    if (res?.isSuccess ?? false) {
+      try {
+        await _offlineCatalog.remove(deck.id);
+      } catch (e) {
+        logger.w('offline deck removal: $e');
+      }
+    }
     await onRefresh();
   }
 

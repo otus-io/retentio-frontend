@@ -164,6 +164,49 @@ void main() {
     await session.clear();
   });
 
+  test('removeDeck keeps media shared with another downloaded deck', () async {
+    final session = (await OfflineLearningSessions(
+      readUsername: () async => 'alice',
+      documentsDir: () async => dir.path,
+    ).current())!;
+    final store = session.store;
+    File only(String name) =>
+        File('${session.mediaRootDir}/$name')..createSync(recursive: true);
+    final own = only('own.mp3');
+    final shared = only('shared.png');
+    await store.putMediaPath('own', own.path);
+    await store.putMediaPath('shared', shared.path);
+    await store.putMediaPath('gone', '${session.mediaRootDir}/gone');
+    for (final id in ['d1', 'd2']) {
+      await store.putDeck(OfflineDeck(id: id, name: id, fields: const []));
+    }
+    await store.putFacts(const [
+      OfflineFact(
+        deckId: 'd1',
+        id: 'f1',
+        entries: [
+          FactEntry(audio: 'own', image: 'shared'),
+          FactEntry(audio: 'gone'),
+          FactEntry(audio: 'unknown'),
+        ],
+      ),
+      OfflineFact(
+        deckId: 'd2',
+        id: 'f2',
+        entries: [FactEntry(image: 'shared')],
+      ),
+    ]);
+
+    await session.removeDeck('d1');
+
+    expect(await store.getDeck('d1'), isNull);
+    expect(own.existsSync(), isFalse);
+    expect(await store.getMediaPath('own'), isNull);
+    expect(await store.getMediaPath('gone'), isNull);
+    expect(shared.existsSync(), isTrue);
+    expect(await store.getMediaPath('shared'), shared.path);
+  });
+
   test('switching accounts opens a separate session', () async {
     var name = 'alice';
     final sessions = OfflineLearningSessions(readUsername: () async => name);

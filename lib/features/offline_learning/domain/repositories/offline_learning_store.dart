@@ -24,6 +24,10 @@ abstract class OfflineLearningStore {
   /// Absolute path of a downloaded media file, or null when not cached.
   Future<String?> getMediaPath(String mediaId);
   Future<void> putMediaPath(String mediaId, String localPath);
+  Future<void> deleteMedia(String mediaId);
+
+  /// Deletes the deck with its facts, cards and queued operations.
+  Future<void> removeDeck(String deckId);
 
   /// Writes the updated card and its queued operation together, so a killed
   /// process never keeps one without the other.

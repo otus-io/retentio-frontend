@@ -117,6 +117,14 @@ void main() {
     );
   });
 
+  test('remove drops the downloaded deck', () async {
+    await catalog().remove('d1');
+    expect(await store.getDeck('d1'), isNull);
+
+    await catalog(session: Future.value(null)).remove('d2');
+    expect(await store.getDeck('d2'), isNotNull);
+  });
+
   test('without a session the remote list is returned as is', () async {
     final remote = [_remote('d1')];
 

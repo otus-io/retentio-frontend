@@ -65,6 +65,10 @@ class _FakeStore implements OfflineLearningStore {
   @override
   Future<void> clear() => throw UnimplementedError();
   @override
+  Future<void> deleteMedia(String mediaId) => throw UnimplementedError();
+  @override
+  Future<void> removeDeck(String deckId) => throw UnimplementedError();
+  @override
   Future<List<OfflineDeck>> getDecks() => throw UnimplementedError();
 }
 

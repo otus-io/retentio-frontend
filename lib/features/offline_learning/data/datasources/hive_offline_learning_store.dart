@@ -120,6 +120,23 @@ class HiveOfflineLearningStore implements OfflineLearningStore {
       _media.put(_mediaKey(mediaId), localPath);
 
   @override
+  Future<void> deleteMedia(String mediaId) => _media.delete(_mediaKey(mediaId));
+
+  @override
+  Future<void> removeDeck(String deckId) async {
+    await _decks.delete(_deckKey(deckId));
+    await _facts.deleteAll(_keys(_facts, _factPrefix(deckId)));
+    final ops = [
+      for (final op in await getOperations())
+        if (op.deckId == deckId) _syncKey(op.operationId),
+    ];
+    await _study.deleteAll([..._keys(_study, _cardPrefix(deckId)), ...ops]);
+  }
+
+  static List<String> _keys(Box<dynamic> box, String prefix) =>
+      box.keys.whereType<String>().where((k) => k.startsWith(prefix)).toList();
+
+  @override
   Future<void> applyLocalChange(OfflineCard card, StudySyncOperation op) =>
       _study.putAll({
         _cardKey(card): card.toJson(),
@@ -149,9 +166,7 @@ class HiveOfflineLearningStore implements OfflineLearningStore {
   @override
   Future<void> clear() async {
     for (final box in [_decks, _facts, _media, _study, _meta]) {
-      await box.deleteAll(
-        box.keys.whereType<String>().where((k) => k.startsWith('$accountId:')),
-      );
+      await box.deleteAll(_keys(box, '$accountId:'));
     }
   }
 }

@@ -9,6 +9,7 @@ import 'package:retentio/features/offline_learning/data/datasources/hive_offline
 import 'package:retentio/features/offline_learning/data/datasources/study_sync_remote_data_source.dart';
 import 'package:retentio/features/offline_learning/data/offline_package_downloader.dart';
 import 'package:retentio/features/offline_learning/data/repositories/offline_first_deck_study_repository.dart';
+import 'package:retentio/features/offline_learning/domain/entities/offline_fact.dart';
 import 'package:retentio/features/offline_learning/domain/repositories/offline_learning_store.dart';
 import 'package:retentio/features/offline_learning/domain/services/offline_sync_service.dart';
 import 'package:retentio/services/apis/api_service.dart';
@@ -29,6 +30,25 @@ class OfflineLearningSession {
   final OfflinePackageDownloader downloader;
   final OfflineSyncService sync;
   final String mediaRootDir;
+
+  /// Deletes a deck's offline data and the media files no other downloaded
+  /// deck uses.
+  Future<void> removeDeck(String deckId) async {
+    Set<String> mediaOf(List<OfflineFact> facts) => {
+      for (final f in facts)
+        for (final e in f.entries) ...[e.audio, e.image],
+    }..remove('');
+    final shared = <String>{
+      for (final d in await store.getDecks())
+        if (d.id != deckId) ...mediaOf(await store.getFacts(d.id)),
+    };
+    for (final id in mediaOf(await store.getFacts(deckId)).difference(shared)) {
+      final path = await store.getMediaPath(id);
+      if (path != null && await File(path).exists()) await File(path).delete();
+      await store.deleteMedia(id);
+    }
+    await store.removeDeck(deckId);
+  }
 
   /// Deletes the account's offline data, unsynced reviews and media files.
   Future<void> clear() async {
