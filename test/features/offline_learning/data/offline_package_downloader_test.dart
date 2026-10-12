@@ -11,6 +11,7 @@ import 'package:retentio/features/offline_learning/data/remote_offline_package_d
 import 'package:retentio/features/offline_learning/domain/entities/offline_card.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_deck.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_fact.dart';
+import 'package:retentio/features/offline_learning/domain/entities/study_sync_operation.dart';
 import 'package:retentio/features/offline_learning/domain/repositories/offline_learning_store.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/models/fact.dart';
@@ -22,7 +23,11 @@ class _FakeStore implements OfflineLearningStore {
   final cards = <String, OfflineCard>{};
   final facts = <String, OfflineFact>{};
   final media = <String, String>{};
+  final ops = <StudySyncOperation>[];
   bool failGetMediaPath = false;
+
+  @override
+  Future<List<StudySyncOperation>> getOperations() async => ops;
 
   @override
   Future<OfflineDeck?> getDeck(String deckId) async => decks[deckId];
@@ -227,7 +232,7 @@ void main() {
   });
 
   test(
-    're-download keeps local schedule and deck state, adds new cards',
+    're-download refreshes clean cards, keeps deck state, adds new cards',
     () async {
       store.decks['d1'] = const OfflineDeck(
         id: 'd1',
@@ -244,14 +249,35 @@ void main() {
         lastReview: 77,
         dueDate: 88,
       ).copyWith(hidden: true);
+      store.cards['local'] = _card('local', lastReview: 5);
+      store.ops.add(
+        const StudySyncOperation(
+          operationId: 'op',
+          sequence: 1,
+          deckId: 'd2',
+          cardId: 'c1',
+          type: StudySyncType.hide,
+          createdAt: 1,
+        ),
+      );
+      const server = OfflineCard(
+        deckId: 'd1',
+        id: 'c1',
+        factId: 'f2',
+        template: [
+          [1],
+          [0],
+        ],
+        lastReview: 1,
+        dueDate: 2,
+        createdAt: 3,
+      );
 
-      await build(
-        remoteCards: [_card('c1', lastReview: 1, dueDate: 2), _card('c2')],
-      ).download('d1');
+      await build(remoteCards: [server, _card('c2')]).download('d1');
 
-      final kept = store.cards['c1']!;
-      expect([kept.lastReview, kept.dueDate, kept.hidden], [77, 88, true]);
-      expect(store.cards.keys, unorderedEquals(['c1', 'c2']));
+      expect(store.cards['c1']!.toJson(), server.toJson());
+      expect(store.cards['local']!.lastReview, 5);
+      expect(store.cards.keys, unorderedEquals(['c1', 'local', 'c2']));
       final deck = store.decks['d1']!;
       expect(deck.name, 'Deck');
       expect(deck.downloadedAt, 10);
@@ -261,6 +287,33 @@ void main() {
       expect(deck.tags.single.id, 't1');
     },
   );
+
+  test('re-download keeps dirty cards and cards with queued ops', () async {
+    store.cards['dirty'] = _card('dirty', lastReview: 77).copyWith(dirty: true);
+    store.cards['queued'] = _card('queued', lastReview: 66);
+    store.ops.add(
+      const StudySyncOperation(
+        operationId: 'op',
+        sequence: 1,
+        deckId: 'd1',
+        cardId: 'queued',
+        type: StudySyncType.review,
+        createdAt: 1,
+        status: StudySyncStatus.failed,
+      ),
+    );
+
+    await build(
+      remoteCards: [
+        _card('dirty', lastReview: 1),
+        _card('queued', lastReview: 2),
+      ],
+    ).download('d1');
+
+    expect(store.cards['dirty']!.lastReview, 77);
+    expect(store.cards['dirty']!.dirty, isTrue);
+    expect(store.cards['queued']!.lastReview, 66);
+  });
 
   test(
     'downloads audio and image, skips video, json and cached media',

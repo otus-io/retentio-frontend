@@ -12,7 +12,8 @@ import 'package:retentio/utils/log.dart';
 int _defaultNowSec() => DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
 /// Assembles a deck's offline study package (deck, facts, cards, media) into
-/// [OfflineLearningStore]. Local card schedules win over the server once seeded.
+/// [OfflineLearningStore]. Server card schedules replace local ones unless the
+/// card has unsynced local changes.
 class OfflinePackageDownloader {
   OfflinePackageDownloader({
     required OfflineLearningStore store,
@@ -167,12 +168,17 @@ class OfflinePackageDownloader {
 
   Future<void> _seedCards(String deckId) async {
     final remote = await _fetchCards(deckId);
-    final localIds = {for (final c in await _store.getCards(deckId)) c.id};
-    final newCards = [
+    final dirtyIds = {
+      for (final c in await _store.getCards(deckId))
+        if (c.dirty) c.id,
+      for (final op in await _store.getOperations())
+        if (op.deckId == deckId) op.cardId,
+    };
+    final updates = [
       for (final c in remote)
-        if (!localIds.contains(c.id)) c,
+        if (!dirtyIds.contains(c.id)) c,
     ];
-    if (newCards.isNotEmpty) await _store.putCards(newCards);
+    if (updates.isNotEmpty) await _store.putCards(updates);
   }
 
   Future<void> _downloadFactMedia(
