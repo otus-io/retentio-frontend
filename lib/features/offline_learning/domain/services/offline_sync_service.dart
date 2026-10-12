@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:retentio/features/offline_learning/data/datasources/study_sync_remote_data_source.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_card.dart';
 import 'package:retentio/features/offline_learning/domain/entities/study_sync_operation.dart';
@@ -14,6 +15,9 @@ class OfflineSyncResult {
   final int sent;
   final int failed;
 }
+
+/// What the study UI shows about the upload queue.
+enum OfflineSyncPhase { synced, offline, pending, syncing, failed, needsLogin }
 
 enum _OpOutcome { sent, failed, removed, retry, unauthorized }
 
@@ -38,23 +42,57 @@ class OfflineSyncService {
   final int Function() _nowSec;
   final int threshold;
 
+  final ValueNotifier<OfflineSyncPhase> phase = ValueNotifier(
+    OfflineSyncPhase.synced,
+  );
+
   Future<OfflineSyncResult>? _inFlight;
 
-  Future<OfflineSyncResult> flush({bool force = false}) =>
-      _inFlight ??= _flush(force).whenComplete(() => _inFlight = null);
+  /// Uploads when [force] or the queue reached [threshold]. [retryNow] also
+  /// sends operations still waiting out their backoff (manual retry).
+  Future<OfflineSyncResult> flush({
+    bool force = false,
+    bool retryNow = false,
+  }) => _inFlight ??= _flushAndReport(
+    force || retryNow,
+    retryNow,
+  ).whenComplete(() => _inFlight = null);
 
-  Future<OfflineSyncResult> _flush(bool force) async {
-    if (!await _isOnline()) {
-      return const OfflineSyncResult(OfflineSyncStatus.skipped);
+  Future<OfflineSyncResult> _flushAndReport(bool force, bool retryNow) async {
+    final online = await _isOnline();
+    final result = online
+        ? await _flush(force, retryNow)
+        : const OfflineSyncResult(OfflineSyncStatus.skipped);
+    phase.value = await _phaseAfter(result, online);
+    return result;
+  }
+
+  Future<OfflineSyncPhase> _phaseAfter(
+    OfflineSyncResult result,
+    bool online,
+  ) async {
+    if (result.status == OfflineSyncStatus.needsLogin) {
+      return OfflineSyncPhase.needsLogin;
     }
+    final queue = await _store.getOperations();
+    if (queue.any((op) => op.status == StudySyncStatus.failed)) {
+      return OfflineSyncPhase.failed;
+    }
+    if (!online) return OfflineSyncPhase.offline;
+    return queue.isEmpty ? OfflineSyncPhase.synced : OfflineSyncPhase.pending;
+  }
+
+  Future<OfflineSyncResult> _flush(bool force, bool retryNow) async {
     final queue = await _store.getOperations();
     final pending = queue.where((op) => op.status == StudySyncStatus.pending);
     if (!force && pending.length < threshold) {
       return const OfflineSyncResult(OfflineSyncStatus.skipped);
     }
     final now = _nowSec();
-    final due = pending.where((op) => op.nextRetryAt <= now).toList()
-      ..sort((a, b) => a.sequence.compareTo(b.sequence));
+    final due =
+        pending.where((op) => retryNow || op.nextRetryAt <= now).toList()
+          ..sort((a, b) => a.sequence.compareTo(b.sequence));
+    if (due.isNotEmpty) phase.value = OfflineSyncPhase.syncing;
     final remaining = [...queue];
     final syncedDecks = <String>{};
     var sent = 0;

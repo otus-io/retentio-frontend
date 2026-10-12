@@ -215,6 +215,53 @@ void main() {
     });
   });
 
+  group('phase', () {
+    test('reports offline, pending, syncing, then synced', () async {
+      final sync = service();
+      expect(sync.phase.value, OfflineSyncPhase.synced);
+
+      queue([_review('a', 1)]);
+      online = false;
+      await sync.flush();
+      expect(sync.phase.value, OfflineSyncPhase.offline);
+
+      online = true;
+      await sync.flush();
+      expect(sync.phase.value, OfflineSyncPhase.pending);
+
+      remote.gate = Completer<void>();
+      final running = sync.flush(force: true);
+      await Future<void>.delayed(Duration.zero);
+      expect(sync.phase.value, OfflineSyncPhase.syncing);
+      remote.gate!.complete();
+      await running;
+      expect(sync.phase.value, OfflineSyncPhase.synced);
+    });
+
+    test('reports failed ops and a needed re-login', () async {
+      final sync = service();
+      queue([_review('a', 1, status: StudySyncStatus.failed)]);
+      await sync.flush(force: true);
+      expect(sync.phase.value, OfflineSyncPhase.failed);
+
+      queue([_review('b', 2)]);
+      remote.statusByOp['b'] = 401;
+      await sync.flush(force: true);
+      expect(sync.phase.value, OfflineSyncPhase.needsLogin);
+    });
+
+    test('retryNow sends ops still in backoff', () async {
+      queue([_review('a', 1, nextRetryAt: _now + 60)]);
+      final sync = service();
+
+      await sync.flush(force: true);
+      expect(remote.patched, isEmpty);
+
+      await sync.flush(retryNow: true);
+      expect(remote.patched, ['a']);
+    });
+  });
+
   test('sends due pending ops in ascending sequence only', () async {
     queue([
       _review('late', 3),
