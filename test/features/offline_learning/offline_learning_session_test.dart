@@ -151,6 +151,55 @@ void main() {
     expect(onlineChecks, 1);
   });
 
+  test('a sync error after a local change is only logged', () async {
+    final session = (await OfflineLearningSessions(
+      readUsername: () async => 'alice',
+      isOnline: () async => throw StateError('no connectivity plugin'),
+    ).current())!;
+    await session.store.putDeck(
+      const OfflineDeck(id: 'd1', name: 'N5', fields: ['W'], downloadedAt: 1),
+    );
+    await session.store.putCards(const [
+      OfflineCard(
+        deckId: 'd1',
+        id: 'c1',
+        factId: 'f1',
+        template: [],
+        lastReview: 0,
+        dueDate: 1,
+      ),
+    ]);
+    final repo = offlineFirstStudyRepository(
+      Future.value(session),
+      remote: DeckStudyLegacyServiceRepository(),
+    );
+
+    final saved = await repo.submitCard(
+      DeckStudySubmitRequest.hide(deckId: 'd1', cardId: 'c1'),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    expect(saved, isTrue);
+    expect(session.sync.phase.value, OfflineSyncPhase.failed);
+  });
+
+  test('a failed open is retried on the next call', () async {
+    var opens = 0;
+    final sessions = OfflineLearningSessions(
+      readUsername: () async => 'alice',
+      openStore: (accountId) async {
+        if (++opens == 1) throw StateError('keychain locked');
+        return HiveOfflineLearningStore.open(accountId: accountId);
+      },
+    );
+
+    await expectLater(sessions.current(), throwsStateError);
+    final session = await sessions.current();
+
+    expect(session!.accountId, 'alice');
+    expect(opens, 2);
+  });
+
   test('clear deletes the account data and media folder', () async {
     final session = (await OfflineLearningSessions(
       readUsername: () async => 'alice',

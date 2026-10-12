@@ -15,6 +15,7 @@ import 'package:retentio/features/offline_learning/domain/repositories/offline_l
 import 'package:retentio/features/offline_learning/domain/services/offline_sync_service.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/index.dart';
+import 'package:retentio/utils/log.dart';
 
 /// Offline study objects for one account.
 class OfflineLearningSession {
@@ -68,7 +69,12 @@ DeckStudyRepository offlineFirstStudyRepository(
   store: session.then((s) => s?.store),
   remote: remote,
   remoteMediaUrl: (id) => '${Env.host}/api/media/$id',
-  onLocalChange: () => session.then((s) async => await s?.sync.flush()),
+  onLocalChange: () => session
+      .then<void>((s) async => await s?.sync.flush())
+      .then<void>(
+        (_) {},
+        onError: (Object e) => logger.w('offline sync after review: $e'),
+      ),
 );
 
 /// Resolves the [OfflineLearningSession] of the logged-in account, or null
@@ -106,7 +112,14 @@ class OfflineLearningSessions {
       if (name == null || name.isEmpty) return null;
       await _saveUsername(name);
     }
-    return _sessions[name] ??= _open(name);
+    final opening = _sessions[name] ??= _open(name);
+    try {
+      return await opening;
+    } catch (_) {
+      // Retry on the next call (e.g. the keychain was locked).
+      if (identical(_sessions[name], opening)) _sessions.remove(name);
+      rethrow;
+    }
   }
 
   Future<OfflineLearningSession> _open(String accountId) async {
