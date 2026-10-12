@@ -127,7 +127,11 @@ class OfflineSyncService {
         attempts: attempts,
         nextRetryAt:
             now + backoffSeconds[min(attempts - 1, backoffSeconds.length - 1)],
-        lastError: result.message ?? 'HTTP ${result.httpStatus}',
+        lastError:
+            result.message ??
+            (result.httpStatus == null
+                ? 'network error'
+                : 'HTTP ${result.httpStatus}'),
       ),
     );
     return _OpOutcome.retry;
