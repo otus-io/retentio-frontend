@@ -1,3 +1,4 @@
+import 'package:retentio/core/network/connectivity_service.dart';
 import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_card.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_deck.dart';
@@ -19,12 +20,14 @@ class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
     required DeckStudyRepository remote,
     required String Function(String mediaId) remoteMediaUrl,
     void Function()? onLocalChange,
+    Future<bool> Function()? isOnline,
     int Function()? nowSec,
     String Function()? newOperationId,
   }) : _store = store,
        _remote = remote,
        _remoteMediaUrl = remoteMediaUrl,
        _onLocalChange = onLocalChange,
+       _isOnline = isOnline ?? hasNetworkConnection,
        _nowSec = nowSec ?? _unixNow,
        _newOperationId = newOperationId ?? (() => 'op-${newMediaClientId()}');
 
@@ -32,6 +35,7 @@ class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
   final DeckStudyRepository _remote;
   final String Function(String mediaId) _remoteMediaUrl;
   final void Function()? _onLocalChange;
+  final Future<bool> Function() _isOnline;
   final int Function() _nowSec;
   final String Function() _newOperationId;
   final Map<String, Future<OfflineDeck?>> _localDecks = {};
@@ -51,6 +55,9 @@ class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
   }) async {
     final deck = await _localDeck(deckId);
     if (deck == null) {
+      if (!await _isOnline()) {
+        return const DeckStudyLoadResult(cardDetail: null, needsDownload: true);
+      }
       return _remote.loadNextDueCard(deckId: deckId, tagId: tagId);
     }
     final store = (await _store)!;

@@ -64,6 +64,7 @@ void main() {
   late HiveOfflineLearningStore store;
   late _FakeRemote remote;
   late int changes;
+  late bool online;
 
   OfflineFirstDeckStudyRepository repo({
     Future<HiveOfflineLearningStore?>? s,
@@ -72,6 +73,7 @@ void main() {
     remote: remote,
     remoteMediaUrl: (id) => 'https://host/api/media/$id',
     onLocalChange: () => changes++,
+    isOnline: () async => online,
     nowSec: () => _now,
     newOperationId: () => 'op-1',
   );
@@ -113,6 +115,7 @@ void main() {
     store = await HiveOfflineLearningStore.open(accountId: 'u1');
     remote = _FakeRemote();
     changes = 0;
+    online = true;
   });
 
   tearDown(() async {
@@ -132,6 +135,16 @@ void main() {
     await repo(s: Future.value(null)).loadNextDueCard(deckId: 'd1');
     expect(remote.loads, 2);
     expect(remote.submits, 1);
+  });
+
+  test('asks for a download when offline and not downloaded', () async {
+    online = false;
+
+    final result = await repo().loadNextDueCard(deckId: 'd1');
+
+    expect(result.needsDownload, isTrue);
+    expect(result.cardDetail, isNull);
+    expect(remote.loads, 0);
   });
 
   test('keeps the first source decision for the whole session', () async {

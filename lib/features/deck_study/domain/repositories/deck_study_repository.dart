@@ -55,6 +55,7 @@ class DeckStudyLoadResult {
     this.nextCardDetail,
     this.refreshedCardsCount,
     this.refreshedDueCardsCount,
+    this.needsDownload = false,
   });
 
   final CardDetail? cardDetail;
@@ -69,6 +70,9 @@ class DeckStudyLoadResult {
 
   /// Live due count from card stats (deck-wide or tag-scoped).
   final int? refreshedDueCardsCount;
+
+  /// The deck is not downloaded for offline study and the device is offline.
+  final bool needsDownload;
 
   bool get hasCard => cardDetail != null;
 }

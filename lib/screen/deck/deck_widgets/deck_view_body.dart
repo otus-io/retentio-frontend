@@ -142,7 +142,13 @@ class DeckViewBody extends StatelessWidget {
                 : '${dueProgressPercent.toStringAsFixed(0)}%';
 
             if (cardDetail == null) {
-              final messageBody = state.activeTagId != null
+              final messageBody = state.needsDownload
+                  ? _DeckStudyMessageColumn(
+                      icon: LucideIcons.wifiOff,
+                      title: loc.offlineDeckNeedsDownload,
+                      theme: theme,
+                    )
+                  : state.activeTagId != null
                   ? _TagFilterEmptyColumn(
                       loc: loc,
                       theme: theme,

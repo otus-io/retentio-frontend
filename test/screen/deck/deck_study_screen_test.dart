@@ -88,6 +88,42 @@ void main() {
       expect(find.text('No cards in this deck'), findsOneWidget);
     });
 
+    testWidgets('asks to go online when the deck is not downloaded', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: emptySessionDeck.id,
+        loadResults: const [
+          DeckStudyLoadResult(cardDetail: null, needsDownload: true),
+        ],
+      );
+      addTearDown(() async {
+        await harness.dispose();
+        tearDownTestEnvironment();
+      });
+
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          DeckViewScreen(deck: emptySessionDeck),
+          overrides: [
+            currentDeckProvider.overrideWithValue(emptySessionDeck),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
+          ],
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(
+        find.text(
+          'Connect to the internet to download this deck for offline study',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('No cards in this deck'), findsNothing);
+    });
+
     testWidgets(
       'shows the same empty message when a stocked deck can serve no card',
       (tester) async {

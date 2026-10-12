@@ -216,6 +216,7 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
         cardsStudied:
             cardsStudiedOverride ?? (resetProgress ? 0 : state.cardsStudied),
         clearErrorMessage: true,
+        needsDownload: false,
       ),
     );
 
@@ -241,6 +242,7 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
     _emit(
       _withRefreshedCounts(state, result).copyWith(
         resetCardDetail: true,
+        needsDownload: result.needsDownload,
         clearPrefetchedCard: true,
         isLoading: false,
         isHide: false,

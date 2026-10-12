@@ -22,6 +22,7 @@ class DeckStudyState extends Equatable {
     this.minInterval = 0,
     this.maxInterval = 0,
     this.errorMessage,
+    this.needsDownload = false,
   });
 
   final String deckId;
@@ -48,6 +49,9 @@ class DeckStudyState extends Equatable {
   final double maxInterval;
   final String? errorMessage;
 
+  /// Offline and the deck has no offline download, so nothing can be served.
+  final bool needsDownload;
+
   bool get hasCard => cardDetail != null;
 
   DeckStudyState copyWith({
@@ -73,6 +77,7 @@ class DeckStudyState extends Equatable {
     double? maxInterval,
     String? errorMessage,
     bool clearErrorMessage = false,
+    bool? needsDownload,
   }) {
     return DeckStudyState(
       deckId: deckId,
@@ -101,6 +106,7 @@ class DeckStudyState extends Equatable {
       errorMessage: clearErrorMessage
           ? null
           : (errorMessage ?? this.errorMessage),
+      needsDownload: needsDownload ?? this.needsDownload,
     );
   }
 
@@ -122,5 +128,6 @@ class DeckStudyState extends Equatable {
     minInterval,
     maxInterval,
     errorMessage,
+    needsDownload,
   ];
 }
