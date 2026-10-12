@@ -7,6 +7,7 @@ import 'package:retentio/features/offline_learning/domain/entities/study_sync_op
 /// account the store was opened for.
 abstract class OfflineLearningStore {
   Future<OfflineDeck?> getDeck(String deckId);
+  Future<List<OfflineDeck>> getDecks();
   Future<void> putDeck(OfflineDeck deck);
 
   Future<List<OfflineCard>> getCards(String deckId);

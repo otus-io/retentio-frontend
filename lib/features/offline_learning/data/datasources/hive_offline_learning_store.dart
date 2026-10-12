@@ -82,6 +82,10 @@ class HiveOfflineLearningStore implements OfflineLearningStore {
   }
 
   @override
+  Future<List<OfflineDeck>> getDecks() async =>
+      _rows(_decks, '$accountId:deck:').map(OfflineDeck.fromJson).toList();
+
+  @override
   Future<void> putDeck(OfflineDeck deck) =>
       _decks.put(_deckKey(deck.id), deck.toJson());
 

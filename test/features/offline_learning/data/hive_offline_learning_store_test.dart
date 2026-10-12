@@ -111,6 +111,8 @@ void main() {
 
     final bob = await HiveOfflineLearningStore.open(accountId: 'bob');
     expect(await bob.getDeck('d1'), isNull);
+    expect(await bob.getDecks(), isEmpty);
+    expect((await store.getDecks()).single.name, 'One');
     expect(await bob.getCards('d1'), isEmpty);
     expect(await bob.getFacts('d1'), isEmpty);
     expect(await bob.getMediaPath('m1'), isNull);

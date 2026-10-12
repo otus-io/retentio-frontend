@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
+import 'package:retentio/features/offline_learning/data/offline_deck_catalog.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/services/apis/deck_service.dart';
 
@@ -30,9 +31,13 @@ class DeckListState {
 }
 
 class DeckListCubit extends Cubit<DeckListState> {
-  DeckListCubit() : super(const DeckListState()) {
+  DeckListCubit({OfflineDeckCatalog? offlineCatalog})
+    : _offlineCatalog = offlineCatalog ?? OfflineDeckCatalog(),
+      super(const DeckListState()) {
     onRefresh();
   }
+
+  final OfflineDeckCatalog _offlineCatalog;
 
   final RefreshController refreshController = RefreshController();
 
@@ -76,7 +81,7 @@ class DeckListCubit extends Cubit<DeckListState> {
       return;
     }
     try {
-      final decks = await DeckService.of.getDecks();
+      final decks = await _offlineCatalog.decks(DeckService.of.getDecks);
       _safe(refreshController.refreshCompleted);
       if (decks.length < _pageSize) {
         _noMore = true;

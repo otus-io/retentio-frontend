@@ -64,6 +64,8 @@ class _FakeStore implements OfflineLearningStore {
   Future<int> nextSequence() => throw UnimplementedError();
   @override
   Future<void> clear() => throw UnimplementedError();
+  @override
+  Future<List<OfflineDeck>> getDecks() => throw UnimplementedError();
 }
 
 class _FakeRemote implements StudySyncRemoteDataSource {
