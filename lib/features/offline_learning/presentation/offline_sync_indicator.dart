@@ -4,6 +4,7 @@ import 'package:retentio/features/offline_learning/domain/services/offline_sync_
 import 'package:retentio/features/offline_learning/offline_learning_session.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/utils/log.dart';
+import 'package:retentio/widgets/app_button.dart';
 
 /// Upload queue status; tapping retries immediately. Hidden once synced.
 class OfflineSyncIndicator extends StatelessWidget {
@@ -55,7 +56,7 @@ class OfflineSyncIndicator extends StatelessWidget {
     if (phase == OfflineSyncPhase.synced) return const SizedBox.shrink();
     return Tooltip(
       message: loc.offlineSyncNow,
-      child: TextButton.icon(
+      child: AppButton(
         onPressed: phase == OfflineSyncPhase.syncing
             ? null
             : () => sync
@@ -64,8 +65,10 @@ class OfflineSyncIndicator extends StatelessWidget {
                     (_) {},
                     onError: (Object e) => logger.w('manual sync: $e'),
                   ),
-        icon: Icon(icon, size: 18),
-        label: Text(label),
+        variant: AppButtonVariant.ghost,
+        size: AppButtonSize.sm,
+        leading: Icon(icon, size: 18),
+        label: label,
       ),
     );
   }

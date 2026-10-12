@@ -5,6 +5,7 @@ import 'package:retentio/features/offline_learning/domain/repositories/offline_l
 import 'package:retentio/features/offline_learning/domain/services/offline_sync_service.dart';
 import 'package:retentio/features/offline_learning/offline_learning_session.dart';
 import 'package:retentio/features/offline_learning/presentation/offline_sync_indicator.dart';
+import 'package:retentio/widgets/app_button.dart';
 
 import '../../../helpers/test_wrapper.dart';
 
@@ -96,6 +97,17 @@ void main() {
 
     expect(sync.retries, [true, true]);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('uses the shared compact AppButton', (tester) async {
+    await pump(tester);
+    sync.phase.value = OfflineSyncPhase.pending;
+    await tester.pump();
+
+    final button = tester.widget<AppButton>(find.byType(AppButton));
+    expect(button.size, AppButtonSize.sm);
+    expect(button.variant, AppButtonVariant.ghost);
+    expect(button.leading, isA<Icon>());
   });
 
   testWidgets('shows nothing without a session', (tester) async {
