@@ -60,6 +60,9 @@ class _FakeCatalog implements OfflineDeckCatalog {
   }
 
   @override
+  Future<Set<String>> readyDeckIds() async => {'d1'};
+
+  @override
   Future<void> remove(String deckId) async {
     if (fail) throw StateError('disk');
     removed.add(deckId);
@@ -105,6 +108,16 @@ void main() {
 
   test('offline cleanup errors do not fail the delete', () async {
     expect((await delete(ok: true, fail: true)).removed, isEmpty);
+  });
+
+  test('refresh carries the offline-ready deck ids', () async {
+    networkDioClient.dio.interceptors.add(_DeckApi(deleteOk: true));
+    final cubit = DeckListCubit(offlineCatalog: _FakeCatalog());
+    await cubit.onRefresh();
+    await cubit.close();
+
+    expect(cubit.state.offlineReadyDeckIds, {'d1'});
+    expect(cubit.state.copyWith(isLoading: true).offlineReadyDeckIds, {'d1'});
   });
 
   test('a failed deck request reaches the offline catalog', () async {

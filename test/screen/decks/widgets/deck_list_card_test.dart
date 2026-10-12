@@ -114,6 +114,26 @@ void main() {
       expect(find.byTooltip('Check updates'), findsOneWidget);
     });
 
+    testWidgets('marks decks that are available offline', (tester) async {
+      final deck = Deck.fromJson({'id': 'deck-offline-1', 'name': 'Offline'});
+
+      await tester.pumpWidget(_wrapCard(deck));
+      expect(find.byTooltip('Available offline'), findsNothing);
+
+      await tester.pumpWidget(
+        buildTestableWidgetWithoutProvider(
+          BlocProvider(
+            create: (_) => DeckSharingStatusCubit(),
+            child: Scaffold(
+              body: DeckListCard(deck: deck, availableOffline: true),
+            ),
+          ),
+        ),
+      );
+      expect(find.byTooltip('Available offline'), findsOneWidget);
+      expect(find.byIcon(LucideIcons.hardDriveDownload), findsOneWidget);
+    });
+
     testWidgets('shows update publish tooltip for published source', (
       tester,
     ) async {

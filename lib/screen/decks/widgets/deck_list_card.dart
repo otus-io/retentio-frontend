@@ -19,8 +19,13 @@ import '../../../routers/routers.dart';
 
 class DeckListCard extends StatelessWidget {
   final Deck deck;
+  final bool availableOffline;
 
-  const DeckListCard({super.key, required this.deck});
+  const DeckListCard({
+    super.key,
+    required this.deck,
+    this.availableOffline = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +87,17 @@ class DeckListCard extends StatelessWidget {
                     style: DeckTextStyles.deckTitle(theme),
                   ),
                 ),
+                if (availableOffline) ...[
+                  const SizedBox(width: 4),
+                  Tooltip(
+                    message: loc.deckAvailableOffline,
+                    child: Icon(
+                      LucideIcons.hardDriveDownload,
+                      size: 16,
+                      color: scheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ],
                 const SizedBox(width: 4),
                 if (!deck.isImported) ...[
                   BadgedAppIconButton(

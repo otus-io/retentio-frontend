@@ -142,6 +142,17 @@ void main() {
     expect(await store.getDeck('d2'), isNotNull);
   });
 
+  test('readyDeckIds lists only study-ready downloads', () async {
+    expect(await catalog().readyDeckIds(), {'d1'});
+    expect(await catalog(session: Future.value(null)).readyDeckIds(), isEmpty);
+    expect(
+      await catalog(
+        session: Future.error(StateError('no storage')),
+      ).readyDeckIds(),
+      isEmpty,
+    );
+  });
+
   test('without a session the remote list is returned as is', () async {
     final remote = [_remote('d1')];
 

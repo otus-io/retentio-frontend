@@ -66,6 +66,21 @@ class OfflineDeckCatalog {
       }, await _stats(store, d)),
   ];
 
+  /// Ids of the downloaded decks that can be studied offline; empty when the
+  /// offline storage is unavailable.
+  Future<Set<String>> readyDeckIds() async {
+    try {
+      final store = (await _session())?.store;
+      if (store == null) return const {};
+      return {
+        for (final d in await store.getDecks())
+          if (d.isReady) d.id,
+      };
+    } catch (_) {
+      return const {};
+    }
+  }
+
   /// Drops the offline copy of a deck deleted on the server.
   Future<void> remove(String deckId) async =>
       (await _session())?.removeDeck(deckId);

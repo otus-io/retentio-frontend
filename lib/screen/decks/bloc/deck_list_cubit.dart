@@ -11,22 +11,26 @@ class DeckListState {
     this.decks = const <Deck>[],
     this.isLoading = true,
     this.error,
+    this.offlineReadyDeckIds = const <String>{},
   });
 
   final List<Deck> decks;
   final bool isLoading;
   final String? error;
+  final Set<String> offlineReadyDeckIds;
 
   DeckListState copyWith({
     List<Deck>? decks,
     bool? isLoading,
     String? error,
     bool clearError = false,
+    Set<String>? offlineReadyDeckIds,
   }) {
     return DeckListState(
       decks: decks ?? this.decks,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
+      offlineReadyDeckIds: offlineReadyDeckIds ?? this.offlineReadyDeckIds,
     );
   }
 }
@@ -92,6 +96,7 @@ class DeckListCubit extends Cubit<DeckListState> {
       final decks = await _offlineCatalog.decks(
         () => DeckService.of.getDecks(throwOnError: true),
       );
+      final offlineReadyDeckIds = await _offlineCatalog.readyDeckIds();
       _safe(refreshController.refreshCompleted);
       if (decks.length < _pageSize) {
         _noMore = true;
@@ -103,7 +108,14 @@ class DeckListCubit extends Cubit<DeckListState> {
       if (_disposed) {
         return;
       }
-      emit(state.copyWith(decks: decks, isLoading: false, clearError: true));
+      emit(
+        state.copyWith(
+          decks: decks,
+          isLoading: false,
+          clearError: true,
+          offlineReadyDeckIds: offlineReadyDeckIds,
+        ),
+      );
     } catch (e) {
       _safe(refreshController.refreshFailed);
       if (_disposed) {

@@ -24,7 +24,8 @@ class DeckScreenBody extends StatelessWidget {
       buildWhen: (prev, curr) =>
           prev.decks != curr.decks ||
           prev.isLoading != curr.isLoading ||
-          prev.error != curr.error,
+          prev.error != curr.error ||
+          prev.offlineReadyDeckIds != curr.offlineReadyDeckIds,
       builder: (context, state) {
         if (state.isLoading && state.decks.isEmpty) {
           return Center(
@@ -92,7 +93,10 @@ class DeckScreenBody extends StatelessWidget {
               return Padding(
                 key: ValueKey(deck.id),
                 padding: const EdgeInsets.only(bottom: 12),
-                child: DeckListCard(deck: deck),
+                child: DeckListCard(
+                  deck: deck,
+                  availableOffline: state.offlineReadyDeckIds.contains(deck.id),
+                ),
               );
             },
           ),
