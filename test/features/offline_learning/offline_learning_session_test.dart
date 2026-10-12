@@ -149,6 +149,21 @@ void main() {
     expect(onlineChecks, 1);
   });
 
+  test('clear deletes the account data and media folder', () async {
+    final session = (await OfflineLearningSessions(
+      readUsername: () async => 'alice',
+      documentsDir: () async => dir.path,
+    ).current())!;
+    await session.store.putMediaPath('m1', '${session.mediaRootDir}/d1/m1');
+    Directory('${session.mediaRootDir}/d1').createSync(recursive: true);
+
+    await session.clear();
+    expect(await session.store.getMediaPath('m1'), isNull);
+    expect(Directory(session.mediaRootDir).existsSync(), isFalse);
+
+    await session.clear();
+  });
+
   test('switching accounts opens a separate session', () async {
     var name = 'alice';
     final sessions = OfflineLearningSessions(readUsername: () async => name);

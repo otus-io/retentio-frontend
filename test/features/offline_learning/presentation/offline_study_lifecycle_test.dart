@@ -59,6 +59,7 @@ void main() {
       store: _FakeStore(),
       downloader: downloader,
       sync: sync,
+      mediaRootDir: '/tmp/none',
     );
   });
 

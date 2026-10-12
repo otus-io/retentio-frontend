@@ -35,4 +35,7 @@ abstract class OfflineLearningStore {
   Future<List<StudySyncOperation>> getOperations();
   Future<void> updateOperation(StudySyncOperation op);
   Future<void> removeOperation(String operationId);
+
+  /// Deletes every row of this account, including queued operations.
+  Future<void> clear();
 }

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:retentio/core/network/connectivity_service.dart';
@@ -19,12 +21,21 @@ class OfflineLearningSession {
     required this.store,
     required this.downloader,
     required this.sync,
+    required this.mediaRootDir,
   });
 
   final String accountId;
   final OfflineLearningStore store;
   final OfflinePackageDownloader downloader;
   final OfflineSyncService sync;
+  final String mediaRootDir;
+
+  /// Deletes the account's offline data, unsynced reviews and media files.
+  Future<void> clear() async {
+    await store.clear();
+    final dir = Directory(mediaRootDir);
+    if (await dir.exists()) await dir.delete(recursive: true);
+  }
 }
 
 /// Study repository that serves downloaded decks from [session] and uploads
@@ -93,6 +104,7 @@ class OfflineLearningSessions {
         isOnline: _isOnline,
         nowSec: () => DateTime.now().millisecondsSinceEpoch ~/ 1000,
       ),
+      mediaRootDir: mediaRoot,
     );
   }
 

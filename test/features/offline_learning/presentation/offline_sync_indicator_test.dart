@@ -49,6 +49,7 @@ void main() {
       store: _FakeStore(),
       downloader: _FakeDownloader(),
       sync: sync,
+      mediaRootDir: '/tmp/none',
     );
     await tester.pumpWidget(
       buildTestableWidget(

@@ -141,4 +141,13 @@ class HiveOfflineLearningStore implements OfflineLearningStore {
   @override
   Future<void> removeOperation(String operationId) =>
       _study.delete(_syncKey(operationId));
+
+  @override
+  Future<void> clear() async {
+    for (final box in [_decks, _facts, _media, _study, _meta]) {
+      await box.deleteAll(
+        box.keys.whereType<String>().where((k) => k.startsWith('$accountId:')),
+      );
+    }
+  }
 }

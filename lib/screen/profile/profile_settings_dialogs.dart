@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:retentio/features/offline_learning/presentation/offline_logout_guard.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:retentio/providers/locale_provider.dart';
@@ -102,6 +103,7 @@ void showProfileLogoutDialog(
   ProfileCubit profileCubit,
   AppLocalizations loc,
 ) {
+  final outerContext = context;
   showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
@@ -134,9 +136,11 @@ void showProfileLogoutDialog(
               context,
             ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
-          onPressed: () {
+          onPressed: () async {
             context.pop();
-            profileCubit.logout();
+            if (await settleOfflineDataBeforeLogout(outerContext)) {
+              await profileCubit.logout();
+            }
           },
         ),
       ],

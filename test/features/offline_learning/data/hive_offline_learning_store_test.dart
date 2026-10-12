@@ -118,6 +118,29 @@ void main() {
     expect(await bob.nextSequence(), 1);
   });
 
+  test('clear removes only this account', () async {
+    final bob = await HiveOfflineLearningStore.open(accountId: 'bob');
+    for (final s in [store, bob]) {
+      await s.putDeck(const OfflineDeck(id: 'd1', name: 'One', fields: []));
+      await s.putFacts(const [
+        OfflineFact(deckId: 'd1', id: 'f1', entries: []),
+      ]);
+      await s.putMediaPath('m1', '/tmp/m1');
+      await s.applyLocalChange(_card('c1'), _op('o1', await s.nextSequence()));
+    }
+
+    await store.clear();
+
+    expect(await store.getDeck('d1'), isNull);
+    expect(await store.getCards('d1'), isEmpty);
+    expect(await store.getFacts('d1'), isEmpty);
+    expect(await store.getMediaPath('m1'), isNull);
+    expect(await store.getOperations(), isEmpty);
+    expect(await store.nextSequence(), 1);
+    expect(await bob.getDeck('d1'), isNotNull);
+    expect(await bob.getOperations(), hasLength(1));
+  });
+
   test('applyLocalChange writes card and operation', () async {
     await store.putCards([_card('c1')]);
     await store.applyLocalChange(
