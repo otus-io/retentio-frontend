@@ -39,9 +39,16 @@ class OfflinePackageDownloader {
   final FetchCardsFn _fetchCards;
   final DownloadMediaFn _downloadMedia;
   final int Function() _nowSec;
+  final Map<String, Future<bool>> _inFlight = {};
 
-  /// Returns true when the deck is study-ready offline.
-  Future<bool> download(String deckId) async {
+  /// Returns true when the deck is study-ready offline. Concurrent calls for
+  /// one deck share a single download (they would write the same files).
+  Future<bool> download(String deckId) =>
+      _inFlight[deckId] ??= _download(deckId).whenComplete(() {
+        _inFlight.remove(deckId);
+      });
+
+  Future<bool> _download(String deckId) async {
     try {
       final deck = await _buildDeck(deckId);
       final facts = await _syncFacts(deckId);

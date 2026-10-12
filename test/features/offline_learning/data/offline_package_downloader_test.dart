@@ -191,6 +191,26 @@ void main() {
     expect(factOffsets, [0]);
   });
 
+  test('concurrent downloads of one deck share a single run', () async {
+    final downloader = build(
+      pages: [
+        [
+          _fact('f1', entries: const [FactEntry(audio: 'aud')]),
+        ],
+      ],
+    );
+
+    final results = await Future.wait([
+      downloader.download('d1'),
+      downloader.download('d1'),
+    ]);
+    await downloader.download('d1');
+
+    expect(results, [true, true]);
+    expect(factOffsets, [0, 0]);
+    expect(downloadedUrls, ['/api/media/aud']);
+  });
+
   test('first seed inserts all cards', () async {
     await build(remoteCards: [_card('c1'), _card('c2')]).download('d1');
 
