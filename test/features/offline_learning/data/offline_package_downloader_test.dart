@@ -284,11 +284,51 @@ void main() {
       expect(deck.lastSyncedAt, 20);
       expect(deck.totalReviews, 50);
       expect(deck.totalReviewsToday, 5);
-      expect(deck.tags.single.id, 't1');
+      expect(deck.tags, isEmpty);
     },
   );
 
-  test('keeps deck counters and tags written during the download', () async {
+  test(
+    'caches the fact tags of all pages, deduped and ordered by id',
+    () async {
+      store.decks['d1'] = const OfflineDeck(
+        id: 'd1',
+        name: 'Old',
+        fields: [],
+        tags: [Tag(id: 'old', name: 'gone', description: '')],
+      );
+      Tag tag(String id, String name) =>
+          Tag(id: id, name: name, description: '');
+      final pages = [
+        OfflineFactsPage(
+          facts: List.generate(200, (i) => _fact('a$i')),
+          hasMore: true,
+          tags: [tag('t2', 'b'), tag('t1', 'c')],
+        ),
+        OfflineFactsPage(
+          facts: [_fact('b0')],
+          hasMore: false,
+          tags: [tag('t2', 'b'), tag('t0', 'a')],
+        ),
+      ];
+      final downloader = OfflinePackageDownloader(
+        store: store,
+        mediaRootDir: tmp.path,
+        fetchDeck: (_) async => _deck,
+        fetchFactsPage: (_, _, offset) async => pages[offset ~/ 200],
+        fetchCards: (_) async => [],
+        nowSec: () => 1000,
+      );
+
+      expect(await downloader.download('d1'), isTrue);
+
+      final tags = store.decks['d1']!.tags;
+      expect([for (final t in tags) t.id], ['t0', 't1', 't2']);
+      expect(tags.first.name, 'a');
+    },
+  );
+
+  test('keeps deck counters written during the download', () async {
     const stored = OfflineDeck(id: 'd1', name: 'Old', fields: []);
     store.decks['d1'] = stored.copyWith(downloadedAt: 10);
     final downloader = OfflinePackageDownloader(
@@ -303,7 +343,6 @@ void main() {
           totalReviews: 70,
           totalReviewsToday: 7,
           lastSyncedAt: 30,
-          tags: const [Tag(id: 't9', name: 'new', description: '')],
         );
         return [];
       },
@@ -318,7 +357,6 @@ void main() {
     expect(deck.downloadedAt, 10);
     expect([deck.totalReviews, deck.totalReviewsToday], [70, 7]);
     expect(deck.lastSyncedAt, 30);
-    expect(deck.tags.single.id, 't9');
   });
 
   test('re-download keeps dirty cards and cards with queued ops', () async {
@@ -749,6 +787,36 @@ void main() {
         ],
       }, limit: 200);
       expect(unlisted.facts.single.mediaVersions, isNull);
+    });
+
+    test('parseOfflineFactsPage collects tag objects of every fact', () {
+      final page = parseOfflineFactsPage('d1', {
+        'facts': [
+          {
+            'id': 'f1',
+            'tags': [
+              {'id': 't2', 'name': 'verb', 'description': 'pos'},
+              {'name': 'no id'},
+              'bad',
+            ],
+          },
+          {
+            'id': 'f2',
+            'tags': [
+              {'id': 7, 'name': null},
+            ],
+          },
+          {'id': 'f3'},
+        ],
+      }, limit: 200);
+
+      expect(
+        [for (final t in page.tags) t.toJson()],
+        [
+          const Tag(id: 't2', name: 'verb', description: 'pos').toJson(),
+          const Tag(id: '7', name: '', description: '').toJson(),
+        ],
+      );
     });
 
     test('parseOfflineFactsPage reports no more on a short page', () {

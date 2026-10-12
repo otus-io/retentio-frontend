@@ -2,6 +2,7 @@ import 'package:retentio/features/offline_learning/domain/entities/offline_card.
 import 'package:retentio/features/offline_learning/domain/entities/offline_fact.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/models/fact.dart';
+import 'package:retentio/models/tag.dart';
 import 'package:retentio/services/index.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/apis/card_service.dart';
@@ -19,10 +20,17 @@ typedef FetchMediaVersionsFn =
 typedef DownloadMediaFn = Future<String?> Function(String url, String path);
 
 class OfflineFactsPage {
-  const OfflineFactsPage({required this.facts, required this.hasMore});
+  const OfflineFactsPage({
+    required this.facts,
+    required this.hasMore,
+    this.tags = const [],
+  });
 
   final List<OfflineFact> facts;
   final bool hasMore;
+
+  /// Tag objects of the page's facts, possibly repeated.
+  final List<Tag> tags;
 }
 
 Future<OfflineFactsPage> fetchOfflineFactsPage(
@@ -67,7 +75,20 @@ OfflineFactsPage parseOfflineFactsPage(
         f['media_versions'] ?? pageVersions,
       ),
   ];
-  return OfflineFactsPage(facts: facts, hasMore: rawFacts.length >= limit);
+  return OfflineFactsPage(
+    facts: facts,
+    hasMore: rawFacts.length >= limit,
+    tags: [
+      for (final f in rawFacts.whereType<Map>())
+        for (final t in (f['tags'] as List? ?? const []).whereType<Map>())
+          if (t['id'] != null)
+            Tag(
+              id: '${t['id']}',
+              name: '${t['name'] ?? ''}',
+              description: '${t['description'] ?? ''}',
+            ),
+    ],
+  );
 }
 
 /// The list endpoint is not documented to return `media_versions`; use them
