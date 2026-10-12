@@ -47,24 +47,43 @@ class OfflineSyncService {
   );
 
   Future<OfflineSyncResult>? _inFlight;
+  var _inFlightForce = false;
+  var _inFlightRetryNow = false;
 
   /// Uploads when [force] or the queue reached [threshold]. [retryNow] also
-  /// sends operations still waiting out their backoff (manual retry).
-  Future<OfflineSyncResult> flush({
-    bool force = false,
-    bool retryNow = false,
-  }) => _inFlight ??= _flushAndReport(
-    force || retryNow,
-    retryNow,
-  ).whenComplete(() => _inFlight = null);
+  /// sends operations still waiting out their backoff (manual retry). A
+  /// stronger request arriving during a weaker flush runs after it.
+  Future<OfflineSyncResult> flush({bool force = false, bool retryNow = false}) {
+    final forced = force || retryNow;
+    final running = _inFlight;
+    if (running != null) {
+      if ((!forced || _inFlightForce) && (!retryNow || _inFlightRetryNow)) {
+        return running;
+      }
+      Future<OfflineSyncResult> again() =>
+          flush(force: forced, retryNow: retryNow);
+      return running.then((_) => again(), onError: (Object _) => again());
+    }
+    _inFlightForce = forced;
+    _inFlightRetryNow = retryNow;
+    return _inFlight = _flushAndReport(
+      forced,
+      retryNow,
+    ).whenComplete(() => _inFlight = null);
+  }
 
   Future<OfflineSyncResult> _flushAndReport(bool force, bool retryNow) async {
-    final online = await _isOnline();
-    final result = online
-        ? await _flush(force, retryNow)
-        : const OfflineSyncResult(OfflineSyncStatus.skipped);
-    phase.value = await _phaseAfter(result, online);
-    return result;
+    try {
+      final online = await _isOnline();
+      final result = online
+          ? await _flush(force, retryNow)
+          : const OfflineSyncResult(OfflineSyncStatus.skipped);
+      phase.value = await _phaseAfter(result, online);
+      return result;
+    } catch (_) {
+      phase.value = OfflineSyncPhase.failed;
+      rethrow;
+    }
   }
 
   Future<OfflineSyncPhase> _phaseAfter(
@@ -89,9 +108,11 @@ class OfflineSyncService {
       return const OfflineSyncResult(OfflineSyncStatus.skipped);
     }
     final now = _nowSec();
+    // FIFO: an op still in backoff holds back everything queued after it.
     final due =
-        pending.where((op) => retryNow || op.nextRetryAt <= now).toList()
-          ..sort((a, b) => a.sequence.compareTo(b.sequence));
+        (pending.toList()..sort((a, b) => a.sequence.compareTo(b.sequence)))
+            .takeWhile((op) => retryNow || op.nextRetryAt <= now)
+            .toList();
     if (due.isNotEmpty) phase.value = OfflineSyncPhase.syncing;
     final remaining = [...queue];
     final syncedDecks = <String>{};
@@ -183,20 +204,21 @@ class OfflineSyncService {
     final cards = await _store.getCards(op.deckId);
     final card = cards.where((c) => c.id == op.cardId).firstOrNull;
     if (card == null) return;
-    final stillQueued = remaining.any(
-      (o) => o.deckId == op.deckId && o.cardId == op.cardId,
-    );
+    // Newer local changes to this card are still queued; keep them.
+    if (remaining.any((o) => o.deckId == op.deckId && o.cardId == op.cardId)) {
+      return;
+    }
     final OfflineCard confirmed;
     if (op.type == StudySyncType.review) {
       confirmed = card.copyWith(
         lastReview: (data['last_review'] as num?)?.toInt(),
         dueDate: (data['due_date'] as num?)?.toInt(),
-        dirty: stillQueued,
+        dirty: false,
       );
     } else {
       confirmed = card.copyWith(
         hidden: data['hidden_status'] as bool? ?? op.hidden,
-        dirty: stillQueued,
+        dirty: false,
       );
     }
     await _store.putCards([confirmed]);

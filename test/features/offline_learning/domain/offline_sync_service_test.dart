@@ -82,12 +82,19 @@ class _FakeRemote implements StudySyncRemoteDataSource {
   final counts = <String, OfflineDeckCounts>{};
   Completer<void>? gate;
 
+  /// Throws once from the next [patchCard].
+  bool throwOnPatch = false;
+
   @override
   Future<StudyPatchResult> patchCard(
     String deckId,
     Map<String, dynamic> body, {
     required String operationId,
   }) async {
+    if (throwOnPatch) {
+      throwOnPatch = false;
+      throw StateError('boom');
+    }
     patched.add(operationId);
     bodies.add(body);
     await gate?.future;
@@ -270,7 +277,7 @@ void main() {
     });
   });
 
-  test('sends due pending ops in ascending sequence only', () async {
+  test('sends pending ops FIFO and stops at one still in backoff', () async {
     queue([
       _review('late', 3),
       _review('early', 1),
@@ -280,13 +287,89 @@ void main() {
 
     await service().flush(force: true);
 
-    expect(remote.patched, ['early', 'late']);
+    expect(remote.patched, ['early']);
     expect(remote.bodies.first, {
       'card_id': 'c1',
       'interval': 60,
       'last_review': 900,
     });
-    expect(store.ops.keys, unorderedEquals(['notDue', 'failed']));
+    expect(store.ops.keys, unorderedEquals(['notDue', 'late', 'failed']));
+  });
+
+  test('retryNow sends ops still in backoff, in order', () async {
+    queue([_review('late', 2), _review('notDue', 1, nextRetryAt: _now + 1)]);
+
+    await service().flush(retryNow: true);
+
+    expect(remote.patched, ['notDue', 'late']);
+  });
+
+  test('keeps newer local schedule while the card is still queued', () async {
+    store.cards['c1'] = _card('c1').copyWith(lastReview: 950, dueDate: 2000);
+    queue([_review('o1', 1), _review('o2', 2)]);
+    remote
+      ..dataByOp['o1'] = {'last_review': 900, 'due_date': 960}
+      ..statusByOp['o2'] = null;
+
+    await service().flush(force: true);
+
+    expect(store.cards['c1']!.dueDate, 2000);
+    expect(store.cards['c1']!.dirty, isTrue);
+  });
+
+  test('a flush error reports failed instead of staying syncing', () async {
+    queue([_review('o1', 1)]);
+    final sync = service();
+    remote.throwOnPatch = true;
+
+    await expectLater(sync.flush(force: true), throwsStateError);
+
+    expect(sync.phase.value, OfflineSyncPhase.failed);
+  });
+
+  group('overlapping flushes', () {
+    late Completer<bool> gate;
+    late OfflineSyncService sync;
+
+    setUp(() {
+      queue([_review('o1', 1)]);
+      gate = Completer<bool>();
+      sync = OfflineSyncService(
+        store: store,
+        remote: remote,
+        isOnline: () => gate.future,
+        nowSec: () => _now,
+      );
+    });
+
+    test('a forced flush runs after a pending normal one', () async {
+      final normal = sync.flush();
+      final forced = sync.flush(force: true);
+      gate.complete(true);
+
+      expect((await normal).status, OfflineSyncStatus.skipped);
+      expect((await forced).status, OfflineSyncStatus.synced);
+      expect(remote.patched, ['o1']);
+    });
+
+    test('a weaker request joins the running flush', () async {
+      final forced = sync.flush(force: true);
+      final normal = sync.flush();
+      gate.complete(true);
+
+      expect(identical(await normal, await forced), isTrue);
+      expect(remote.patched, ['o1']);
+    });
+
+    test('a stronger request still runs after a failed flush', () async {
+      remote.throwOnPatch = true;
+      final first = sync.flush(force: true);
+      final retry = sync.flush(retryNow: true);
+      gate.complete(true);
+      await expectLater(first, throwsStateError);
+
+      expect((await retry).status, OfflineSyncStatus.synced);
+    });
   });
 
   group('2xx', () {
