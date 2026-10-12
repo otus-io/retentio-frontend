@@ -114,13 +114,12 @@ class OfflineSyncService {
             .takeWhile((op) => retryNow || op.nextRetryAt <= now)
             .toList();
     if (due.isNotEmpty) phase.value = OfflineSyncPhase.syncing;
-    final remaining = [...queue];
     final syncedDecks = <String>{};
     var sent = 0;
     var failed = 0;
     var retry = false;
     for (final op in due) {
-      final outcome = await _process(op, remaining, now);
+      final outcome = await _process(op, now);
       if (outcome == _OpOutcome.unauthorized) {
         return OfflineSyncResult(
           OfflineSyncStatus.needsLogin,
@@ -147,19 +146,14 @@ class OfflineSyncService {
     return OfflineSyncResult(status, sent: sent, failed: failed);
   }
 
-  Future<_OpOutcome> _process(
-    StudySyncOperation op,
-    List<StudySyncOperation> remaining,
-    int now,
-  ) async {
+  Future<_OpOutcome> _process(StudySyncOperation op, int now) async {
     final result = await _remote.patchCard(
       op.deckId,
       op.toPatchBody(),
       operationId: op.operationId,
     );
     if (result.isSuccess) {
-      remaining.removeWhere((o) => o.operationId == op.operationId);
-      await _confirmCard(op, result.data ?? const {}, remaining);
+      await _confirmCard(op, result.data ?? const {});
       await _store.removeOperation(op.operationId);
       return _OpOutcome.sent;
     }
@@ -175,7 +169,6 @@ class OfflineSyncService {
         );
         return _OpOutcome.failed;
       case 404:
-        remaining.removeWhere((o) => o.operationId == op.operationId);
         await _store.removeOperation(op.operationId);
         await _store.deleteCard(op.deckId, op.cardId);
         return _OpOutcome.removed;
@@ -199,15 +192,19 @@ class OfflineSyncService {
   Future<void> _confirmCard(
     StudySyncOperation op,
     Map<String, dynamic> data,
-    List<StudySyncOperation> remaining,
   ) async {
     final cards = await _store.getCards(op.deckId);
     final card = cards.where((c) => c.id == op.cardId).firstOrNull;
     if (card == null) return;
-    // Newer local changes to this card are still queued; keep them.
-    if (remaining.any((o) => o.deckId == op.deckId && o.cardId == op.cardId)) {
-      return;
-    }
+    // Newer local changes to this card are still queued (possibly added
+    // during this flush); keep them.
+    final newer = (await _store.getOperations()).any(
+      (o) =>
+          o.operationId != op.operationId &&
+          o.deckId == op.deckId &&
+          o.cardId == op.cardId,
+    );
+    if (newer) return;
     final OfflineCard confirmed;
     if (op.type == StudySyncType.review) {
       confirmed = card.copyWith(

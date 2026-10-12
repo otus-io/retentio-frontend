@@ -317,6 +317,24 @@ void main() {
     expect(store.cards['c1']!.dirty, isTrue);
   });
 
+  test('keeps a review made while its earlier op was uploading', () async {
+    store.cards['c1'] = _card('c1');
+    queue([_review('o1', 1)]);
+    remote
+      ..dataByOp['o1'] = {'last_review': 900, 'due_date': 960}
+      ..gate = Completer<void>();
+
+    final flushing = service().flush(force: true);
+    await Future<void>.delayed(Duration.zero);
+    store.cards['c1'] = _card('c1').copyWith(lastReview: 950, dueDate: 2000);
+    queue([_review('o2', 2, nextRetryAt: _now + 1)]);
+    remote.gate!.complete();
+    await flushing;
+
+    expect(store.cards['c1']!.dueDate, 2000);
+    expect(store.ops.keys, ['o2']);
+  });
+
   test('a flush error reports failed instead of staying syncing', () async {
     queue([_review('o1', 1)]);
     final sync = service();
