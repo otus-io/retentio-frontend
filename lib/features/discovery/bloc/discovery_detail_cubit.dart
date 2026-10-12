@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/features/discovery/data/discovery_favorites_repository.dart';
+import 'package:retentio/features/offline_learning/offline_learning_session.dart';
 import 'package:retentio/models/catalog_deck.dart';
 import 'package:retentio/models/import_deck_result.dart';
 import 'package:retentio/services/apis/deck_catalog_service.dart';
+import 'package:retentio/utils/log.dart';
 
 // ── Import status ─────────────────────────────────────────────────────────────
 
@@ -56,12 +60,21 @@ class DiscoveryDetailState {
 // ── Cubit ─────────────────────────────────────────────────────────────────────
 
 class DiscoveryDetailCubit extends Cubit<DiscoveryDetailState> {
-  DiscoveryDetailCubit({DiscoveryFavoritesRepository? favoritesRepository})
-    : _favoritesRepository =
-          favoritesRepository ?? DiscoveryFavoritesRepository(),
-      super(const DiscoveryDetailState());
+  DiscoveryDetailCubit({
+    DiscoveryFavoritesRepository? favoritesRepository,
+    Future<void> Function(String deckId)? downloadOffline,
+  }) : _favoritesRepository =
+           favoritesRepository ?? DiscoveryFavoritesRepository(),
+       _downloadOffline = downloadOffline ?? _downloadOfflinePackage,
+       super(const DiscoveryDetailState());
 
   final DiscoveryFavoritesRepository _favoritesRepository;
+  final Future<void> Function(String deckId) _downloadOffline;
+
+  static Future<void> _downloadOfflinePackage(String deckId) async =>
+      (await OfflineLearningSessions.instance.current())?.downloader.download(
+        deckId,
+      );
 
   Future<void> load(String sourceDeckId) async {
     emit(state.copyWith(isLoading: true, clearError: true));
@@ -108,6 +121,11 @@ class DiscoveryDetailCubit extends Cubit<DiscoveryDetailState> {
     );
     try {
       final result = await DeckCatalogService.of.importDeck(deck.id);
+      unawaited(
+        _downloadOffline(result.id).catchError(
+          (Object e) => logger.w('offline download after import: $e'),
+        ),
+      );
       if (isClosed) return;
       emit(
         state.copyWith(
