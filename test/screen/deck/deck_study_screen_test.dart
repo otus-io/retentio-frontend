@@ -7,6 +7,7 @@ import 'package:retentio/screen/deck/deck_view_screen.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_study_tag_filter_bar.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
 import 'package:retentio/screen/deck/providers/deck_scope.dart';
+import 'package:retentio/widgets/app_button.dart';
 
 import '../../helpers/card_test_samples.dart';
 import '../../helpers/fake_deck_study_bloc.dart';
@@ -122,6 +123,47 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('No cards in this deck'), findsNothing);
+    });
+
+    testWidgets('retry reloads a deck that needed a download', (tester) async {
+      await setupTestEnvironment();
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: emptySessionDeck.id,
+        loadResults: const [
+          DeckStudyLoadResult(cardDetail: null, needsDownload: true),
+          DeckStudyLoadResult(cardDetail: null),
+        ],
+      );
+      addTearDown(() async {
+        await harness.dispose();
+        tearDownTestEnvironment();
+      });
+
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          DeckViewScreen(deck: emptySessionDeck),
+          overrides: [
+            currentDeckProvider.overrideWithValue(emptySessionDeck),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
+          ],
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      final loadsBefore = harness.repository.loadCalls;
+
+      await tester.tap(find.widgetWithText(AppButton, 'Retry'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(harness.repository.loadCalls, loadsBefore + 1);
+      expect(
+        find.text(
+          'Connect to the internet to download this deck for offline study',
+        ),
+        findsNothing,
+      );
+      expect(find.text('No cards in this deck'), findsOneWidget);
     });
 
     testWidgets(

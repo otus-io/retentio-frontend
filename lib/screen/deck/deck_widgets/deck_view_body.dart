@@ -147,6 +147,12 @@ class DeckViewBody extends StatelessWidget {
                       icon: LucideIcons.wifiOff,
                       title: loc.offlineDeckNeedsDownload,
                       theme: theme,
+                      action: AppButton(
+                        label: loc.retry,
+                        onPressed: () => context.read<DeckStudyBloc>().add(
+                          const DeckStudyStarted(),
+                        ),
+                      ),
                     )
                   : state.activeTagId != null
                   ? _TagFilterEmptyColumn(
@@ -316,11 +322,13 @@ class _DeckStudyMessageColumn extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.theme,
+    this.action,
   });
 
   final IconData icon;
   final String title;
   final ThemeData theme;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -336,6 +344,10 @@ class _DeckStudyMessageColumn extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
+          if (action case final action?) ...[
+            const SizedBox(height: _kMessageButtonTopSpacing),
+            action,
+          ],
         ],
       ),
     );
