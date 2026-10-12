@@ -1,9 +1,14 @@
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:retentio/core/network/connectivity_service.dart';
 import 'package:retentio/features/auth/data/datasources/local_auth_data_source.dart';
+import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/features/offline_learning/data/datasources/hive_offline_learning_store.dart';
+import 'package:retentio/features/offline_learning/data/datasources/study_sync_remote_data_source.dart';
 import 'package:retentio/features/offline_learning/data/offline_package_downloader.dart';
+import 'package:retentio/features/offline_learning/data/repositories/offline_first_deck_study_repository.dart';
 import 'package:retentio/features/offline_learning/domain/repositories/offline_learning_store.dart';
+import 'package:retentio/features/offline_learning/domain/services/offline_sync_service.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/index.dart';
 
@@ -13,12 +18,26 @@ class OfflineLearningSession {
     required this.accountId,
     required this.store,
     required this.downloader,
+    required this.sync,
   });
 
   final String accountId;
   final OfflineLearningStore store;
   final OfflinePackageDownloader downloader;
+  final OfflineSyncService sync;
 }
+
+/// Study repository that serves downloaded decks from [session] and uploads
+/// each local review through the session's sync queue.
+DeckStudyRepository offlineFirstStudyRepository(
+  Future<OfflineLearningSession?> session, {
+  required DeckStudyRepository remote,
+}) => OfflineFirstDeckStudyRepository(
+  store: session.then((s) => s?.store),
+  remote: remote,
+  remoteMediaUrl: (id) => '${Env.host}/api/media/$id',
+  onLocalChange: () => session.then((s) async => await s?.sync.flush()),
+);
 
 /// Resolves the [OfflineLearningSession] of the logged-in account, or null
 /// when the account cannot be identified (never logged in since the username
@@ -30,7 +49,9 @@ class OfflineLearningSessions {
     Future<String?> Function()? fetchUsername,
     Future<OfflineLearningStore> Function(String accountId)? openStore,
     Future<String> Function()? documentsDir,
-  }) : _readUsername = readUsername ?? const LocalAuthDataSource().readUsername,
+    Future<bool> Function()? isOnline,
+  }) : _isOnline = isOnline ?? hasNetworkConnection,
+       _readUsername = readUsername ?? const LocalAuthDataSource().readUsername,
        _saveUsername = saveUsername ?? const LocalAuthDataSource().saveUsername,
        _fetchUsername = fetchUsername ?? _fetchProfileUsername,
        _openStore = openStore ?? _openHiveStore,
@@ -43,6 +64,7 @@ class OfflineLearningSessions {
   final Future<String?> Function() _fetchUsername;
   final Future<OfflineLearningStore> Function(String accountId) _openStore;
   final Future<String> Function() _documentsDir;
+  final Future<bool> Function() _isOnline;
   final Map<String, Future<OfflineLearningSession>> _sessions = {};
 
   Future<OfflineLearningSession?> current() async {
@@ -64,6 +86,12 @@ class OfflineLearningSessions {
       downloader: OfflinePackageDownloader(
         store: store,
         mediaRootDir: mediaRoot,
+      ),
+      sync: OfflineSyncService(
+        store: store,
+        remote: StudySyncRemoteDataSource(),
+        isOnline: _isOnline,
+        nowSec: () => DateTime.now().millisecondsSinceEpoch ~/ 1000,
       ),
     );
   }

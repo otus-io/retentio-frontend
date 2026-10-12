@@ -5,7 +5,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:retentio/core/network/network.dart';
 import 'package:retentio/features/auth/data/datasources/local_auth_data_source.dart';
+import 'package:retentio/features/deck_study/data/repositories/deck_study_legacy_service_repository.dart';
+import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/features/offline_learning/data/datasources/hive_offline_learning_store.dart';
+import 'package:retentio/features/offline_learning/domain/entities/offline_card.dart';
+import 'package:retentio/features/offline_learning/domain/entities/offline_deck.dart';
+import 'package:retentio/features/offline_learning/domain/entities/offline_fact.dart';
+import 'package:retentio/models/fact.dart';
+import 'package:retentio/services/index.dart';
+import 'package:retentio/features/offline_learning/domain/services/offline_sync_service.dart';
 import 'package:retentio/features/offline_learning/offline_learning_session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -77,6 +85,68 @@ void main() {
       ),
       isTrue,
     );
+  });
+
+  test('session sync flushes the account queue', () async {
+    final sessions = OfflineLearningSessions(
+      readUsername: () async => 'alice',
+      isOnline: () async => true,
+    );
+
+    final result = await (await sessions.current())!.sync.flush(force: true);
+
+    expect(result.status, OfflineSyncStatus.synced);
+    expect(result.sent, 0);
+  });
+
+  test('study repository serves the session store and syncs changes', () async {
+    var onlineChecks = 0;
+    final session = (await OfflineLearningSessions(
+      readUsername: () async => 'alice',
+      isOnline: () async {
+        onlineChecks++;
+        return false;
+      },
+    ).current())!;
+    await session.store.putDeck(
+      const OfflineDeck(id: 'd1', name: 'N5', fields: ['W'], downloadedAt: 1),
+    );
+    await session.store.putFacts(const [
+      OfflineFact(
+        deckId: 'd1',
+        id: 'f1',
+        entries: [FactEntry(text: 'cat', image: 'img1')],
+      ),
+    ]);
+    await session.store.putCards(const [
+      OfflineCard(
+        deckId: 'd1',
+        id: 'c1',
+        factId: 'f1',
+        template: [
+          [0],
+          [0],
+        ],
+        lastReview: 0,
+        dueDate: 1,
+      ),
+    ]);
+    final repo = offlineFirstStudyRepository(
+      Future.value(session),
+      remote: DeckStudyLegacyServiceRepository(),
+    );
+
+    final result = await repo.loadNextDueCard(deckId: 'd1');
+    await repo.submitCard(
+      DeckStudySubmitRequest.hide(deckId: 'd1', cardId: 'c1'),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    expect(
+      result.cardDetail!.card.front.single.items.last.value,
+      '${Env.host}/api/media/img1',
+    );
+    expect(onlineChecks, 1);
   });
 
   test('switching accounts opens a separate session', () async {
