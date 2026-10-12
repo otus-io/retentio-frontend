@@ -33,27 +33,38 @@ class OfflineDeckCatalog {
       for (final d in await store.getDecks())
         if (d.isReady) d.id: d,
     };
-    if (!await _isOnline()) {
-      return [
-        for (final d in local.values)
-          _deck({
-            'id': d.id,
-            'name': d.name,
-            'fields': d.fields,
-            'rate': d.rate,
-            'source_deck_id': d.sourceDeckId,
-            'source_version': d.sourceVersion,
-          }, await _stats(store, d)),
-      ];
+    if (!await _isOnline()) return _localDecks(store, local.values);
+    final List<Deck> remoteDecks;
+    try {
+      remoteDecks = await fetchRemote();
+    } catch (_) {
+      // A network interface is up but the server is unreachable.
+      if (local.isEmpty) rethrow;
+      return _localDecks(store, local.values);
     }
     return [
-      for (final remote in await fetchRemote())
+      for (final remote in remoteDecks)
         if (local[remote.id] case final d?)
           _deck(remote.toJson(), await _stats(store, d))
         else
           remote,
     ];
   }
+
+  Future<List<Deck>> _localDecks(
+    OfflineLearningStore store,
+    Iterable<OfflineDeck> decks,
+  ) async => [
+    for (final d in decks)
+      _deck({
+        'id': d.id,
+        'name': d.name,
+        'fields': d.fields,
+        'rate': d.rate,
+        'source_deck_id': d.sourceDeckId,
+        'source_version': d.sourceVersion,
+      }, await _stats(store, d)),
+  ];
 
   /// Drops the offline copy of a deck deleted on the server.
   Future<void> remove(String deckId) async =>

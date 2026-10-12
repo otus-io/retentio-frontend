@@ -117,6 +117,23 @@ void main() {
     );
   });
 
+  test('server unreachable: falls back to downloaded decks', () async {
+    final decks = await catalog().decks(
+      () async => throw const SocketException('down'),
+    );
+
+    expect(decks.single.name, 'Local');
+  });
+
+  test('server unreachable with nothing downloaded: rethrows', () async {
+    await store.removeDeck('d1');
+
+    await expectLater(
+      catalog().decks(() async => throw const SocketException('down')),
+      throwsA(isA<SocketException>()),
+    );
+  });
+
   test('remove drops the downloaded deck', () async {
     await catalog().remove('d1');
     expect(await store.getDeck('d1'), isNull);

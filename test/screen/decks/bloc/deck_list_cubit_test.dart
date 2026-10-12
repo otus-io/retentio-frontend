@@ -38,13 +38,26 @@ class _DeckApi extends Interceptor {
   }
 }
 
+class _Unreachable extends Interceptor {
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) =>
+      handler.reject(DioException(requestOptions: options));
+}
+
 class _FakeCatalog implements OfflineDeckCatalog {
   final removed = <String>[];
   bool fail = false;
+  Object? fetchError;
 
   @override
-  Future<List<Deck>> decks(Future<List<Deck>> Function() fetchRemote) =>
-      fetchRemote();
+  Future<List<Deck>> decks(Future<List<Deck>> Function() fetchRemote) async {
+    try {
+      return await fetchRemote();
+    } catch (e) {
+      fetchError = e;
+      rethrow;
+    }
+  }
 
   @override
   Future<void> remove(String deckId) async {
@@ -92,5 +105,15 @@ void main() {
 
   test('offline cleanup errors do not fail the delete', () async {
     expect((await delete(ok: true, fail: true)).removed, isEmpty);
+  });
+
+  test('a failed deck request reaches the offline catalog', () async {
+    networkDioClient.dio.interceptors.add(_Unreachable());
+    final catalog = _FakeCatalog();
+    final cubit = DeckListCubit(offlineCatalog: catalog);
+    await cubit.onRefresh();
+    await cubit.close();
+
+    expect(catalog.fetchError, isA<DioException>());
   });
 }

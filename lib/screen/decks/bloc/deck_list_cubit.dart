@@ -89,7 +89,9 @@ class DeckListCubit extends Cubit<DeckListState> {
       return;
     }
     try {
-      final decks = await _offlineCatalog.decks(DeckService.of.getDecks);
+      final decks = await _offlineCatalog.decks(
+        () => DeckService.of.getDecks(throwOnError: true),
+      );
       _safe(refreshController.refreshCompleted);
       if (decks.length < _pageSize) {
         _noMore = true;
