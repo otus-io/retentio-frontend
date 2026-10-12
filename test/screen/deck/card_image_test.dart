@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:retentio/screen/deck/card_widgets/card_image.dart';
 import 'package:retentio/widgets/common_net_image.dart';
 
@@ -26,6 +27,17 @@ void main() {
 
     expect(find.byType(Image), findsOneWidget);
     expect(find.byType(CommonNetImage), findsNothing);
+  });
+
+  test('recognizes absolute file paths of every platform, not urls', () {
+    expect(isLocalImagePath(r'C:\media\img1', style: p.windows), isTrue);
+    expect(isLocalImagePath(r'\\host\share\img1', style: p.windows), isTrue);
+    expect(isLocalImagePath('/media/img1', style: p.posix), isTrue);
+    for (final style in [p.windows, p.posix]) {
+      expect(isLocalImagePath('https://host/img1', style: style), isFalse);
+      expect(isLocalImagePath('http://host/img1', style: style), isFalse);
+    }
+    expect(isLocalImagePath('/media/img1'), isTrue);
   });
 
   testWidgets('loads remote urls and missing local paths from the network', (
