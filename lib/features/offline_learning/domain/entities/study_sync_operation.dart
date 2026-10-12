@@ -15,6 +15,7 @@ class StudySyncOperation {
     this.lastReview,
     this.hidden,
     this.attempts = 0,
+    this.httpAttempts = 0,
     this.nextRetryAt = 0,
     this.status = StudySyncStatus.pending,
     this.lastError,
@@ -30,6 +31,9 @@ class StudySyncOperation {
   final int? lastReview;
   final bool? hidden;
   final int attempts;
+
+  /// Attempts answered with a non-2xx HTTP status; network errors excluded.
+  final int httpAttempts;
   final int nextRetryAt;
   final StudySyncStatus status;
   final String? lastError;
@@ -41,6 +45,7 @@ class StudySyncOperation {
 
   StudySyncOperation copyWith({
     int? attempts,
+    int? httpAttempts,
     int? nextRetryAt,
     StudySyncStatus? status,
     String? lastError,
@@ -55,6 +60,7 @@ class StudySyncOperation {
     lastReview: lastReview,
     hidden: hidden,
     attempts: attempts ?? this.attempts,
+    httpAttempts: httpAttempts ?? this.httpAttempts,
     nextRetryAt: nextRetryAt ?? this.nextRetryAt,
     status: status ?? this.status,
     lastError: lastError ?? this.lastError,
@@ -74,6 +80,7 @@ class StudySyncOperation {
         lastReview: (json['last_review'] as num?)?.toInt(),
         hidden: json['hidden'] as bool?,
         attempts: (json['attempts'] as num?)?.toInt() ?? 0,
+        httpAttempts: (json['http_attempts'] as num?)?.toInt() ?? 0,
         nextRetryAt: (json['next_retry_at'] as num?)?.toInt() ?? 0,
         status: json['status'] == 'failed'
             ? StudySyncStatus.failed
@@ -92,6 +99,7 @@ class StudySyncOperation {
     'last_review': lastReview,
     'hidden': hidden,
     'attempts': attempts,
+    'http_attempts': httpAttempts,
     'next_retry_at': nextRetryAt,
     'status': status.name,
     'last_error': lastError,

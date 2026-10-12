@@ -137,6 +137,7 @@ StudySyncOperation _review(
   String deckId = 'd1',
   int nextRetryAt = 0,
   int attempts = 0,
+  int httpAttempts = 0,
   StudySyncStatus status = StudySyncStatus.pending,
 }) => StudySyncOperation(
   operationId: id,
@@ -149,8 +150,11 @@ StudySyncOperation _review(
   lastReview: 900,
   nextRetryAt: nextRetryAt,
   attempts: attempts,
+  httpAttempts: httpAttempts,
   status: status,
 );
+
+const maxAttempts = OfflineSyncService.maxHttpAttempts;
 
 StudySyncOperation _hide(String id, int seq, {String cardId = 'c1'}) =>
     StudySyncOperation(
@@ -528,6 +532,75 @@ void main() {
       await service().flush(force: true);
 
       expect(store.ops['a']!.lastError, 'HTTP 503');
+    });
+
+    test('network error stops ops of other cards too', () async {
+      queue([_review('a', 1), _review('b', 2, cardId: 'c2')]);
+      remote.statusByOp['a'] = null;
+
+      await service().flush(force: true);
+
+      expect(remote.patched, ['a']);
+      expect(store.ops['a']!.httpAttempts, 0);
+    });
+
+    test('HTTP error holds back only later ops of the same card', () async {
+      queue([
+        _review('a', 1),
+        _review('b', 2),
+        _review('c', 3, cardId: 'c2'),
+        _review('d', 4, deckId: 'd2'),
+      ]);
+      remote.statusByOp['a'] = 409;
+
+      final result = await service().flush(force: true);
+
+      expect(result.status, OfflineSyncStatus.partial);
+      expect(remote.patched, ['a', 'c', 'd']);
+      expect(store.ops.keys, ['a', 'b']);
+      expect(store.ops['a']!.httpAttempts, 1);
+      expect(store.ops['b']!.attempts, 0);
+    });
+
+    test('op in backoff holds back only later ops of its card', () async {
+      queue([
+        _review('wait', 1, nextRetryAt: _now + 1),
+        _review('later', 2),
+        _review('other', 3, cardId: 'c2'),
+      ]);
+
+      final result = await service().flush(force: true);
+
+      expect(result.status, OfflineSyncStatus.synced);
+      expect(remote.patched, ['other']);
+      expect(store.ops.keys, ['wait', 'later']);
+    });
+
+    test('marks the op failed after max HTTP attempts', () async {
+      queue([
+        _review('a', 1, attempts: 9, httpAttempts: maxAttempts - 1),
+        _review('b', 2),
+      ]);
+      remote.statusByOp['a'] = 422;
+      remote.messageByOp['a'] = 'bad state';
+
+      final result = await service().flush(force: true);
+
+      final op = store.ops['a']!;
+      expect(op.status, StudySyncStatus.failed);
+      expect(op.lastError, 'bad state');
+      expect(op.httpAttempts, maxAttempts);
+      expect(result.failed, 1);
+      expect(remote.patched, ['a', 'b']);
+    });
+
+    test('failed op does not hold back later ops of its card', () async {
+      queue([_review('a', 1, status: StudySyncStatus.failed), _review('b', 2)]);
+
+      await service().flush(force: true);
+
+      expect(remote.patched, ['b']);
+      expect(store.ops.keys, ['a']);
     });
 
     for (final (attempts, delay) in [

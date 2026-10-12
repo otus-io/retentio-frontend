@@ -19,9 +19,10 @@ class OfflineSyncResult {
 /// What the study UI shows about the upload queue.
 enum OfflineSyncPhase { synced, offline, pending, syncing, failed, needsLogin }
 
-enum _OpOutcome { sent, failed, removed, retry, unauthorized }
+enum _OpOutcome { sent, failed, removed, retry, offline, unauthorized }
 
-/// Uploads the local study queue FIFO, then refreshes server review counters.
+/// Uploads the local study queue FIFO per card, then refreshes server review
+/// counters.
 class OfflineSyncService {
   OfflineSyncService({
     required OfflineLearningStore store,
@@ -35,6 +36,9 @@ class OfflineSyncService {
        _nowSec = nowSec;
 
   static const backoffSeconds = [30, 120, 600, 1800, 7200];
+
+  /// HTTP errors (not network errors) after which an op is marked failed.
+  static const maxHttpAttempts = 8;
 
   final OfflineLearningStore _store;
   final StudySyncRemoteDataSource _remote;
@@ -108,17 +112,24 @@ class OfflineSyncService {
       return const OfflineSyncResult(OfflineSyncStatus.skipped);
     }
     final now = _nowSec();
-    // FIFO: an op still in backoff holds back everything queued after it.
-    final due =
-        (pending.toList()..sort((a, b) => a.sequence.compareTo(b.sequence)))
-            .takeWhile((op) => retryNow || op.nextRetryAt <= now)
-            .toList();
-    if (due.isNotEmpty) phase.value = OfflineSyncPhase.syncing;
+    bool isDue(StudySyncOperation op) => retryNow || op.nextRetryAt <= now;
+    final ordered = pending.toList()
+      ..sort((a, b) => a.sequence.compareTo(b.sequence));
+    if (ordered.any(isDue)) phase.value = OfflineSyncPhase.syncing;
+    // FIFO per card: an op in backoff or failing now holds back later ops of
+    // the same card only.
+    final heldCards = <(String, String)>{};
     final syncedDecks = <String>{};
     var sent = 0;
     var failed = 0;
     var retry = false;
-    for (final op in due) {
+    for (final op in ordered) {
+      final card = (op.deckId, op.cardId);
+      if (heldCards.contains(card)) continue;
+      if (!isDue(op)) {
+        heldCards.add(card);
+        continue;
+      }
       final outcome = await _process(op, now);
       if (outcome == _OpOutcome.unauthorized) {
         return OfflineSyncResult(
@@ -133,6 +144,10 @@ class OfflineSyncService {
       }
       if (outcome == _OpOutcome.failed) failed++;
       if (outcome == _OpOutcome.retry) {
+        retry = true;
+        heldCards.add(card);
+      }
+      if (outcome == _OpOutcome.offline) {
         retry = true;
         break;
       }
@@ -173,20 +188,33 @@ class OfflineSyncService {
         await _store.deleteCard(op.deckId, op.cardId);
         return _OpOutcome.removed;
     }
+    final offline = result.httpStatus == null;
     final attempts = op.attempts + 1;
+    final httpAttempts = op.httpAttempts + (offline ? 0 : 1);
+    final lastError =
+        result.message ??
+        (offline ? 'network error' : 'HTTP ${result.httpStatus}');
+    if (httpAttempts >= maxHttpAttempts) {
+      await _store.updateOperation(
+        op.copyWith(
+          attempts: attempts,
+          httpAttempts: httpAttempts,
+          status: StudySyncStatus.failed,
+          lastError: lastError,
+        ),
+      );
+      return _OpOutcome.failed;
+    }
     await _store.updateOperation(
       op.copyWith(
         attempts: attempts,
+        httpAttempts: httpAttempts,
         nextRetryAt:
             now + backoffSeconds[min(attempts - 1, backoffSeconds.length - 1)],
-        lastError:
-            result.message ??
-            (result.httpStatus == null
-                ? 'network error'
-                : 'HTTP ${result.httpStatus}'),
+        lastError: lastError,
       ),
     );
-    return _OpOutcome.retry;
+    return offline ? _OpOutcome.offline : _OpOutcome.retry;
   }
 
   Future<void> _confirmCard(
