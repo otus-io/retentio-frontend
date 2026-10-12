@@ -138,6 +138,8 @@ void main() {
     Object? cardsError,
     DownloadMediaFn? downloadMedia,
     FetchMediaVersionsFn? fetchMediaVersions,
+    bool online = true,
+    int now = 1000,
   }) => OfflinePackageDownloader(
     store: store,
     mediaRootDir: tmp.path,
@@ -163,7 +165,8 @@ void main() {
           versionLookups.add(factId);
           return const {};
         },
-    nowSec: () => 1000,
+    nowSec: () => now,
+    isOnline: () async => online,
   );
 
   test('fetches all fact pages and marks the deck ready', () async {
@@ -223,6 +226,59 @@ void main() {
     expect(results, [true, true]);
     expect(factOffsets, [0, 0]);
     expect(downloadedUrls, ['/api/media/aud']);
+  });
+
+  group('refreshIfStale', () {
+    const ready = OfflineDeck(
+      id: 'd1',
+      name: 'Old',
+      fields: [],
+      downloadedAt: 1,
+    );
+    const now = 10000;
+    const interval = OfflinePackageDownloader.refreshIntervalSec;
+
+    test('does nothing offline', () async {
+      await build(online: false).refreshIfStale('d1');
+
+      expect(factOffsets, isEmpty);
+      expect(store.decks, isEmpty);
+    });
+
+    test('first download runs and leaves the deck due a refresh', () async {
+      await build(now: now).refreshIfStale('d1');
+
+      expect(factOffsets, [0]);
+      final deck = store.decks['d1']!;
+      expect(deck.downloadedAt, now);
+      expect(deck.refreshedAt, 0);
+    });
+
+    test('skips a ready deck refreshed within the interval', () async {
+      store.decks['d1'] = ready.copyWith(refreshedAt: now - interval + 1);
+
+      await build(now: now).refreshIfStale('d1');
+
+      expect(factOffsets, isEmpty);
+    });
+
+    test('refreshes a ready deck once the interval has passed', () async {
+      store.decks['d1'] = ready.copyWith(refreshedAt: now - interval);
+
+      await build(now: now).refreshIfStale('d1');
+
+      expect(factOffsets, [0]);
+      expect(store.decks['d1']!.refreshedAt, now);
+      expect(store.decks['d1']!.downloadedAt, 1);
+    });
+
+    test('refreshes a ready deck never refreshed before', () async {
+      store.decks['d1'] = ready;
+
+      await build(now: now).refreshIfStale('d1');
+
+      expect(store.decks['d1']!.refreshedAt, now);
+    });
   });
 
   test('first seed inserts all cards', () async {

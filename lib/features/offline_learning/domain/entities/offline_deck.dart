@@ -14,6 +14,7 @@ class OfflineDeck {
     this.downloadedAt = 0,
     this.lastSyncedAt = 0,
     this.tags = const [],
+    this.refreshedAt = 0,
   });
 
   final String id;
@@ -32,6 +33,9 @@ class OfflineDeck {
   /// Fact tags of this deck, cached for the offline tag filter.
   final List<Tag> tags;
 
+  /// When a study-page refresh of this ready deck last succeeded; 0 = never.
+  final int refreshedAt;
+
   bool get isReady => downloadedAt > 0;
 
   OfflineDeck copyWith({
@@ -40,6 +44,7 @@ class OfflineDeck {
     int? downloadedAt,
     int? lastSyncedAt,
     List<Tag>? tags,
+    int? refreshedAt,
   }) => OfflineDeck(
     id: id,
     name: name,
@@ -52,6 +57,7 @@ class OfflineDeck {
     downloadedAt: downloadedAt ?? this.downloadedAt,
     lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
     tags: tags ?? this.tags,
+    refreshedAt: refreshedAt ?? this.refreshedAt,
   );
 
   factory OfflineDeck.fromJson(Map<String, dynamic> json) => OfflineDeck(
@@ -69,6 +75,7 @@ class OfflineDeck {
       for (final t in (json['tags'] as List? ?? const []))
         Tag.fromJson(Map<String, dynamic>.from(t as Map)),
     ],
+    refreshedAt: (json['refreshed_at'] as num?)?.toInt() ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -83,5 +90,6 @@ class OfflineDeck {
     'downloaded_at': downloadedAt,
     'last_synced_at': lastSyncedAt,
     'tags': [for (final t in tags) t.toJson()],
+    'refreshed_at': refreshedAt,
   };
 }

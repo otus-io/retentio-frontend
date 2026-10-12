@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:retentio/core/network/connectivity_service.dart';
 import 'package:retentio/features/offline_learning/data/remote_offline_package_data_source.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_deck.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_fact.dart';
@@ -26,6 +27,7 @@ class OfflinePackageDownloader {
     DownloadMediaFn? downloadMedia,
     FetchMediaVersionsFn? fetchMediaVersions,
     int Function()? nowSec,
+    Future<bool> Function()? isOnline,
   }) : _store = store,
        _mediaRootDir = mediaRootDir,
        _fetchDeck = fetchDeck ?? DeckService.of.getDeckDetail,
@@ -33,10 +35,12 @@ class OfflinePackageDownloader {
        _fetchCards = fetchCards ?? fetchOfflineCards,
        _downloadMedia = downloadMedia ?? ApiService.downloadFile,
        _fetchMediaVersions = fetchMediaVersions ?? fetchOfflineMediaVersions,
-       _nowSec = nowSec ?? _defaultNowSec;
+       _nowSec = nowSec ?? _defaultNowSec,
+       _isOnline = isOnline ?? hasNetworkConnection;
 
   static const int factsPageSize = 200;
   static const int versionLookupConcurrency = 4;
+  static const int refreshIntervalSec = 3600;
 
   final OfflineLearningStore _store;
   final String _mediaRootDir;
@@ -46,7 +50,21 @@ class OfflinePackageDownloader {
   final DownloadMediaFn _downloadMedia;
   final FetchMediaVersionsFn _fetchMediaVersions;
   final int Function() _nowSec;
+  final Future<bool> Function() _isOnline;
   final Map<String, Future<bool>> _inFlight = {};
+
+  /// Study-page refresh: downloads only when online, and a study-ready deck
+  /// at most once per [refreshIntervalSec].
+  Future<void> refreshIfStale(String deckId) async {
+    if (!await _isOnline()) return;
+    final deck = await _store.getDeck(deckId);
+    if (deck != null &&
+        deck.isReady &&
+        _nowSec() - deck.refreshedAt < refreshIntervalSec) {
+      return;
+    }
+    await download(deckId);
+  }
 
   /// Returns true when the deck is study-ready offline. Concurrent calls for
   /// one deck share a single download (they would write the same files).
@@ -94,6 +112,9 @@ class OfflinePackageDownloader {
         : _nowSec(),
     lastSyncedAt: local?.lastSyncedAt ?? 0,
     tags: tags,
+    // A first download's card snapshot predates the online session it runs
+    // beside, so it leaves the deck due a refresh on the next open.
+    refreshedAt: local != null && local.isReady ? _nowSec() : 0,
   );
 
   /// Returns the facts and their distinct tags ordered by id, the order of

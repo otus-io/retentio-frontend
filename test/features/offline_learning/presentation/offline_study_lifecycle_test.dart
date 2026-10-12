@@ -35,10 +35,7 @@ class _FakeDownloader implements OfflinePackageDownloader {
   final decks = <String>[];
 
   @override
-  Future<bool> download(String deckId) async {
-    decks.add(deckId);
-    return true;
-  }
+  Future<void> refreshIfStale(String deckId) async => decks.add(deckId);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

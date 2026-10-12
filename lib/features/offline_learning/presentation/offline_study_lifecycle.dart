@@ -42,7 +42,9 @@ class _OfflineStudyLifecycleState extends State<OfflineStudyLifecycle>
     );
     _run((s) async {
       await s.sync.flush(force: true);
-      if (widget.deckId case final deckId?) await s.downloader.download(deckId);
+      if (widget.deckId case final deckId?) {
+        await s.downloader.refreshIfStale(deckId);
+      }
     });
   }
 

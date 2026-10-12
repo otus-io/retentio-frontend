@@ -108,12 +108,15 @@ void main() {
       totalReviews: 3,
       totalReviewsToday: 4,
       tags: const [Tag(id: 't1', name: 'N5', description: '')],
+      refreshedAt: 5,
     );
     expect(ready.isReady, isTrue);
+    expect(ready.toJson()['refreshed_at'], 5);
     expect(OfflineDeck.fromJson(ready.toJson()).tags.single.name, 'N5');
     expect(OfflineDeck.fromJson(ready.toJson()).toJson(), ready.toJson());
     expect(deck.copyWith().toJson(), deck.toJson());
     expect(OfflineDeck.fromJson({}).fields, isEmpty);
+    expect(OfflineDeck.fromJson({}).refreshedAt, 0);
   });
 
   test('StudySyncOperation builds separate review and hide bodies', () {
