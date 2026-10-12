@@ -29,12 +29,18 @@ class _Offline extends Interceptor {
 class _FakeStore implements OfflineLearningStore {
   final ops = <StudySyncOperation>[];
   int clears = 0;
+  bool failReads = false;
+  bool failClear = false;
 
   @override
-  Future<List<StudySyncOperation>> getOperations() async => [...ops];
+  Future<List<StudySyncOperation>> getOperations() async {
+    if (failReads) throw StateError('hive');
+    return [...ops];
+  }
 
   @override
   Future<void> clear() async {
+    if (failClear) throw StateError('disk');
     clears++;
     ops.clear();
   }
@@ -209,5 +215,22 @@ void main() {
 
     expect(results, [true]);
     expect(store.ops, hasLength(1));
+  });
+
+  testWidgets('a storage error does not block logout', (tester) async {
+    store.failReads = true;
+
+    expect(await start(tester, Future.value(session)), [true]);
+  });
+
+  testWidgets('a failed discard still logs out', (tester) async {
+    store
+      ..ops.add(_op)
+      ..failClear = true;
+    final results = await start(tester, Future.value(session));
+    await tester.tap(find.text('Discard and log out'));
+    await settle(tester);
+
+    expect(results, [true]);
   });
 }

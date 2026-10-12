@@ -8,17 +8,27 @@ enum _LogoutChoice { sync, keep, discard }
 /// Settles the offline data of the logged-in account before logout. Returns
 /// false when the user cancels. Offline data is deleted once nothing is left
 /// to upload or the user discards it; kept reviews upload after re-login.
+/// Offline storage errors never block logout.
 Future<bool> settleOfflineDataBeforeLogout(
   BuildContext context, {
   Future<OfflineLearningSession?>? session,
 }) async {
-  final OfflineLearningSession? s;
   try {
-    s = await (session ?? OfflineLearningSessions.instance.current());
+    return await _settle(
+      context,
+      session ?? OfflineLearningSessions.instance.current(),
+    );
   } catch (e) {
     logger.w('offline logout: $e');
     return true;
   }
+}
+
+Future<bool> _settle(
+  BuildContext context,
+  Future<OfflineLearningSession?> session,
+) async {
+  final s = await session;
   if (s == null) return true;
   if ((await s.store.getOperations()).isEmpty) {
     await s.clear();
