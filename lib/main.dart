@@ -136,7 +136,9 @@ class MainTabScreen extends ConsumerWidget {
     );
     if (!isLoggedIn) return scaffold;
     return OfflineStudyLifecycle(
-      session: OfflineLearningSessions.instance.current(),
+      session: OfflineLearningSessions.instance
+          .current()
+          .then<OfflineLearningSession?>((s) => s, onError: (Object _) => null),
       child: scaffold,
     );
   }
