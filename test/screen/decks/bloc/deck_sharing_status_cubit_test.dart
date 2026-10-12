@@ -173,6 +173,47 @@ void main() {
       expect(cubit.state.openContributionDeckIds, isEmpty);
     });
 
+    final importedDeck = Deck.fromJson({
+      'id': 'imp1',
+      'name': 'I',
+      'source_deck_id': 'src',
+      'stats': <String, dynamic>{},
+      'owner': 'u',
+    });
+
+    test('offline: hides badges without requesting', () async {
+      var checks = 0;
+      final cubit = DeckSharingStatusCubit(
+        isOnline: () async {
+          checks++;
+          return false;
+        },
+      );
+      addTearDown(cubit.close);
+      cubit.markDirty('imp1');
+      cubit.markOpenContributions('imp1');
+      cubit.setDecks([importedDeck]);
+
+      await cubit.refresh();
+
+      expect(checks, 1);
+      expect(cubit.state.flashingDeckIds, isEmpty);
+      expect(cubit.state.openContributionDeckIds, isEmpty);
+    });
+
+    test('unknown connectivity keeps the previous badges', () async {
+      final cubit = DeckSharingStatusCubit(
+        isOnline: () => Future.error(StateError('no plugin')),
+      );
+      addTearDown(cubit.close);
+      cubit.markDirty('imp1');
+      cubit.setDecks([importedDeck]);
+
+      await cubit.refresh();
+
+      expect(cubit.state.shouldFlash('imp1'), isTrue);
+    });
+
     test('startPolling and stopPolling do not throw', () {
       final cubit = DeckSharingStatusCubit();
       addTearDown(cubit.close);

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:retentio/core/network/connectivity_service.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/services/apis/deck_catalog_service.dart';
 import 'package:retentio/services/apis/deck_publish_service.dart';
@@ -35,8 +36,13 @@ class DeckSharingStatusState {
 
 /// Polls publish-preview and open contribution inbox (published sources),
 /// and updates summary (imports), every 60s.
+/// Offline it neither polls nor shows badges.
 class DeckSharingStatusCubit extends Cubit<DeckSharingStatusState> {
-  DeckSharingStatusCubit() : super(const DeckSharingStatusState());
+  DeckSharingStatusCubit({Future<bool> Function()? isOnline})
+    : _isOnline = isOnline ?? hasNetworkConnection,
+      super(const DeckSharingStatusState());
+
+  final Future<bool> Function() _isOnline;
 
   static const _pollInterval = Duration(seconds: 60);
 
@@ -94,6 +100,18 @@ class DeckSharingStatusCubit extends Cubit<DeckSharingStatusState> {
     try {
       final nextFlash = <String>{};
       final nextContrib = <String>{};
+      if (_decks.isNotEmpty &&
+          !await _isOnline().catchError((Object _) => true)) {
+        if (!_disposed) {
+          emit(
+            state.copyWith(
+              flashingDeckIds: nextFlash,
+              openContributionDeckIds: nextContrib,
+            ),
+          );
+        }
+        return;
+      }
       await Future.wait(
         _decks.map((deck) async {
           if (deck.isImported) {
