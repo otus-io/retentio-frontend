@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +9,7 @@ import 'package:retentio/features/offline_learning/domain/repositories/offline_l
 import 'package:retentio/features/offline_learning/domain/services/offline_sync_service.dart';
 import 'package:retentio/features/offline_learning/offline_learning_session.dart';
 import 'package:retentio/features/offline_learning/presentation/offline_logout_guard.dart';
+import 'package:retentio/widgets/app_button.dart';
 
 import '../../../helpers/test_wrapper.dart';
 
@@ -70,6 +73,8 @@ class _FakeSync implements OfflineSyncService {
   final _FakeStore store;
   bool uploads = true;
   int flushes = 0;
+  Completer<void>? gate;
+  Object? error;
 
   @override
   Future<OfflineSyncResult> flush({
@@ -77,6 +82,8 @@ class _FakeSync implements OfflineSyncService {
     bool retryNow = false,
   }) async {
     flushes++;
+    await gate?.future;
+    if (error case final e?) throw e;
     if (uploads) store.ops.clear();
     return const OfflineSyncResult(OfflineSyncStatus.synced);
   }
@@ -194,6 +201,56 @@ void main() {
     expect(results, [true]);
     expect(sync.flushes, 1);
     expect(store.clears, 1);
+  });
+
+  testWidgets('shows a non-dismissible progress dialog while syncing', (
+    tester,
+  ) async {
+    store.ops.add(_op);
+    sync.gate = Completer<void>();
+    final results = await start(tester, Future.value(session));
+    await tester.tap(find.text('Sync and log out'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Uploading reviews…'), findsOneWidget);
+    await tester.tapAt(const Offset(5, 5));
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(find.text('Uploading reviews…'), findsOneWidget);
+    expect(results, isEmpty);
+
+    sync.gate!.complete();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Uploading reviews…'), findsNothing);
+    expect(results, [true]);
+    expect(store.clears, 1);
+  });
+
+  testWidgets('a sync error closes the progress dialog', (tester) async {
+    store.ops.add(_op);
+    sync.error = StateError('network');
+    final results = await start(tester, Future.value(session));
+    await tester.tap(find.text('Sync and log out'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Uploading reviews…'), findsNothing);
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(results, [true]);
+    expect(store.ops, hasLength(1));
+  });
+
+  testWidgets('choices use the shared app buttons', (tester) async {
+    store.ops.add(_op);
+    await start(tester, Future.value(session));
+
+    AppButtonVariant variantOf(String label) =>
+        tester.widget<AppButton>(find.widgetWithText(AppButton, label)).variant;
+    expect(variantOf('Cancel'), AppButtonVariant.ghost);
+    expect(variantOf('Sync and log out'), AppButtonVariant.primary);
+    expect(variantOf('Keep and log out'), AppButtonVariant.secondary);
+    expect(variantOf('Discard and log out'), AppButtonVariant.danger);
   });
 
   testWidgets('a failed sync asks again', (tester) async {
