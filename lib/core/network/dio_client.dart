@@ -140,6 +140,7 @@ class NetworkDioClient {
     dynamic params,
     Map<String, dynamic>? pathParams,
     Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
   }) async {
     _assertConfigured();
     url = _buildFinalUrl(url, pathParams);
@@ -148,7 +149,9 @@ class NetworkDioClient {
       final response = await _dio.patch(
         url,
         data: params,
-        options: headers == null ? null : Options(headers: headers),
+        options: headers == null && extra == null
+            ? null
+            : Options(headers: headers, extra: extra),
       );
       final res = response.data as Map<String, dynamic>?;
       if (res == null) return null;

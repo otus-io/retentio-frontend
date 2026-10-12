@@ -152,6 +152,38 @@ void main() {
     });
   });
 
+  group('401 handling', () {
+    setUp(() async {
+      await ApiService.setToken('t');
+      networkDioClient.dio.interceptors.add(ResponseNormalizeInterceptor());
+    });
+    tearDown(networkDioClient.dio.interceptors.clear);
+
+    test('sync PATCH keeps the session', () async {
+      final result = await source.patchCard('deck-1', {
+        'card_id': 'auth',
+      }, operationId: 'op-401');
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(result.httpStatus, 401);
+      expect(adapter.requests.single.extra, {
+        ResponseNormalizeInterceptor.keepSessionOn401: true,
+      });
+      expect(ApiService.authorization, 't');
+    });
+
+    test('other requests still clear the session', () async {
+      await ApiService.patch(
+        '/api/decks/{id}/card',
+        pathParams: {'id': 'deck-1'},
+        params: {'card_id': 'auth'},
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(ApiService.authorization, isNot('t'));
+    });
+  });
+
   test('ApiService.patch without headers sends no Idempotency-Key', () async {
     await ApiService.patch(
       '/api/decks/{id}/card',

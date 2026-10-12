@@ -1,3 +1,4 @@
+import 'package:retentio/core/network/interceptors/response_normalize_interceptor.dart';
 import 'package:retentio/models/api_response.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/services/apis/api_service.dart';
@@ -55,6 +56,7 @@ class StudySyncRemoteDataSource {
     pathParams: {'id': deckId},
     params: body,
     headers: headers,
+    extra: const {ResponseNormalizeInterceptor.keepSessionOn401: true},
   );
 
   Future<StudyPatchResult> patchCard(

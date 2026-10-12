@@ -103,12 +103,14 @@ class ApiService {
     Map<String, String>? pathParams,
     dynamic params,
     Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
   }) {
     return networkDioClient.patch(
       endpoint,
       pathParams: pathParams,
       params: params,
       headers: headers,
+      extra: extra,
     );
   }
 
