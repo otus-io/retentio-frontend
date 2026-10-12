@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:retentio/features/offline_learning/offline_learning_session.dart';
+import 'package:retentio/features/offline_learning/presentation/offline_study_lifecycle.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/deck/bloc/deck_study_context_cubit.dart';
 import 'package:retentio/screen/deck/bloc/deck_study_flip_card_controller_cubit.dart';
@@ -21,7 +23,13 @@ class DeckViewScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final repository = DeckStudyLegacyServiceRepository();
+    final session = OfflineLearningSessions.instance
+        .current()
+        .then<OfflineLearningSession?>((s) => s, onError: (Object _) => null);
+    final repository = offlineFirstStudyRepository(
+      session,
+      remote: DeckStudyLegacyServiceRepository(),
+    );
     final maybeDeckListCubit = _tryReadDeckListCubit(context);
     final injectedStudyBloc = _tryReadInjectedStudyBloc(context);
     return MultiBlocProvider(
@@ -57,36 +65,42 @@ class DeckViewScreen extends StatelessWidget {
           ),
         ),
       ],
-      child: Scaffold(
-        backgroundColor: scheme.surface,
-        appBar: AppBar(
-          backgroundColor: scheme.surfaceContainerHighest,
-          title: BlocBuilder<DeckStudyContextCubit, DeckStudyContextState>(
-            buildWhen: (previous, current) =>
-                previous.deck.name != current.deck.name,
-            builder: (context, state) => Text(state.deck.name),
-          ),
-          leadingWidth: 52,
-          scrolledUnderElevation: 0,
-          iconTheme: IconThemeData(size: 22, color: scheme.onSurface),
-          actionsPadding: const EdgeInsets.only(right: AppThemeTokens.spaceMd),
-          actions: [
-            BlocBuilder<DeckStudyContextCubit, DeckStudyContextState>(
+      child: OfflineStudyLifecycle(
+        session: session,
+        deckId: deck.id,
+        child: Scaffold(
+          backgroundColor: scheme.surface,
+          appBar: AppBar(
+            backgroundColor: scheme.surfaceContainerHighest,
+            title: BlocBuilder<DeckStudyContextCubit, DeckStudyContextState>(
               buildWhen: (previous, current) =>
-                  previous.deck.id != current.deck.id ||
                   previous.deck.name != current.deck.name,
-              builder: (context, state) => DeckMenu(deck: state.deck),
+              builder: (context, state) => Text(state.deck.name),
             ),
-          ],
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(1),
-            child: Divider(
-              height: 1,
-              color: scheme.outline.withValues(alpha: 0.2),
+            leadingWidth: 52,
+            scrolledUnderElevation: 0,
+            iconTheme: IconThemeData(size: 22, color: scheme.onSurface),
+            actionsPadding: const EdgeInsets.only(
+              right: AppThemeTokens.spaceMd,
+            ),
+            actions: [
+              BlocBuilder<DeckStudyContextCubit, DeckStudyContextState>(
+                buildWhen: (previous, current) =>
+                    previous.deck.id != current.deck.id ||
+                    previous.deck.name != current.deck.name,
+                builder: (context, state) => DeckMenu(deck: state.deck),
+              ),
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(1),
+              child: Divider(
+                height: 1,
+                color: scheme.outline.withValues(alpha: 0.2),
+              ),
             ),
           ),
+          body: const DeckViewBody(),
         ),
-        body: const DeckViewBody(),
       ),
     );
   }
