@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:retentio/features/offline_learning/offline_learning_session.dart';
 import 'package:retentio/features/offline_learning/presentation/offline_study_lifecycle.dart';
+import 'package:retentio/features/offline_learning/presentation/offline_sync_indicator.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/deck/bloc/deck_study_context_cubit.dart';
 import 'package:retentio/screen/deck/bloc/deck_study_flip_card_controller_cubit.dart';
@@ -84,6 +85,7 @@ class DeckViewScreen extends StatelessWidget {
               right: AppThemeTokens.spaceMd,
             ),
             actions: [
+              OfflineSyncIndicator(session: session),
               BlocBuilder<DeckStudyContextCubit, DeckStudyContextState>(
                 buildWhen: (previous, current) =>
                     previous.deck.id != current.deck.id ||

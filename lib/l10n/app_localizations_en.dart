@@ -1967,4 +1967,43 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get apiServerVerifyEmail =>
       'Could not verify email. Please try again.';
+
+  @override
+  String get offlineDeckNeedsDownload =>
+      'Connect to the internet to download this deck for offline study';
+
+  @override
+  String get offlineSyncOffline => 'Offline';
+
+  @override
+  String get offlineSyncPending => 'Pending sync';
+
+  @override
+  String get offlineSyncSyncing => 'Syncing';
+
+  @override
+  String get offlineSyncFailed => 'Sync failed';
+
+  @override
+  String get offlineSyncNeedsLogin => 'Re-login required';
+
+  @override
+  String get offlineSyncNow => 'Sync now';
+
+  @override
+  String get logoutPendingSyncMessage =>
+      'Some reviews have not been uploaded yet.';
+
+  @override
+  String get logoutSyncAndLogout => 'Sync and log out';
+
+  @override
+  String get logoutKeepAndLogout => 'Keep and log out';
+
+  @override
+  String get logoutDiscardAndLogout => 'Discard and log out';
+
+  @override
+  String get logoutSyncIncomplete =>
+      'Some reviews could not be uploaded. Keep them or discard them?';
 }

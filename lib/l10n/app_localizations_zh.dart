@@ -1854,4 +1854,40 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get apiServerVerifyEmail => '无法验证邮箱，请重试';
+
+  @override
+  String get offlineDeckNeedsDownload => '请联网下载此卡组后再离线学习';
+
+  @override
+  String get offlineSyncOffline => '离线学习';
+
+  @override
+  String get offlineSyncPending => '待同步';
+
+  @override
+  String get offlineSyncSyncing => '同步中';
+
+  @override
+  String get offlineSyncFailed => '同步失败';
+
+  @override
+  String get offlineSyncNeedsLogin => '需要重新登录';
+
+  @override
+  String get offlineSyncNow => '立即同步';
+
+  @override
+  String get logoutPendingSyncMessage => '还有学习记录没有上传。';
+
+  @override
+  String get logoutSyncAndLogout => '同步后退出';
+
+  @override
+  String get logoutKeepAndLogout => '保留并退出';
+
+  @override
+  String get logoutDiscardAndLogout => '丢弃并退出';
+
+  @override
+  String get logoutSyncIncomplete => '部分记录上传失败，保留还是丢弃？';
 }

@@ -18,7 +18,10 @@ class _FakeSync implements OfflineSyncService {
   bool fail = false;
 
   @override
-  Future<OfflineSyncResult> flush({bool force = false}) async {
+  Future<OfflineSyncResult> flush({
+    bool force = false,
+    bool retryNow = false,
+  }) async {
     calls.add(force);
     if (fail) throw StateError('offline');
     return const OfflineSyncResult(OfflineSyncStatus.synced);

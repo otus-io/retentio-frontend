@@ -1382,5 +1382,17 @@
   "authVerifyTokenInvalid": "验证链接无效或已过期",
   "apiTokenRequired": "需要令牌",
   "apiServerValidateVerifyToken": "无法验证令牌，请重试",
-  "apiServerVerifyEmail": "无法验证邮箱，请重试"
+  "apiServerVerifyEmail": "无法验证邮箱，请重试",
+  "offlineDeckNeedsDownload": "请联网下载此卡组后再离线学习",
+  "offlineSyncOffline": "离线学习",
+  "offlineSyncPending": "待同步",
+  "offlineSyncSyncing": "同步中",
+  "offlineSyncFailed": "同步失败",
+  "offlineSyncNeedsLogin": "需要重新登录",
+  "offlineSyncNow": "立即同步",
+  "logoutPendingSyncMessage": "还有学习记录没有上传。",
+  "logoutSyncAndLogout": "同步后退出",
+  "logoutKeepAndLogout": "保留并退出",
+  "logoutDiscardAndLogout": "丢弃并退出",
+  "logoutSyncIncomplete": "部分记录上传失败，保留还是丢弃？"
 }
