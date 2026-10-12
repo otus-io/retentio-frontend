@@ -139,12 +139,17 @@ class NetworkDioClient {
     String url, {
     dynamic params,
     Map<String, dynamic>? pathParams,
+    Map<String, dynamic>? headers,
   }) async {
     _assertConfigured();
     url = _buildFinalUrl(url, pathParams);
 
     try {
-      final response = await _dio.patch(url, data: params);
+      final response = await _dio.patch(
+        url,
+        data: params,
+        options: headers == null ? null : Options(headers: headers),
+      );
       final res = response.data as Map<String, dynamic>?;
       if (res == null) return null;
       return ApiResponse.fromJson(res);
