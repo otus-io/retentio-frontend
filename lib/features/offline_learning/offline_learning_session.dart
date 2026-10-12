@@ -38,7 +38,10 @@ class OfflineLearningSession {
   Future<void> removeDeck(String deckId) async {
     Set<String> mediaOf(List<OfflineFact> facts) => {
       for (final f in facts)
-        for (final e in f.entries) ...[e.audio, e.image],
+        for (final e in f.entries) ...[
+          f.mediaKey(e.audio),
+          f.mediaKey(e.image),
+        ],
     }..remove('');
     final shared = <String>{
       for (final d in await store.getDecks())

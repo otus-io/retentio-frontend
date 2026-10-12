@@ -63,6 +63,42 @@ void main() {
     expect(OfflineFact.fromJson({}).entries, isEmpty);
   });
 
+  test('OfflineFact keeps pinned media versions and keys media by them', () {
+    const fact = OfflineFact(
+      deckId: 'd1',
+      id: 'f1',
+      entries: [
+        FactEntry(audio: 'a', image: 'b', video: 'c', json: 'd'),
+        FactEntry(text: 'x'),
+      ],
+      tagIds: ['t1'],
+      mediaVersions: {'a': 3},
+    );
+    final back = OfflineFact.fromJson(fact.toJson());
+    expect(back.mediaVersions, {'a': 3});
+    expect(back.mediaIds, {'a', 'b', 'c', 'd'});
+    expect([back.mediaKey('a'), back.mediaKey('b')], ['a?v=3', 'b']);
+    final legacy = OfflineFact.fromJson({'id': 'f1'});
+    expect(legacy.mediaVersions, isNull);
+    expect(legacy.toJson().containsKey('media_versions'), isFalse);
+    expect(legacy.mediaKey('a'), 'a');
+    final mixed = OfflineFact.fromJson({
+      'media_versions': {'a': 1, 'b': 'x'},
+    });
+    expect(mixed.mediaVersions, {'a': 1});
+    final unpinned = fact.withMediaVersions(null);
+    expect(
+      [unpinned.deckId, unpinned.id, unpinned.tagIds],
+      [
+        'd1',
+        'f1',
+        ['t1'],
+      ],
+    );
+    expect(unpinned.entries, fact.entries);
+    expect(unpinned.mediaVersions, isNull);
+  });
+
   test('OfflineDeck round-trips and reports readiness', () {
     const deck = OfflineDeck(id: 'd1', name: 'N5', fields: ['Q', 'A']);
     expect(deck.isReady, isFalse);

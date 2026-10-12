@@ -16,6 +16,7 @@ import 'package:retentio/utils/media_client_id.dart';
 /// Deals and records cards from the local store for downloaded decks and falls
 /// back to [remote] otherwise. Whether a deck is local is decided once per
 /// deck, so a download finishing mid-session does not switch sources.
+/// [remoteMediaUrl] receives an [OfflineFact.mediaKey] (`id` or `id?v=N`).
 class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
   OfflineFirstDeckStudyRepository({
     required Future<OfflineLearningStore?> store,
@@ -109,7 +110,9 @@ class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
     final paths = <String, String>{};
     for (final e in fact.entries) {
       for (final id in [e.audio, e.image, e.video, e.json]) {
-        final path = id.isEmpty ? null : await store.getMediaPath(id);
+        final path = id.isEmpty
+            ? null
+            : await store.getMediaPath(fact.mediaKey(id));
         if (path != null && await File(path).exists()) paths[id] = path;
       }
     }
@@ -118,7 +121,7 @@ class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
       fact: fact,
       deckFields: deck.fields,
       urgency: urgency,
-      resolveMedia: (id) => paths[id] ?? _remoteMediaUrl(id),
+      resolveMedia: (id) => paths[id] ?? _remoteMediaUrl(fact.mediaKey(id)),
     );
   }
 

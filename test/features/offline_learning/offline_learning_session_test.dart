@@ -258,6 +258,43 @@ void main() {
     expect(await store.getMediaPath('shared'), shared.path);
   });
 
+  test('removeDeck deletes pinned media but keeps the unpinned copy', () async {
+    final session = (await OfflineLearningSessions(
+      readUsername: () async => 'alice',
+      documentsDir: () async => dir.path,
+    ).current())!;
+    final store = session.store;
+    final pinned = File('${session.mediaRootDir}/d1/aud_v=2')
+      ..createSync(recursive: true);
+    final owned = File('${session.mediaRootDir}/d2/aud')
+      ..createSync(recursive: true);
+    await store.putMediaPath('aud?v=2', pinned.path);
+    await store.putMediaPath('aud', owned.path);
+    for (final id in ['d1', 'd2']) {
+      await store.putDeck(OfflineDeck(id: id, name: id, fields: const []));
+    }
+    await store.putFacts(const [
+      OfflineFact(
+        deckId: 'd1',
+        id: 'f1',
+        entries: [FactEntry(audio: 'aud')],
+        mediaVersions: {'aud': 2},
+      ),
+      OfflineFact(
+        deckId: 'd2',
+        id: 'f2',
+        entries: [FactEntry(audio: 'aud')],
+      ),
+    ]);
+
+    await session.removeDeck('d1');
+
+    expect(pinned.existsSync(), isFalse);
+    expect(await store.getMediaPath('aud?v=2'), isNull);
+    expect(owned.existsSync(), isTrue);
+    expect(await store.getMediaPath('aud'), owned.path);
+  });
+
   test('switching accounts opens a separate session', () async {
     var name = 'alice';
     final sessions = OfflineLearningSessions(readUsername: () async => name);

@@ -182,6 +182,32 @@ void main() {
     expect(result.refreshedDueCardsCount, 1);
   });
 
+  test('imported deck resolves media by pinned version', () async {
+    await seedReadyDeck();
+    await store.putFacts(const [
+      OfflineFact(
+        deckId: 'd1',
+        id: 'f1',
+        entries: [
+          FactEntry(text: '猫', audio: 'aud1'),
+          FactEntry(image: 'img1', video: 'vid1'),
+        ],
+        mediaVersions: {'aud1': 5, 'img1': 3, 'vid1': 2},
+      ),
+    ]);
+    final pinned = File('${dir.path}/aud1_v5.mp3')..createSync();
+    await store.putMediaPath('aud1?v=5', pinned.path);
+    await store.putCards([_card('c1', 'f1', due: 900)]);
+
+    final card = (await repo().loadNextDueCard(deckId: 'd1')).cardDetail!.card;
+
+    expect(card.front.single.items.last.value, pinned.path);
+    expect(card.back.single.items.map((i) => i.value), [
+      'https://host/api/media/img1?v=3',
+      'https://host/api/media/vid1?v=2',
+    ]);
+  });
+
   test('tag filter keeps only cards of tagged facts', () async {
     await seedReadyDeck();
     await store.putCards([_card('c1', 'f1'), _card('c2', 'f2', due: 1100)]);
