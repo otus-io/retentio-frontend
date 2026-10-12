@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retentio/models/tag.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_card.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_deck.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_fact.dart';
@@ -70,8 +71,10 @@ void main() {
       lastSyncedAt: 2,
       totalReviews: 3,
       totalReviewsToday: 4,
+      tags: const [Tag(id: 't1', name: 'N5', description: '')],
     );
     expect(ready.isReady, isTrue);
+    expect(OfflineDeck.fromJson(ready.toJson()).tags.single.name, 'N5');
     expect(OfflineDeck.fromJson(ready.toJson()).toJson(), ready.toJson());
     expect(deck.copyWith().toJson(), deck.toJson());
     expect(OfflineDeck.fromJson({}).fields, isEmpty);

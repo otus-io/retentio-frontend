@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retentio/models/tag.dart';
 import 'package:retentio/core/network/network.dart';
 import 'package:retentio/features/offline_learning/data/offline_package_downloader.dart';
 import 'package:retentio/features/offline_learning/data/remote_offline_package_data_source.dart';
@@ -207,6 +208,7 @@ void main() {
         totalReviewsToday: 5,
         downloadedAt: 10,
         lastSyncedAt: 20,
+        tags: [Tag(id: 't1', name: 'N5', description: '')],
       );
       store.cards['c1'] = _card(
         'c1',
@@ -227,6 +229,7 @@ void main() {
       expect(deck.lastSyncedAt, 20);
       expect(deck.totalReviews, 50);
       expect(deck.totalReviewsToday, 5);
+      expect(deck.tags.single.id, 't1');
     },
   );
 

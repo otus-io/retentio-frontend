@@ -155,9 +155,24 @@ class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
     return true;
   }
 
+  /// Downloaded decks cache the tags loaded online and serve them offline. An
+  /// empty online result keeps the cache (the remote returns [] on errors).
   @override
-  Future<List<Tag>> loadDeckTags({required String deckId}) =>
-      _remote.loadDeckTags(deckId: deckId);
+  Future<List<Tag>> loadDeckTags({required String deckId}) async {
+    if (await _localDeck(deckId) == null) {
+      return _remote.loadDeckTags(deckId: deckId);
+    }
+    final store = (await _store)!;
+    if (!await _isOnline()) {
+      return (await store.getDeck(deckId))?.tags ?? const [];
+    }
+    final tags = await _remote.loadDeckTags(deckId: deckId);
+    final latest = await store.getDeck(deckId);
+    if (latest != null && tags.isNotEmpty) {
+      await store.putDeck(latest.copyWith(tags: tags));
+    }
+    return tags;
+  }
 
   @override
   Future<bool> deleteCard({

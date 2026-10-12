@@ -72,6 +72,7 @@ class OfflinePackageDownloader {
           local?.totalReviewsToday ?? remote.stats.totalReviewsToday,
       downloadedAt: local?.downloadedAt ?? 0,
       lastSyncedAt: local?.lastSyncedAt ?? 0,
+      tags: local?.tags ?? const [],
     );
   }
 

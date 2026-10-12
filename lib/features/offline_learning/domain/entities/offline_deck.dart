@@ -1,3 +1,5 @@
+import 'package:retentio/models/tag.dart';
+
 /// Local deck metadata. A deck is study-ready only when [downloadedAt] > 0.
 class OfflineDeck {
   const OfflineDeck({
@@ -11,6 +13,7 @@ class OfflineDeck {
     this.totalReviewsToday = 0,
     this.downloadedAt = 0,
     this.lastSyncedAt = 0,
+    this.tags = const [],
   });
 
   final String id;
@@ -26,6 +29,9 @@ class OfflineDeck {
   final int downloadedAt;
   final int lastSyncedAt;
 
+  /// Fact tags of this deck, cached for the offline tag filter.
+  final List<Tag> tags;
+
   bool get isReady => downloadedAt > 0;
 
   OfflineDeck copyWith({
@@ -33,6 +39,7 @@ class OfflineDeck {
     int? totalReviewsToday,
     int? downloadedAt,
     int? lastSyncedAt,
+    List<Tag>? tags,
   }) => OfflineDeck(
     id: id,
     name: name,
@@ -44,6 +51,7 @@ class OfflineDeck {
     totalReviewsToday: totalReviewsToday ?? this.totalReviewsToday,
     downloadedAt: downloadedAt ?? this.downloadedAt,
     lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+    tags: tags ?? this.tags,
   );
 
   factory OfflineDeck.fromJson(Map<String, dynamic> json) => OfflineDeck(
@@ -57,6 +65,10 @@ class OfflineDeck {
     totalReviewsToday: (json['total_reviews_today'] as num?)?.toInt() ?? 0,
     downloadedAt: (json['downloaded_at'] as num?)?.toInt() ?? 0,
     lastSyncedAt: (json['last_synced_at'] as num?)?.toInt() ?? 0,
+    tags: [
+      for (final t in (json['tags'] as List? ?? const []))
+        Tag.fromJson(Map<String, dynamic>.from(t as Map)),
+    ],
   );
 
   Map<String, dynamic> toJson() => {
@@ -70,5 +82,6 @@ class OfflineDeck {
     'total_reviews_today': totalReviewsToday,
     'downloaded_at': downloadedAt,
     'last_synced_at': lastSyncedAt,
+    'tags': [for (final t in tags) t.toJson()],
   };
 }

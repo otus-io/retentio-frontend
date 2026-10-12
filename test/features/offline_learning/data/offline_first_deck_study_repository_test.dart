@@ -297,4 +297,15 @@ void main() {
     final tags = await repo().loadDeckTags(deckId: 'd1');
     expect(tags.single.id, 't1');
   });
+
+  test('downloaded decks cache tags online and serve them offline', () async {
+    await seedReadyDeck();
+    final r = repo();
+
+    expect((await r.loadDeckTags(deckId: 'd1')).single.id, 't1');
+    expect((await store.getDeck('d1'))!.tags.single.name, 'N5');
+
+    online = false;
+    expect((await r.loadDeckTags(deckId: 'd1')).single.id, 't1');
+  });
 }
