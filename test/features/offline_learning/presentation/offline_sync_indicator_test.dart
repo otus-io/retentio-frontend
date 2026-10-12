@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/features/offline_learning/data/offline_package_downloader.dart';
@@ -34,6 +36,26 @@ class _FakeSync implements OfflineSyncService {
     if (fail) throw StateError('disk');
     return const OfflineSyncResult(OfflineSyncStatus.synced);
   }
+
+  final calls = <String>[];
+  Completer<int>? countGate;
+
+  @override
+  Future<int> failedCount() async {
+    calls.add('count');
+    await countGate?.future;
+    return 2;
+  }
+
+  @override
+  Future<OfflineSyncResult> retryFailed() async {
+    calls.add('retry');
+    if (fail) throw StateError('disk');
+    return const OfflineSyncResult(OfflineSyncStatus.synced);
+  }
+
+  @override
+  Future<void> discardFailed() async => calls.add('discard');
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -108,6 +130,71 @@ void main() {
     expect(button.size, AppButtonSize.sm);
     expect(button.variant, AppButtonVariant.ghost);
     expect(button.leading, isA<Icon>());
+  });
+
+  group('failed phase', () {
+    Future<void> openDialog(WidgetTester tester) async {
+      await pump(tester);
+      sync.phase.value = OfflineSyncPhase.failed;
+      await tester.pump();
+      await tester.tap(find.text('Sync failed'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('shows how many reviews were rejected; cancel keeps them', (
+      tester,
+    ) async {
+      await openDialog(tester);
+
+      expect(find.text('The server rejected 2 reviews.'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(sync.calls, ['count']);
+      expect(sync.retries, isEmpty);
+    });
+
+    testWidgets('retry sends the rejected reviews again', (tester) async {
+      await openDialog(tester);
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(sync.calls, ['count', 'retry']);
+    });
+
+    testWidgets('discard removes the rejected reviews', (tester) async {
+      await openDialog(tester);
+      await tester.tap(find.text('Discard'));
+      await tester.pumpAndSettle();
+
+      expect(sync.calls, ['count', 'discard']);
+    });
+
+    testWidgets('a failing retry is logged, not thrown', (tester) async {
+      sync.fail = true;
+      await openDialog(tester);
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+
+      expect(sync.calls, ['count', 'retry']);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('no dialog once the indicator is gone', (tester) async {
+      sync.countGate = Completer<int>();
+      await pump(tester);
+      sync.phase.value = OfflineSyncPhase.failed;
+      await tester.pump();
+      await tester.tap(find.text('Sync failed'));
+      await tester.pumpWidget(const SizedBox());
+      sync.countGate!.complete(0);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(sync.calls, ['count']);
+    });
   });
 
   testWidgets('shows nothing without a session', (tester) async {

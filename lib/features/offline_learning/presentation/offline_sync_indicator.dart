@@ -6,7 +6,8 @@ import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/utils/log.dart';
 import 'package:retentio/widgets/app_button.dart';
 
-/// Upload queue status; tapping retries immediately. Hidden once synced.
+/// Upload queue status; tapping retries immediately, or asks what to do with
+/// reviews the server rejected. Hidden once synced.
 class OfflineSyncIndicator extends StatelessWidget {
   const OfflineSyncIndicator({super.key, required this.session});
 
@@ -57,19 +58,59 @@ class OfflineSyncIndicator extends StatelessWidget {
     return Tooltip(
       message: loc.offlineSyncNow,
       child: AppButton(
-        onPressed: phase == OfflineSyncPhase.syncing
-            ? null
-            : () => sync
-                  .flush(retryNow: true)
-                  .then<void>(
-                    (_) {},
-                    onError: (Object e) => logger.w('manual sync: $e'),
-                  ),
+        onPressed: switch (phase) {
+          OfflineSyncPhase.syncing => null,
+          OfflineSyncPhase.failed => () => _run(
+            _showRejected(context, sync),
+            'rejected reviews',
+          ),
+          _ => () => _run(sync.flush(retryNow: true), 'manual sync'),
+        },
         variant: AppButtonVariant.ghost,
         size: AppButtonSize.sm,
         leading: Icon(icon, size: 18),
         label: label,
       ),
     );
+  }
+
+  void _run(Future<Object?> task, String name) =>
+      task.then<void>((_) {}, onError: (Object e) => logger.w('$name: $e'));
+
+  Future<void> _showRejected(
+    BuildContext context,
+    OfflineSyncService sync,
+  ) async {
+    final count = await sync.failedCount();
+    if (!context.mounted) return;
+    final loc = AppLocalizations.of(context)!;
+    final action = await showDialog<Future<Object?> Function()>(
+      context: context,
+      builder: (dialogContext) {
+        void close(Future<Object?> Function()? action) =>
+            Navigator.of(dialogContext).pop(action);
+        return AlertDialog(
+          title: Text(loc.offlineSyncRejectedTitle),
+          content: Text(loc.offlineSyncRejectedMessage(count)),
+          actions: [
+            AppButton(
+              label: loc.cancel,
+              onPressed: () => close(null),
+              variant: AppButtonVariant.ghost,
+            ),
+            AppButton(
+              label: loc.offlineSyncDiscardRejected,
+              onPressed: () => close(sync.discardFailed),
+              variant: AppButtonVariant.secondary,
+            ),
+            AppButton(
+              label: loc.retry,
+              onPressed: () => close(sync.retryFailed),
+            ),
+          ],
+        );
+      },
+    );
+    await action?.call();
   }
 }

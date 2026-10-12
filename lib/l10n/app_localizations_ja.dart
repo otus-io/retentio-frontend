@@ -1894,4 +1894,21 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get logoutSyncIncomplete => '一部の記録をアップロードできませんでした。保持しますか、破棄しますか？';
+
+  @override
+  String get offlineSyncRejectedTitle => '学習記録が未アップロードです';
+
+  @override
+  String offlineSyncRejectedMessage(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'サーバーが$count件の学習記録を拒否しました。',
+      one: 'サーバーが1件の学習記録を拒否しました。',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get offlineSyncDiscardRejected => '破棄';
 }

@@ -1890,4 +1890,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get logoutSyncIncomplete => '部分记录上传失败，保留还是丢弃？';
+
+  @override
+  String get offlineSyncRejectedTitle => '学习记录未上传';
+
+  @override
+  String offlineSyncRejectedMessage(int count) {
+    return '服务器拒绝了 $count 条学习记录。';
+  }
+
+  @override
+  String get offlineSyncDiscardRejected => '丢弃';
 }

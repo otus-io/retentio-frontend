@@ -3609,6 +3609,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Some reviews could not be uploaded. Keep them or discard them?'**
   String get logoutSyncIncomplete;
+
+  /// Title of the dialog for reviews the server rejected
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews not uploaded'**
+  String get offlineSyncRejectedTitle;
+
+  /// Dialog message: number of queued reviews the server rejected
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The server rejected 1 review.} other{The server rejected {count} reviews.}}'**
+  String offlineSyncRejectedMessage(int count);
+
+  /// Dialog action: delete the reviews the server rejected
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get offlineSyncDiscardRejected;
 }
 
 class _AppLocalizationsDelegate

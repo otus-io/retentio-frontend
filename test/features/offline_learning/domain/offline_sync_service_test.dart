@@ -310,6 +310,62 @@ void main() {
     expect(remote.patched, ['notDue', 'late']);
   });
 
+  group('failed ops', () {
+    setUp(
+      () => queue([
+        _review(
+          'a',
+          1,
+          attempts: 9,
+          httpAttempts: maxAttempts,
+          nextRetryAt: _now + 60,
+          status: StudySyncStatus.failed,
+        ),
+        _review('b', 2, cardId: 'c2', nextRetryAt: _now + 60),
+      ]),
+    );
+
+    test('failedCount counts only failed ops', () async {
+      expect(await service().failedCount(), 1);
+    });
+
+    test('retryFailed resets failed ops and sends them now', () async {
+      final sync = service();
+
+      final result = await sync.retryFailed();
+
+      expect(result.sent, 2);
+      expect(remote.patched, ['a', 'b']);
+      expect(store.ops, isEmpty);
+      expect(sync.phase.value, OfflineSyncPhase.synced);
+    });
+
+    test('retryFailed restarts the retry budget', () async {
+      remote.statusByOp['a'] = 500;
+
+      await service().retryFailed();
+
+      final op = store.ops['a']!;
+      expect(op.status, StudySyncStatus.pending);
+      expect(op.attempts, 1);
+      expect(op.httpAttempts, 1);
+      expect(op.nextRetryAt, _now + 30);
+    });
+
+    test('discardFailed removes failed ops and recomputes phase', () async {
+      final sync = service();
+      online = false;
+      await sync.flush();
+      expect(sync.phase.value, OfflineSyncPhase.failed);
+
+      await sync.discardFailed();
+
+      expect(store.ops.keys, ['b']);
+      expect(sync.phase.value, OfflineSyncPhase.offline);
+      expect(remote.patched, isEmpty);
+    });
+  });
+
   test('keeps newer local schedule while the card is still queued', () async {
     store.cards['c1'] = _card('c1').copyWith(lastReview: 950, dueDate: 2000);
     queue([_review('o1', 1), _review('o2', 2)]);

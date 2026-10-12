@@ -2006,4 +2006,21 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get logoutSyncIncomplete =>
       'Some reviews could not be uploaded. Keep them or discard them?';
+
+  @override
+  String get offlineSyncRejectedTitle => 'Reviews not uploaded';
+
+  @override
+  String offlineSyncRejectedMessage(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'The server rejected $count reviews.',
+      one: 'The server rejected 1 review.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get offlineSyncDiscardRejected => 'Discard';
 }

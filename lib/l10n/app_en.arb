@@ -2326,5 +2326,18 @@
   "logoutSyncIncomplete": "Some reviews could not be uploaded. Keep them or discard them?",
   "@logoutSyncIncomplete": {
     "description": "Logout dialog after a failed upload"
+  },
+  "offlineSyncRejectedTitle": "Reviews not uploaded",
+  "@offlineSyncRejectedTitle": {
+    "description": "Title of the dialog for reviews the server rejected"
+  },
+  "offlineSyncRejectedMessage": "{count, plural, =1{The server rejected 1 review.} other{The server rejected {count} reviews.}}",
+  "@offlineSyncRejectedMessage": {
+    "description": "Dialog message: number of queued reviews the server rejected",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "offlineSyncDiscardRejected": "Discard",
+  "@offlineSyncDiscardRejected": {
+    "description": "Dialog action: delete the reviews the server rejected"
   }
 }

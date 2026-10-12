@@ -76,6 +76,40 @@ class OfflineSyncService {
     ).whenComplete(() => _inFlight = null);
   }
 
+  /// Ops the server rejected for good (400 or [maxHttpAttempts]).
+  Future<int> failedCount() async => (await _failedOperations()).length;
+
+  /// Puts rejected ops back in the queue and uploads immediately.
+  Future<OfflineSyncResult> retryFailed() async {
+    for (final op in await _failedOperations()) {
+      await _store.updateOperation(
+        op.copyWith(
+          status: StudySyncStatus.pending,
+          attempts: 0,
+          httpAttempts: 0,
+          nextRetryAt: 0,
+        ),
+      );
+    }
+    return flush(retryNow: true);
+  }
+
+  /// Drops rejected ops; their local card changes are kept.
+  Future<void> discardFailed() async {
+    for (final op in await _failedOperations()) {
+      await _store.removeOperation(op.operationId);
+    }
+    phase.value = await _phaseAfter(
+      const OfflineSyncResult(OfflineSyncStatus.skipped),
+      await _isOnline(),
+    );
+  }
+
+  Future<List<StudySyncOperation>> _failedOperations() async =>
+      (await _store.getOperations())
+          .where((op) => op.status == StudySyncStatus.failed)
+          .toList();
+
   Future<OfflineSyncResult> _flushAndReport(bool force, bool retryNow) async {
     try {
       final online = await _isOnline();
