@@ -2339,5 +2339,13 @@
   "offlineSyncDiscardRejected": "Discard",
   "@offlineSyncDiscardRejected": {
     "description": "Dialog action: delete the reviews the server rejected"
+  },
+  "deckAvailableOffline": "Available offline",
+  "@deckAvailableOffline": {
+    "description": "Tooltip for the deck list marker of decks downloaded for offline study"
+  },
+  "logoutSyncInProgress": "Uploading reviews…",
+  "@logoutSyncInProgress": {
+    "description": "Progress dialog while unsynced reviews upload before logout"
   }
 }

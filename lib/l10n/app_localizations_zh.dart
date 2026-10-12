@@ -1901,4 +1901,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get offlineSyncDiscardRejected => '丢弃';
+
+  @override
+  String get deckAvailableOffline => '可离线学习';
+
+  @override
+  String get logoutSyncInProgress => '正在上传学习记录…';
 }

@@ -1397,5 +1397,7 @@
   "logoutSyncIncomplete": "部分记录上传失败，保留还是丢弃？",
   "offlineSyncRejectedTitle": "学习记录未上传",
   "offlineSyncRejectedMessage": "服务器拒绝了 {count} 条学习记录。",
-  "offlineSyncDiscardRejected": "丢弃"
+  "offlineSyncDiscardRejected": "丢弃",
+  "deckAvailableOffline": "可离线学习",
+  "logoutSyncInProgress": "正在上传学习记录…"
 }

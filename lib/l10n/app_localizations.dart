@@ -3627,6 +3627,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Discard'**
   String get offlineSyncDiscardRejected;
+
+  /// Tooltip for the deck list marker of decks downloaded for offline study
+  ///
+  /// In en, this message translates to:
+  /// **'Available offline'**
+  String get deckAvailableOffline;
+
+  /// Progress dialog while unsynced reviews upload before logout
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading reviews…'**
+  String get logoutSyncInProgress;
 }
 
 class _AppLocalizationsDelegate

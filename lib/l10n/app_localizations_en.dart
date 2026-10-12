@@ -2023,4 +2023,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineSyncDiscardRejected => 'Discard';
+
+  @override
+  String get deckAvailableOffline => 'Available offline';
+
+  @override
+  String get logoutSyncInProgress => 'Uploading reviews…';
 }

@@ -587,5 +587,7 @@
   "logoutSyncIncomplete": "一部の記録をアップロードできませんでした。保持しますか、破棄しますか？",
   "offlineSyncRejectedTitle": "学習記録が未アップロードです",
   "offlineSyncRejectedMessage": "{count, plural, =1{サーバーが1件の学習記録を拒否しました。} other{サーバーが{count}件の学習記録を拒否しました。}}",
-  "offlineSyncDiscardRejected": "破棄"
+  "offlineSyncDiscardRejected": "破棄",
+  "deckAvailableOffline": "オフラインで利用可能",
+  "logoutSyncInProgress": "学習記録をアップロード中…"
 }

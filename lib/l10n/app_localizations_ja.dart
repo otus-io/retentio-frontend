@@ -1911,4 +1911,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get offlineSyncDiscardRejected => '破棄';
+
+  @override
+  String get deckAvailableOffline => 'オフラインで利用可能';
+
+  @override
+  String get logoutSyncInProgress => '学習記録をアップロード中…';
 }
