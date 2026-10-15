@@ -21,15 +21,21 @@ class ContributionsInboxSheet extends StatefulWidget {
       _ContributionsInboxSheetState();
 }
 
+bool contributionCanAccept(DeckContribution c) => c.type != 'report';
+
 class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
   List<DeckContribution>? _items;
   String? _error;
   bool _loading = true;
   bool _loadingMore = false;
   bool _hasMore = false;
+  bool _acceptingAll = false;
   String? _busyId;
 
   static const _pageSize = 50;
+
+  List<DeckContribution> get _acceptable =>
+      (_items ?? const []).where(contributionCanAccept).toList();
 
   @override
   void initState() {
@@ -99,6 +105,73 @@ class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
     }
   }
 
+  Future<void> _acceptAll() async {
+    final loc = AppLocalizations.of(context)!;
+    final toAccept = _acceptable;
+    if (toAccept.isEmpty || _acceptingAll || _busyId != null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(loc.contributionsAcceptAllConfirmTitle),
+        content: Text(
+          loc.contributionsAcceptAllConfirmMessage(toAccept.length),
+        ),
+        actions: [
+          AppButton(
+            label: loc.cancel,
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            variant: AppButtonVariant.ghost,
+          ),
+          AppButton(
+            label: loc.contributionsAccept,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _acceptingAll = true);
+    var sent = 0;
+    var failed = 0;
+    String? lastError;
+    try {
+      for (final c in toAccept) {
+        try {
+          await DeckCatalogService.of.acceptContribution(
+            sourceDeckId: widget.sourceDeckId,
+            contributionId: c.id,
+          );
+          sent += 1;
+        } catch (e) {
+          failed += 1;
+          lastError = rawApiErrorMessage(e);
+        }
+      }
+      if (!mounted) return;
+      if (failed == 0) {
+        AppToast.success(context, loc.contributionsAcceptAllSuccess(sent));
+      } else if (sent > 0) {
+        AppToast.error(
+          context,
+          loc.contributionsAcceptAllPartial(sent, failed),
+        );
+      } else {
+        AppToast.error(
+          context,
+          ApiErrorMessages.resolve(
+            lastError ?? 'accept_contribution_failed',
+            loc,
+          ),
+        );
+      }
+      await _load();
+    } finally {
+      if (mounted) setState(() => _acceptingAll = false);
+    }
+  }
+
   Future<void> _setStatus(DeckContribution c, String status) async {
     final loc = AppLocalizations.of(context)!;
     setState(() => _busyId = c.id);
@@ -163,92 +236,119 @@ class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
       );
     }
 
-    return ListView.separated(
-      shrinkWrap: true,
-      itemCount: items.length + (_hasMore ? 1 : 0),
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (_, i) {
-        if (i >= items.length) {
-          return AppButton(
-            label: loc.contributionsLoadMore,
+    final acceptable = _acceptable;
+    final rowBusy = _busyId != null || _acceptingAll;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (acceptable.isNotEmpty) ...[
+          AppButton(
+            label: loc.contributionsAcceptAll(acceptable.length),
             size: AppButtonSize.sm,
-            variant: AppButtonVariant.secondary,
-            isLoading: _loadingMore,
-            onPressed: _loadingMore ? null : () => _load(append: true),
-          );
-        }
-        final c = items[i];
-        final busy = _busyId == c.id;
-        final canAccept = c.type != 'report';
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            border: Border.all(color: scheme.outline.withValues(alpha: 0.2)),
-            borderRadius: BorderRadius.circular(12),
+            isLoading: _acceptingAll,
+            onPressed: rowBusy ? null : _acceptAll,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                c.type.replaceAll('_', ' '),
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
+          const SizedBox(height: 12),
+        ],
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: items.length + (_hasMore ? 1 : 0),
+          separatorBuilder: (_, _) => const SizedBox(height: 8),
+          itemBuilder: (_, i) {
+            if (i >= items.length) {
+              return AppButton(
+                label: loc.contributionsLoadMore,
+                size: AppButtonSize.sm,
+                variant: AppButtonVariant.secondary,
+                isLoading: _loadingMore,
+                onPressed: _loadingMore || _acceptingAll
+                    ? null
+                    : () => _load(append: true),
+              );
+            }
+            final c = items[i];
+            final busy = _busyId == c.id;
+            final canAccept = contributionCanAccept(c);
+            return Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: scheme.outline.withValues(alpha: 0.2),
                 ),
+                borderRadius: BorderRadius.circular(12),
               ),
-              Text(
-                [
-                  if (c.reporter.isNotEmpty) c.reporter,
-                  if (c.factId.isNotEmpty) c.factId,
-                  if (c.sourceVersion > 0) 'v${c.sourceVersion}',
-                ].join(' · '),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-              if (c.message.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(c.message, style: theme.textTheme.bodyMedium),
-              ],
-              if (c.hasEntryDiff || c.hasTagDiff || c.hasFieldRename) ...[
-                const SizedBox(height: 10),
-                _ContributionDiffBlock(contribution: c),
-              ],
-              const SizedBox(height: 10),
-              Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (canAccept)
-                    Expanded(
-                      child: AppButton(
-                        label: loc.contributionsAccept,
-                        size: AppButtonSize.sm,
-                        isLoading: busy,
-                        onPressed: busy ? null : () => _accept(c),
-                      ),
-                    ),
-                  if (canAccept) const SizedBox(width: 8),
-                  Expanded(
-                    child: AppButton(
-                      label: loc.contributionsDismiss,
-                      size: AppButtonSize.sm,
-                      variant: AppButtonVariant.secondary,
-                      onPressed: busy ? null : () => _setStatus(c, 'dismissed'),
+                  Text(
+                    c.type.replaceAll('_', ' '),
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: AppButton(
-                      label: loc.contributionsResolve,
-                      size: AppButtonSize.sm,
-                      variant: AppButtonVariant.ghost,
-                      onPressed: busy ? null : () => _setStatus(c, 'resolved'),
+                  Text(
+                    [
+                      if (c.reporter.isNotEmpty) c.reporter,
+                      if (c.factId.isNotEmpty) c.factId,
+                      if (c.sourceVersion > 0) 'v${c.sourceVersion}',
+                    ].join(' · '),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
                     ),
+                  ),
+                  if (c.message.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(c.message, style: theme.textTheme.bodyMedium),
+                  ],
+                  if (c.hasEntryDiff || c.hasTagDiff || c.hasFieldRename) ...[
+                    const SizedBox(height: 10),
+                    _ContributionDiffBlock(contribution: c),
+                  ],
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      if (canAccept)
+                        Expanded(
+                          child: AppButton(
+                            label: loc.contributionsAccept,
+                            size: AppButtonSize.sm,
+                            isLoading: busy,
+                            onPressed: rowBusy ? null : () => _accept(c),
+                          ),
+                        ),
+                      if (canAccept) const SizedBox(width: 8),
+                      Expanded(
+                        child: AppButton(
+                          label: loc.contributionsDismiss,
+                          size: AppButtonSize.sm,
+                          variant: AppButtonVariant.secondary,
+                          onPressed: rowBusy
+                              ? null
+                              : () => _setStatus(c, 'dismissed'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: AppButton(
+                          label: loc.contributionsResolve,
+                          size: AppButtonSize.sm,
+                          variant: AppButtonVariant.ghost,
+                          onPressed: rowBusy
+                              ? null
+                              : () => _setStatus(c, 'resolved'),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-        );
-      },
+            );
+          },
+        ),
+      ],
     );
   }
 }

@@ -6,7 +6,6 @@ import 'package:retentio/models/fact.dart';
 import 'package:retentio/models/fact_quality.dart';
 import 'package:retentio/screen/qa/qa_column_prefs.dart';
 import 'package:retentio/services/apis/card_service.dart';
-import 'package:retentio/services/apis/deck_catalog_service.dart';
 import 'package:retentio/services/apis/fact_quality_service.dart';
 
 /// Note attached to `fact_edit` contributions sent from QA mode.
@@ -295,36 +294,21 @@ class QaModeCubit extends Cubit<QaModeState> {
     return null;
   }
 
+  /// Reloads the current fact after [FactEdit] auto-submits the contribution.
+  ///
+  /// Does not use [goTo] — that method no-ops while [QaModeState.busy] is true.
+  /// [entryIndex] is kept for call-site compatibility; FactEdit sends it.
+  // ignore: avoid_unused_parameter
   Future<String?> submitEdit({int? entryIndex}) async {
     final factId = state.factId;
     if (factId == null) return null;
-    emit(state.copyWith(busy: true));
-    String? error;
-    try {
-      final contributionId = await DeckCatalogService.of
-          .submitFactEditContribution(
-            importDeckId: deckId,
-            factId: factId,
-            message: kQaEditMessage,
-            entryIndex: entryIndex,
-          );
-      await PendingContributionsStore.of.markAsSent(
-        deckId,
-        PendingContributionsStore.of.itemId(
-          PendingContributionKind.edit,
-          factId: factId,
-        ),
-        contributionId: contributionId,
-        message: kQaEditMessage,
-      );
-    } catch (e) {
-      error = rawApiErrorMessage(e);
-    }
-    if (isClosed) return error;
-    emit(state.copyWith(busy: false));
-    await goTo(state.index);
+    if (isClosed) return null;
+    emit(state.copyWith(busy: true, loading: true));
+    await _loadCurrentFact();
     await _refreshHeader();
-    return error;
+    if (isClosed) return null;
+    emit(state.copyWith(busy: false));
+    return null;
   }
 
   Future<void> _loadCurrentFact() async {

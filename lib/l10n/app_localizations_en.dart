@@ -1628,6 +1628,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contributionsAccept => 'Accept';
 
   @override
+  String contributionsAcceptAll(int count) {
+    return 'Accept all ($count)';
+  }
+
+  @override
+  String get contributionsAcceptAllConfirmTitle => 'Accept all?';
+
+  @override
+  String contributionsAcceptAllConfirmMessage(int count) {
+    return 'Accept $count contributions into your working copy? Reports are skipped.';
+  }
+
+  @override
+  String contributionsAcceptAllSuccess(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Accepted $count contributions',
+      one: 'Accepted 1 contribution',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String contributionsAcceptAllPartial(int sent, int failed) {
+    return 'Accepted $sent; $failed failed';
+  }
+
+  @override
   String get contributionsDismiss => 'Dismiss';
 
   @override

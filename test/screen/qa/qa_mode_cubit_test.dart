@@ -438,50 +438,55 @@ void main() {
   });
 
   group('submitEdit', () {
-    test('sends the overlay as fact_edit and clears the outbox row', () async {
+    test('reloads overlay text and counters after FactEdit', () async {
+      final entries = <String, List<Map<String, dynamic>>>{
+        'fact-1': [
+          {'text': 'headword', 'audio': 'aud-1'},
+          {'text': 'meaning'},
+        ],
+        'fact-2': [
+          {'text': 'second'},
+        ],
+      };
+      adapter = FakeQaApiAdapter(
+        factIds: const ['fact-1', 'fact-2'],
+        entriesByFactId: entries,
+      );
+      networkDioClient.dio.httpClientAdapter = adapter;
+
       final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
       await startWalk(cubit);
+      expect(cubit.state.entries.first.text, 'headword');
+
       await PendingContributionsStore.of.upsert(
         deckId: 'imp-1',
         kind: PendingContributionKind.edit,
         factId: 'fact-1',
-        preview: 'headword',
+        preview: 'updated headword',
       );
+      await PendingContributionsStore.of.markAsSent(
+        'imp-1',
+        PendingContributionsStore.of.itemId(
+          PendingContributionKind.edit,
+          factId: 'fact-1',
+        ),
+        contributionId: 'cont-1',
+        message: kQaEditMessage,
+      );
+      // Simulate overlay already saved by FactEdit before onSaved refresh.
+      entries['fact-1'] = [
+        {'text': 'updated headword', 'audio': 'aud-1'},
+        {'text': 'meaning'},
+      ];
 
       final error = await cubit.submitEdit(entryIndex: 0);
 
       expect(error, isNull);
-      expect(adapter.contributionPosts, hasLength(1));
-      expect(adapter.contributionPosts.first, {
-        'message': kQaEditMessage,
-        'entry_index': 0,
-      });
-      expect(await PendingContributionsStore.of.listPending('imp-1'), isEmpty);
+      expect(adapter.contributionPosts, isEmpty);
+      expect(cubit.state.entries.first.text, 'updated headword');
       expect(cubit.state.editedCount, 1);
       expect(cubit.state.busy, isFalse);
-      await cubit.close();
-    });
-
-    test('returns the API message when the POST fails', () async {
-      buildAdapter(contributionFails: true);
-      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
-      await startWalk(cubit);
-      await PendingContributionsStore.of.upsert(
-        deckId: 'imp-1',
-        kind: PendingContributionKind.edit,
-        factId: 'fact-1',
-        preview: 'headword',
-      );
-
-      expect(
-        await cubit.submitEdit(entryIndex: 1),
-        'daily contribution limit exceeded',
-      );
-      expect(
-        await PendingContributionsStore.of.listPending('imp-1'),
-        hasLength(1),
-      );
-      expect(cubit.state.editedCount, 0);
+      expect(cubit.state.loading, isFalse);
       await cubit.close();
     });
   });

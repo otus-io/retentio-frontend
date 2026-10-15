@@ -1531,6 +1531,35 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contributionsAccept => '接受';
 
   @override
+  String contributionsAcceptAll(int count) {
+    return '全部接受（$count）';
+  }
+
+  @override
+  String get contributionsAcceptAllConfirmTitle => '全部接受？';
+
+  @override
+  String contributionsAcceptAllConfirmMessage(int count) {
+    return '将 $count 条贡献接受进工作副本？报告不会被接受。';
+  }
+
+  @override
+  String contributionsAcceptAllSuccess(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已接受 $count 条贡献',
+      one: '已接受 1 条贡献',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String contributionsAcceptAllPartial(int sent, int failed) {
+    return '已接受 $sent 条；$failed 条失败';
+  }
+
+  @override
   String get contributionsDismiss => '忽略';
 
   @override

@@ -247,34 +247,94 @@ Tabs: **Decks** | **Discover** | **Profile**
 
 ## 11. Publish (source deck only)
 
-- [ ] First publish → deck appears in Discovery
-- [ ] Re-publish with changes → version / update preview as designed
-- [ ] Re-publish with no changes → no-changes error (or equivalent)
-- [ ] Publish refreshes Discovery
-- [ ] List badge for unpublished changes clears after publish
+Use Author A. Account B is only needed for the Discovery checks.
+
+- [ ] Never-published source: deck menu shows **Publish** and **Contributions inbox**; no Pending outbox, Check updates, or QA mode
+- [ ] That deck is absent from Discovery for a guest and for account B
+- [ ] First-publish sheet shows the deck name and the publish hint (no change summary)
+- [ ] Publish shows a loading state and cannot be double-tapped
+- [ ] Success state shows the published version and no longer offers Publish
+- [ ] Discovery **Latest** then lists the deck for a guest and for account B (name, fields, description, fact count)
+- [ ] Deck list shows the publish/update control; the unpublished-changes badge is absent until a later edit
+- [ ] Edit a fact on the source: A’s study shows the new text immediately; Discovery and B’s imported copy still show the previous snapshot
+- [ ] Re-publish sheet shows a change summary while loading, then the summary line; if the preview fails, Publish still works
+- [ ] Re-publish with no working-copy changes → no-changes error
+- [ ] After a real re-publish, the unpublished-changes badge clears and Discovery shows the new snapshot
+- [ ] Delete on a published source → error toast; deck stays in the list
+- [ ] Delete is still allowed on a source that has never been published
 
 ---
 
-## 12. Import collaboration
+## 12. Import, edit, and contributions
 
-### Importer (imported deck)
+Two accounts: Author A (published source) and Importer B.
 
-- [ ] Deck menu shows Pending outbox + Check updates (no Publish / Contributions inbox)
-- [ ] Edit fact / add fact / tag changes create pending items
-- [ ] Outbox: Pending vs Sent tabs
-- [ ] Select all / send selected / dismiss / clear
-- [ ] Partial send failure messaging
-- [ ] Report issue (Audio / Content / Other); Other requires details
-- [ ] Check updates: summary; expand detail; accept/keep decisions; sync
-- [ ] After sync, study matches decisions; list badge clears
+### Import
 
-### Author (published source)
+- [ ] Guest can open Discovery list and detail; **Import** sends them to login
+- [ ] After login, the same detail imports: success toast, then the new deck is on B’s Decks list only
+- [ ] Imported copy matches the published snapshot (name, fields, description, fact text, media)
+- [ ] **Go study** opens B’s copy; reviewing a card does not change A’s due counts
+- [ ] B’s Discovery card shows the imported badge; importing again → duplicate message, no second deck
+- [ ] A opening their own catalog detail cannot import; A’s deck list is not duplicated
+- [ ] Favorite survives restart; unfavorite removes it from Favorites only
+- [ ] Unavailable / not-found detail → error UI + Retry
+- [ ] Imported deck menu: **Pending outbox**, **Check updates**, **QA mode**. No Publish, no Contributions inbox
+- [ ] Edit Deck on an import: name and column headers are disabled; rate still saves
+- [ ] Deck tag add/remove on an import shows the staged toast and a deck-tags row in the outbox; A’s tags are unchanged
+- [ ] Delete imported deck is allowed; A’s source deck remains
 
-- [ ] Deck menu: Contributions inbox
-- [ ] List open contributions; load more
-- [ ] Preview before/after text & audio
-- [ ] Accept / Dismiss / Resolve
-- [ ] Accepted changes on source; re-publish visible to importers
+### Edit and outbox (Importer B)
+
+Study-screen edits stay local until B sends them. QA mode is the exception: it sends `fact_edit` immediately (section 16).
+
+- [ ] Card menu on an import shows **Report issue**; the same menu on A’s source deck does not
+- [ ] Edit fact text or audio → B’s study card updates immediately and a staged toast appears
+- [ ] Outbox **Pending** shows one Edit row with a text preview; A’s inbox is still empty
+- [ ] Edit that fact again → the same Pending row is replaced (still one Edit) with the latest preview
+- [ ] Change fact tags → a separate fact-tags row, in addition to the edit row
+- [ ] Add fact → new card is studyable for B, and Pending gains an Add row
+- [ ] Optional outbox message is stored on the sent item
+- [ ] Send one selected row → success notice; that row moves to **Sent**; unselected rows stay Pending
+- [ ] Select all → send; empty Pending, rows listed under Sent
+- [ ] Dismiss selected removes those rows and does not add them to A’s inbox
+- [ ] Clear all empties Pending
+- [ ] Partial send failure names the failed kinds and leaves the unsent rows in Pending
+
+### Report issue (Importer B → Author A)
+
+Report sends immediately from the card menu. It does not appear in the outbox.
+
+- [ ] Audio or Content with empty details submits; success toast; sheet closes
+- [ ] Other with empty details is blocked (details required) and does not submit
+- [ ] Other with details submits; message is the details text (max 200 characters)
+- [ ] Audio/Content with details submits as `Category: details`
+- [ ] A’s inbox shows the report with B’s username, fact id, and message
+- [ ] Report row has **Dismiss** and **Resolve** only (no Accept)
+- [ ] Dismiss or Resolve removes it from the open inbox and does not change A’s fact
+
+### Author inbox and re-publish
+
+- [ ] Before B sends, A’s inbox is empty (or unchanged)
+- [ ] After B sends an edit, add, or tag change, A’s inbox lists it: type, reporter, fact id, source version, optional message
+- [ ] Edit preview shows before/after text; play before/after when the fact has audio
+- [ ] Tag change preview shows before/after tag names
+- [ ] Load more when the inbox is longer than one page
+- [ ] **Accept** copies the proposal onto A’s working copy (A’s study shows it)
+- [ ] After accept alone, Discovery and B’s pinned copy still show the old snapshot
+- [ ] A re-publishes → B’s deck list shows the update badge
+- [ ] **Dismiss** drops the row and does not change A’s facts
+- [ ] **Resolve** closes the row without applying the proposal
+
+### Check updates and sync (Importer B)
+
+- [ ] Before A re-publishes, Check updates is up to date and Sync is disabled
+- [ ] After A re-publishes, the sheet shows pinned version → latest version and edited / added / removed counts
+- [ ] Expand an edited fact: before/after text (and audio); a local-overlay hint when B still has an unsent or unsynced overlay
+- [ ] **Accept** then Sync: study matches A’s published text; list badge clears
+- [ ] **Keep local** then Sync: B’s overlay text remains on that fact
+- [ ] Added facts appear in study after sync; removed facts can be accepted or kept
+- [ ] Detail load failure on one fact shows Retry and does not block Sync for the rest
 
 ---
 

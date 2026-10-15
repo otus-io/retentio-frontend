@@ -2030,6 +2030,26 @@
   },
   "contributionsEmpty": "No open contributions",
   "contributionsAccept": "Accept",
+  "contributionsAcceptAll": "Accept all ({count})",
+  "@contributionsAcceptAll": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "contributionsAcceptAllConfirmTitle": "Accept all?",
+  "contributionsAcceptAllConfirmMessage": "Accept {count} contributions into your working copy? Reports are skipped.",
+  "@contributionsAcceptAllConfirmMessage": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "contributionsAcceptAllSuccess": "{count, plural, =1{Accepted 1 contribution} other{Accepted {count} contributions}}",
+  "@contributionsAcceptAllSuccess": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "contributionsAcceptAllPartial": "Accepted {sent}; {failed} failed",
+  "@contributionsAcceptAllPartial": {
+    "placeholders": {
+      "sent": { "type": "int" },
+      "failed": { "type": "int" }
+    }
+  },
   "contributionsDismiss": "Dismiss",
   "contributionsResolve": "Resolve",
   "contributionsAccepted": "Contribution accepted",
