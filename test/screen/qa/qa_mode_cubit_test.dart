@@ -489,6 +489,19 @@ void main() {
       expect(cubit.state.loading, isFalse);
       await cubit.close();
     });
+
+    test('clears busy and loading when header refresh fails', () async {
+      buildAdapter();
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await startWalk(cubit);
+      cubit.debugFailNextRefreshHeader = true;
+
+      expect(await cubit.submitEdit(entryIndex: 0), isNull);
+
+      expect(cubit.state.busy, isFalse);
+      expect(cubit.state.loading, isFalse);
+      await cubit.close();
+    });
   });
 
   group('refreshStats', () {

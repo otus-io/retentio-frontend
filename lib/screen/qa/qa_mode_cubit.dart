@@ -304,10 +304,16 @@ class QaModeCubit extends Cubit<QaModeState> {
     if (factId == null) return null;
     if (isClosed) return null;
     emit(state.copyWith(busy: true, loading: true));
-    await _loadCurrentFact();
-    await _refreshHeader();
-    if (isClosed) return null;
-    emit(state.copyWith(busy: false));
+    try {
+      await _loadCurrentFact();
+      await _refreshHeader();
+    } catch (_) {
+      // Reload failed; busy/loading cleared in finally so QA isn't stuck.
+    } finally {
+      if (!isClosed) {
+        emit(state.copyWith(busy: false, loading: false));
+      }
+    }
     return null;
   }
 
