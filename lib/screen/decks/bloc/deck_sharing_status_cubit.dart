@@ -33,8 +33,8 @@ class DeckSharingStatusState {
   }
 }
 
-/// Polls publish-preview (sources), updates summary (imports), and open
-/// contribution inbox (sources) every 60s.
+/// Polls publish-preview and open contribution inbox (published sources),
+/// and updates summary (imports), every 60s.
 class DeckSharingStatusCubit extends Cubit<DeckSharingStatusState> {
   DeckSharingStatusCubit() : super(const DeckSharingStatusState());
 
@@ -110,16 +110,16 @@ class DeckSharingStatusCubit extends Cubit<DeckSharingStatusState> {
             return;
           }
 
-          if (deck.isPublishedSource) {
-            try {
-              final preview = await DeckPublishService.of.getPublishPreview(
-                deck.id,
-              );
-              if (preview.hasUnpublishedChanges) nextFlash.add(deck.id);
-            } catch (_) {
-              if (previousFlash.contains(deck.id)) {
-                nextFlash.add(deck.id);
-              }
+          if (!deck.isPublishedSource) return;
+
+          try {
+            final preview = await DeckPublishService.of.getPublishPreview(
+              deck.id,
+            );
+            if (preview.hasUnpublishedChanges) nextFlash.add(deck.id);
+          } catch (_) {
+            if (previousFlash.contains(deck.id)) {
+              nextFlash.add(deck.id);
             }
           }
 

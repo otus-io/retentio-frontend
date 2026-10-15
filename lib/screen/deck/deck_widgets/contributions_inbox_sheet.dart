@@ -430,8 +430,7 @@ class _ContributionDiffBlock extends StatelessWidget {
               _ContributionAudioRow(
                 label: loc.contributionsPlayBefore,
                 urls: [
-                  for (final i in beforeAudioIndexes)
-                    if (c.beforeAudioUrl(i) != null) c.beforeAudioUrl(i)!,
+                  for (final i in beforeAudioIndexes) ?c.beforeAudioUrl(i),
                 ],
               ),
             ],
@@ -454,10 +453,7 @@ class _ContributionDiffBlock extends StatelessWidget {
               const SizedBox(height: 4),
               _ContributionAudioRow(
                 label: loc.contributionsPlayAfter,
-                urls: [
-                  for (final i in afterAudioIndexes)
-                    if (c.afterAudioUrl(i) != null) c.afterAudioUrl(i)!,
-                ],
+                urls: [for (final i in afterAudioIndexes) ?c.afterAudioUrl(i)],
               ),
             ],
           ] else if (showProposedOnly) ...[
@@ -477,10 +473,7 @@ class _ContributionDiffBlock extends StatelessWidget {
               const SizedBox(height: 4),
               _ContributionAudioRow(
                 label: loc.contributionsPlayAfter,
-                urls: [
-                  for (final i in afterAudioIndexes)
-                    if (c.afterAudioUrl(i) != null) c.afterAudioUrl(i)!,
-                ],
+                urls: [for (final i in afterAudioIndexes) ?c.afterAudioUrl(i)],
               ),
             ],
           ] else if (showReportedOnly) ...[
@@ -501,8 +494,7 @@ class _ContributionDiffBlock extends StatelessWidget {
               _ContributionAudioRow(
                 label: loc.contributionsPlayBefore,
                 urls: [
-                  for (final i in beforeAudioIndexes)
-                    if (c.beforeAudioUrl(i) != null) c.beforeAudioUrl(i)!,
+                  for (final i in beforeAudioIndexes) ?c.beforeAudioUrl(i),
                 ],
               ),
             ],

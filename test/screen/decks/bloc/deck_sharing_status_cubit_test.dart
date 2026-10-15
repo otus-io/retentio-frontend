@@ -50,6 +50,9 @@ class _SharingStatusAdapter implements HttpClientAdapter {
   final bool failUpdates;
   final bool failContributions;
 
+  int contributionRequestCount = 0;
+  int publishPreviewRequestCount = 0;
+
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
@@ -58,6 +61,7 @@ class _SharingStatusAdapter implements HttpClientAdapter {
   ) async {
     final path = options.path;
     if (path.contains('publish-preview')) {
+      publishPreviewRequestCount++;
       if (failPublish) return _error('preview failed');
       return _ok({
         'has_unpublished_changes': unpublished,
@@ -69,6 +73,7 @@ class _SharingStatusAdapter implements HttpClientAdapter {
       return _ok({'source_version': 1, 'latest_version': hasUpdates ? 2 : 1});
     }
     if (path.contains('/contributions')) {
+      contributionRequestCount++;
       if (failContributions) return _error('contributions failed');
       return _ok({
         'contributions': openContributions
@@ -246,7 +251,7 @@ void main() {
       );
       final cubit = DeckSharingStatusCubit();
       addTearDown(cubit.close);
-      cubit.setDecks([_source(id: 'src1', publishedVersion: 0)]);
+      cubit.setDecks([_source(id: 'src1')]);
       await cubit.refresh();
       expect(cubit.state.hasOpenContributions('src1'), isTrue);
 
@@ -258,5 +263,23 @@ void main() {
       expect(cubit.state.hasOpenContributions('src1'), isFalse);
       expect(cubit.state.shouldFlash('src1'), isFalse);
     });
+
+    test(
+      'refresh skips contribution and publish polls for local drafts',
+      () async {
+        final adapter = _SharingStatusAdapter(openContributions: true);
+        networkDioClient.dio.httpClientAdapter = adapter;
+        final cubit = DeckSharingStatusCubit();
+        addTearDown(cubit.close);
+        cubit.setDecks([_source(id: 'draft1', publishedVersion: 0)]);
+
+        await cubit.refresh();
+
+        expect(adapter.contributionRequestCount, 0);
+        expect(adapter.publishPreviewRequestCount, 0);
+        expect(cubit.state.hasOpenContributions('draft1'), isFalse);
+        expect(cubit.state.shouldFlash('draft1'), isFalse);
+      },
+    );
   });
 }
