@@ -3016,6 +3016,36 @@ abstract class AppLocalizations {
   /// **'Accept'**
   String get contributionsAccept;
 
+  /// No description provided for @contributionsAcceptAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept all ({count})'**
+  String contributionsAcceptAll(int count);
+
+  /// No description provided for @contributionsAcceptAllConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept all?'**
+  String get contributionsAcceptAllConfirmTitle;
+
+  /// No description provided for @contributionsAcceptAllConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept {count} contributions into your working copy? Reports are skipped.'**
+  String contributionsAcceptAllConfirmMessage(int count);
+
+  /// No description provided for @contributionsAcceptAllSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Accepted 1 contribution} other{Accepted {count} contributions}}'**
+  String contributionsAcceptAllSuccess(int count);
+
+  /// No description provided for @contributionsAcceptAllPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted {sent}; {failed} failed'**
+  String contributionsAcceptAllPartial(int sent, int failed);
+
   /// No description provided for @contributionsDismiss.
   ///
   /// In en, this message translates to:

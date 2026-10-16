@@ -1533,6 +1533,35 @@ class AppLocalizationsJa extends AppLocalizations {
   String get contributionsAccept => '承認';
 
   @override
+  String contributionsAcceptAll(int count) {
+    return 'すべて承認（$count）';
+  }
+
+  @override
+  String get contributionsAcceptAllConfirmTitle => 'すべて承認しますか？';
+
+  @override
+  String contributionsAcceptAllConfirmMessage(int count) {
+    return '$count件の貢献を作業コピーに反映しますか？報告はスキップされます。';
+  }
+
+  @override
+  String contributionsAcceptAllSuccess(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count件の貢献を承認しました',
+      one: '1件の貢献を承認しました',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String contributionsAcceptAllPartial(int sent, int failed) {
+    return '$sent件を承認、$failed件が失敗';
+  }
+
+  @override
   String get contributionsDismiss => '却下';
 
   @override

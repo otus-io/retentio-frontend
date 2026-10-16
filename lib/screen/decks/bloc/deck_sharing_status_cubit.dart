@@ -5,22 +5,36 @@ import 'package:retentio/models/deck.dart';
 import 'package:retentio/services/apis/deck_catalog_service.dart';
 import 'package:retentio/services/apis/deck_publish_service.dart';
 
-/// Which list-card affordances should flash for unpublished / unsynced changes.
+/// Which list-card affordances should flash for unpublished / unsynced changes
+/// and which source decks have open importer contributions.
 class DeckSharingStatusState {
-  const DeckSharingStatusState({this.flashingDeckIds = const {}});
+  const DeckSharingStatusState({
+    this.flashingDeckIds = const {},
+    this.openContributionDeckIds = const {},
+  });
 
   final Set<String> flashingDeckIds;
+  final Set<String> openContributionDeckIds;
 
   bool shouldFlash(String deckId) => flashingDeckIds.contains(deckId);
 
-  DeckSharingStatusState copyWith({Set<String>? flashingDeckIds}) {
+  bool hasOpenContributions(String deckId) =>
+      openContributionDeckIds.contains(deckId);
+
+  DeckSharingStatusState copyWith({
+    Set<String>? flashingDeckIds,
+    Set<String>? openContributionDeckIds,
+  }) {
     return DeckSharingStatusState(
       flashingDeckIds: flashingDeckIds ?? this.flashingDeckIds,
+      openContributionDeckIds:
+          openContributionDeckIds ?? this.openContributionDeckIds,
     );
   }
 }
 
-/// Polls publish-preview (sources) and updates summary (imports) every 60s.
+/// Polls publish-preview and open contribution inbox (published sources),
+/// and updates summary (imports), every 60s.
 class DeckSharingStatusCubit extends Cubit<DeckSharingStatusState> {
   DeckSharingStatusCubit() : super(const DeckSharingStatusState());
 
@@ -57,35 +71,81 @@ class DeckSharingStatusCubit extends Cubit<DeckSharingStatusState> {
     emit(state.copyWith(flashingDeckIds: next));
   }
 
+  void markOpenContributions(String deckId) {
+    if (_disposed || deckId.isEmpty) return;
+    emit(
+      state.copyWith(
+        openContributionDeckIds: {...state.openContributionDeckIds, deckId},
+      ),
+    );
+  }
+
+  void clearOpenContributions(String deckId) {
+    if (_disposed || deckId.isEmpty) return;
+    final next = {...state.openContributionDeckIds}..remove(deckId);
+    emit(state.copyWith(openContributionDeckIds: next));
+  }
+
   Future<void> refresh() async {
     if (_disposed || _refreshing) return;
     _refreshing = true;
-    final previous = state.flashingDeckIds;
+    final previousFlash = state.flashingDeckIds;
+    final previousContrib = state.openContributionDeckIds;
     try {
-      final next = <String>{};
+      final nextFlash = <String>{};
+      final nextContrib = <String>{};
       await Future.wait(
         _decks.map((deck) async {
-          try {
-            if (deck.isImported) {
+          if (deck.isImported) {
+            try {
               final summary = await DeckCatalogService.of.getDeckUpdatesSummary(
                 deck.id,
               );
-              if (summary.hasUpdates) next.add(deck.id);
-            } else if (deck.isPublishedSource) {
-              final preview = await DeckPublishService.of.getPublishPreview(
-                deck.id,
-              );
-              if (preview.hasUnpublishedChanges) next.add(deck.id);
+              if (summary.hasUpdates) nextFlash.add(deck.id);
+            } catch (_) {
+              if (previousFlash.contains(deck.id)) {
+                nextFlash.add(deck.id);
+              }
+            }
+            return;
+          }
+
+          if (!deck.isPublishedSource) return;
+
+          try {
+            final preview = await DeckPublishService.of.getPublishPreview(
+              deck.id,
+            );
+            if (preview.hasUnpublishedChanges) nextFlash.add(deck.id);
+          } catch (_) {
+            if (previousFlash.contains(deck.id)) {
+              nextFlash.add(deck.id);
+            }
+          }
+
+          try {
+            final page = await DeckCatalogService.of.listContributions(
+              deck.id,
+              status: 'open',
+              limit: 1,
+            );
+            if (page.contributions.isNotEmpty) {
+              nextContrib.add(deck.id);
             }
           } catch (_) {
-            if (previous.contains(deck.id)) {
-              next.add(deck.id);
+            if (previousContrib.contains(deck.id)) {
+              nextContrib.add(deck.id);
             }
           }
         }),
       );
       if (_disposed) return;
-      emit(state.copyWith(flashingDeckIds: next));
+      emit(
+        state.copyWith(
+          flashingDeckIds: nextFlash,
+          openContributionDeckIds: nextContrib,
+        ),
+      );
     } finally {
       _refreshing = false;
     }

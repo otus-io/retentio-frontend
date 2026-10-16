@@ -108,14 +108,10 @@ class _QaModeView extends StatelessWidget {
         child: FactEdit(
           deck: deck,
           factId: factId,
+          contributionMessage: kQaEditMessage,
+          contributionEntryIndex: entryIndex,
           onSaved: () async {
-            final error = await cubit.submitEdit(entryIndex: entryIndex);
-            if (!context.mounted) return;
-            if (error == null) {
-              AppToast.success(context, loc.qaEditSubmitted);
-            } else {
-              AppToast.error(context, ApiErrorMessages.resolve(error, loc));
-            }
+            await cubit.submitEdit(entryIndex: entryIndex);
           },
         ),
       ),

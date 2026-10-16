@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/screen/deck/deck_widgets/contributions_inbox_sheet.dart';
 import 'package:retentio/screen/deck/deck_widgets/import_updates_sheet.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/decks/bloc/deck_sharing_status_cubit.dart';
@@ -35,6 +36,9 @@ class DeckListCard extends StatelessWidget {
 
     final showBadge = context.select<DeckSharingStatusCubit, bool>(
       (c) => c.state.shouldFlash(deck.id),
+    );
+    final showContributionBadge = context.select<DeckSharingStatusCubit, bool>(
+      (c) => c.state.hasOpenContributions(deck.id),
     );
 
     return InkWell(
@@ -79,7 +83,24 @@ class DeckListCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                if (!deck.isImported)
+                if (!deck.isImported) ...[
+                  BadgedAppIconButton(
+                    icon: LucideIcons.inbox,
+                    tooltip: loc.contributionsInbox,
+                    showBadge: showContributionBadge,
+                    onPressed: () async {
+                      await showCommonBottomSheet<void>(
+                        context: context,
+                        title: loc.contributionsInbox,
+                        initialChildSize: 0.7,
+                        minChildSize: 0.4,
+                        maxChildSize: 0.95,
+                        child: ContributionsInboxSheet(sourceDeckId: deck.id),
+                      );
+                      if (!context.mounted) return;
+                      await context.read<DeckSharingStatusCubit>().refresh();
+                    },
+                  ),
                   BadgedAppIconButton(
                     icon: LucideIcons.share2,
                     tooltip: deck.isPublishedSource
@@ -103,8 +124,8 @@ class DeckListCard extends StatelessWidget {
                         ),
                       );
                     },
-                  )
-                else
+                  ),
+                ] else
                   BadgedAppIconButton(
                     icon: LucideIcons.refreshCw,
                     tooltip: loc.deckCheckUpdates,

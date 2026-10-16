@@ -22,20 +22,64 @@ void main() {
       );
     });
 
-    test('returns local file path when file exists', () {
-      final file = File(
-        '${Directory.systemTemp.path}/retentio_play_url_${DateTime.now().microsecondsSinceEpoch}.m4a',
+    test('treats an absolute path as a local file without a disk check', () {
+      final missing = File(
+        '${Directory.systemTemp.path}${Platform.pathSeparator}retentio_play_url_missing_${DateTime.now().microsecondsSinceEpoch}.m4a',
       );
-      file.writeAsStringSync('x');
-      addTearDown(() {
-        if (file.existsSync()) file.deleteSync();
-      });
-
-      expect(attachmentAudioPlayUrl(file.path), file.absolute.path);
+      expect(missing.existsSync(), isFalse);
+      expect(attachmentAudioPlayUrl(missing.path), missing.absolute.path);
     });
+
+    test('absoluteAttachmentExists ignores media ids', () async {
+      expect(await absoluteAttachmentExists('aud1'), isFalse);
+    });
+
+    test(
+      'absoluteAttachmentExists reports whether an absolute file exists',
+      () async {
+        final missing = File(
+          '${Directory.systemTemp.path}${Platform.pathSeparator}retentio_attach_missing_${DateTime.now().microsecondsSinceEpoch}.m4a',
+        );
+        final present = File(
+          '${Directory.systemTemp.path}${Platform.pathSeparator}retentio_attach_present_${DateTime.now().microsecondsSinceEpoch}.m4a',
+        );
+        present.writeAsStringSync('x');
+        addTearDown(() {
+          if (present.existsSync()) present.deleteSync();
+        });
+
+        expect(await absoluteAttachmentExists(missing.path), isFalse);
+        expect(await absoluteAttachmentExists(present.path), isTrue);
+      },
+    );
 
     test('maps bare media id to owned media URL', () {
       expect(attachmentAudioPlayUrl('media01'), '/api/media/media01');
+    });
+
+    test('appends snapshot pin for pinned media id', () {
+      expect(
+        attachmentAudioPlayUrl('media01', mediaVersions: const {'media01': 1}),
+        '/api/media/media01?v=1',
+      );
+    });
+
+    test('encodes reserved characters in a pinned media id', () {
+      expect(
+        attachmentAudioPlayUrl('a/b?c', mediaVersions: const {'a/b?c': 2}),
+        '/api/media/a%2Fb%3Fc?v=2',
+      );
+    });
+
+    test('omits v for ids without a positive pin', () {
+      expect(
+        attachmentAudioPlayUrl('media02', mediaVersions: const {'media01': 1}),
+        '/api/media/media02',
+      );
+      expect(
+        attachmentAudioPlayUrl('media01', mediaVersions: const {'media01': 0}),
+        '/api/media/media01',
+      );
     });
   });
 }

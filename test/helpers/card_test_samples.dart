@@ -1,10 +1,11 @@
 import 'package:retentio/models/card.dart';
 import 'package:retentio/models/deck.dart';
 
-Deck sampleDeck({int cardsCount = 5}) {
+Deck sampleDeck({int cardsCount = 5, String sourceDeckId = ''}) {
   return Deck.fromJson({
     'id': 'deck-test-1',
     'name': 'Test deck',
+    'source_deck_id': sourceDeckId,
     'stats': {
       'cards_count': cardsCount,
       'unseen_cards': cardsCount,
