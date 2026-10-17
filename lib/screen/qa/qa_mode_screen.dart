@@ -128,9 +128,12 @@ class _QaModeView extends StatelessWidget {
           BlocBuilder<QaModeCubit, QaModeState>(
             buildWhen: (prev, next) =>
                 prev.pickingColumns != next.pickingColumns ||
+                prev.walkComplete != next.walkComplete ||
                 prev.activeColumnIndexes != next.activeColumnIndexes,
             builder: (context, state) {
-              if (state.pickingColumns) return const SizedBox.shrink();
+              if (state.pickingColumns || state.walkComplete) {
+                return const SizedBox.shrink();
+              }
               return AppIconButton(
                 icon: LucideIcons.columns3,
                 tooltip: loc.qaModeChooseColumns,
@@ -143,70 +146,107 @@ class _QaModeView extends StatelessWidget {
         ],
       ),
       body: SafeArea(
-        child: BlocListener<QaModeCubit, QaModeState>(
-          listenWhen: (prev, next) => !prev.walkComplete && next.walkComplete,
-          listener: (context, state) {
-            AppToast.success(
-              context,
-              AppLocalizations.of(context)!.qaModeWalkComplete,
-            );
-          },
-          child: BlocBuilder<QaModeCubit, QaModeState>(
-            builder: (context, state) {
-              if (state.pickingColumns) {
-                return _QaColumnPicker(
+        child: BlocBuilder<QaModeCubit, QaModeState>(
+          builder: (context, state) {
+            if (state.pickingColumns) {
+              return _QaColumnPicker(
+                deck: deck,
+                fieldLabel: (index) => _fieldLabel(context, index),
+              );
+            }
+            if (state.walkComplete) {
+              return _QaWalkComplete(
+                onBack: () => Navigator.of(context).maybePop(),
+              );
+            }
+            if (state.loading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (state.factIds.isEmpty) {
+              return _QaMessage(text: loc.qaModeEmpty);
+            }
+            if (state.factLoadFailed) {
+              return _QaMessage(text: loc.qaModeFactLoadFailed);
+            }
+            final visibleIndexes = [
+              for (var i = 0; i < state.entries.length; i++)
+                if (state.activeColumnIndexes.contains(i)) i,
+            ];
+            return Column(
+              children: [
+                _QaHeader(
+                  state: state,
                   deck: deck,
                   fieldLabel: (index) => _fieldLabel(context, index),
-                );
-              }
-              if (state.loading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (state.factIds.isEmpty) {
-                return _QaMessage(text: loc.qaModeEmpty);
-              }
-              if (state.factLoadFailed) {
-                return _QaMessage(text: loc.qaModeFactLoadFailed);
-              }
-              final visibleIndexes = [
-                for (var i = 0; i < state.entries.length; i++)
-                  if (state.activeColumnIndexes.contains(i)) i,
-              ];
-              return Column(
-                children: [
-                  _QaHeader(
-                    state: state,
-                    deck: deck,
-                    fieldLabel: (index) => _fieldLabel(context, index),
-                  ),
-                  Expanded(
-                    child: ListView(
-                      padding: _kQaPadding,
-                      children: [
-                        for (final i in visibleIndexes)
-                          _QaColumnRow(
-                            entry: state.entries[i],
-                            label: _label(context, state, i),
-                            audioUrl: qaAudioUrl(
-                              audioId: state.entries[i].audio,
-                              mediaVersions: state.mediaVersions,
-                            ),
-                            checked: state.checkedIndexes.contains(i),
-                            scoreable: qaScoreableAspects(
-                              state.entries[i],
-                            ).isNotEmpty,
-                            onToggle: () =>
-                                context.read<QaModeCubit>().toggleColumn(i),
-                            onEdit: () => _edit(context, i),
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: _kQaPadding,
+                    children: [
+                      for (final i in visibleIndexes)
+                        _QaColumnRow(
+                          entry: state.entries[i],
+                          label: _label(context, state, i),
+                          audioUrl: qaAudioUrl(
+                            audioId: state.entries[i].audio,
+                            mediaVersions: state.mediaVersions,
                           ),
-                      ],
-                    ),
+                          checked: state.checkedIndexes.contains(i),
+                          scoreable: qaScoreableAspects(
+                            state.entries[i],
+                          ).isNotEmpty,
+                          onToggle: () =>
+                              context.read<QaModeCubit>().toggleColumn(i),
+                          onEdit: () => _edit(context, i),
+                        ),
+                    ],
                   ),
-                  _QaFooter(state: state, onNext: () => _next(context)),
-                ],
-              );
-            },
-          ),
+                ),
+                _QaFooter(state: state, onNext: () => _next(context)),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown after the last fact in the selected columns is signed off.
+class _QaWalkComplete extends StatelessWidget {
+  const _QaWalkComplete({required this.onBack});
+
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    return Padding(
+      padding: _kQaMessagePadding,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              LucideIcons.circleCheck,
+              size: 96,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              loc.qaModeWalkComplete,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 32),
+            AppButton(
+              label: loc.backToDeck,
+              fullWidth: true,
+              leading: const Icon(LucideIcons.arrowLeft),
+              onPressed: onBack,
+            ),
+          ],
         ),
       ),
     );
