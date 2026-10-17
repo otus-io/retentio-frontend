@@ -161,10 +161,10 @@ class QaModeCubit extends Cubit<QaModeState> {
     final sameColumns =
         factsLoaded && setEquals(state.activeColumnIndexes, columns);
     var index = state.index;
+    var stats = state.stats;
     if (factsLoaded && !sameColumns) {
-      final stats =
-          state.stats ??
-          await FactQualityService.of.getDeckQualityStats(deckId);
+      // Always refetch: another device may have advanced cursors since load.
+      stats = await FactQualityService.of.getDeckQualityStats(deckId);
       if (isClosed) return;
       final resumeId = qaResumeFactId(
         columns: columns,
@@ -180,7 +180,7 @@ class QaModeCubit extends Cubit<QaModeState> {
         activeColumnIndexes: columns,
         factIds: factsLoaded ? state.factIds : const [],
         index: factsLoaded ? index : 0,
-        stats: state.stats,
+        stats: stats,
         editedCount: state.editedCount,
       ),
     );
@@ -298,7 +298,13 @@ class QaModeCubit extends Cubit<QaModeState> {
         deckId: deckId,
         factId: factId,
         entries: pendingPutEntries(),
-        columns: state.checkedIndexes.toList()..sort(),
+        // In-range active columns only (incl. empty); out-of-range deck
+        // fields would 400 on the server.
+        columns:
+            (state.activeColumnIndexes
+                .where((i) => i >= 0 && i < state.entries.length)
+                .toList()
+              ..sort()),
       );
     } catch (e) {
       if (!isClosed) emit(state.copyWith(busy: false));
