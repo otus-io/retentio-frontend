@@ -82,6 +82,13 @@ void main() {
       expect(stats.lastFactId, 'fact-9');
     });
 
+    test('reads per-column cursors', () {
+      final stats = FactQualityStats.fromJson({
+        'cursors': {'0': 'fact-a', '1': '', 'x': 'fact-b', '2': 'fact-c'},
+      });
+      expect(stats.cursors, {0: 'fact-a', 2: 'fact-c'});
+    });
+
     test('reads per-column counters', () {
       final stats = FactQualityStats.fromJson({
         'columns': {
@@ -129,6 +136,35 @@ void main() {
         'audio',
       ]);
       expect(qaScoreableAspects(const FactEntry(image: 'img1')), isEmpty);
+    });
+  });
+
+  group('qaResumeFactId', () {
+    const ids = ['fact-1', 'fact-2', 'fact-3'];
+
+    test('returns the earliest selected cursor', () {
+      expect(
+        qaResumeFactId(
+          columns: {0, 1},
+          cursors: {0: 'fact-2', 1: 'fact-1'},
+          factIds: ids,
+        ),
+        'fact-1',
+      );
+    });
+
+    test('returns null when any selected column is missing', () {
+      expect(
+        qaResumeFactId(columns: {0, 2}, cursors: {0: 'fact-2'}, factIds: ids),
+        isNull,
+      );
+    });
+
+    test('returns null when a cursor id is unknown', () {
+      expect(
+        qaResumeFactId(columns: {0}, cursors: {0: 'ghost'}, factIds: ids),
+        isNull,
+      );
     });
   });
 

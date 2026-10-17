@@ -128,9 +128,12 @@ class _QaModeView extends StatelessWidget {
           BlocBuilder<QaModeCubit, QaModeState>(
             buildWhen: (prev, next) =>
                 prev.pickingColumns != next.pickingColumns ||
+                prev.walkComplete != next.walkComplete ||
                 prev.activeColumnIndexes != next.activeColumnIndexes,
             builder: (context, state) {
-              if (state.pickingColumns) return const SizedBox.shrink();
+              if (state.pickingColumns || state.walkComplete) {
+                return const SizedBox.shrink();
+              }
               return AppIconButton(
                 icon: LucideIcons.columns3,
                 tooltip: loc.qaModeChooseColumns,
@@ -149,6 +152,11 @@ class _QaModeView extends StatelessWidget {
               return _QaColumnPicker(
                 deck: deck,
                 fieldLabel: (index) => _fieldLabel(context, index),
+              );
+            }
+            if (state.walkComplete) {
+              return _QaWalkComplete(
+                onBack: () => Navigator.of(context).maybePop(),
               );
             }
             if (state.loading) {
@@ -198,6 +206,47 @@ class _QaModeView extends StatelessWidget {
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown after the last fact in the selected columns is signed off.
+class _QaWalkComplete extends StatelessWidget {
+  const _QaWalkComplete({required this.onBack});
+
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    return Padding(
+      padding: _kQaMessagePadding,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              LucideIcons.circleCheck,
+              size: 96,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              loc.qaModeWalkComplete,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 32),
+            AppButton(
+              label: loc.backToDeck,
+              fullWidth: true,
+              leading: const Icon(LucideIcons.arrowLeft),
+              onPressed: onBack,
+            ),
+          ],
         ),
       ),
     );
