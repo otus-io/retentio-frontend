@@ -531,6 +531,7 @@
   "qaModeColumnPercent": "{percent}%",
   "qaModePrevious": "前へ",
   "qaModeVerify": "確認済みにする",
+  "qaModeWalkComplete": "この列の確認は完了です。ありがとうございます。",
   "qaVerifyConfirmTitle": "確認を送信",
   "qaVerifyConfirmFields": "確認する項目：{fields}",
   "qaVerifySuccess": "品質を保存しました",

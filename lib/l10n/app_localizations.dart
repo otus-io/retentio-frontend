@@ -3286,6 +3286,12 @@ abstract class AppLocalizations {
   /// **'Verified'**
   String get qaModeVerify;
 
+  /// No description provided for @qaModeWalkComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re done with these columns. Thank you.'**
+  String get qaModeWalkComplete;
+
   /// No description provided for @qaVerifyConfirmTitle.
   ///
   /// In en, this message translates to:

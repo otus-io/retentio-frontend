@@ -143,61 +143,70 @@ class _QaModeView extends StatelessWidget {
         ],
       ),
       body: SafeArea(
-        child: BlocBuilder<QaModeCubit, QaModeState>(
-          builder: (context, state) {
-            if (state.pickingColumns) {
-              return _QaColumnPicker(
-                deck: deck,
-                fieldLabel: (index) => _fieldLabel(context, index),
-              );
-            }
-            if (state.loading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (state.factIds.isEmpty) {
-              return _QaMessage(text: loc.qaModeEmpty);
-            }
-            if (state.factLoadFailed) {
-              return _QaMessage(text: loc.qaModeFactLoadFailed);
-            }
-            final visibleIndexes = [
-              for (var i = 0; i < state.entries.length; i++)
-                if (state.activeColumnIndexes.contains(i)) i,
-            ];
-            return Column(
-              children: [
-                _QaHeader(
-                  state: state,
-                  deck: deck,
-                  fieldLabel: (index) => _fieldLabel(context, index),
-                ),
-                Expanded(
-                  child: ListView(
-                    padding: _kQaPadding,
-                    children: [
-                      for (final i in visibleIndexes)
-                        _QaColumnRow(
-                          entry: state.entries[i],
-                          label: _label(context, state, i),
-                          audioUrl: qaAudioUrl(
-                            audioId: state.entries[i].audio,
-                            mediaVersions: state.mediaVersions,
-                          ),
-                          checked: state.checkedIndexes.contains(i),
-                          scoreable: qaScoreableAspects(
-                            state.entries[i],
-                          ).isNotEmpty,
-                          onToggle: () =>
-                              context.read<QaModeCubit>().toggleColumn(i),
-                          onEdit: () => _edit(context, i),
-                        ),
-                    ],
-                  ),
-                ),
-                _QaFooter(state: state, onNext: () => _next(context)),
-              ],
+        child: BlocListener<QaModeCubit, QaModeState>(
+          listenWhen: (prev, next) => !prev.walkComplete && next.walkComplete,
+          listener: (context, state) {
+            AppToast.success(
+              context,
+              AppLocalizations.of(context)!.qaModeWalkComplete,
             );
           },
+          child: BlocBuilder<QaModeCubit, QaModeState>(
+            builder: (context, state) {
+              if (state.pickingColumns) {
+                return _QaColumnPicker(
+                  deck: deck,
+                  fieldLabel: (index) => _fieldLabel(context, index),
+                );
+              }
+              if (state.loading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (state.factIds.isEmpty) {
+                return _QaMessage(text: loc.qaModeEmpty);
+              }
+              if (state.factLoadFailed) {
+                return _QaMessage(text: loc.qaModeFactLoadFailed);
+              }
+              final visibleIndexes = [
+                for (var i = 0; i < state.entries.length; i++)
+                  if (state.activeColumnIndexes.contains(i)) i,
+              ];
+              return Column(
+                children: [
+                  _QaHeader(
+                    state: state,
+                    deck: deck,
+                    fieldLabel: (index) => _fieldLabel(context, index),
+                  ),
+                  Expanded(
+                    child: ListView(
+                      padding: _kQaPadding,
+                      children: [
+                        for (final i in visibleIndexes)
+                          _QaColumnRow(
+                            entry: state.entries[i],
+                            label: _label(context, state, i),
+                            audioUrl: qaAudioUrl(
+                              audioId: state.entries[i].audio,
+                              mediaVersions: state.mediaVersions,
+                            ),
+                            checked: state.checkedIndexes.contains(i),
+                            scoreable: qaScoreableAspects(
+                              state.entries[i],
+                            ).isNotEmpty,
+                            onToggle: () =>
+                                context.read<QaModeCubit>().toggleColumn(i),
+                            onEdit: () => _edit(context, i),
+                          ),
+                      ],
+                    ),
+                  ),
+                  _QaFooter(state: state, onNext: () => _next(context)),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

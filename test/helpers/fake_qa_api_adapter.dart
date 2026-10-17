@@ -12,10 +12,10 @@ class FakeQaApiAdapter implements HttpClientAdapter {
     this.entriesByFactId = const {},
     this.qualityByFactId = const {},
     this.mediaVersionsByFactId = const {},
-    this.stats,
+    Map<String, dynamic>? stats,
     this.qualityPutFails = false,
     this.contributionFails = false,
-  });
+  }) : stats = stats == null ? null : Map<String, dynamic>.from(stats);
 
   final List<String> factIds;
 
@@ -28,8 +28,8 @@ class FakeQaApiAdapter implements HttpClientAdapter {
   /// Fact id → snapshot `media_versions` for that fact's GET response.
   final Map<String, Map<String, int>> mediaVersionsByFactId;
 
-  /// `data` for `/quality/stats`; `null` answers 404.
-  final Map<String, dynamic>? stats;
+  /// `data` for `/quality/stats`; `null` answers 404. Mutated on quality PUT.
+  Map<String, dynamic>? stats;
 
   bool qualityPutFails;
   bool contributionFails;
@@ -87,6 +87,7 @@ class FakeQaApiAdapter implements HttpClientAdapter {
             ? Map<String, dynamic>.from(options.data as Map)
             : <String, dynamic>{};
         qualityPuts.add(body);
+        _advanceCursors(factId, body['columns']);
         final entries = body['entries'];
         return _ok({
           'quality': {
@@ -141,6 +142,28 @@ class FakeQaApiAdapter implements HttpClientAdapter {
     }
 
     return _error('not found', 404);
+  }
+
+  void _advanceCursors(String factId, Object? columnsRaw) {
+    if (columnsRaw is! List || columnsRaw.isEmpty) return;
+    final factIndex = factIds.indexOf(factId);
+    if (factIndex < 0) return;
+    final current = stats ?? <String, dynamic>{};
+    final cursors = Map<String, dynamic>.from(
+      current['cursors'] is Map
+          ? Map<String, dynamic>.from(current['cursors'] as Map)
+          : const <String, dynamic>{},
+    );
+    for (final col in columnsRaw) {
+      final key = '$col';
+      final stored = cursors[key]?.toString();
+      final storedIndex = stored == null || stored.isEmpty
+          ? -1
+          : factIds.indexOf(stored);
+      if (storedIndex >= factIndex) continue;
+      cursors[key] = factId;
+    }
+    stats = {...current, 'last_fact_id': factId, 'cursors': cursors};
   }
 
   String _factIdFrom(String path, {required String suffix}) {

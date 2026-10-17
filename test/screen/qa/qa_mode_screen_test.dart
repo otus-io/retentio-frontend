@@ -249,6 +249,10 @@ void main() {
       );
       expect(find.text('second'), findsOneWidget);
       expect(find.textContaining('Fact 2 / 2'), findsOneWidget);
+      expect(
+        find.text("You're done with these columns. Thank you."),
+        findsNothing,
+      );
     });
 
     testWidgets('Next verifies the last fact without requiring hasNext', (
@@ -273,6 +277,11 @@ void main() {
 
       expect(adapter.qualityPuts, hasLength(1));
       expect(find.textContaining('Fact 1 / 1'), findsOneWidget);
+      expect(
+        find.text("You're done with these columns. Thank you."),
+        findsOneWidget,
+      );
+      await tester.pump(const Duration(seconds: 2));
     });
 
     testWidgets('Verified is not tappable and fills when all columns checked', (

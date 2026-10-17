@@ -1803,6 +1803,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qaModeVerify => 'Verified';
 
   @override
+  String get qaModeWalkComplete =>
+      'You\'re done with these columns. Thank you.';
+
+  @override
   String get qaVerifyConfirmTitle => 'Send verification';
 
   @override

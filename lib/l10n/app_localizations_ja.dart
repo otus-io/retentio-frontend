@@ -1705,6 +1705,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get qaModeVerify => '確認済みにする';
 
   @override
+  String get qaModeWalkComplete => 'この列の確認は完了です。ありがとうございます。';
+
+  @override
   String get qaVerifyConfirmTitle => '確認を送信';
 
   @override

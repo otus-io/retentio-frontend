@@ -3176,7 +3176,8 @@ This list does **not** include `count` / `total` — use `total_entries` for the
 |-------|---------|
 | `verified_aspects` / `total_aspects` | Human/10 scoreable text/audio aspects vs all non-empty text/audio fields |
 | `verified_facts` / `total_facts` | Facts fully human-verified vs facts with ≥1 scoreable aspect |
-| `last_fact_id` | QA resume cursor; omitted when unset |
+| `last_fact_id` | Legacy deck-wide QA resume cursor; omitted when unset |
+| `cursors` | Per-column resume map (`"0"` → fact id); omitted when empty |
 | `last_fact_updated_at` | UTC RFC3339 when cursor was last written |
 
 **`PUT …/facts/{factId}/quality`** sets `last_fact_id` to that fact on success (no separate stats write needed).
@@ -3215,7 +3216,7 @@ Request/response examples for contributions: [Import overlays & contributions](#
 
 Editorial scores used to find content worth regenerating (weak examples, bad audio). Not study content and not in publish snapshots. **PUT** is deck owner on a source or imported deck (import: fact must be in the pinned snapshot; entry indexes validated against the snapshot). **GET** / list: deck owner on source or imported decks. **DELETE** remains source-owner only (imported → **400** `fact quality is only available on source decks`). List/filter: [Quality catalog](#quality-catalog). Design notes: [`fact-quality.md`](fact-quality.md).
 
-Each entry index (`"0"`, `"2"`, …, matching the fact's `entries` positions) may score `text` and/or `audio` with `score` **1–10** (1 worst) and `model` (`claude`, `elevenlabs`, `human`, …). Deleting a fact or deck deletes its quality; shrinking `entries` drops scores for indexes that no longer exist. **PUT replaces the whole record**; the server sets `fact_id`, `updated_at`, and `verified_by` (JWT username when any aspect uses `model: human`; omit from request body). On success it also sets the deck's QA resume cursor (`last_fact_id`) to this fact — see [Quality stats](#quality-stats). Empty `entries`, missing `text`/`audio` on an index, non-canonical keys (`"02"`), out-of-range indexes, empty `model`, or score outside 1–10 → **400**. On imported decks, facts outside the pinned snapshot → **400** `fact not in pinned snapshot`.
+Each entry index (`"0"`, `"2"`, …, matching the fact's `entries` positions) may score `text` and/or `audio` with `score` **1–10** (1 worst) and `model` (`claude`, `elevenlabs`, `human`, …). Deleting a fact or deck deletes its quality; shrinking `entries` drops scores for indexes that no longer exist. **PUT replaces the whole record**; the server sets `fact_id`, `updated_at`, and `verified_by` (JWT username when any aspect uses `model: human`; omit from request body). On success it also sets the deck's QA resume cursor (`last_fact_id`) to this fact. Optional `columns` (entry indexes) advances those per-column resume cursors to this fact, forward-only — see [Quality stats](#quality-stats). Empty `entries`, missing `text`/`audio` on an index, non-canonical keys (`"02"`), out-of-range indexes, empty `model`, or score outside 1–10 → **400**. On imported decks, facts outside the pinned snapshot → **400** `fact not in pinned snapshot`.
 
 **Endpoint:** `PUT /api/decks/{id}/facts/{factId}/quality`
 
@@ -3227,7 +3228,8 @@ Each entry index (`"0"`, `"2"`, …, matching the fact's `entries` positions) ma
       "text": { "score": 1, "model": "claude" },
       "audio": { "score": 3, "model": "elevenlabs" }
     }
-  }
+  },
+  "columns": [0, 2]
 }
 ```
 
