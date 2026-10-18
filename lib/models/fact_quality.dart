@@ -55,6 +55,7 @@ class FactQualityStats {
   const FactQualityStats({
     required this.verifiedAspects,
     required this.totalAspects,
+    this.editedCount = 0,
     this.lastFactId,
     this.columns = const {},
     this.cursors = const {},
@@ -62,6 +63,9 @@ class FactQualityStats {
 
   final int verifiedAspects;
   final int totalAspects;
+
+  /// Distinct facts with a new `fact_edit` contribution on this deck.
+  final int editedCount;
 
   /// Legacy deck-wide QA resume cursor; `null` when never verified.
   final String? lastFactId;
@@ -100,6 +104,7 @@ class FactQualityStats {
     return FactQualityStats(
       verifiedAspects: _toInt(json['verified_aspects']) ?? 0,
       totalAspects: _toInt(json['total_aspects']) ?? 0,
+      editedCount: _toInt(json['edited_count']) ?? 0,
       lastFactId: (resume != null && resume.isNotEmpty) ? resume : null,
       columns: columns,
       cursors: cursors,
@@ -130,6 +135,24 @@ String? qaResumeFactId({
     }
   }
   return resumeId;
+}
+
+/// True when every selected column's cursor is already on the last fact.
+///
+/// Used to show the walk-complete screen instead of reopening the last fact.
+bool qaColumnsWalkComplete({
+  required Set<int> columns,
+  required Map<int, String> cursors,
+  required List<String> factIds,
+}) {
+  if (factIds.isEmpty) return false;
+  final resumeId = qaResumeFactId(
+    columns: columns,
+    cursors: cursors,
+    factIds: factIds,
+  );
+  if (resumeId == null) return false;
+  return factIds.indexOf(resumeId) == factIds.length - 1;
 }
 
 /// Per-column human-verification counters from quality stats.

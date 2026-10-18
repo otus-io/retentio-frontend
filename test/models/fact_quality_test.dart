@@ -68,13 +68,16 @@ void main() {
       final stats = FactQualityStats.fromJson({
         'verified_aspects': 12,
         'total_aspects': '40',
+        'edited_count': '3',
       });
       expect(stats.verifiedAspects, 12);
       expect(stats.totalAspects, 40);
+      expect(stats.editedCount, 3);
 
       final empty = FactQualityStats.fromJson({'verified_aspects': <int>[]});
       expect(empty.verifiedAspects, 0);
       expect(empty.totalAspects, 0);
+      expect(empty.editedCount, 0);
     });
 
     test('reads the resume cursor when present', () {
@@ -164,6 +167,54 @@ void main() {
       expect(
         qaResumeFactId(columns: {0}, cursors: {0: 'ghost'}, factIds: ids),
         isNull,
+      );
+    });
+  });
+
+  group('qaColumnsWalkComplete', () {
+    const ids = ['fact-1', 'fact-2', 'fact-3'];
+
+    test('is true when every selected cursor is on the last fact', () {
+      expect(
+        qaColumnsWalkComplete(
+          columns: {0, 1},
+          cursors: {0: 'fact-3', 1: 'fact-3'},
+          factIds: ids,
+        ),
+        isTrue,
+      );
+    });
+
+    test('is false when the earliest cursor is before the last fact', () {
+      expect(
+        qaColumnsWalkComplete(
+          columns: {0, 1},
+          cursors: {0: 'fact-3', 1: 'fact-2'},
+          factIds: ids,
+        ),
+        isFalse,
+      );
+    });
+
+    test('is false when any selected column has no cursor', () {
+      expect(
+        qaColumnsWalkComplete(
+          columns: {0, 1},
+          cursors: {0: 'fact-3'},
+          factIds: ids,
+        ),
+        isFalse,
+      );
+    });
+
+    test('is false when the deck has no facts', () {
+      expect(
+        qaColumnsWalkComplete(
+          columns: {0},
+          cursors: {0: 'fact-1'},
+          factIds: const [],
+        ),
+        isFalse,
       );
     });
   });

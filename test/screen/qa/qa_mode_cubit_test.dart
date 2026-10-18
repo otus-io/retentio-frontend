@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/core/network/network.dart';
-import 'package:retentio/features/contributions/pending_contributions_store.dart';
 import 'package:retentio/screen/qa/qa_column_prefs.dart';
 import 'package:retentio/screen/qa/qa_mode_cubit.dart';
 import 'package:retentio/services/apis/api_service.dart';
@@ -97,7 +96,7 @@ void main() {
       await cubit.close();
     });
 
-    test('stays on the last fact when the cursor is that fact', () async {
+    test('shows walk complete when every cursor is on the last fact', () async {
       buildAdapter(
         stats: {
           'last_fact_id': 'fact-1',
@@ -108,8 +107,10 @@ void main() {
 
       await startWalk(cubit);
 
-      expect(cubit.state.index, 1);
-      expect(cubit.state.hasNext, isFalse);
+      expect(cubit.state.walkComplete, isTrue);
+      expect(cubit.state.pickingColumns, isFalse);
+      expect(cubit.state.loading, isFalse);
+      expect(cubit.state.fact, isNull);
       await cubit.close();
     });
 
@@ -605,33 +606,25 @@ void main() {
       adapter = FakeQaApiAdapter(
         factIds: const ['fact-1', 'fact-2'],
         entriesByFactId: entries,
+        stats: {'verified_aspects': 0, 'total_aspects': 3, 'edited_count': 0},
       );
       networkDioClient.dio.httpClientAdapter = adapter;
 
       final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
       await startWalk(cubit);
       expect(cubit.state.entries.first.text, 'headword');
+      expect(cubit.state.editedCount, 0);
 
-      await PendingContributionsStore.of.upsert(
-        deckId: 'imp-1',
-        kind: PendingContributionKind.edit,
-        factId: 'fact-1',
-        preview: 'updated headword',
-      );
-      await PendingContributionsStore.of.markAsSent(
-        'imp-1',
-        PendingContributionsStore.of.itemId(
-          PendingContributionKind.edit,
-          factId: 'fact-1',
-        ),
-        contributionId: 'cont-1',
-        message: kQaEditMessage,
-      );
       // Simulate overlay already saved by FactEdit before onSaved refresh.
       entries['fact-1'] = [
         {'text': 'updated headword', 'audio': 'aud-1'},
         {'text': 'meaning'},
       ];
+      adapter.stats = {
+        'verified_aspects': 0,
+        'total_aspects': 3,
+        'edited_count': 1,
+      };
 
       final error = await cubit.submitEdit(entryIndex: 0);
 
@@ -792,6 +785,34 @@ void main() {
         await cubit.close();
       },
     );
+
+    test('column switch to a finished set opens walk complete', () async {
+      buildAdapter(
+        factIds: const ['fact-1', 'fact-2'],
+        stats: {
+          'verified_aspects': 0,
+          'total_aspects': 3,
+          'cursors': <String, dynamic>{},
+        },
+      );
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await startWalk(cubit);
+      expect(cubit.state.walkComplete, isFalse);
+
+      adapter.stats = {
+        'verified_aspects': 3,
+        'total_aspects': 3,
+        'edited_count': 1,
+        'cursors': {'0': 'fact-2', '1': 'fact-2'},
+      };
+      cubit.reopenColumnPicker();
+      await cubit.startWalk({0, 1});
+
+      expect(cubit.state.walkComplete, isTrue);
+      expect(cubit.state.editedCount, 1);
+      expect(cubit.state.fact, isNull);
+      await cubit.close();
+    });
 
     test(
       'startWalk stops when the cubit is closed while saving columns',
