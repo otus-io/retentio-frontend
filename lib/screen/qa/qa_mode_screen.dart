@@ -266,6 +266,7 @@ class _QaColumnPicker extends StatefulWidget {
 class _QaColumnPickerState extends State<_QaColumnPicker> {
   Set<int> _selected = const {};
   bool _loading = true;
+  bool _starting = false;
 
   int get _columnCount =>
       widget.deck.fields.isNotEmpty ? widget.deck.fields.length : 1;
@@ -301,8 +302,11 @@ class _QaColumnPickerState extends State<_QaColumnPicker> {
   }
 
   Future<void> _start() async {
+    if (_starting) return;
     if (_selected.isEmpty) return;
-    await context.read<QaModeCubit>().startWalk(_selected);
+    final columns = Set<int>.of(_selected);
+    setState(() => _starting = true);
+    await context.read<QaModeCubit>().startWalk(columns);
   }
 
   @override
@@ -335,7 +339,7 @@ class _QaColumnPickerState extends State<_QaColumnPicker> {
                     for (var i = 0; i < _columnCount; i++)
                       CheckboxListTile(
                         value: _selected.contains(i),
-                        onChanged: (_) => _toggle(i),
+                        onChanged: _starting ? null : (_) => _toggle(i),
                         controlAffinity: ListTileControlAffinity.leading,
                         contentPadding: EdgeInsets.zero,
                         title: Text(widget.fieldLabel(i)),
@@ -357,7 +361,7 @@ class _QaColumnPickerState extends State<_QaColumnPicker> {
             label: loc.qaModeStartWalk,
             fullWidth: true,
             leading: const Icon(LucideIcons.play),
-            onPressed: _selected.isEmpty ? null : _start,
+            onPressed: _selected.isEmpty || _starting ? null : _start,
           ),
         ],
       ),

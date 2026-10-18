@@ -164,8 +164,10 @@ class QaModeCubit extends Cubit<QaModeState> {
     var stats = state.stats;
     if (factsLoaded) {
       // Always refetch: another device may have advanced cursors since load.
-      stats = await FactQualityService.of.getDeckQualityStats(deckId);
+      // A failed read keeps the stats already on screen.
+      final fetched = await FactQualityService.of.getDeckQualityStats(deckId);
       if (isClosed) return;
+      if (fetched != null) stats = fetched;
       final cursors = stats?.cursors ?? const {};
       if (qaColumnsWalkComplete(
         columns: columns,
@@ -232,7 +234,12 @@ class QaModeCubit extends Cubit<QaModeState> {
   Future<void> refreshStats() async {
     final stats = await FactQualityService.of.getDeckQualityStats(deckId);
     if (isClosed) return;
-    emit(state.copyWith(stats: stats, editedCount: stats?.editedCount ?? 0));
+    emit(
+      state.copyWith(
+        stats: stats,
+        editedCount: stats?.editedCount ?? state.editedCount,
+      ),
+    );
   }
 
   Future<void> _loadFacts() async {
@@ -448,6 +455,11 @@ class QaModeCubit extends Cubit<QaModeState> {
     }
     final stats = await FactQualityService.of.getDeckQualityStats(deckId);
     if (isClosed) return;
-    emit(state.copyWith(stats: stats, editedCount: stats?.editedCount ?? 0));
+    emit(
+      state.copyWith(
+        stats: stats,
+        editedCount: stats?.editedCount ?? state.editedCount,
+      ),
+    );
   }
 }

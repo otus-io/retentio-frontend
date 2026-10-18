@@ -41,6 +41,9 @@ class FakeQaApiAdapter implements HttpClientAdapter {
   /// How many times `GET …/facts/ids` was hit.
   int factIdsRequestCount = 0;
 
+  /// How many times `GET …/quality/stats` was hit.
+  int statsRequestCount = 0;
+
   /// Optional gate awaited before answering `GET …/quality/stats`.
   /// Used by tests to assert busy stays true during header refresh.
   Future<void>? statsHold;
@@ -66,6 +69,7 @@ class FakeQaApiAdapter implements HttpClientAdapter {
     final method = options.method;
 
     if (method == 'GET' && path.endsWith('/quality/stats')) {
+      statsRequestCount++;
       final hold = statsHold;
       if (hold != null) {
         final started = _statsHoldStarted ??= Completer<void>();

@@ -667,6 +667,22 @@ void main() {
       expect(cubit.state.stats?.columnAt(0)?.completionPercent, 25);
       await cubit.close();
     });
+
+    test('keeps the last edited count when stats cannot be loaded', () async {
+      buildAdapter(
+        stats: {'verified_aspects': 1, 'total_aspects': 4, 'edited_count': 2},
+      );
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await cubit.refreshStats();
+      expect(cubit.state.editedCount, 2);
+
+      adapter.stats = null;
+      await cubit.refreshStats();
+
+      expect(cubit.state.stats?.verifiedAspects, 1);
+      expect(cubit.state.editedCount, 2);
+      await cubit.close();
+    });
   });
 
   group('column filter', () {
@@ -785,6 +801,33 @@ void main() {
         await cubit.close();
       },
     );
+
+    test('keeps loaded stats when a column-switch refetch fails', () async {
+      buildAdapter(
+        factIds: const ['fact-1', 'fact-2', 'fact-3'],
+        stats: {
+          'verified_aspects': 2,
+          'total_aspects': 4,
+          'edited_count': 3,
+          'cursors': {'0': 'fact-1', '1': 'fact-1'},
+        },
+      );
+      final cubit = QaModeCubit(deckId: 'imp-1', deckFieldCount: 2);
+      await startWalk(cubit);
+      expect(cubit.state.index, 1);
+      expect(cubit.state.editedCount, 3);
+
+      adapter.stats = null;
+      cubit.reopenColumnPicker();
+      await cubit.startWalk({0});
+
+      expect(cubit.state.stats?.verifiedAspects, 2);
+      expect(cubit.state.stats?.totalAspects, 4);
+      expect(cubit.state.editedCount, 3);
+      expect(cubit.state.index, 1);
+      expect(cubit.state.entries.first.text, 'second');
+      await cubit.close();
+    });
 
     test('column switch to a finished set opens walk complete', () async {
       buildAdapter(
