@@ -2147,6 +2147,7 @@
   },
   "qaModePrevious": "Previous",
   "qaModeVerify": "Verified",
+  "qaModeWalkComplete": "You're done with these columns. Thank you.",
   "qaVerifyConfirmTitle": "Send verification",
   "qaVerifyConfirmFields": "Signing off: {fields}",
   "@qaVerifyConfirmFields": {

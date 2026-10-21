@@ -1702,6 +1702,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get qaModeVerify => '已核验';
 
   @override
+  String get qaModeWalkComplete => '这些栏目已核验完成，谢谢。';
+
+  @override
   String get qaVerifyConfirmTitle => '发送核验';
 
   @override

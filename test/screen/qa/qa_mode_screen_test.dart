@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter/material.dart';
@@ -249,9 +251,13 @@ void main() {
       );
       expect(find.text('second'), findsOneWidget);
       expect(find.textContaining('Fact 2 / 2'), findsOneWidget);
+      expect(
+        find.text("You're done with these columns. Thank you."),
+        findsNothing,
+      );
     });
 
-    testWidgets('Next verifies the last fact without requiring hasNext', (
+    testWidgets('Next verifies the last fact and shows the complete screen', (
       tester,
     ) async {
       useAdapter(factIds: const ['fact-1']);
@@ -272,7 +278,71 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(adapter.qualityPuts, hasLength(1));
-      expect(find.textContaining('Fact 1 / 1'), findsOneWidget);
+      expect(find.textContaining('Fact 1 / 1'), findsNothing);
+      expect(find.text('headword'), findsNothing);
+      expect(
+        find.text("You're done with these columns. Thank you."),
+        findsOneWidget,
+      );
+      expect(find.byIcon(LucideIcons.circleCheck), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Back to Deck'), findsOneWidget);
+    });
+
+    testWidgets('Back to Deck pops the QA screen after walk complete', (
+      tester,
+    ) async {
+      useAdapter(factIds: const ['fact-1']);
+      tester.view.physicalSize = const Size(1000, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final router = GoRouter(
+        initialLocation: '/qa',
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, _) => const Scaffold(body: Text('Study deck')),
+            routes: [
+              GoRoute(
+                path: 'qa',
+                builder: (_, _) => QaModeScreen(deck: _importedDeck()),
+              ),
+            ],
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp.router(
+            routerConfig: router,
+            locale: const Locale('en'),
+            supportedLocales: const [Locale('en'), Locale('zh'), Locale('ja')],
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await startQaWalk(tester);
+
+      await tester.tap(find.text('日文'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('中文'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Next'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Back to Deck'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Study deck'), findsOneWidget);
+      expect(find.text('QA mode'), findsNothing);
     });
 
     testWidgets('Verified is not tappable and fills when all columns checked', (
@@ -393,6 +463,82 @@ void main() {
       expect(find.text('50%'), findsOneWidget);
       expect(find.text('0%'), findsOneWidget);
     });
+
+    testWidgets(
+      'column picker ignores a second start while the walk is opening',
+      (tester) async {
+        useAdapter(
+          stats: {
+            'verified_aspects': 1,
+            'total_aspects': 2,
+            'columns': {
+              '0': {'verified_aspects': 1, 'total_aspects': 2},
+            },
+          },
+        );
+        await pumpQaMode(tester);
+        await tester.tap(find.byIcon(LucideIcons.columns3));
+        await tester.pumpAndSettle();
+
+        FilledButton startButton() => tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'Start QA'),
+        );
+
+        // Clear both columns, then invoke the handler captured before rebuild
+        // so an empty pick is ignored and the picker stays up.
+        final startWithSelection = startButton().onPressed!;
+        await tester.tap(find.text('日文'));
+        await tester.tap(find.text('中文'));
+        startWithSelection();
+        await tester.pump();
+        expect(find.text('Choose columns'), findsOneWidget);
+        expect(startButton().onPressed, isNull);
+
+        await tester.tap(find.text('日文'));
+        await tester.pump();
+
+        final hold = Completer<void>();
+        final statsRequests = adapter.statsRequestCount;
+        adapter.statsHold = hold.future;
+        try {
+          final start = startButton().onPressed!;
+          start();
+          start();
+          for (
+            var i = 0;
+            i < 10 && adapter.statsRequestCount == statsRequests;
+            i++
+          ) {
+            await tester.pump(const Duration(milliseconds: 50));
+          }
+
+          expect(adapter.statsRequestCount, statsRequests + 1);
+          final tiles = tester
+              .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
+              .toList();
+          expect(tiles.map((tile) => tile.value), [true, false]);
+          expect(tiles.every((tile) => tile.onChanged == null), isTrue);
+          expect(startButton().onPressed, isNull);
+
+          await tester.tap(find.text('中文'));
+          await tester.pump();
+          expect(
+            tester
+                .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
+                .map((tile) => tile.value),
+            [true, false],
+          );
+
+          hold.complete();
+          await tester.pumpAndSettle();
+        } finally {
+          if (!hold.isCompleted) hold.complete();
+        }
+
+        expect(find.text('日文'), findsOneWidget);
+        expect(find.text('中文'), findsNothing);
+      },
+    );
 
     testWidgets('column picker limits the walk to selected columns', (
       tester,

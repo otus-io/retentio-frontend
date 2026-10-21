@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
-import 'package:retentio/features/contributions/pending_contributions_store.dart';
 import 'package:retentio/models/fact.dart';
 import 'package:retentio/models/fact_quality.dart';
 import 'package:retentio/screen/qa/qa_column_prefs.dart';
@@ -25,6 +24,7 @@ class QaModeState {
     this.stats,
     this.editedCount = 0,
     this.busy = false,
+    this.walkComplete = false,
   });
 
   final bool loading;
@@ -49,6 +49,9 @@ class QaModeState {
   final FactQualityStats? stats;
   final int editedCount;
   final bool busy;
+
+  /// Set after Next signs off the last fact of this column set.
+  final bool walkComplete;
 
   String? get factId =>
       index >= 0 && index < factIds.length ? factIds[index] : null;
@@ -100,6 +103,7 @@ class QaModeState {
     FactQualityStats? stats,
     int? editedCount,
     bool? busy,
+    bool? walkComplete,
   }) => QaModeState(
     loading: loading ?? this.loading,
     pickingColumns: pickingColumns ?? this.pickingColumns,
@@ -113,6 +117,7 @@ class QaModeState {
     stats: stats ?? this.stats,
     editedCount: editedCount ?? this.editedCount,
     busy: busy ?? this.busy,
+    walkComplete: walkComplete ?? this.walkComplete,
   );
 }
 
@@ -142,22 +147,67 @@ class QaModeCubit extends Cubit<QaModeState> {
   }
 
   /// Locks the column filter for this walk and loads facts.
+  ///
+  /// A different selection opens at the earliest per-column server cursor (the
+  /// first fact when any selected column has not been walked). Same columns
+  /// stay on the current fact unless every selected cursor is already on the
+  /// last fact — then [QaModeState.walkComplete] is set immediately.
   Future<void> startWalk(Set<int> activeColumnIndexes) async {
     if (activeColumnIndexes.isEmpty || state.busy) return;
-    await QaColumnPrefs.save(deckId, activeColumnIndexes);
-    final resumeWalk = state.factIds.isNotEmpty;
+    final columns = Set<int>.of(activeColumnIndexes);
+    await QaColumnPrefs.save(deckId, columns);
+    if (isClosed) return;
+    final factsLoaded = state.factIds.isNotEmpty;
+    final sameColumns =
+        factsLoaded && setEquals(state.activeColumnIndexes, columns);
+    var index = state.index;
+    var stats = state.stats;
+    if (factsLoaded) {
+      // Always refetch: another device may have advanced cursors since load.
+      // A failed read keeps the stats already on screen.
+      final fetched = await FactQualityService.of.getDeckQualityStats(deckId);
+      if (isClosed) return;
+      if (fetched != null) stats = fetched;
+      final cursors = stats?.cursors ?? const {};
+      if (qaColumnsWalkComplete(
+        columns: columns,
+        cursors: cursors,
+        factIds: state.factIds,
+      )) {
+        emit(
+          QaModeState(
+            pickingColumns: false,
+            walkComplete: true,
+            activeColumnIndexes: columns,
+            factIds: state.factIds,
+            index: state.factIds.length - 1,
+            stats: stats,
+            editedCount: stats?.editedCount ?? 0,
+          ),
+        );
+        return;
+      }
+      if (!sameColumns) {
+        final resumeId = qaResumeFactId(
+          columns: columns,
+          cursors: cursors,
+          factIds: state.factIds,
+        );
+        index = _resumeIndex(state.factIds, resumeId);
+      }
+    }
     emit(
       QaModeState(
         pickingColumns: false,
         loading: true,
-        activeColumnIndexes: Set<int>.of(activeColumnIndexes),
-        factIds: resumeWalk ? state.factIds : const [],
-        index: resumeWalk ? state.index : 0,
-        stats: state.stats,
-        editedCount: state.editedCount,
+        activeColumnIndexes: columns,
+        factIds: factsLoaded ? state.factIds : const [],
+        index: factsLoaded ? index : 0,
+        stats: stats,
+        editedCount: stats?.editedCount ?? state.editedCount,
       ),
     );
-    if (resumeWalk) {
+    if (factsLoaded) {
       await _loadCurrentFact();
       await _refreshHeader();
     } else {
@@ -184,22 +234,52 @@ class QaModeCubit extends Cubit<QaModeState> {
   Future<void> refreshStats() async {
     final stats = await FactQualityService.of.getDeckQualityStats(deckId);
     if (isClosed) return;
-    emit(state.copyWith(stats: stats));
+    emit(
+      state.copyWith(
+        stats: stats,
+        editedCount: stats?.editedCount ?? state.editedCount,
+      ),
+    );
   }
 
   Future<void> _loadFacts() async {
-    final resumeId = (await FactQualityService.of.getDeckQualityStats(
-      deckId,
-    ))?.lastFactId;
-    if (isClosed) return;
     final ids = await CardService.listFactIds(deckId);
     if (isClosed) return;
-    final verifiedIndex = resumeId == null ? -1 : ids.indexOf(resumeId);
-    final startIndex = verifiedIndex >= 0
-        ? (verifiedIndex + 1).clamp(0, ids.length - 1)
-        : 0;
+    final stats = await FactQualityService.of.getDeckQualityStats(deckId);
+    if (isClosed) return;
+    final cursors = stats?.cursors ?? const {};
+    final editedCount = stats?.editedCount ?? 0;
+    if (qaColumnsWalkComplete(
+      columns: state.activeColumnIndexes,
+      cursors: cursors,
+      factIds: ids,
+    )) {
+      emit(
+        state.copyWith(
+          loading: false,
+          factIds: ids,
+          index: ids.length - 1,
+          stats: stats,
+          editedCount: editedCount,
+          walkComplete: true,
+        ),
+      );
+      return;
+    }
+    final resumeId = qaResumeFactId(
+      columns: state.activeColumnIndexes,
+      cursors: cursors,
+      factIds: ids,
+    );
+    final startIndex = _resumeIndex(ids, resumeId);
     emit(
-      state.copyWith(loading: ids.isNotEmpty, factIds: ids, index: startIndex),
+      state.copyWith(
+        loading: ids.isNotEmpty,
+        factIds: ids,
+        index: startIndex,
+        stats: stats,
+        editedCount: editedCount,
+      ),
     );
     if (ids.isEmpty) {
       emit(state.copyWith(loading: false));
@@ -219,6 +299,7 @@ class QaModeCubit extends Cubit<QaModeState> {
         mediaVersions: const {},
         checkedIndexes: const {},
         loading: true,
+        walkComplete: false,
       ),
     );
     await _loadCurrentFact();
@@ -226,11 +307,15 @@ class QaModeCubit extends Cubit<QaModeState> {
 
   Future<String?> next() async {
     if (!state.canAdvance) return null;
+    final finishing = !state.hasNext;
     if (state.canVerify) {
       final error = await verify();
       if (error != null) return error;
     }
     await goTo(state.index + 1);
+    if (finishing && !state.walkComplete && !isClosed) {
+      emit(state.copyWith(walkComplete: true));
+    }
     return null;
   }
 
@@ -261,6 +346,13 @@ class QaModeCubit extends Cubit<QaModeState> {
         deckId: deckId,
         factId: factId,
         entries: pendingPutEntries(),
+        // In-range active columns only (incl. empty); out-of-range deck
+        // fields would 400 on the server.
+        columns:
+            (state.activeColumnIndexes
+                .where((i) => i >= 0 && i < state.entries.length)
+                .toList()
+              ..sort()),
       );
     } catch (e) {
       if (!isClosed) emit(state.copyWith(busy: false));
@@ -344,20 +436,29 @@ class QaModeCubit extends Cubit<QaModeState> {
     );
   }
 
+  /// Index of the fact after [resumeId], or 0 when there is nothing to resume.
+  ///
+  /// The last fact stays put: signing it off has no later fact to open.
+  static int _resumeIndex(List<String> ids, String? resumeId) {
+    if (ids.isEmpty || resumeId == null) return 0;
+    final verifiedIndex = ids.indexOf(resumeId);
+    if (verifiedIndex < 0) return 0;
+    final next = verifiedIndex + 1;
+    if (next >= ids.length) return ids.length - 1;
+    return next;
+  }
+
   Future<void> _refreshHeader() async {
     if (debugFailNextRefreshHeader) {
       debugFailNextRefreshHeader = false;
       throw StateError('qa header refresh failed');
     }
     final stats = await FactQualityService.of.getDeckQualityStats(deckId);
-    final sent = await PendingContributionsStore.of.listSent(deckId);
     if (isClosed) return;
     emit(
       state.copyWith(
         stats: stats,
-        editedCount: sent
-            .where((row) => row.kind == PendingContributionKind.edit)
-            .length,
+        editedCount: stats?.editedCount ?? state.editedCount,
       ),
     );
   }

@@ -1305,6 +1305,7 @@
   },
   "qaModePrevious": "上一条",
   "qaModeVerify": "已核验",
+  "qaModeWalkComplete": "这些栏目已核验完成，谢谢。",
   "qaVerifyConfirmTitle": "发送核验",
   "qaVerifyConfirmFields": "将核验：{fields}",
   "@qaVerifyConfirmFields": {

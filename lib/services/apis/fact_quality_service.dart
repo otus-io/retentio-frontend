@@ -36,15 +36,23 @@ class FactQualityService {
   }
 
   /// Replaces the whole quality record. Throws with the API `msg` on failure.
+  ///
+  /// When [columns] is non-empty, the server advances those per-column resume
+  /// cursors to [factId] (forward-only).
   Future<void> putFactQuality({
     required String deckId,
     required String factId,
     required Map<String, dynamic> entries,
+    List<int>? columns,
   }) async {
+    final body = <String, dynamic>{'entries': entries};
+    if (columns != null && columns.isNotEmpty) {
+      body['columns'] = columns.toList()..sort();
+    }
     final res = await ApiService.put(
       Api.factQuality,
       pathParams: {'id': deckId, 'factId': factId},
-      body: {'entries': entries},
+      body: body,
     );
     if (res == null || !res.isSuccess) {
       throw Exception(res?.msg ?? 'quality_put_failed');

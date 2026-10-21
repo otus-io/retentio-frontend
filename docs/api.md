@@ -3154,7 +3154,7 @@ This list does **not** include `count` / `total` — use `total_entries` for the
 
 **Who:** Deck owner on a **source** or **imported** deck.
 
-**Purpose:** QA progress header (human-verified aspect/fact counts) and server-stored resume cursor (`last_fact_id`). Counts are computed from fact entries plus stored quality; on imported decks, entry shapes come from the **pinned snapshot**. Design notes: [`fact-quality.md`](fact-quality.md).
+**Purpose:** QA progress header (human-verified aspect/fact counts, `edited_count`) and server-stored resume cursor (`last_fact_id`). Counts are computed from fact entries plus stored quality; on imported decks, entry shapes come from the **pinned snapshot**. Design notes: [`fact-quality.md`](fact-quality.md).
 
 **GET — success (200):**
 
@@ -3165,6 +3165,7 @@ This list does **not** include `count` / `total` — use `total_entries` for the
     "total_aspects": 40,
     "verified_facts": 3,
     "total_facts": 10,
+    "edited_count": 2,
     "last_fact_id": "abc12345",
     "last_fact_updated_at": "2026-08-28T20:53:00Z"
   },
@@ -3176,7 +3177,9 @@ This list does **not** include `count` / `total` — use `total_entries` for the
 |-------|---------|
 | `verified_aspects` / `total_aspects` | Human/10 scoreable text/audio aspects vs all non-empty text/audio fields |
 | `verified_facts` / `total_facts` | Facts fully human-verified vs facts with ≥1 scoreable aspect |
-| `last_fact_id` | QA resume cursor; omitted when unset |
+| `edited_count` | Distinct facts with a new `fact_edit` on this deck; open-row refresh does not bump |
+| `last_fact_id` | Legacy deck-wide QA resume cursor; omitted when unset |
+| `cursors` | Per-column resume map (`"0"` → fact id); omitted when empty |
 | `last_fact_updated_at` | UTC RFC3339 when cursor was last written |
 
 **`PUT …/facts/{factId}/quality`** sets `last_fact_id` to that fact on success (no separate stats write needed).
@@ -3215,7 +3218,7 @@ Request/response examples for contributions: [Import overlays & contributions](#
 
 Editorial scores used to find content worth regenerating (weak examples, bad audio). Not study content and not in publish snapshots. **PUT** is deck owner on a source or imported deck (import: fact must be in the pinned snapshot; entry indexes validated against the snapshot). **GET** / list: deck owner on source or imported decks. **DELETE** remains source-owner only (imported → **400** `fact quality is only available on source decks`). List/filter: [Quality catalog](#quality-catalog). Design notes: [`fact-quality.md`](fact-quality.md).
 
-Each entry index (`"0"`, `"2"`, …, matching the fact's `entries` positions) may score `text` and/or `audio` with `score` **1–10** (1 worst) and `model` (`claude`, `elevenlabs`, `human`, …). Deleting a fact or deck deletes its quality; shrinking `entries` drops scores for indexes that no longer exist. **PUT replaces the whole record**; the server sets `fact_id`, `updated_at`, and `verified_by` (JWT username when any aspect uses `model: human`; omit from request body). On success it also sets the deck's QA resume cursor (`last_fact_id`) to this fact — see [Quality stats](#quality-stats). Empty `entries`, missing `text`/`audio` on an index, non-canonical keys (`"02"`), out-of-range indexes, empty `model`, or score outside 1–10 → **400**. On imported decks, facts outside the pinned snapshot → **400** `fact not in pinned snapshot`.
+Each entry index (`"0"`, `"2"`, …, matching the fact's `entries` positions) may score `text` and/or `audio` with `score` **1–10** (1 worst) and `model` (`claude`, `elevenlabs`, `human`, …). Deleting a fact or deck deletes its quality; shrinking `entries` drops scores for indexes that no longer exist. **PUT replaces the whole record**; the server sets `fact_id`, `updated_at`, and `verified_by` (JWT username when any aspect uses `model: human`; omit from request body). On success it also sets the deck's QA resume cursor (`last_fact_id`) to this fact. Optional `columns` (entry indexes) advances those per-column resume cursors to this fact, forward-only — see [Quality stats](#quality-stats). Empty `entries`, missing `text`/`audio` on an index, non-canonical keys (`"02"`), out-of-range indexes, empty `model`, or score outside 1–10 → **400**. On imported decks, facts outside the pinned snapshot → **400** `fact not in pinned snapshot`.
 
 **Endpoint:** `PUT /api/decks/{id}/facts/{factId}/quality`
 
@@ -3227,7 +3230,8 @@ Each entry index (`"0"`, `"2"`, …, matching the fact's `entries` positions) ma
       "text": { "score": 1, "model": "claude" },
       "audio": { "score": 3, "model": "elevenlabs" }
     }
-  }
+  },
+  "columns": [0, 2]
 }
 ```
 
@@ -3705,7 +3709,7 @@ Contribution submit/inbox errors: [Deck sharing](#deck-sharing).
 | `/api/decks/{id}/facts/{factId}/quality`      | GET         | same `data.quality`; `meta.msg` `Quality retrieved successfully`; **404** `Quality not found` if none stored |
 | `/api/decks/{id}/facts/{factId}/quality`      | DELETE      | `{ "data": { "fact_id" }, "meta": { "msg": "Quality deleted successfully" } }` — 200 even when nothing was stored |
 | `/api/decks/{id}/quality`                     | GET         | `{ "data": { "items": [ { "fact_id", "entries", "updated_at" } ] }, "meta": { "msg": "ok", "effective_score"?, "total_entries", "has_more", "limit", "offset" } }` — no `count`/`total`; defaults `limit` 50, `offset` 0 |
-| `/api/decks/{id}/quality/stats`               | GET         | `{ "data": { "verified_aspects", "total_aspects", "verified_facts", "total_facts", "last_fact_id"?, "last_fact_updated_at"? }, "meta": { "msg": "ok" } }` — see [Quality stats](#quality-stats) |
+| `/api/decks/{id}/quality/stats`               | GET         | `{ "data": { "verified_aspects", "total_aspects", "verified_facts", "total_facts", "edited_count", "last_fact_id"?, "cursors"?, "last_fact_updated_at"? }, "meta": { "msg": "ok" } }` — see [Quality stats](#quality-stats) |
 | `/api/decks/{id}/facts/{factId}/confidence`   | GET         | `{ "data": { "fact_id", "score", "reports", "p_good" }, "meta": { "msg": "ok" } }`                                                                          |
 | `/api/decks/{id}/confidence`                  | GET         | `{ "data": { "items": [ { "fact_id", "score", "reports", "p_good" } ] }, "meta": { "msg", "count", "has_more", "limit", "offset", "total" } }` — defaults `limit` 50, `offset` 0 |
 | `/api/decks/{id}/card`                        | GET         | Optional query `tag_id`. `{ "data": { "card": { id, fact_id, template, …, front[], back[] }, "urgency", "next_card"? }, "meta": { "msg", … } }` — `next_card` is second-most urgent when present (includes its own `urgency`) |
