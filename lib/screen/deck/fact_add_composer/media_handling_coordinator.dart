@@ -113,14 +113,12 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
 
   Future<void> pickMediaForTargetRow() async {
     final loc = AppLocalizations.of(context)!;
-    final result = await FilePicker.pickFiles(
+    final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: AddFactPickExtensions.all,
-      allowMultiple: false,
-      withData: false,
     );
-    if (result == null || result.files.isEmpty) return;
-    final path = result.files.first.path;
+    if (file == null) return;
+    final path = file.path;
     if (path == null) {
       showComposerSnack(loc.addFactUploadFailed);
       return;

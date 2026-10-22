@@ -1,19 +1,17 @@
-// Several Flutter plugins still declare Java 8 for library modules; JDK 21+ warns that
-// -source/-target 8 is obsolete. Force 11 for every Android library subproject.
+// Several Flutter plugins still declare Java 8 for library modules. AGP 9 with
+// Built-in Kotlin requires 17. Force that for every Android library subproject.
 
 subprojects { subproject ->
     subproject.afterEvaluate {
         def androidExt = subproject.extensions.findByName("android")
         if (androidExt != null) {
             androidExt.compileOptions {
-                sourceCompatibility JavaVersion.VERSION_11
-                targetCompatibility JavaVersion.VERSION_11
+                sourceCompatibility JavaVersion.VERSION_17
+                targetCompatibility JavaVersion.VERSION_17
             }
         }
         subproject.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-            kotlinOptions {
-                jvmTarget = "11"
-            }
+            compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
 }

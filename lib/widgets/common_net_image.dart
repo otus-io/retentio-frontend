@@ -531,6 +531,8 @@ class ExtendedNetworkImageSSLProvider
             : null,
       );
       if (bytes.lengthInBytes == 0) {
+        // Leave the failed future unawaited so this catch does not swallow it.
+        // ignore: unawaited_return_in_try_block
         return Future<Uint8List>.error(
           StateError('NetworkImage is an empty file: $resolved'),
         );
