@@ -18,12 +18,13 @@ pluginManagement {
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-    id("com.android.application") version "8.11.1" apply false
+    id("com.android.application") version "9.1.0" apply false
     // START: FlutterFire Configuration
     id("com.google.gms.google-services") version("4.4.2") apply false
     id("com.google.firebase.crashlytics") version("3.0.3") apply false
     // END: FlutterFire Configuration
-    id("org.jetbrains.kotlin.android") version "2.2.20" apply false
+    // Declares the Kotlin version Built-in Kotlin uses. Not applied to the app module.
+    id("org.jetbrains.kotlin.android") version "2.4.0" apply false
 }
 
 include(":app")
