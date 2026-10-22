@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -39,9 +40,10 @@ base class _PickedFile extends PlatformFile {
 }
 
 class _FakeFilePicker extends FilePickerPlatform {
-  _FakeFilePicker(this.result);
+  _FakeFilePicker(this.result, {this.gate});
 
   final PlatformFile? result;
+  final Completer<void>? gate;
   FileType? seenType;
   List<String>? seenExtensions;
 
@@ -61,6 +63,8 @@ class _FakeFilePicker extends FilePickerPlatform {
   }) async {
     seenType = type;
     seenExtensions = allowedExtensions;
+    final gate = this.gate;
+    if (gate != null) await gate.future;
     return result;
   }
 }
@@ -175,6 +179,26 @@ void main() {
     expect(state.snacks, ['Upload failed. Try again.']);
     expect(state.attached, isEmpty);
   });
+
+  testWidgets(
+    'pickMediaForTargetRow ignores a file that arrives after unmount',
+    (tester) async {
+      final gate = Completer<void>();
+      FilePickerPlatform.instance = _FakeFilePicker(
+        _PickedFile(Uri.parse('content://picker/1'), name: 'photo.jpg'),
+        gate: gate,
+      );
+      final state = await pump(tester);
+
+      final pending = state.pickMediaForTargetRow();
+      await tester.pumpWidget(const SizedBox.shrink());
+      gate.complete();
+      await pending;
+
+      expect(state.snacks, isEmpty);
+      expect(state.attached, isEmpty);
+    },
+  );
 
   testWidgets('pickMediaForTargetRow attaches a picked local file', (
     tester,

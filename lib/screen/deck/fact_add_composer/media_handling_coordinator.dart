@@ -117,7 +117,7 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
       type: FileType.custom,
       allowedExtensions: AddFactPickExtensions.all,
     );
-    if (file == null) return;
+    if (file == null || !mounted) return;
     final path = file.path;
     if (path == null) {
       showComposerSnack(loc.addFactUploadFailed);
