@@ -108,41 +108,16 @@ void main() {
     expect(AccountLimits.limitMessage(en, secret: 'password'), isNull);
   });
 
-  test('allows whitespace in a secret when login does not reject it', () {
+  test('reports username whitespace without applying length rules', () {
     expect(
-      AccountLimits.limitMessage(
-        en,
-        username: 'ab',
-        secret: 'pass word',
-        rejectSecretWhitespace: false,
-      ),
-      isNull,
-    );
-    expect(
-      AccountLimits.limitMessage(
-        en,
-        username: 'ab',
-        secret: 'pass\tword',
-        rejectSecretWhitespace: false,
-      ),
-      isNull,
-    );
-    expect(
-      AccountLimits.limitMessage(
-        en,
-        username: 'a b',
-        secret: 'pass word',
-        rejectSecretWhitespace: false,
-      ),
+      AccountLimits.usernameSpaceMessage(en, 'a b'),
       en.usernameContainsSpaces,
     );
     expect(
-      AccountLimits.limitMessage(
-        en,
-        secret: 'short',
-        rejectSecretWhitespace: false,
-      ),
-      en.passwordTooShort,
+      AccountLimits.usernameSpaceMessage(en, '  a\tb  '),
+      en.usernameContainsSpaces,
     );
+    expect(AccountLimits.usernameSpaceMessage(en, 'a'), isNull);
+    expect(AccountLimits.usernameSpaceMessage(en, '  ab  '), isNull);
   });
 }

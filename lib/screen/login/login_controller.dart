@@ -14,14 +14,9 @@ class LoginController {
       showSnack(context, loc.pleaseFillAllFields);
       return;
     }
-    final limitMessage = AccountLimits.limitMessage(
-      loc,
-      username: name,
-      secret: password,
-      rejectSecretWhitespace: false,
-    );
-    if (limitMessage != null) {
-      showSnack(context, limitMessage);
+    final spaceMessage = AccountLimits.usernameSpaceMessage(loc, name);
+    if (spaceMessage != null) {
+      showSnack(context, spaceMessage);
       return;
     }
 
