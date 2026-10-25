@@ -5,9 +5,18 @@ import 'package:retentio/features/offline_learning/data/offline_deck_catalog.dar
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/decks/bloc/deck_sharing_status_cubit.dart';
+import 'package:retentio/screen/decks/widgets/deck_list_card.dart';
 import 'package:retentio/screen/decks/widgets/deck_screen_body.dart';
 
 import '../../../helpers/test_wrapper.dart';
+
+class _ReadyCubit extends DeckListCubit {
+  _ReadyCubit() : super(offlineCatalog: _Catalog());
+
+  void setOfflineReady(Set<String> ids) {
+    emit(state.copyWith(offlineReadyDeckIds: ids));
+  }
+}
 
 class _Catalog implements OfflineDeckCatalog {
   @override
@@ -27,14 +36,14 @@ void main() {
   testWidgets('only offline-ready decks show the offline marker', (
     tester,
   ) async {
-    final cubit = DeckListCubit(offlineCatalog: _Catalog());
+    final cubit = _ReadyCubit();
     addTearDown(cubit.close);
 
     await tester.pumpWidget(
       buildTestableWidgetWithoutProvider(
         MultiBlocProvider(
           providers: [
-            BlocProvider.value(value: cubit),
+            BlocProvider<DeckListCubit>.value(value: cubit),
             BlocProvider(create: (_) => DeckSharingStatusCubit()),
           ],
           child: const Scaffold(body: DeckScreenBody()),
@@ -46,5 +55,24 @@ void main() {
     expect(find.text('Downloaded'), findsOneWidget);
     expect(find.text('Online only'), findsOneWidget);
     expect(find.byTooltip('Available offline'), findsOneWidget);
+
+    cubit.setOfflineReady({'d2'});
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      tester
+          .widget<DeckListCard>(find.widgetWithText(DeckListCard, 'Downloaded'))
+          .availableOffline,
+      isFalse,
+    );
+    expect(
+      tester
+          .widget<DeckListCard>(
+            find.widgetWithText(DeckListCard, 'Online only'),
+          )
+          .availableOffline,
+      isTrue,
+    );
   });
 }

@@ -214,6 +214,59 @@ void main() {
       expect(harness.bloc.state.prefetchedCard, isNull);
     });
 
+    test(
+      'review again clears session progress and loads the next card',
+      () async {
+        final harness = FakeDeckStudyBlocHarness(
+          deckId: 'deck-1',
+          loadResults: [
+            DeckStudyLoadResult(
+              cardDetail: sampleCardDetail(id: 'card-a'),
+              nextCardDetail: sampleCardDetail(id: 'card-b'),
+              refreshedDueCardsCount: 4,
+            ),
+            DeckStudyLoadResult(cardDetail: sampleCardDetail(id: 'card-c')),
+          ],
+        );
+        addTearDown(harness.dispose);
+        await pumpEventQueue();
+
+        harness.bloc.add(const DeckStudyReviewAgainRequested());
+        await pumpEventQueue();
+
+        expect(harness.bloc.state.cardDetail?.card.id, 'card-c');
+        expect(harness.bloc.state.cardsStudied, 0);
+        expect(harness.bloc.state.prefetchedCard, isNull);
+        expect(harness.bloc.state.refreshedDueCardsCount, isNull);
+        expect(harness.bloc.state.isLoading, isFalse);
+        expect(harness.repository.loadCalls, 2);
+      },
+    );
+
+    test('reload from an empty session clears the frozen due counts', () async {
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: 'deck-1',
+        loadResults: const [
+          DeckStudyLoadResult(cardDetail: null, refreshedDueCardsCount: 4),
+          DeckStudyLoadResult(cardDetail: null),
+        ],
+      );
+      addTearDown(harness.dispose);
+      await pumpEventQueue();
+      expect(harness.bloc.state.cardDetail, isNull);
+      expect(harness.bloc.state.refreshedDueCardsCount, 4);
+      expect(harness.bloc.state.sessionDueTarget, 4);
+
+      harness.bloc.add(const DeckStudyReloadRequested());
+      await pumpEventQueue();
+
+      expect(harness.bloc.state.cardDetail, isNull);
+      expect(harness.bloc.state.refreshedDueCardsCount, isNull);
+      expect(harness.bloc.state.sessionDueTarget, isNull);
+      expect(harness.repository.loadCalls, 2);
+      expect(harness.repository.resynced, ['deck-1']);
+    });
+
     for (final (name, resynced, error, loads) in [
       ('redraws after the local copy resyncs', true, null, 3),
       ('keeps the card when nothing was resynced', false, null, 2),

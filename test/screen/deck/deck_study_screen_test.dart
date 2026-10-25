@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/models/tag.dart';
+import 'package:retentio/screen/deck/bloc/deck_study_context_cubit.dart';
 import 'package:retentio/screen/deck/deck_view_screen.dart';
+import 'package:retentio/screen/deck/deck_widgets/deck_menu.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_study_tag_filter_bar.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
 import 'package:retentio/screen/deck/providers/deck_scope.dart';
@@ -87,6 +90,56 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('No cards in this deck'), findsOneWidget);
+    });
+
+    testWidgets('rebuilds the deck menu when the deck is renamed', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: emptySessionDeck.id,
+        loadResults: const [DeckStudyLoadResult(cardDetail: null)],
+      );
+      addTearDown(() async {
+        await harness.dispose();
+        tearDownTestEnvironment();
+      });
+
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          DeckViewScreen(deck: emptySessionDeck),
+          overrides: [
+            currentDeckProvider.overrideWithValue(emptySessionDeck),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
+          ],
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(
+        tester.widget<DeckMenu>(find.byType(DeckMenu)).deck.name,
+        'Empty session',
+      );
+
+      final cubit = tester
+          .element(find.byType(DeckMenu))
+          .read<DeckStudyContextCubit>();
+      cubit.updateDeck(emptySessionDeck.copyWith(name: 'Renamed'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(
+        tester.widget<DeckMenu>(find.byType(DeckMenu)).deck.name,
+        'Renamed',
+      );
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.text('Renamed'),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('asks to go online when the deck is not downloaded', (

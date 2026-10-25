@@ -77,6 +77,10 @@ void main() {
     final facts = await store.getFacts('d1');
     expect(facts.map((f) => f.id), ['f1']);
     expect(facts.single.entries.single.text, 'b');
+
+    await store.deleteFacts('d1', ['f1']);
+    expect(await store.getFacts('d1'), isEmpty);
+    expect((await store.getFacts('d2')).map((f) => f.id), ['f2']);
   });
 
   test('cards are sorted, deck-scoped, upserted and deletable', () async {
@@ -94,6 +98,10 @@ void main() {
     await store.deleteCard('d1', 'c2');
     cards = await store.getCards('d1');
     expect(cards.map((c) => c.id), ['c1', 'c3']);
+    expect((await store.getCards('d2')).map((c) => c.id), ['x']);
+
+    await store.deleteCards('d1', ['c1']);
+    expect((await store.getCards('d1')).map((c) => c.id), ['c3']);
     expect((await store.getCards('d2')).map((c) => c.id), ['x']);
   });
 
