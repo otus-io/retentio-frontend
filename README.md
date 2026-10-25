@@ -63,6 +63,7 @@ Extended reference: [docs/flutter_commands.md](docs/flutter_commands.md) ([中�
 | -------- | ----------- |
 | [docs/flutter_commands.md](docs/flutter_commands.md) | Flutter CLI commands (devices, run, build, `API_ENV`) |
 | [docs/api.md](docs/api.md) | Frontend API usage ([中文](docs/api_zh.md)) |
+| [docs/offline_learning_logic.md](docs/offline_learning_logic.md) | Offline learning business rules ([中文](docs/offline_learning_logic_zh.md)) |
 | [docs/frontend_tests.md](docs/frontend_tests.md) | Test commands and layout ([中文](docs/frontend_tests_zh.md)) |
 | [docs/contributing.md](docs/contributing.md) | Code conduct and PR guidelines ([中文](docs/contributing_zh.md)) |
 | [docs/pre_commit_hook.md](docs/pre_commit_hook.md) | Pre-commit hook setup ([中文](docs/pre_commit_hook_zh.md)) |

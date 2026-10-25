@@ -156,4 +156,4 @@ This doc is for the **Flutter app** (Hive on device). `retentio-webapp` does not
 
 Until B/C exist, prefer **one primary study device**, or accept that web reviews won’t reshape the phone’s local queue automatically.
 
-**Related:** [offline_learning_cache_plan.md](offline_learning_cache_plan.md); [api.md](api.md); `hydrated_storage.dart`; `features/deck_study/`; typed PATCH wrapper for outbox flush (not `CardService.updateCard`'s `bool?`).
+**Related:** [offline_learning_logic.md](offline_learning_logic.md); [offline_learning_cache_plan.md](offline_learning_cache_plan.md); [api.md](api.md); `hydrated_storage.dart`; `features/deck_study/`; typed PATCH wrapper for outbox flush (not `CardService.updateCard`'s `bool?`).
