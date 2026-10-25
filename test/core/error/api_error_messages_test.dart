@@ -35,12 +35,20 @@ void main() {
         en.usernameLengthInvalid,
       );
       expect(
+        ApiErrorMessages.resolve('Username must not contain spaces', zh),
+        zh.usernameContainsSpaces,
+      );
+      expect(
         ApiErrorMessages.resolve('Password must be at least 8 characters', zh),
         zh.passwordTooShort,
       );
       expect(
         ApiErrorMessages.resolve('Password must be at most 64 characters', en),
         en.passwordTooLong,
+      );
+      expect(
+        ApiErrorMessages.resolve('Password must be at most 72 bytes', zh),
+        zh.passwordTooManyBytes,
       );
     });
 

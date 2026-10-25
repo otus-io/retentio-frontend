@@ -25,6 +25,49 @@ void main() {
     );
   });
 
+  test('rejects internal spaces only when asked', () {
+    expect(
+      AccountLimits.limitMessage(
+        en,
+        username: 'a b',
+        secret: 'password',
+        rejectSpaces: true,
+      ),
+      en.usernameContainsSpaces,
+    );
+    expect(
+      AccountLimits.limitMessage(
+        en,
+        username: '  a b  ',
+        secret: 'password',
+        rejectSpaces: true,
+      ),
+      en.usernameContainsSpaces,
+    );
+    expect(
+      AccountLimits.limitMessage(
+        en,
+        username: 'a\tb',
+        secret: 'password',
+        rejectSpaces: true,
+      ),
+      en.usernameContainsSpaces,
+    );
+    expect(
+      AccountLimits.limitMessage(
+        en,
+        username: '  ab  ',
+        secret: 'password',
+        rejectSpaces: true,
+      ),
+      isNull,
+    );
+    expect(
+      AccountLimits.limitMessage(en, username: 'a b', secret: 'password'),
+      isNull,
+    );
+  });
+
   test('rejects a username outside 2 to 32 characters after trim', () {
     expect(
       AccountLimits.limitMessage(en, username: 'a', secret: 'password'),
@@ -69,7 +112,7 @@ void main() {
   test('rejects a secret that exceeds 72 bytes', () {
     expect(
       AccountLimits.limitMessage(en, secret: '😀' * 19),
-      en.passwordTooLong,
+      en.passwordTooManyBytes,
     );
   });
 
