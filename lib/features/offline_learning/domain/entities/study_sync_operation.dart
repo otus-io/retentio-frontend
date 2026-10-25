@@ -19,6 +19,7 @@ class StudySyncOperation {
     this.nextRetryAt = 0,
     this.status = StudySyncStatus.pending,
     this.lastError,
+    this.maybeApplied = false,
   });
 
   final String operationId;
@@ -38,6 +39,9 @@ class StudySyncOperation {
   final StudySyncStatus status;
   final String? lastError;
 
+  /// A send got no response, so the server may have applied it already.
+  final bool maybeApplied;
+
   /// Body for `PATCH /api/decks/{id}/card`; review and hide never mix.
   Map<String, dynamic> toPatchBody() => type == StudySyncType.review
       ? {'card_id': cardId, 'interval': interval, 'last_review': lastReview}
@@ -49,6 +53,7 @@ class StudySyncOperation {
     int? nextRetryAt,
     StudySyncStatus? status,
     String? lastError,
+    bool? maybeApplied,
   }) => StudySyncOperation(
     operationId: operationId,
     sequence: sequence,
@@ -64,6 +69,7 @@ class StudySyncOperation {
     nextRetryAt: nextRetryAt ?? this.nextRetryAt,
     status: status ?? this.status,
     lastError: lastError ?? this.lastError,
+    maybeApplied: maybeApplied ?? this.maybeApplied,
   );
 
   factory StudySyncOperation.fromJson(Map<String, dynamic> json) =>
@@ -86,6 +92,7 @@ class StudySyncOperation {
             ? StudySyncStatus.failed
             : StudySyncStatus.pending,
         lastError: json['last_error'] as String?,
+        maybeApplied: json['maybe_applied'] == true,
       );
 
   Map<String, dynamic> toJson() => {
@@ -103,5 +110,6 @@ class StudySyncOperation {
     'next_retry_at': nextRetryAt,
     'status': status.name,
     'last_error': lastError,
+    'maybe_applied': maybeApplied,
   };
 }

@@ -83,6 +83,10 @@ abstract class DeckStudyRepository {
     String? tagId,
   });
 
+  /// Re-downloads a local copy after facts changed online. Returns false
+  /// without doing anything when the deck is served remotely.
+  Future<bool> resyncLocalCopy(String deckId);
+
   Future<List<Tag>> loadDeckTags({required String deckId});
 
   Future<bool> submitCard(DeckStudySubmitRequest request);

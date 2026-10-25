@@ -36,6 +36,14 @@ class _FakeStore implements OfflineLearningStore {
       cards.remove(cardId);
 
   @override
+  Future<void> deleteCards(String deckId, Iterable<String> cardIds) async =>
+      cardIds.forEach(cards.remove);
+
+  @override
+  Future<void> deleteFacts(String deckId, Iterable<String> factIds) =>
+      throw UnimplementedError();
+
+  @override
   Future<List<StudySyncOperation>> getOperations() async =>
       ops.values.toList()..sort((a, b) => a.sequence.compareTo(b.sequence));
 
@@ -81,6 +89,10 @@ class _FakeRemote implements StudySyncRemoteDataSource {
   final messageByOp = <String, String>{};
   final apiErrorOps = <String>{};
   final counts = <String, OfflineDeckCounts>{};
+  final cardRequests = <String>[];
+
+  /// Server cards per deck; a missing deck reads as a failed request.
+  final serverCards = <String, List<OfflineCard>>{};
   Completer<void>? gate;
 
   /// Throws once from the next [patchCard].
@@ -114,6 +126,12 @@ class _FakeRemote implements StudySyncRemoteDataSource {
   Future<OfflineDeckCounts?> fetchDeckCounts(String deckId) async {
     countRequests.add(deckId);
     return counts[deckId];
+  }
+
+  @override
+  Future<List<OfflineCard>?> fetchCards(String deckId) async {
+    cardRequests.add(deckId);
+    return serverCards[deckId];
   }
 }
 
@@ -265,7 +283,7 @@ void main() {
       await sync.flush(force: true);
       expect(sync.phase.value, OfflineSyncPhase.failed);
 
-      queue([_review('b', 2)]);
+      queue([_review('b', 2, cardId: 'c2')]);
       remote.statusByOp['b'] = 401;
       await sync.flush(force: true);
       expect(sync.phase.value, OfflineSyncPhase.needsLogin);
@@ -288,7 +306,7 @@ void main() {
       _review('late', 3),
       _review('early', 1),
       _review('notDue', 2, nextRetryAt: _now + 1),
-      _review('failed', 0, status: StudySyncStatus.failed),
+      _review('failed', 0, cardId: 'c2', status: StudySyncStatus.failed),
     ]);
 
     await service().flush(force: true);
@@ -527,7 +545,7 @@ void main() {
   });
 
   test('400 marks the op failed, keeps payload, and continues', () async {
-    queue([_review('a', 1), _review('b', 2)]);
+    queue([_review('a', 1), _review('b', 2, cardId: 'c2')]);
     remote.statusByOp['a'] = 400;
     remote.messageByOp['a'] = 'bad body';
 
@@ -541,6 +559,42 @@ void main() {
     expect(failed.lastError, 'bad body');
     expect(failed.interval, 60);
     expect(store.ops.keys, ['a']);
+  });
+
+  test('whilePaused waits out the op in flight and sends no more', () async {
+    queue([_review('a', 1), _review('b', 2, cardId: 'c2')]);
+    remote.statusByOp['a'] = 500;
+    remote.gate = Completer<void>();
+    final sync = service();
+    final running = sync.flush(force: true);
+    await Future<void>.delayed(Duration.zero);
+
+    final seen = <String>[];
+    final paused = sync.whilePaused(() async {
+      seen.addAll(store.ops.keys);
+      store.ops.clear();
+      return (await sync.flush(force: true)).status;
+    });
+    remote.gate!.complete();
+    await running;
+
+    expect(await paused, OfflineSyncStatus.skipped);
+    expect(remote.patched, ['a']);
+    // The failed upload wrote its backoff before the action cleared the queue,
+    // so nothing writes the op back afterwards.
+    expect(seen, unorderedEquals(['a', 'b']));
+    expect(store.ops, isEmpty);
+    expect((await sync.flush(force: true)).status, OfflineSyncStatus.synced);
+  });
+
+  test('400 holds back later ops of its card', () async {
+    queue([_review('a', 1), _review('b', 2)]);
+    remote.statusByOp['a'] = 400;
+
+    await service().flush(force: true);
+
+    expect(remote.patched, ['a']);
+    expect(store.ops.keys, unorderedEquals(['a', 'b']));
   });
 
   test('400 without a message records the HTTP status', () async {
@@ -653,7 +707,7 @@ void main() {
     test('marks the op failed after max HTTP attempts', () async {
       queue([
         _review('a', 1, attempts: 9, httpAttempts: maxAttempts - 1),
-        _review('b', 2),
+        _review('b', 2, cardId: 'c2'),
       ]);
       remote.statusByOp['a'] = 422;
       remote.messageByOp['a'] = 'bad state';
@@ -668,13 +722,39 @@ void main() {
       expect(remote.patched, ['a', 'b']);
     });
 
-    test('failed op does not hold back later ops of its card', () async {
-      queue([_review('a', 1, status: StudySyncStatus.failed), _review('b', 2)]);
+    test('failed op holds back later ops of its card only', () async {
+      queue([
+        _review('a', 1, status: StudySyncStatus.failed),
+        _review('b', 2),
+        _review('c', 3, cardId: 'c2'),
+      ]);
 
       await service().flush(force: true);
 
+      expect(remote.patched, ['c']);
+      expect(store.ops.keys, unorderedEquals(['a', 'b']));
+    });
+
+    test('retrying a failed op sends it before the newer op', () async {
+      queue([_review('a', 1, status: StudySyncStatus.failed), _review('b', 2)]);
+      final sync = service();
+      await sync.flush(force: true);
+
+      await sync.retryFailed();
+
+      // The newer review lands last, so the server keeps its schedule.
+      expect(remote.patched, ['a', 'b']);
+      expect(store.ops, isEmpty);
+    });
+
+    test('discarding a failed op releases later ops of its card', () async {
+      queue([_review('a', 1, status: StudySyncStatus.failed), _review('b', 2)]);
+      final sync = service();
+
+      await sync.discardFailed();
+      await sync.flush(force: true);
+
       expect(remote.patched, ['b']);
-      expect(store.ops.keys, ['a']);
     });
 
     for (final (attempts, delay) in [
@@ -745,5 +825,106 @@ void main() {
     remote.gate = null;
     queue([_review('b', 2)]);
     expect((await sync.flush(force: true)).sent, 1);
+  });
+
+  test('retries counters that failed to load on the next flush', () async {
+    store.decks['d1'] = const OfflineDeck(id: 'd1', name: 'D1', fields: []);
+    queue([_review('a', 1)]);
+    final sync = service();
+    await sync.flush(force: true);
+
+    remote.counts['d1'] = const OfflineDeckCounts(
+      totalReviews: 3,
+      totalReviewsToday: 1,
+    );
+    await sync.flush(force: true);
+    await sync.flush(force: true);
+
+    expect(remote.countRequests, ['d1', 'd1']);
+    expect(store.decks['d1']!.totalReviews, 3);
+  });
+
+  test('discardFailed releases cards nothing else is queued for', () async {
+    for (final id in ['c1', 'c2', 'c3']) {
+      store.cards[id] = _card(id);
+    }
+    queue([
+      _review('a', 1, status: StudySyncStatus.failed),
+      _review('b', 2, cardId: 'c2', status: StudySyncStatus.failed),
+      _review('c', 3, cardId: 'c2'),
+    ]);
+
+    await service().discardFailed();
+
+    expect(store.cards['c1']!.dirty, isFalse);
+    expect(store.cards['c2']!.dirty, isTrue);
+    expect(store.cards['c3']!.dirty, isTrue);
+  });
+
+  group('reviews the server may have applied', () {
+    test('a network error marks reviews but not hides', () async {
+      queue([_review('a', 1)]);
+      remote.statusByOp['a'] = null;
+      final sync = service();
+      await sync.flush(force: true);
+
+      queue([_hide('h', 2, cardId: 'c2')]);
+      remote.statusByOp['h'] = null;
+      await sync.flush(force: true);
+
+      expect(store.ops['a']!.maybeApplied, isTrue);
+      expect(store.ops['h']!.maybeApplied, isFalse);
+      expect(remote.cardRequests, isEmpty);
+    });
+
+    test(
+      'confirms an applied review from the server without resending',
+      () async {
+        store.cards['c1'] = _card('c1');
+        queue([
+          _review('a', 1).copyWith(maybeApplied: true),
+          _review('b', 2, cardId: 'c2').copyWith(maybeApplied: true),
+        ]);
+        remote.serverCards['d1'] = [
+          _card('c1').copyWith(lastReview: 900, dueDate: 960, dirty: false),
+        ];
+
+        final result = await service().flush(force: true);
+
+        expect(remote.cardRequests, ['d1']);
+        expect(remote.patched, ['b']);
+        expect(result.sent, 2);
+        expect(store.ops, isEmpty);
+        final c1 = store.cards['c1']!;
+        expect([c1.lastReview, c1.dueDate, c1.dirty], [900, 960, false]);
+      },
+    );
+
+    test('resends when the server schedule differs or is unknown', () async {
+      queue([
+        _review('a', 1).copyWith(maybeApplied: true),
+        const StudySyncOperation(
+          operationId: 'b',
+          sequence: 2,
+          deckId: 'd1',
+          cardId: 'c2',
+          type: StudySyncType.review,
+          createdAt: 0,
+          maybeApplied: true,
+        ),
+        _review(
+          'c',
+          3,
+          deckId: 'd2',
+          cardId: 'c3',
+        ).copyWith(maybeApplied: true),
+      ]);
+      remote.serverCards['d1'] = [_card('c1'), _card('c2')];
+
+      await service().flush(force: true);
+
+      expect(remote.cardRequests, ['d1', 'd2']);
+      expect(remote.patched, ['a', 'b', 'c']);
+    });
   });
 }

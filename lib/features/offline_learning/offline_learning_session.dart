@@ -34,8 +34,13 @@ class OfflineLearningSession {
   final String mediaRootDir;
 
   /// Deletes a deck's offline data and the media files no other downloaded
-  /// deck uses.
-  Future<void> removeDeck(String deckId) async {
+  /// deck uses, after stopping the deck's download and any upload.
+  Future<void> removeDeck(String deckId) => downloader.whileHalted(
+    deckId,
+    () => sync.whilePaused(() => _removeDeck(deckId)),
+  );
+
+  Future<void> _removeDeck(String deckId) async {
     Set<String> mediaOf(List<OfflineFact> facts) => {
       for (final f in facts)
         for (final e in f.entries) ...[
@@ -55,30 +60,49 @@ class OfflineLearningSession {
     await store.removeDeck(deckId);
   }
 
-  /// Deletes the account's offline data, unsynced reviews and media files.
-  Future<void> clear() async {
-    await store.clear();
-    final dir = Directory(mediaRootDir);
-    if (await dir.exists()) await dir.delete(recursive: true);
-  }
+  /// Deletes the account's offline data, unsynced reviews and media files,
+  /// after stopping running downloads and uploads.
+  Future<void> clear() => downloader.whileHalted(
+    null,
+    () => sync.whilePaused(() async {
+      await store.clear();
+      final dir = Directory(mediaRootDir);
+      if (await dir.exists()) await dir.delete(recursive: true);
+    }),
+  );
 }
 
-/// Study repository that serves downloaded decks from [session] and uploads
-/// each local review through the session's sync queue.
+/// Study repository that serves downloaded decks from [session], uploads
+/// each local review through the session's sync queue, and re-downloads a
+/// deck whose facts changed.
 DeckStudyRepository offlineFirstStudyRepository(
   Future<OfflineLearningSession?> session, {
   required DeckStudyRepository remote,
+  Future<bool> Function()? isOnline,
 }) => OfflineFirstDeckStudyRepository(
   store: session.then((s) => s?.store),
   remote: remote,
   remoteMediaUrl: (id) => '${Env.host}/api/media/$id',
-  onLocalChange: () => session
-      .then<void>((s) async => await s?.sync.flush())
-      .then<void>(
-        (_) {},
-        onError: (Object e) => logger.w('offline sync after review: $e'),
-      ),
+  onLocalChange: () => _runSessionTask(
+    session,
+    (s) => s.sync.flush(),
+    'offline sync after review',
+  ),
+  refreshLocalCopy: (deckId) => _runSessionTask(
+    session,
+    (s) => s.downloader.download(deckId, fresh: true),
+    'offline refresh after edit',
+  ),
+  isOnline: isOnline,
 );
+
+Future<void> _runSessionTask(
+  Future<OfflineLearningSession?> session,
+  Future<Object?> Function(OfflineLearningSession session) task,
+  String label,
+) => session
+    .then<void>((s) => task(s!))
+    .then<void>((_) {}, onError: (Object e) => logger.w('$label: $e'));
 
 /// Resolves the [OfflineLearningSession] of the logged-in account, or null
 /// when the account cannot be identified (never logged in since the username

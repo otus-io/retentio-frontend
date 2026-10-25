@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -9,9 +10,14 @@ import 'package:retentio/features/auth/data/datasources/local_auth_data_source.d
 import 'package:retentio/features/deck_study/data/repositories/deck_study_legacy_service_repository.dart';
 import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/features/offline_learning/data/datasources/hive_offline_learning_store.dart';
+import 'package:retentio/features/offline_learning/data/datasources/study_sync_remote_data_source.dart';
+import 'package:retentio/features/offline_learning/data/offline_package_downloader.dart';
+import 'package:retentio/features/offline_learning/data/remote_offline_package_data_source.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_card.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_deck.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_fact.dart';
+import 'package:retentio/features/offline_learning/domain/entities/study_sync_operation.dart';
+import 'package:retentio/models/deck.dart';
 import 'package:retentio/models/fact.dart';
 import 'package:retentio/services/index.dart';
 import 'package:retentio/features/offline_learning/domain/services/offline_sync_service.dart';
@@ -26,6 +32,36 @@ class _FailingInterceptor extends Interceptor {
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     handler.reject(DioException(requestOptions: options));
   }
+}
+
+class _NoRemote implements StudySyncRemoteDataSource {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+/// Holds every upload until [gate] completes, then answers 500.
+class _GatedRemote implements StudySyncRemoteDataSource {
+  _GatedRemote(this.gate);
+
+  final Completer<void> gate;
+  final patched = <String>[];
+
+  @override
+  Future<StudyPatchResult> patchCard(
+    String deckId,
+    Map<String, dynamic> body, {
+    required String operationId,
+  }) async {
+    patched.add(operationId);
+    await gate.future;
+    return const StudyPatchResult(httpStatus: 500);
+  }
+
+  @override
+  Future<OfflineDeckCounts?> fetchDeckCounts(String deckId) async => null;
+
+  @override
+  Future<List<OfflineCard>?> fetchCards(String deckId) async => null;
 }
 
 void main() {
@@ -183,6 +219,46 @@ void main() {
     expect(session.sync.phase.value, OfflineSyncPhase.failed);
   });
 
+  test('study repository re-downloads after a fact edit', () async {
+    var downloads = 0;
+    final store = await HiveOfflineLearningStore.open(accountId: 'alice');
+    final session = OfflineLearningSession(
+      accountId: 'alice',
+      store: store,
+      mediaRootDir: '${dir.path}/media',
+      downloader: OfflinePackageDownloader(
+        store: store,
+        mediaRootDir: '${dir.path}/media',
+        fetchDeck: (id) async {
+          downloads++;
+          return Deck.fromJson({'id': id, 'name': 'Deck'});
+        },
+        fetchFactsPage: (_, _, _) async =>
+            const OfflineFactsPage(facts: [], hasMore: false),
+        fetchCards: (_) async => [],
+        nowSec: () => 1,
+      ),
+      sync: OfflineSyncService(
+        store: store,
+        remote: _NoRemote(),
+        isOnline: () async => true,
+        nowSec: () => 1,
+      ),
+    );
+    await store.putDeck(
+      const OfflineDeck(id: 'd1', name: 'N5', fields: ['W'], downloadedAt: 1),
+    );
+    final repo = offlineFirstStudyRepository(
+      Future.value(session),
+      remote: DeckStudyLegacyServiceRepository(),
+      isOnline: () async => true,
+    );
+
+    await repo.resyncLocalCopy('d1');
+
+    expect(downloads, 1);
+  });
+
   test('a failed open is retried on the next call', () async {
     var opens = 0;
     final sessions = OfflineLearningSessions(
@@ -213,6 +289,120 @@ void main() {
     expect(Directory(session.mediaRootDir).existsSync(), isFalse);
 
     await session.clear();
+  });
+
+  group('removal while background work runs', () {
+    late HiveOfflineLearningStore store;
+    late Completer<void> deckGate;
+    late Completer<void> patchGate;
+    late _GatedRemote remote;
+    late OfflineLearningSession session;
+
+    setUp(() async {
+      store = await HiveOfflineLearningStore.open(accountId: 'alice');
+      deckGate = Completer<void>();
+      patchGate = Completer<void>();
+      remote = _GatedRemote(patchGate);
+      final mediaRootDir = '${dir.path}/media';
+      session = OfflineLearningSession(
+        accountId: 'alice',
+        store: store,
+        mediaRootDir: mediaRootDir,
+        downloader: OfflinePackageDownloader(
+          store: store,
+          mediaRootDir: mediaRootDir,
+          fetchDeck: (id) async {
+            await deckGate.future;
+            return Deck.fromJson({'id': id, 'name': 'Deck'});
+          },
+          fetchFactsPage: (_, _, _) async =>
+              const OfflineFactsPage(facts: [], hasMore: false),
+          fetchCards: (_) async => [],
+          nowSec: () => 1,
+        ),
+        sync: OfflineSyncService(
+          store: store,
+          remote: remote,
+          isOnline: () async => true,
+          nowSec: () => 1,
+        ),
+      );
+      await store.putDeck(
+        const OfflineDeck(id: 'd1', name: 'd1', fields: [], downloadedAt: 1),
+      );
+      for (final (id, deckId) in [('op1', 'd1'), ('op2', 'd2')]) {
+        await store.updateOperation(
+          StudySyncOperation(
+            operationId: id,
+            sequence: id == 'op1' ? 1 : 2,
+            deckId: deckId,
+            cardId: 'c-$deckId',
+            type: StudySyncType.review,
+            createdAt: 0,
+            interval: 60,
+            lastReview: 1,
+          ),
+        );
+      }
+    });
+
+    /// Starts a download of d1 and a flush blocked on its first upload, which
+    /// fails with a 500 once released and so writes its op back.
+    Future<(Future<bool>, Future<OfflineSyncResult>)> startWork() async {
+      final download = session.downloader.download('d1');
+      final flush = session.sync.flush(force: true);
+      while (remote.patched.isEmpty) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      return (download, flush);
+    }
+
+    test('removeDeck is not undone by the download or upload', () async {
+      final (download, flush) = await startWork();
+
+      final removed = session.removeDeck('d1');
+      deckGate.complete();
+      patchGate.complete();
+      await removed;
+      await flush;
+
+      expect(await download, isFalse);
+      expect(await store.getDeck('d1'), isNull);
+      expect(
+        [for (final op in await store.getOperations()) op.operationId],
+        ['op2'],
+      );
+      // The paused flush did not go on to the other deck's op.
+      expect(remote.patched, ['op1']);
+    });
+
+    test('clear is not undone by the download or upload', () async {
+      final (download, flush) = await startWork();
+
+      final cleared = session.clear();
+      deckGate.complete();
+      patchGate.complete();
+      await cleared;
+      await flush;
+
+      expect(await download, isFalse);
+      expect(await store.getDecks(), isEmpty);
+      expect(await store.getOperations(), isEmpty);
+      expect(remote.patched, ['op1']);
+    });
+
+    test('background work runs again once removal is done', () async {
+      deckGate.complete();
+      patchGate.complete();
+      await session.removeDeck('d1');
+
+      expect(await session.downloader.download('d1'), isTrue);
+      expect(
+        (await session.sync.flush(force: true)).status,
+        OfflineSyncStatus.partial,
+      );
+      expect(remote.patched, ['op2']);
+    });
   });
 
   test('removeDeck keeps media shared with another downloaded deck', () async {

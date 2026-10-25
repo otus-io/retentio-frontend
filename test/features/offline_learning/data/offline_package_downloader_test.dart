@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -52,6 +53,14 @@ class _FakeStore implements OfflineLearningStore {
       facts[f.id] = f;
     }
   }
+
+  @override
+  Future<void> deleteCards(String deckId, Iterable<String> cardIds) async =>
+      cardIds.forEach(cards.remove);
+
+  @override
+  Future<void> deleteFacts(String deckId, Iterable<String> factIds) async =>
+      factIds.forEach(facts.remove);
 
   @override
   Future<String?> getMediaPath(String mediaId) async {
@@ -134,8 +143,11 @@ void main() {
     FetchDeckFn? fetchDeck,
     List<List<OfflineFact>> pages = const [[]],
     Object? factsError,
+    List<String>? factIds,
+    Object? factIdsError,
     List<OfflineCard> remoteCards = const [],
     Object? cardsError,
+    FetchCardsFn? fetchCards,
     DownloadMediaFn? downloadMedia,
     FetchMediaVersionsFn? fetchMediaVersions,
     bool online = true,
@@ -154,10 +166,16 @@ void main() {
         hasMore: index < pages.length - 1,
       );
     },
-    fetchCards: (_) async {
-      if (cardsError != null) throw cardsError;
-      return remoteCards;
+    fetchFactIds: (_) async {
+      if (factIdsError != null) throw factIdsError;
+      return factIds;
     },
+    fetchCards:
+        fetchCards ??
+        (_) async {
+          if (cardsError != null) throw cardsError;
+          return remoteCards;
+        },
     downloadMedia: downloadMedia ?? writeMedia,
     fetchMediaVersions:
         fetchMediaVersions ??
@@ -189,6 +207,7 @@ void main() {
     expect(deck.sourceVersion, 3);
     expect(deck.totalReviews, 9);
     expect(deck.totalReviewsToday, 2);
+    expect(deck.lastSyncedAt, 1000);
   });
 
   test('stops paging on an empty page even if hasMore is set', () async {
@@ -226,6 +245,155 @@ void main() {
     expect(results, [true, true]);
     expect(factOffsets, [0, 0]);
     expect(downloadedUrls, ['/api/media/aud']);
+  });
+
+  test('a fresh download runs again after the running one', () async {
+    final gate = Completer<void>();
+    var listings = 0;
+    final downloader = OfflinePackageDownloader(
+      store: store,
+      mediaRootDir: tmp.path,
+      fetchDeck: (_) async {
+        await gate.future;
+        return _deck;
+      },
+      // The fact added by the edit is only listed by the second run.
+      fetchFactsPage: (_, _, _) async => OfflineFactsPage(
+        facts: [_fact('f1'), if (++listings > 1) _fact('f2')],
+        hasMore: false,
+      ),
+      fetchCards: (_) async => [],
+      fetchMediaVersions: (_, _) async => const {},
+      nowSec: () => 1,
+    );
+
+    final stale = downloader.download('d1');
+    final fresh = downloader.download('d1', fresh: true);
+    final shared = downloader.download('d1');
+    gate.complete();
+
+    expect(await Future.wait([stale, fresh, shared]), [true, true, true]);
+    expect(listings, 2);
+    expect(store.facts.keys, unorderedEquals(['f1', 'f2']));
+  });
+
+  group('whileHalted', () {
+    test('stops a download before it writes and blocks new ones', () async {
+      final gate = Completer<void>();
+      final downloader = build(
+        fetchDeck: (_) async {
+          await gate.future;
+          return _deck;
+        },
+        pages: [
+          [_fact('f1')],
+        ],
+      );
+
+      final running = downloader.download('d1');
+      final halted = downloader.whileHalted('d1', () async {
+        expect(await downloader.download('d1'), isFalse);
+        return store.decks.isEmpty && store.facts.isEmpty;
+      });
+      gate.complete();
+
+      expect(await running, isFalse);
+      expect(await halted, isTrue);
+      expect(factOffsets, isEmpty);
+      expect(await downloader.download('d1'), isTrue);
+      expect(store.decks['d1']!.isReady, isTrue);
+    });
+
+    test('halting one deck leaves other decks downloading', () async {
+      final downloader = build();
+
+      final other = await downloader.whileHalted(
+        'd1',
+        () => downloader.download('d2'),
+      );
+
+      expect(other, isTrue);
+      expect(store.decks.keys, ['d2']);
+    });
+
+    /// A downloader whose facts listing or cards fetch waits on [gate]; the
+    /// step name is added to [reached] when the download gets there.
+    OfflinePackageDownloader gatedAt(
+      String step,
+      Completer<void> gate,
+      List<String> reached,
+    ) => OfflinePackageDownloader(
+      store: store,
+      mediaRootDir: tmp.path,
+      fetchDeck: (_) async => _deck,
+      fetchFactsPage: (_, _, _) async {
+        if (step == 'facts') {
+          reached.add(step);
+          await gate.future;
+        }
+        return OfflineFactsPage(facts: [_fact('f1')], hasMore: false);
+      },
+      fetchCards: (_) async {
+        if (step == 'cards') {
+          reached.add(step);
+          await gate.future;
+        }
+        return [_card('c1')];
+      },
+      fetchMediaVersions: (_, _) async => const {},
+      nowSec: () => 1,
+    );
+
+    for (final step in ['facts', 'cards']) {
+      test('stops while fetching $step without writing them', () async {
+        final gate = Completer<void>();
+        final reached = <String>[];
+        final downloader = gatedAt(step, gate, reached);
+
+        final running = downloader.download('d1');
+        while (reached.isEmpty) {
+          await Future<void>.delayed(Duration.zero);
+        }
+        final halted = downloader.whileHalted('d1', () async {});
+        gate.complete();
+        await halted;
+
+        expect(await running, isFalse);
+        expect(store.facts.keys, step == 'facts' ? isEmpty : ['f1']);
+        expect(store.cards, isEmpty);
+        expect(store.decks, isEmpty);
+      });
+    }
+
+    test('drops the media file being downloaded', () async {
+      final gate = Completer<void>();
+      String? partPath;
+      final downloader = build(
+        pages: [
+          [
+            _fact('f1', entries: const [FactEntry(audio: 'aud')]),
+          ],
+        ],
+        downloadMedia: (url, path) async {
+          partPath = path;
+          await gate.future;
+          return writeMedia(url, path);
+        },
+      );
+
+      final running = downloader.download('d1');
+      while (partPath == null) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      final halted = downloader.whileHalted(null, () async {});
+      gate.complete();
+      await halted;
+
+      expect(await running, isFalse);
+      expect(store.media, isEmpty);
+      expect(store.decks, isEmpty);
+      expect(File(partPath!).existsSync(), isFalse);
+    });
   });
 
   group('refreshIfStale', () {
@@ -288,7 +456,7 @@ void main() {
   });
 
   test(
-    're-download refreshes clean cards, keeps deck state, adds new cards',
+    're-download refreshes clean cards and server counters, adds new cards',
     () async {
       store.decks['d1'] = const OfflineDeck(
         id: 'd1',
@@ -332,17 +500,43 @@ void main() {
       await build(remoteCards: [server, _card('c2')]).download('d1');
 
       expect(store.cards['c1']!.toJson(), server.toJson());
-      expect(store.cards['local']!.lastReview, 5);
-      expect(store.cards.keys, unorderedEquals(['c1', 'local', 'c2']));
+      // A clean card the server no longer lists was deleted there.
+      expect(store.cards.keys, unorderedEquals(['c1', 'c2']));
       final deck = store.decks['d1']!;
       expect(deck.name, 'Deck');
       expect(deck.downloadedAt, 10);
-      expect(deck.lastSyncedAt, 20);
-      expect(deck.totalReviews, 50);
-      expect(deck.totalReviewsToday, 5);
+      // Server counters fetched at the start of the download replace the
+      // local ones; queued reviews are added on top when stats are computed.
+      expect(deck.lastSyncedAt, 1000);
+      expect(deck.totalReviews, 9);
+      expect(deck.totalReviewsToday, 2);
       expect(deck.tags, isEmpty);
     },
   );
+
+  test('keeps a card an upload confirmed while the list was loading', () async {
+    store.cards['c1'] = _card(
+      'c1',
+      lastReview: 40,
+      dueDate: 100,
+    ).copyWith(dirty: true);
+    store.cards['c2'] = _card('c2', lastReview: 1, dueDate: 2);
+
+    await build(
+      fetchCards: (_) async {
+        // The flush confirms c1 after the server built this listing.
+        store.cards['c1'] = _card('c1', lastReview: 50, dueDate: 110);
+        return [
+          _card('c1', lastReview: 1, dueDate: 2),
+          _card('c2', lastReview: 7, dueDate: 9),
+        ];
+      },
+    ).download('d1');
+
+    expect(store.cards['c1']!.lastReview, 50);
+    expect(store.cards['c1']!.dirty, isFalse);
+    expect(store.cards['c2']!.lastReview, 7);
+  });
 
   test(
     'caches the fact tags of all pages, deduped and ordered by id',
@@ -440,6 +634,61 @@ void main() {
     expect(store.cards['dirty']!.lastReview, 77);
     expect(store.cards['dirty']!.dirty, isTrue);
     expect(store.cards['queued']!.lastReview, 66);
+  });
+
+  test(
+    're-download drops facts and clean cards deleted on the server',
+    () async {
+      store.facts['kept'] = _fact('kept');
+      store.facts['gone'] = _fact('gone');
+      store.cards['c1'] = _card('c1');
+      store.cards['gone'] = _card('gone');
+      store.cards['dirty'] = _card('dirty').copyWith(dirty: true);
+      store.cards['queued'] = _card('queued');
+      store.ops.add(
+        const StudySyncOperation(
+          operationId: 'op',
+          sequence: 1,
+          deckId: 'd1',
+          cardId: 'queued',
+          type: StudySyncType.review,
+          createdAt: 1,
+        ),
+      );
+
+      final ok = await build(
+        pages: [
+          [_fact('kept'), _fact('new')],
+        ],
+        factIds: ['kept', 'new'],
+        remoteCards: [_card('c1')],
+      ).download('d1');
+
+      expect(ok, isTrue);
+      expect(store.facts.keys, unorderedEquals(['kept', 'new']));
+      expect(store.cards.keys, unorderedEquals(['c1', 'dirty', 'queued']));
+    },
+  );
+
+  test('keeps a fact the paging skipped but the id list has', () async {
+    store.facts['skipped'] = _fact('skipped');
+
+    await build(
+      pages: [
+        [_fact('a')],
+      ],
+      factIds: ['a', 'skipped'],
+    ).download('d1');
+
+    expect(store.facts.keys, unorderedEquals(['skipped', 'a']));
+  });
+
+  test('keeps stored facts when the fact id list cannot be read', () async {
+    store.facts['old'] = _fact('old');
+
+    expect(await build(factIdsError: StateError('x')).download('d1'), isTrue);
+
+    expect(store.facts.keys, ['old']);
   });
 
   test(
@@ -732,6 +981,27 @@ void main() {
     expect(store.decks['d1']!.isReady, isTrue);
   });
 
+  test('a refresh that misses media stays due a refresh', () async {
+    store.decks['d1'] = const OfflineDeck(
+      id: 'd1',
+      name: 'Old',
+      fields: [],
+      downloadedAt: 1,
+      refreshedAt: 5,
+    );
+
+    await build(
+      pages: [
+        [
+          _fact('f1', entries: const [FactEntry(audio: 'boom')]),
+        ],
+      ],
+      downloadMedia: (_, _) async => throw Exception('network'),
+    ).download('d1');
+
+    expect(store.decks['d1']!.refreshedAt, 5);
+  });
+
   test('store media lookup failure does not fail download', () async {
     store.failGetMediaPath = true;
     final ok = await build(
@@ -941,6 +1211,7 @@ void main() {
     });
 
     test('download uses the real API helpers', () async {
+      store.facts['stale'] = _fact('stale');
       final downloader = OfflinePackageDownloader(
         store: store,
         mediaRootDir: tmp.path,
@@ -954,6 +1225,19 @@ void main() {
       expect(store.cards.keys, ['c1']);
       final path = store.media['m1']!;
       expect(File(path).readAsBytesSync(), [1, 2, 3]);
+    });
+
+    test('a failed fact id list keeps stored facts', () async {
+      store.facts['stale'] = _fact('stale');
+      networkDioClient.dio.httpClientAdapter = _FakeAdapter(failFactIds: true);
+
+      final ok = await OfflinePackageDownloader(
+        store: store,
+        mediaRootDir: tmp.path,
+      ).download('d1');
+
+      expect(ok, isTrue);
+      expect(store.facts.keys, unorderedEquals(['stale', 'f1']));
     });
 
     test('imported deck fetches pinned versions per fact', () async {
@@ -974,9 +1258,10 @@ void main() {
 }
 
 class _FakeAdapter implements HttpClientAdapter {
-  _FakeAdapter({this.imported = false});
+  _FakeAdapter({this.imported = false, this.failFactIds = false});
 
   final bool imported;
+  final bool failFactIds;
   final mediaUris = <String>[];
 
   @override
@@ -996,6 +1281,20 @@ class _FakeAdapter implements HttpClientAdapter {
       return _ok({
         'fact': {'id': 'f1', 'entries': []},
         'media_versions': {'m1': 7},
+      });
+    }
+    if (path.endsWith('/facts/ids')) {
+      if (failFactIds) {
+        return ResponseBody.fromString(
+          jsonEncode({'code': -1, 'msg': 'boom', 'data': null}),
+          500,
+          headers: {
+            Headers.contentTypeHeader: [Headers.jsonContentType],
+          },
+        );
+      }
+      return _ok({
+        'fact_ids': ['f1'],
       });
     }
     if (path.endsWith('/facts')) {

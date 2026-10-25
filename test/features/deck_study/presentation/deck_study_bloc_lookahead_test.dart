@@ -214,6 +214,33 @@ void main() {
       expect(harness.bloc.state.prefetchedCard, isNull);
     });
 
+    for (final (name, resynced, error, loads) in [
+      ('redraws after the local copy resyncs', true, null, 3),
+      ('keeps the card when nothing was resynced', false, null, 2),
+      ('ignores a failed resync', true, StateError('offline'), 2),
+    ]) {
+      test('reload after a fact change $name', () async {
+        final harness = FakeDeckStudyBlocHarness(
+          deckId: 'deck-1',
+          fallbackResult: DeckStudyLoadResult(
+            cardDetail: sampleCardDetail(id: 'card-a'),
+          ),
+        );
+        addTearDown(harness.dispose);
+        harness.repository
+          ..resyncResult = resynced
+          ..resyncError = error;
+        await pumpEventQueue();
+
+        harness.bloc.add(const DeckStudyReloadRequested());
+        await pumpEventQueue();
+
+        expect(harness.repository.resynced, ['deck-1']);
+        expect(harness.repository.loadCalls, loads);
+        expect(harness.bloc.state.cardDetail?.card.id, 'card-a');
+      });
+    }
+
     test('keeps the promoted card and counts when the refill fails', () async {
       final harness = FakeDeckStudyBlocHarness(
         deckId: 'deck-1',

@@ -15,7 +15,8 @@ import 'package:retentio/utils/media_client_id.dart';
 
 /// Deals and records cards from the local store for downloaded decks and falls
 /// back to [remote] otherwise. Whether a deck is local is decided once per
-/// deck, so a download finishing mid-session does not switch sources.
+/// deck, so a download finishing mid-session does not switch sources while
+/// online; offline, a deck downloaded meanwhile switches to local.
 /// [remoteMediaUrl] receives an [OfflineFact.mediaKey] (`id` or `id?v=N`).
 class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
   OfflineFirstDeckStudyRepository({
@@ -23,6 +24,7 @@ class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
     required DeckStudyRepository remote,
     required String Function(String mediaId) remoteMediaUrl,
     void Function()? onLocalChange,
+    Future<void> Function(String deckId)? refreshLocalCopy,
     Future<bool> Function()? isOnline,
     int Function()? nowSec,
     String Function()? newOperationId,
@@ -30,6 +32,7 @@ class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
        _remote = remote,
        _remoteMediaUrl = remoteMediaUrl,
        _onLocalChange = onLocalChange,
+       _refreshLocalCopy = refreshLocalCopy,
        _isOnline = isOnline ?? hasNetworkConnection,
        _nowSec = nowSec ?? _unixNow,
        _newOperationId = newOperationId ?? (() => 'op-${newMediaClientId()}');
@@ -38,6 +41,7 @@ class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
   final DeckStudyRepository _remote;
   final String Function(String mediaId) _remoteMediaUrl;
   final void Function()? _onLocalChange;
+  final Future<void> Function(String deckId)? _refreshLocalCopy;
   final Future<bool> Function() _isOnline;
   final int Function() _nowSec;
   final String Function() _newOperationId;
@@ -51,17 +55,34 @@ class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
         return deck != null && deck.isReady ? deck : null;
       });
 
+  /// Re-syncs a downloaded deck whose facts just changed online. Re-reads the
+  /// deck row afterwards (name and fields may have changed); a deck served
+  /// remotely stays remote.
+  @override
+  Future<bool> resyncLocalCopy(String deckId) async {
+    final refresh = _refreshLocalCopy;
+    if (refresh == null || await _localDeck(deckId) == null) return false;
+    if (!await _isOnline()) return false;
+    await refresh(deckId);
+    _localDecks.remove(deckId);
+    return true;
+  }
+
   @override
   Future<DeckStudyLoadResult> loadNextDueCard({
     required String deckId,
     String? tagId,
   }) async {
-    final deck = await _localDeck(deckId);
+    var deck = await _localDeck(deckId);
     if (deck == null) {
-      if (!await _isOnline()) {
+      if (await _isOnline()) {
+        return _remote.loadNextDueCard(deckId: deckId, tagId: tagId);
+      }
+      _localDecks.remove(deckId);
+      deck = await _localDeck(deckId);
+      if (deck == null) {
         return const DeckStudyLoadResult(cardDetail: null, needsDownload: true);
       }
-      return _remote.loadNextDueCard(deckId: deckId, tagId: tagId);
     }
     final store = (await _store)!;
     final now = _nowSec();

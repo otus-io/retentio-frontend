@@ -202,6 +202,9 @@ void main() {
     });
 
     test('unknown connectivity keeps the previous badges', () async {
+      networkDioClient.dio.httpClientAdapter = _SharingStatusAdapter(
+        failUpdates: true,
+      );
       final cubit = DeckSharingStatusCubit(
         isOnline: () => Future.error(StateError('no plugin')),
       );

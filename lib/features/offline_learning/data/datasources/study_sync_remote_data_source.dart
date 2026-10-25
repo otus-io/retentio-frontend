@@ -1,4 +1,6 @@
 import 'package:retentio/core/network/interceptors/response_normalize_interceptor.dart';
+import 'package:retentio/features/offline_learning/data/remote_offline_package_data_source.dart';
+import 'package:retentio/features/offline_learning/domain/entities/offline_card.dart';
 import 'package:retentio/models/api_response.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/services/apis/api_service.dart';
@@ -49,12 +51,17 @@ class OfflineDeckCounts {
 }
 
 class StudySyncRemoteDataSource {
-  StudySyncRemoteDataSource({StudyPatchFn? patchFn, DeckDetailFn? deckDetailFn})
-    : _patchFn = patchFn ?? _defaultPatch,
-      _deckDetailFn = deckDetailFn ?? DeckService.of.getDeckDetail;
+  StudySyncRemoteDataSource({
+    StudyPatchFn? patchFn,
+    DeckDetailFn? deckDetailFn,
+    FetchCardsFn? fetchCardsFn,
+  }) : _patchFn = patchFn ?? _defaultPatch,
+       _deckDetailFn = deckDetailFn ?? DeckService.of.getDeckDetail,
+       _fetchCardsFn = fetchCardsFn ?? fetchOfflineCards;
 
   final StudyPatchFn _patchFn;
   final DeckDetailFn _deckDetailFn;
+  final FetchCardsFn _fetchCardsFn;
 
   static Future<ApiResponse?> _defaultPatch(
     String deckId,
@@ -86,6 +93,15 @@ class StudySyncRemoteDataSource {
           errorBody is Map &&
           (errorBody.containsKey('msg') || errorBody.containsKey('message')),
     );
+  }
+
+  /// Server schedules of the deck's cards, or null when they cannot be read.
+  Future<List<OfflineCard>?> fetchCards(String deckId) async {
+    try {
+      return await _fetchCardsFn(deckId);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<OfflineDeckCounts?> fetchDeckCounts(String deckId) async {

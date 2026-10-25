@@ -18,6 +18,9 @@ class _FakeRemote implements DeckStudyRepository {
   bool deleteResult = true;
 
   @override
+  Future<bool> resyncLocalCopy(String deckId) async => false;
+
+  @override
   Future<DeckStudyLoadResult> loadNextDueCard({
     required String deckId,
     String? tagId,
@@ -68,11 +71,13 @@ void main() {
 
   OfflineFirstDeckStudyRepository repo({
     Future<HiveOfflineLearningStore?>? s,
+    Future<void> Function(String deckId)? refreshLocalCopy,
   }) => OfflineFirstDeckStudyRepository(
     store: s ?? Future.value(store),
     remote: remote,
     remoteMediaUrl: (id) => 'https://host/api/media/$id',
     onLocalChange: () => changes++,
+    refreshLocalCopy: refreshLocalCopy,
     isOnline: () async => online,
     nowSec: () => _now,
     newOperationId: () => 'op-1',
@@ -149,6 +154,20 @@ void main() {
     expect(remote.loads, 0);
   });
 
+  test('offline, switches to a copy downloaded mid-session', () async {
+    online = false;
+    final r = repo();
+    expect((await r.loadNextDueCard(deckId: 'd1')).needsDownload, isTrue);
+
+    await seedReadyDeck();
+    await store.putCards([_card('c1', 'f1')]);
+    final result = await r.loadNextDueCard(deckId: 'd1');
+
+    expect(result.needsDownload, isFalse);
+    expect(result.cardDetail!.card.id, 'c1');
+    expect(remote.loads, 0);
+  });
+
   test('keeps the first source decision for the whole session', () async {
     final r = repo();
     await r.loadNextDueCard(deckId: 'd1');
@@ -156,6 +175,66 @@ void main() {
     await store.putCards([_card('c1', 'f1')]);
     await r.loadNextDueCard(deckId: 'd1');
     expect(remote.loads, 2);
+  });
+
+  test('re-syncs a downloaded deck before dealing after a fact edit', () async {
+    await seedReadyDeck();
+    await store.putCards([_card('c1', 'f1', due: 900)]);
+    final refreshed = <String>[];
+    final r = repo(
+      refreshLocalCopy: (deckId) async {
+        refreshed.add(deckId);
+        await store.putDeck(
+          const OfflineDeck(
+            id: 'd1',
+            name: 'N5',
+            fields: ['Kanji', 'Meaning'],
+            downloadedAt: 1,
+          ),
+        );
+        await store.putFacts(const [
+          OfflineFact(
+            deckId: 'd1',
+            id: 'f1',
+            entries: [
+              FactEntry(text: '猫!'),
+              FactEntry(text: 'cat'),
+            ],
+          ),
+        ]);
+      },
+    );
+    await r.loadNextDueCard(deckId: 'd1');
+    expect(refreshed, isEmpty);
+
+    expect(await r.resyncLocalCopy('d1'), isTrue);
+    final card = (await r.loadNextDueCard(deckId: 'd1')).cardDetail!.card;
+
+    expect(refreshed, ['d1']);
+    expect(card.front.single.field, 'Kanji');
+    expect(card.front.single.items.single.value, '猫!');
+    expect(remote.loads, 0);
+  });
+
+  test('skips the re-sync offline or for a deck served remotely', () async {
+    final refreshed = <String>[];
+    Future<void> refresh(String deckId) async => refreshed.add(deckId);
+
+    expect(await repo().resyncLocalCopy('d1'), isFalse);
+    expect(
+      await repo(refreshLocalCopy: refresh).resyncLocalCopy('d1'),
+      isFalse,
+    );
+
+    await seedReadyDeck();
+    expect(await repo().resyncLocalCopy('d1'), isFalse);
+    online = false;
+    expect(
+      await repo(refreshLocalCopy: refresh).resyncLocalCopy('d1'),
+      isFalse,
+    );
+
+    expect(refreshed, isEmpty);
   });
 
   test('deals card and lookahead locally with media and counts', () async {

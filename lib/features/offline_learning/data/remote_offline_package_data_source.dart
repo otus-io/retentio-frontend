@@ -12,6 +12,9 @@ typedef FetchFactsPageFn =
     Future<OfflineFactsPage> Function(String deckId, int limit, int offset);
 typedef FetchCardsFn = Future<List<OfflineCard>> Function(String deckId);
 
+/// Every fact id of the deck, or null when the list could not be read.
+typedef FetchFactIdsFn = Future<List<String>?> Function(String deckId);
+
 /// Pinned media versions of one fact, or null when the lookup failed.
 typedef FetchMediaVersionsFn =
     Future<Map<String, int>?> Function(String deckId, String factId);
@@ -44,6 +47,14 @@ Future<OfflineFactsPage> fetchOfflineFactsPage(
     queryParams: {'limit': limit, 'offset': offset},
   );
   return parseOfflineFactsPage(deckId, res?.data, limit: limit);
+}
+
+Future<List<String>?> fetchOfflineFactIds(String deckId) async {
+  final res = await ApiService.get(Api.factIds, pathParams: {'id': deckId});
+  final ids = res != null && res.isSuccess && res.data is Map
+      ? (res.data as Map)['fact_ids']
+      : null;
+  return ids is List ? [for (final id in ids) '$id'] : null;
 }
 
 Future<Map<String, int>?> fetchOfflineMediaVersions(

@@ -13,6 +13,13 @@ import 'package:retentio/models/deck.dart';
 
 class _Unused implements OfflinePackageDownloader, OfflineSyncService {
   @override
+  Future<T> whileHalted<T>(String? deckId, Future<T> Function() action) =>
+      action();
+
+  @override
+  Future<T> whilePaused<T>(Future<T> Function() action) => action();
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/core/network/network.dart';
 import 'package:retentio/features/offline_learning/data/datasources/study_sync_remote_data_source.dart';
+import 'package:retentio/features/offline_learning/domain/entities/offline_card.dart';
 import 'package:retentio/models/api_response.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/services/apis/api_service.dart';
@@ -244,6 +245,32 @@ void main() {
 
       expect(counts?.totalReviews, 3);
       expect(counts?.totalReviewsToday, 1);
+    });
+  });
+
+  group('fetchCards', () {
+    test('returns the injected server cards', () async {
+      const card = OfflineCard(
+        deckId: 'd1',
+        id: 'c1',
+        factId: 'f1',
+        template: [],
+        lastReview: 1,
+        dueDate: 2,
+      );
+      final injected = StudySyncRemoteDataSource(
+        fetchCardsFn: (_) async => [card],
+      );
+
+      expect(await injected.fetchCards('d1'), [card]);
+    });
+
+    test('returns null when the cards request fails', () async {
+      final injected = StudySyncRemoteDataSource(
+        fetchCardsFn: (_) async => throw StateError('offline'),
+      );
+
+      expect(await injected.fetchCards('d1'), isNull);
     });
   });
 }

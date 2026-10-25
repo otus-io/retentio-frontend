@@ -39,6 +39,9 @@ class DeckStudyLegacyServiceRepository implements DeckStudyRepository {
   final GetCardsStatsFn _getCardsStatsFn;
 
   @override
+  Future<bool> resyncLocalCopy(String deckId) async => false;
+
+  @override
   Future<DeckStudyLoadResult> loadNextDueCard({
     required String deckId,
     String? tagId,

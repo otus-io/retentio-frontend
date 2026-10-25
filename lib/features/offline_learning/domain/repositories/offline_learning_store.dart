@@ -15,11 +15,13 @@ abstract class OfflineLearningStore {
   /// Upserts by card id.
   Future<void> putCards(List<OfflineCard> cards);
   Future<void> deleteCard(String deckId, String cardId);
+  Future<void> deleteCards(String deckId, Iterable<String> cardIds);
 
   Future<List<OfflineFact>> getFacts(String deckId);
 
   /// Upserts by fact id.
   Future<void> putFacts(List<OfflineFact> facts);
+  Future<void> deleteFacts(String deckId, Iterable<String> factIds);
 
   /// Absolute path of a downloaded media file, or null when not cached.
   Future<String?> getMediaPath(String mediaId);

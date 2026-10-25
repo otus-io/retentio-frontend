@@ -256,7 +256,8 @@ void main() {
         'fields': ['Front', 'Back'],
       });
 
-      final cubit = DeckSharingStatusCubit()..markOpenContributions(deck.id);
+      final cubit = DeckSharingStatusCubit(isOnline: () async => true)
+        ..markOpenContributions(deck.id);
       cubit.setDecks([deck]);
       addTearDown(cubit.close);
 

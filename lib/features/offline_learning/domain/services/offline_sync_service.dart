@@ -53,11 +53,18 @@ class OfflineSyncService {
   Future<OfflineSyncResult>? _inFlight;
   var _inFlightForce = false;
   var _inFlightRetryNow = false;
+  var _halts = 0;
+
+  /// Decks whose server counters failed to load after an upload.
+  final Set<String> _staleCountDecks = {};
 
   /// Uploads when [force] or the queue reached [threshold]. [retryNow] also
   /// sends operations still waiting out their backoff (manual retry). A
   /// stronger request arriving during a weaker flush runs after it.
   Future<OfflineSyncResult> flush({bool force = false, bool retryNow = false}) {
+    if (_halts > 0) {
+      return Future.value(const OfflineSyncResult(OfflineSyncStatus.skipped));
+    }
     final forced = force || retryNow;
     final running = _inFlight;
     if (running != null) {
@@ -74,6 +81,21 @@ class OfflineSyncService {
       forced,
       retryNow,
     ).whenComplete(() => _inFlight = null);
+  }
+
+  /// Stops uploading after the op being sent, waits for the running flush,
+  /// then runs [action] before any new flush can start. Used before deleting
+  /// queued ops, which a running flush would otherwise write back.
+  Future<T> whilePaused<T>(Future<T> Function() action) async {
+    _halts++;
+    try {
+      for (var running = _inFlight; running != null; running = _inFlight) {
+        await running.then<void>((_) {}, onError: (Object _) {});
+      }
+      return await action();
+    } finally {
+      _halts--;
+    }
   }
 
   /// Ops the server rejected for good (400 or [maxHttpAttempts]).
@@ -94,10 +116,29 @@ class OfflineSyncService {
     return flush(retryNow: true);
   }
 
-  /// Drops rejected ops; their local card changes are kept.
+  /// Drops rejected ops. Their local card changes stay until the next
+  /// download replaces them with the server schedule.
   Future<void> discardFailed() async {
-    for (final op in await _failedOperations()) {
+    final discarded = await _failedOperations();
+    for (final op in discarded) {
       await _store.removeOperation(op.operationId);
+    }
+    final queued = {
+      for (final op in await _store.getOperations()) (op.deckId, op.cardId),
+    };
+    for (final deckId in {for (final op in discarded) op.deckId}) {
+      final cardIds = {
+        for (final op in discarded)
+          if (op.deckId == deckId) op.cardId,
+      };
+      final released = [
+        for (final c in await _store.getCards(deckId))
+          if (c.dirty &&
+              cardIds.contains(c.id) &&
+              !queued.contains((deckId, c.id)))
+            c.copyWith(dirty: false),
+      ];
+      if (released.isNotEmpty) await _store.putCards(released);
     }
     phase.value = await _phaseAfter(
       const OfflineSyncResult(OfflineSyncStatus.skipped),
@@ -147,24 +188,30 @@ class OfflineSyncService {
     }
     final now = _nowSec();
     bool isDue(StudySyncOperation op) => retryNow || op.nextRetryAt <= now;
-    final ordered = pending.toList()
+    if (pending.any(isDue)) phase.value = OfflineSyncPhase.syncing;
+    final ordered = queue.toList()
       ..sort((a, b) => a.sequence.compareTo(b.sequence));
-    if (ordered.any(isDue)) phase.value = OfflineSyncPhase.syncing;
-    // FIFO per card: an op in backoff or failing now holds back later ops of
-    // the same card only.
+    // FIFO per card: a failed op, or one in backoff or failing now, holds
+    // back later ops of the same card only. Sending them first would let a
+    // retried failed op overwrite the newer schedule.
     final heldCards = <(String, String)>{};
     final syncedDecks = <String>{};
+    final serverCards = <String, Future<List<OfflineCard>?>>{};
     var sent = 0;
     var failed = 0;
     var retry = false;
     for (final op in ordered) {
+      if (_halts > 0) {
+        retry = true;
+        break;
+      }
       final card = (op.deckId, op.cardId);
       if (heldCards.contains(card)) continue;
-      if (!isDue(op)) {
+      if (op.status == StudySyncStatus.failed || !isDue(op)) {
         heldCards.add(card);
         continue;
       }
-      final outcome = await _process(op, now);
+      final outcome = await _process(op, now, serverCards);
       if (outcome == _OpOutcome.unauthorized) {
         return OfflineSyncResult(
           OfflineSyncStatus.needsLogin,
@@ -176,7 +223,10 @@ class OfflineSyncService {
         sent++;
         syncedDecks.add(op.deckId);
       }
-      if (outcome == _OpOutcome.failed) failed++;
+      if (outcome == _OpOutcome.failed) {
+        failed++;
+        heldCards.add(card);
+      }
       if (outcome == _OpOutcome.retry) {
         retry = true;
         heldCards.add(card);
@@ -186,8 +236,13 @@ class OfflineSyncService {
         break;
       }
     }
-    for (final deckId in syncedDecks) {
-      await _refreshDeckCounts(deckId, now);
+    for (final deckId in {...syncedDecks, ..._staleCountDecks}) {
+      if (_halts > 0) break;
+      if (await _refreshDeckCounts(deckId, now)) {
+        _staleCountDecks.remove(deckId);
+      } else {
+        _staleCountDecks.add(deckId);
+      }
     }
     final status = retry || failed > 0
         ? OfflineSyncStatus.partial
@@ -195,7 +250,14 @@ class OfflineSyncService {
     return OfflineSyncResult(status, sent: sent, failed: failed);
   }
 
-  Future<_OpOutcome> _process(StudySyncOperation op, int now) async {
+  Future<_OpOutcome> _process(
+    StudySyncOperation op,
+    int now,
+    Map<String, Future<List<OfflineCard>?>> serverCards,
+  ) async {
+    if (op.maybeApplied && await _appliedOnServer(op, serverCards)) {
+      return _OpOutcome.sent;
+    }
     final result = await _remote.patchCard(
       op.deckId,
       op.toPatchBody(),
@@ -246,9 +308,36 @@ class OfflineSyncService {
         nextRetryAt:
             now + backoffSeconds[min(attempts - 1, backoffSeconds.length - 1)],
         lastError: lastError,
+        maybeApplied: offline && op.type == StudySyncType.review ? true : null,
       ),
     );
     return offline ? _OpOutcome.offline : _OpOutcome.retry;
+  }
+
+  /// The server ignores `Idempotency-Key`, so resending a review it already
+  /// applied would count it twice. Confirms the op from the server card when
+  /// its schedule is exactly the reviewed one.
+  Future<bool> _appliedOnServer(
+    StudySyncOperation op,
+    Map<String, Future<List<OfflineCard>?>> serverCards,
+  ) async {
+    final cards = await (serverCards[op.deckId] ??= _remote.fetchCards(
+      op.deckId,
+    ));
+    final server = cards?.where((c) => c.id == op.cardId).firstOrNull;
+    final lastReview = op.lastReview;
+    if (server == null ||
+        lastReview == null ||
+        server.lastReview != lastReview ||
+        server.dueDate != lastReview + (op.interval ?? 0)) {
+      return false;
+    }
+    await _confirmCard(op, {
+      'last_review': server.lastReview,
+      'due_date': server.dueDate,
+    });
+    await _store.removeOperation(op.operationId);
+    return true;
   }
 
   Future<void> _confirmCard(
@@ -283,11 +372,12 @@ class OfflineSyncService {
     await _store.putCards([confirmed]);
   }
 
-  Future<void> _refreshDeckCounts(String deckId, int now) async {
+  /// Returns false when the counters could not be read (retried next flush).
+  Future<bool> _refreshDeckCounts(String deckId, int now) async {
     final counts = await _remote.fetchDeckCounts(deckId);
-    if (counts == null) return;
+    if (counts == null) return false;
     final deck = await _store.getDeck(deckId);
-    if (deck == null) return;
+    if (deck == null) return true;
     await _store.putDeck(
       deck.copyWith(
         totalReviews: counts.totalReviews,
@@ -295,5 +385,6 @@ class OfflineSyncService {
         lastSyncedAt: now,
       ),
     );
+    return true;
   }
 }

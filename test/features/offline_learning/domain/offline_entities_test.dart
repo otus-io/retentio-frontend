@@ -163,12 +163,15 @@ void main() {
       nextRetryAt: 50,
       status: StudySyncStatus.failed,
       lastError: '400',
+      maybeApplied: true,
     );
     final back = StudySyncOperation.fromJson(failed.toJson());
     expect(back.toJson(), failed.toJson());
     expect(back.type, StudySyncType.hide);
     expect(back.status, StudySyncStatus.failed);
     expect(back.httpAttempts, 1);
+    expect(back.maybeApplied, isTrue);
+    expect(op.maybeApplied, isFalse);
     expect(op.copyWith().toJson(), op.toJson());
 
     final defaults = StudySyncOperation.fromJson({});

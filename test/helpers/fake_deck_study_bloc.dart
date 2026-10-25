@@ -27,6 +27,17 @@ class FakeDeckStudyRepository implements DeckStudyRepository {
   int hideSubmitCalls = 0;
   int deleteCalls = 0;
   final List<String?> loadTagIds = [];
+  final List<String> resynced = [];
+
+  @override
+  Future<bool> resyncLocalCopy(String deckId) async {
+    resynced.add(deckId);
+    if (resyncError != null) throw resyncError!;
+    return resyncResult;
+  }
+
+  bool resyncResult = false;
+  Object? resyncError;
 
   @override
   Future<List<Tag>> loadDeckTags({required String deckId}) async => deckTags;

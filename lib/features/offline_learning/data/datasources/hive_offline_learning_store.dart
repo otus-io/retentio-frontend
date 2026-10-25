@@ -103,6 +103,10 @@ class HiveOfflineLearningStore implements OfflineLearningStore {
       _study.delete('${_cardPrefix(deckId)}$cardId');
 
   @override
+  Future<void> deleteCards(String deckId, Iterable<String> cardIds) =>
+      _study.deleteAll([for (final id in cardIds) '${_cardPrefix(deckId)}$id']);
+
+  @override
   Future<List<OfflineFact>> getFacts(String deckId) async =>
       _rows(_facts, _factPrefix(deckId)).map(OfflineFact.fromJson).toList();
 
@@ -110,6 +114,10 @@ class HiveOfflineLearningStore implements OfflineLearningStore {
   Future<void> putFacts(List<OfflineFact> facts) => _facts.putAll({
     for (final f in facts) '${_factPrefix(f.deckId)}${f.id}': f.toJson(),
   });
+
+  @override
+  Future<void> deleteFacts(String deckId, Iterable<String> factIds) =>
+      _facts.deleteAll([for (final id in factIds) '${_factPrefix(deckId)}$id']);
 
   @override
   Future<String?> getMediaPath(String mediaId) async =>
