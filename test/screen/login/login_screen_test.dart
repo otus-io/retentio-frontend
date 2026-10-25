@@ -94,6 +94,17 @@ void main() {
     });
 
     testWidgets('rejects whitespace inside the username', (tester) async {
+      networkDioClient.configure(
+        baseUrl: 'http://localhost',
+        options: BaseOptions(),
+      );
+      final previous = networkDioClient.dio.httpClientAdapter;
+      final adapter = _LoginRequestAdapter();
+      networkDioClient.dio.httpClientAdapter = adapter;
+      addTearDown(() {
+        networkDioClient.dio.httpClientAdapter = previous;
+      });
+
       await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
       await tester.pumpAndSettle();
 
@@ -101,7 +112,9 @@ void main() {
       await tester.enterText(find.byType(TextField).last, 'short');
       await tester.tap(find.text('Login'));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
+      expect(adapter.usernames, isEmpty);
       expect(find.text('Username must not contain whitespace'), findsOneWidget);
       await tester.pump(const Duration(seconds: 2));
     });
