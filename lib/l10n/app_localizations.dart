@@ -190,10 +190,10 @@ abstract class AppLocalizations {
   /// **'Passwords do not match'**
   String get passwordNotMatch;
 
-  /// Username contains a space after trim
+  /// Username contains whitespace after trim
   ///
   /// In en, this message translates to:
-  /// **'Username must not contain spaces'**
+  /// **'Username must not contain whitespace'**
   String get usernameContainsSpaces;
 
   /// Username length must be 2 to 32 characters
@@ -208,6 +208,12 @@ abstract class AppLocalizations {
   /// **'Password must be at least 8 characters'**
   String get passwordTooShort;
 
+  /// Password contains whitespace
+  ///
+  /// In en, this message translates to:
+  /// **'Password must not contain whitespace'**
+  String get passwordContainsSpaces;
+
   /// Password longer than 64 characters
   ///
   /// In en, this message translates to:
@@ -217,7 +223,7 @@ abstract class AppLocalizations {
   /// Password longer than bcrypt's 72-byte limit
   ///
   /// In en, this message translates to:
-  /// **'Password must be at most 72 bytes'**
+  /// **'Password is too long when encoded (contains too many multi-byte characters)'**
   String get passwordTooManyBytes;
 
   /// Success message after successful registration

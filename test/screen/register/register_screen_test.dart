@@ -133,7 +133,7 @@ void main() {
       await tester.tap(find.widgetWithText(AppButton, 'Register'));
       await tester.pump();
 
-      expect(find.text('Username must not contain spaces'), findsOneWidget);
+      expect(find.text('Username must not contain whitespace'), findsOneWidget);
       await tester.pump(const Duration(seconds: 2));
     });
 

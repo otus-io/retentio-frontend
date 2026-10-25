@@ -67,9 +67,15 @@ class ApiErrorMessages {
         loc.apiRegisterFieldsRequired,
     'Username must be between 2 and 32 characters': (loc) =>
         loc.usernameLengthInvalid,
+    'Username must not contain whitespace': (loc) => loc.usernameContainsSpaces,
+    // Deployed API still sends this until the whitespace wording is live.
     'Username must not contain spaces': (loc) => loc.usernameContainsSpaces,
     'Password must be at least 8 characters': (loc) => loc.passwordTooShort,
+    'Password must not contain whitespace': (loc) => loc.passwordContainsSpaces,
     'Password must be at most 64 characters': (loc) => loc.passwordTooLong,
+    'Password is too long when encoded (contains too many multi-byte characters)':
+        (loc) => loc.passwordTooManyBytes,
+    // Deployed API still sends this until the encoded-length wording is live.
     'Password must be at most 72 bytes': (loc) => loc.passwordTooManyBytes,
     'Username and password are required': (loc) => loc.apiLoginFieldsRequired,
     'Error checking username': (loc) => loc.apiServerCheckUsername,

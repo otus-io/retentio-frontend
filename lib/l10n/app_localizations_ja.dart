@@ -56,7 +56,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get passwordNotMatch => 'パスワードが一致しません';
 
   @override
-  String get usernameContainsSpaces => 'ユーザー名にスペースは使えません';
+  String get usernameContainsSpaces => 'ユーザー名に空白文字は使えません';
 
   @override
   String get usernameLengthInvalid => 'ユーザー名は2〜32文字にしてください';
@@ -65,10 +65,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get passwordTooShort => 'パスワードは8文字以上にしてください';
 
   @override
+  String get passwordContainsSpaces => 'パスワードに空白文字は使えません';
+
+  @override
   String get passwordTooLong => 'パスワードは64文字以内にしてください';
 
   @override
-  String get passwordTooManyBytes => 'パスワードは72バイト以内にしてください';
+  String get passwordTooManyBytes => 'パスワードはエンコードすると長すぎます（マルチバイト文字が多すぎます）';
 
   @override
   String get registerSuccess => '登録が完了しました';

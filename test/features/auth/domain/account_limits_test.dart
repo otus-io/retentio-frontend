@@ -25,46 +25,34 @@ void main() {
     );
   });
 
-  test('rejects internal spaces only when asked', () {
-    expect(
-      AccountLimits.limitMessage(
-        en,
-        username: 'a b',
-        secret: 'password',
-        rejectSpaces: true,
-      ),
-      en.usernameContainsSpaces,
-    );
-    expect(
-      AccountLimits.limitMessage(
-        en,
-        username: '  a b  ',
-        secret: 'password',
-        rejectSpaces: true,
-      ),
-      en.usernameContainsSpaces,
-    );
-    expect(
-      AccountLimits.limitMessage(
-        en,
-        username: 'a\tb',
-        secret: 'password',
-        rejectSpaces: true,
-      ),
-      en.usernameContainsSpaces,
-    );
-    expect(
-      AccountLimits.limitMessage(
-        en,
-        username: '  ab  ',
-        secret: 'password',
-        rejectSpaces: true,
-      ),
-      isNull,
-    );
+  test('rejects whitespace inside a username or password', () {
     expect(
       AccountLimits.limitMessage(en, username: 'a b', secret: 'password'),
+      en.usernameContainsSpaces,
+    );
+    expect(
+      AccountLimits.limitMessage(en, username: '  a b  ', secret: 'password'),
+      en.usernameContainsSpaces,
+    );
+    expect(
+      AccountLimits.limitMessage(en, username: 'a\tb', secret: 'password'),
+      en.usernameContainsSpaces,
+    );
+    expect(
+      AccountLimits.limitMessage(en, username: '  ab  ', secret: 'password'),
       isNull,
+    );
+    expect(
+      AccountLimits.limitMessage(en, username: 'ab', secret: 'pass word'),
+      en.passwordContainsSpaces,
+    );
+    expect(
+      AccountLimits.limitMessage(en, username: 'ab', secret: 'pass\tword'),
+      en.passwordContainsSpaces,
+    );
+    expect(
+      AccountLimits.limitMessage(en, secret: 'pass word'),
+      en.passwordContainsSpaces,
     );
   });
 
@@ -118,5 +106,18 @@ void main() {
 
   test('skips the username check when no username is provided', () {
     expect(AccountLimits.limitMessage(en, secret: 'password'), isNull);
+  });
+
+  test('reports username whitespace without applying length rules', () {
+    expect(
+      AccountLimits.usernameSpaceMessage(en, 'a b'),
+      en.usernameContainsSpaces,
+    );
+    expect(
+      AccountLimits.usernameSpaceMessage(en, '  a\tb  '),
+      en.usernameContainsSpaces,
+    );
+    expect(AccountLimits.usernameSpaceMessage(en, 'a'), isNull);
+    expect(AccountLimits.usernameSpaceMessage(en, '  ab  '), isNull);
   });
 }
