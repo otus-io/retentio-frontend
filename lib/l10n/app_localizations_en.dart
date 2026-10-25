@@ -58,6 +58,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordNotMatch => 'Passwords do not match';
 
   @override
+  String get usernameContainsSpaces => 'Username must not contain spaces';
+
+  @override
+  String get usernameLengthInvalid =>
+      'Username must be between 2 and 32 characters';
+
+  @override
+  String get passwordTooShort => 'Password must be at least 8 characters';
+
+  @override
+  String get passwordTooLong => 'Password must be at most 64 characters';
+
+  @override
+  String get passwordTooManyBytes => 'Password must be at most 72 bytes';
+
+  @override
   String get registerSuccess => 'Register Success';
 
   @override

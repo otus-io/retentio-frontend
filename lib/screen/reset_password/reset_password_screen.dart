@@ -3,6 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
+import 'package:retentio/features/auth/domain/account_limits.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/routers/routers.dart';
 import 'package:retentio/services/apis/auth_service.dart';
@@ -46,6 +47,11 @@ class ResetPasswordScreen extends HookWidget {
       }
       if (password != confirm) {
         showSnack(context, loc.passwordNotMatch);
+        return;
+      }
+      final limitMessage = AccountLimits.limitMessage(loc, secret: password);
+      if (limitMessage != null) {
+        showSnack(context, limitMessage);
         return;
       }
 

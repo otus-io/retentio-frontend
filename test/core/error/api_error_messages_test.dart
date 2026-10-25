@@ -27,6 +27,29 @@ void main() {
         ApiErrorMessages.resolve('Username already exists', zh),
         zh.authUsernameAlreadyExists,
       );
+      expect(
+        ApiErrorMessages.resolve(
+          'Username must be between 2 and 32 characters',
+          en,
+        ),
+        en.usernameLengthInvalid,
+      );
+      expect(
+        ApiErrorMessages.resolve('Username must not contain spaces', zh),
+        zh.usernameContainsSpaces,
+      );
+      expect(
+        ApiErrorMessages.resolve('Password must be at least 8 characters', zh),
+        zh.passwordTooShort,
+      );
+      expect(
+        ApiErrorMessages.resolve('Password must be at most 64 characters', en),
+        en.passwordTooLong,
+      );
+      expect(
+        ApiErrorMessages.resolve('Password must be at most 72 bytes', zh),
+        zh.passwordTooManyBytes,
+      );
     });
 
     test('maps deck sharing errors', () {

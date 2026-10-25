@@ -70,6 +70,26 @@
   "@passwordNotMatch": {
     "description": "Validation error message when passwords don't match"
   },
+  "usernameContainsSpaces": "Username must not contain spaces",
+  "@usernameContainsSpaces": {
+    "description": "Username contains a space after trim"
+  },
+  "usernameLengthInvalid": "Username must be between 2 and 32 characters",
+  "@usernameLengthInvalid": {
+    "description": "Username length must be 2 to 32 characters"
+  },
+  "passwordTooShort": "Password must be at least 8 characters",
+  "@passwordTooShort": {
+    "description": "Password shorter than 8 characters"
+  },
+  "passwordTooLong": "Password must be at most 64 characters",
+  "@passwordTooLong": {
+    "description": "Password longer than 64 characters"
+  },
+  "passwordTooManyBytes": "Password must be at most 72 bytes",
+  "@passwordTooManyBytes": {
+    "description": "Password longer than bcrypt's 72-byte limit"
+  },
   "registerSuccess": "Register Success",
   "@registerSuccess": {
     "description": "Success message after successful registration"

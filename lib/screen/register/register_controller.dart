@@ -13,7 +13,7 @@ class RegisterController {
     final loc = AppLocalizations.of(context)!;
 
     if (email.isEmpty ||
-        username.isEmpty ||
+        username.trim().isEmpty ||
         password.isEmpty ||
         confirmPassword.isEmpty) {
       showSnack(context, loc.pleaseFillAllFields);
@@ -23,13 +23,23 @@ class RegisterController {
       showSnack(context, loc.passwordNotMatch);
       return;
     }
+    final limitMessage = AccountLimits.limitMessage(
+      loc,
+      username: username,
+      secret: password,
+      rejectSpaces: true,
+    );
+    if (limitMessage != null) {
+      showSnack(context, limitMessage);
+      return;
+    }
 
     setLoading(true);
 
     try {
       final result = await AuthService.register(
         email: email,
-        username: username,
+        username: username.trim(),
         password: password,
       );
       if (!context.mounted) return;

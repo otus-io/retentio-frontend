@@ -56,6 +56,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get passwordNotMatch => '两次密码输入不一致';
 
   @override
+  String get usernameContainsSpaces => '用户名不能包含空格';
+
+  @override
+  String get usernameLengthInvalid => '用户名须为 2 到 32 个字符';
+
+  @override
+  String get passwordTooShort => '密码至少需要 8 个字符';
+
+  @override
+  String get passwordTooLong => '密码最多 64 个字符';
+
+  @override
+  String get passwordTooManyBytes => '密码最多 72 字节';
+
+  @override
   String get registerSuccess => '注册成功';
 
   @override

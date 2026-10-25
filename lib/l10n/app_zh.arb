@@ -15,6 +15,26 @@
   "confirmPassword": "确认密码",
   "pleaseFillAllFields": "请填写所有字段",
   "passwordNotMatch": "两次密码输入不一致",
+  "usernameContainsSpaces": "用户名不能包含空格",
+  "@usernameContainsSpaces": {
+    "description": "Username contains a space after trim"
+  },
+  "usernameLengthInvalid": "用户名须为 2 到 32 个字符",
+  "@usernameLengthInvalid": {
+    "description": "Username length must be 2 to 32 characters"
+  },
+  "passwordTooShort": "密码至少需要 8 个字符",
+  "@passwordTooShort": {
+    "description": "Password shorter than 8 characters"
+  },
+  "passwordTooLong": "密码最多 64 个字符",
+  "@passwordTooLong": {
+    "description": "Password longer than 64 characters"
+  },
+  "passwordTooManyBytes": "密码最多 72 字节",
+  "@passwordTooManyBytes": {
+    "description": "Password longer than bcrypt's 72-byte limit"
+  },
   "registerSuccess": "注册成功",
   "loginSuccess": "登录成功",
   "loginFailed": "登录失败",
