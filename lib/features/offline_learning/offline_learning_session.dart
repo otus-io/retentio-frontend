@@ -10,7 +10,6 @@ import 'package:retentio/features/offline_learning/data/datasources/offline_stor
 import 'package:retentio/features/offline_learning/data/datasources/study_sync_remote_data_source.dart';
 import 'package:retentio/features/offline_learning/data/offline_package_downloader.dart';
 import 'package:retentio/features/offline_learning/data/repositories/offline_first_deck_study_repository.dart';
-import 'package:retentio/features/offline_learning/domain/entities/offline_fact.dart';
 import 'package:retentio/features/offline_learning/domain/repositories/offline_learning_store.dart';
 import 'package:retentio/features/offline_learning/domain/services/offline_sync_service.dart';
 import 'package:retentio/services/apis/api_service.dart';
@@ -41,23 +40,8 @@ class OfflineLearningSession {
   );
 
   Future<void> _removeDeck(String deckId) async {
-    Set<String> mediaOf(List<OfflineFact> facts) => {
-      for (final f in facts)
-        for (final e in f.entries) ...[
-          f.mediaKey(e.audio),
-          f.mediaKey(e.image),
-        ],
-    }..remove('');
-    final shared = <String>{
-      for (final d in await store.getDecks())
-        if (d.id != deckId) ...mediaOf(await store.getFacts(d.id)),
-    };
-    for (final id in mediaOf(await store.getFacts(deckId)).difference(shared)) {
-      final path = await store.getMediaPath(id);
-      if (path != null && await File(path).exists()) await File(path).delete();
-      await store.deleteMedia(id);
-    }
     await store.removeDeck(deckId);
+    await pruneUnusedMedia(store);
   }
 
   /// Deletes the account's offline data, unsynced reviews and media files,
@@ -132,9 +116,15 @@ class OfflineLearningSessions {
   final Future<bool> Function() _isOnline;
   final Map<String, Future<OfflineLearningSession>> _sessions = {};
 
-  Future<OfflineLearningSession?> current() async {
+  /// [fetchMissingUsername] false skips the profile request when no username
+  /// is stored (the session is then null), for callers that must not wait on
+  /// the network.
+  Future<OfflineLearningSession?> current({
+    bool fetchMissingUsername = true,
+  }) async {
     var name = await _readUsername();
     if (name == null || name.isEmpty) {
+      if (!fetchMissingUsername) return null;
       name = await _fetchUsername();
       if (name == null || name.isEmpty) return null;
       await _saveUsername(name);

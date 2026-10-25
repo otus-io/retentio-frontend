@@ -40,6 +40,9 @@ class OfflineSyncService {
   /// HTTP errors (not network errors) after which an op is marked failed.
   static const maxHttpAttempts = 8;
 
+  /// Proxy errors that can follow a request the backend already applied.
+  static const _gatewayStatuses = {502, 503, 504};
+
   final OfflineLearningStore _store;
   final StudySyncRemoteDataSource _remote;
   final Future<bool> Function() _isOnline;
@@ -110,6 +113,7 @@ class OfflineSyncService {
           attempts: 0,
           httpAttempts: 0,
           nextRetryAt: 0,
+          clearLastError: true,
         ),
       );
     }
@@ -255,8 +259,11 @@ class OfflineSyncService {
     int now,
     Map<String, Future<List<OfflineCard>?>> serverCards,
   ) async {
-    if (op.maybeApplied && await _appliedOnServer(op, serverCards)) {
-      return _OpOutcome.sent;
+    if (op.maybeApplied) {
+      // Resending without knowing the server state could count it twice.
+      final applied = await _appliedOnServer(op, serverCards);
+      if (applied == null) return _OpOutcome.retry;
+      if (applied) return _OpOutcome.sent;
     }
     final result = await _remote.patchCard(
       op.deckId,
@@ -308,7 +315,11 @@ class OfflineSyncService {
         nextRetryAt:
             now + backoffSeconds[min(attempts - 1, backoffSeconds.length - 1)],
         lastError: lastError,
-        maybeApplied: offline && op.type == StudySyncType.review ? true : null,
+        maybeApplied:
+            (offline || _gatewayStatuses.contains(result.httpStatus)) &&
+                op.type == StudySyncType.review
+            ? true
+            : null,
       ),
     );
     return offline ? _OpOutcome.offline : _OpOutcome.retry;
@@ -316,15 +327,17 @@ class OfflineSyncService {
 
   /// The server ignores `Idempotency-Key`, so resending a review it already
   /// applied would count it twice. Confirms the op from the server card when
-  /// its schedule is exactly the reviewed one.
-  Future<bool> _appliedOnServer(
+  /// its schedule is exactly the reviewed one. Null when the server cards
+  /// could not be read, so the state is unknown.
+  Future<bool?> _appliedOnServer(
     StudySyncOperation op,
     Map<String, Future<List<OfflineCard>?>> serverCards,
   ) async {
     final cards = await (serverCards[op.deckId] ??= _remote.fetchCards(
       op.deckId,
     ));
-    final server = cards?.where((c) => c.id == op.cardId).firstOrNull;
+    if (cards == null) return null;
+    final server = cards.where((c) => c.id == op.cardId).firstOrNull;
     final lastReview = op.lastReview;
     if (server == null ||
         lastReview == null ||
@@ -344,8 +357,7 @@ class OfflineSyncService {
     StudySyncOperation op,
     Map<String, dynamic> data,
   ) async {
-    final cards = await _store.getCards(op.deckId);
-    final card = cards.where((c) => c.id == op.cardId).firstOrNull;
+    final card = await _store.getCard(op.deckId, op.cardId);
     if (card == null) return;
     // Newer local changes to this card are still queued (possibly added
     // during this flush); keep them.

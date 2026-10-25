@@ -53,6 +53,7 @@ class StudySyncOperation {
     int? nextRetryAt,
     StudySyncStatus? status,
     String? lastError,
+    bool clearLastError = false,
     bool? maybeApplied,
   }) => StudySyncOperation(
     operationId: operationId,
@@ -68,7 +69,7 @@ class StudySyncOperation {
     httpAttempts: httpAttempts ?? this.httpAttempts,
     nextRetryAt: nextRetryAt ?? this.nextRetryAt,
     status: status ?? this.status,
-    lastError: lastError ?? this.lastError,
+    lastError: clearLastError ? null : (lastError ?? this.lastError),
     maybeApplied: maybeApplied ?? this.maybeApplied,
   );
 

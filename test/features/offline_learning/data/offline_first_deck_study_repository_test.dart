@@ -317,6 +317,38 @@ void main() {
     expect(result.refreshedDueCardsCount, 0);
   });
 
+  test(
+    'a review made after going offline uses a copy downloaded meanwhile',
+    () async {
+      final r = repo();
+      await r.loadNextDueCard(deckId: 'd1');
+      await seedReadyDeck();
+      await store.putCards([_card('c1', 'f1')]);
+      online = false;
+
+      final ok = await r.submitCard(
+        DeckStudySubmitRequest.hide(deckId: 'd1', cardId: 'c1'),
+      );
+
+      expect(ok, isTrue);
+      expect(remote.submits, 0);
+      expect(await store.getOperations(), hasLength(1));
+    },
+  );
+
+  test(
+    'a review offline without a download still goes to the remote',
+    () async {
+      online = false;
+
+      await repo().submitCard(
+        DeckStudySubmitRequest.hide(deckId: 'd1', cardId: 'c1'),
+      );
+
+      expect(remote.submits, 1);
+    },
+  );
+
   test('review updates the card and queues one operation', () async {
     await seedReadyDeck();
     await store.putCards([_card('c1', 'f1')]);

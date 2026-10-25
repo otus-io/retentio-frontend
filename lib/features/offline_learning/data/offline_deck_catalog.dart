@@ -42,6 +42,7 @@ class OfflineDeckCatalog {
       if (local.isEmpty) rethrow;
       return _localDecks(store, local.values);
     }
+    await _dropDeletedDecks(local.keys, {for (final d in remoteDecks) d.id});
     return [
       for (final remote in remoteDecks)
         if (local[remote.id] case final d?)
@@ -49,6 +50,24 @@ class OfflineDeckCatalog {
         else
           remote,
     ];
+  }
+
+  /// Removes the copies of decks the server no longer lists (deleted on
+  /// another device). The deck list is not paged, but an empty one is never
+  /// trusted: it could be an unreadable response.
+  Future<void> _dropDeletedDecks(
+    Iterable<String> localIds,
+    Set<String> remoteIds,
+  ) async {
+    if (remoteIds.isEmpty) return;
+    for (final id in localIds.toList()) {
+      if (remoteIds.contains(id)) continue;
+      try {
+        await remove(id);
+      } catch (_) {
+        // Retried on the next listing.
+      }
+    }
   }
 
   Future<List<Deck>> _localDecks(

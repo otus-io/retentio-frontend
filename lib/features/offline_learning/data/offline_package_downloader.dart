@@ -47,6 +47,7 @@ class OfflinePackageDownloader {
 
   static const int factsPageSize = 200;
   static const int versionLookupConcurrency = 4;
+  static const int mediaDownloadConcurrency = 4;
   static const int refreshIntervalSec = 3600;
 
   final OfflineLearningStore _store;
@@ -165,6 +166,11 @@ class OfflinePackageDownloader {
           mediaComplete: mediaComplete,
         ),
       );
+      try {
+        await pruneUnusedMedia(_store);
+      } catch (e) {
+        logger.w('Offline media cleanup of deck=$deckId failed: $e');
+      }
       return true;
     } on _DownloadHalted {
       logger.i('Offline download of deck=$deckId stopped for removal');
@@ -364,16 +370,25 @@ class OfflinePackageDownloader {
         ],
     }..remove('');
     var complete = true;
-    for (final key in mediaKeys) {
-      try {
-        await _downloadOne(deckId, key);
-      } on _DownloadHalted {
-        rethrow;
-      } catch (e, s) {
-        complete = false;
-        logger.e('Offline media $key failed: $e', stackTrace: s);
+    final keys = mediaKeys.toList();
+    var next = 0;
+    Future<void> worker() async {
+      while (next < keys.length) {
+        final key = keys[next++];
+        try {
+          await _downloadOne(deckId, key);
+        } on _DownloadHalted {
+          rethrow;
+        } catch (e, s) {
+          complete = false;
+          logger.e('Offline media $key failed: $e', stackTrace: s);
+        }
       }
     }
+
+    await Future.wait([
+      for (var w = 0; w < mediaDownloadConcurrency; w++) worker(),
+    ]);
     return complete;
   }
 
@@ -398,6 +413,22 @@ class OfflinePackageDownloader {
   }
 }
 
+/// Deletes cached media files no stored fact references any more (facts
+/// deleted or edited, decks removed).
+Future<void> pruneUnusedMedia(OfflineLearningStore store) async {
+  final used = <String>{
+    for (final deck in await store.getDecks())
+      for (final fact in await store.getFacts(deck.id))
+        for (final id in fact.mediaIds) fact.mediaKey(id),
+  };
+  for (final MapEntry(:key, :value) in (await store.getMediaPaths()).entries) {
+    if (used.contains(key)) continue;
+    final file = File(value);
+    if (await file.exists()) await file.delete();
+    await store.deleteMedia(key);
+  }
+}
+
 /// File extension (with dot) sniffed from the file's leading bytes, or '' when
 /// the format is unknown. Players and image decoders rely on it.
 Future<String> mediaFileExtension(String path) async {
@@ -414,7 +445,15 @@ Future<String> mediaFileExtension(String path) async {
   if (at(0, [0x47, 0x49, 0x46, 0x38])) return '.gif';
   if (at(0, riff) && at(8, [0x57, 0x45, 0x42, 0x50])) return '.webp';
   if (at(0, riff) && at(8, [0x57, 0x41, 0x56, 0x45])) return '.wav';
-  if (at(0, [0x49, 0x44, 0x33]) || at(0, [0xFF, 0xFB])) return '.mp3';
+  // MP3 frame sync (11 set bits) with layer III of any MPEG version; AAC ADTS
+  // sync (12 set bits) with layer 00.
+  final sync = head.length >= 2 && head[0] == 0xFF;
+  if (at(0, [0x49, 0x44, 0x33]) ||
+      (sync && head[1] & 0xE0 == 0xE0 && head[1] & 0x06 == 0x02)) {
+    return '.mp3';
+  }
+  if (sync && head[1] & 0xF6 == 0xF0) return '.aac';
+  if (at(0, [0x66, 0x4C, 0x61, 0x43])) return '.flac';
   if (at(0, [0x4F, 0x67, 0x67, 0x53])) return '.ogg';
   if (at(0, [0x1A, 0x45, 0xDF, 0xA3])) return '.webm';
   if (at(4, [0x66, 0x74, 0x79, 0x70])) return '.m4a';

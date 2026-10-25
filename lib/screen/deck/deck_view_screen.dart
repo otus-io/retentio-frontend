@@ -16,21 +16,29 @@ import 'package:retentio/theme/theme_tokens.dart';
 
 import '../../features/deck_study/deck_study.dart';
 
-class DeckViewScreen extends StatelessWidget {
+class DeckViewScreen extends StatefulWidget {
   final Deck deck;
 
   const DeckViewScreen({super.key, required this.deck});
 
   @override
+  State<DeckViewScreen> createState() => _DeckViewScreenState();
+}
+
+class _DeckViewScreenState extends State<DeckViewScreen> {
+  late final Future<OfflineLearningSession?> session = OfflineLearningSessions
+      .instance
+      .current()
+      .then<OfflineLearningSession?>((s) => s, onError: (Object _) => null);
+  late final DeckStudyRepository repository = offlineFirstStudyRepository(
+    session,
+    remote: DeckStudyLegacyServiceRepository(),
+  );
+
+  @override
   Widget build(BuildContext context) {
+    final deck = widget.deck;
     final scheme = Theme.of(context).colorScheme;
-    final session = OfflineLearningSessions.instance
-        .current()
-        .then<OfflineLearningSession?>((s) => s, onError: (Object _) => null);
-    final repository = offlineFirstStudyRepository(
-      session,
-      remote: DeckStudyLegacyServiceRepository(),
-    );
     final maybeDeckListCubit = _tryReadDeckListCubit(context);
     final injectedStudyBloc = _tryReadInjectedStudyBloc(context);
     return MultiBlocProvider(

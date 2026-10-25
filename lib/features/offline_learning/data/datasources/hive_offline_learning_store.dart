@@ -95,6 +95,12 @@ class HiveOfflineLearningStore implements OfflineLearningStore {
         ..sort((a, b) => a.id.compareTo(b.id));
 
   @override
+  Future<OfflineCard?> getCard(String deckId, String cardId) async {
+    final value = _study.get('${_cardPrefix(deckId)}$cardId');
+    return value == null ? null : OfflineCard.fromJson(_json(value));
+  }
+
+  @override
   Future<void> putCards(List<OfflineCard> cards) =>
       _study.putAll({for (final c in cards) _cardKey(c): c.toJson()});
 
@@ -122,6 +128,15 @@ class HiveOfflineLearningStore implements OfflineLearningStore {
   @override
   Future<String?> getMediaPath(String mediaId) async =>
       _media.get(_mediaKey(mediaId)) as String?;
+
+  @override
+  Future<Map<String, String>> getMediaPaths() async {
+    final prefix = '$accountId:media:';
+    return {
+      for (final key in _keys(_media, prefix))
+        key.substring(prefix.length): _media.get(key) as String,
+    };
+  }
 
   @override
   Future<void> putMediaPath(String mediaId, String localPath) =>

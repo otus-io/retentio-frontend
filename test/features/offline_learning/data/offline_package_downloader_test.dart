@@ -26,9 +26,22 @@ class _FakeStore implements OfflineLearningStore {
   final media = <String, String>{};
   final ops = <StudySyncOperation>[];
   bool failGetMediaPath = false;
+  bool failGetMediaPaths = false;
 
   @override
   Future<List<StudySyncOperation>> getOperations() async => ops;
+
+  @override
+  Future<List<OfflineDeck>> getDecks() async => decks.values.toList();
+
+  @override
+  Future<Map<String, String>> getMediaPaths() async {
+    if (failGetMediaPaths) throw StateError('store broken');
+    return Map.of(media);
+  }
+
+  @override
+  Future<void> deleteMedia(String mediaId) async => media.remove(mediaId);
 
   @override
   Future<OfflineDeck?> getDeck(String deckId) async => decks[deckId];
@@ -941,6 +954,8 @@ void main() {
       '.wav': [0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x41, 0x56, 0x45],
       '.mp3': [0x49, 0x44, 0x33, 4],
       '.ogg': [0x4F, 0x67, 0x67, 0x53],
+      '.flac': [0x66, 0x4C, 0x61, 0x43],
+      '.aac': [0xFF, 0xF1, 0x50],
       '.webm': [0x1A, 0x45, 0xDF, 0xA3],
       '.m4a': [0, 0, 0, 0x20, 0x66, 0x74, 0x79, 0x70],
       '': [0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 1, 2, 3, 4],
@@ -950,9 +965,93 @@ void main() {
       File(path).writeAsBytesSync(bytes);
       expect(await mediaFileExtension(path), ext);
     }
-    final frameSync = '${tmp.path}/frame.bin';
-    File(frameSync).writeAsBytesSync([0xFF, 0xFB, 0x90]);
-    expect(await mediaFileExtension(frameSync), '.mp3');
+    // MP3 frame headers of every MPEG version and CRC setting.
+    for (final second in [0xFB, 0xFA, 0xF3, 0xF2, 0xE3]) {
+      final frameSync = '${tmp.path}/frame$second.bin';
+      File(frameSync).writeAsBytesSync([0xFF, second, 0x90]);
+      expect(await mediaFileExtension(frameSync), '.mp3', reason: '$second');
+    }
+    // MPEG layer II, and a lone 0xFF byte, are not MP3.
+    final layer2 = '${tmp.path}/layer2.bin';
+    File(layer2).writeAsBytesSync([0xFF, 0xFD, 0x90]);
+    expect(await mediaFileExtension(layer2), '');
+    final lone = '${tmp.path}/lone.bin';
+    File(lone).writeAsBytesSync([0xFF]);
+    expect(await mediaFileExtension(lone), '');
+  });
+
+  test('unreferenced media is deleted after a download', () async {
+    final stale = File('${tmp.path}/stale.png')..writeAsBytesSync([1]);
+    final kept = File('${tmp.path}/kept.png')..writeAsBytesSync([1]);
+    final gone = File('${tmp.path}/gone.png');
+    store.media['old'] = stale.path;
+    store.media['aud'] = kept.path;
+    store.media['missing'] = gone.path;
+
+    await build(
+      pages: [
+        [
+          _fact('f1', entries: const [FactEntry(audio: 'aud')]),
+        ],
+      ],
+    ).download('d1');
+
+    expect(store.media.keys, ['aud']);
+    expect(stale.existsSync(), isFalse);
+    expect(kept.existsSync(), isTrue);
+  });
+
+  test(
+    'media of other decks and pinned versions survive the cleanup',
+    () async {
+      final other = File('${tmp.path}/other.png')..writeAsBytesSync([1]);
+      store.decks['d2'] = const OfflineDeck(id: 'd2', name: 'Two', fields: []);
+      store.facts['x'] = const OfflineFact(
+        deckId: 'd2',
+        id: 'x',
+        entries: [FactEntry(image: 'shared')],
+        mediaVersions: {'shared': 2},
+      );
+      store.media['shared?v=2'] = other.path;
+
+      await build(pages: const [[]]).download('d1');
+
+      expect(store.media.keys, ['shared?v=2']);
+      expect(other.existsSync(), isTrue);
+    },
+  );
+
+  test('a failing media cleanup does not fail the download', () async {
+    store.failGetMediaPaths = true;
+
+    final ok = await build(pages: const [[]]).download('d1');
+
+    expect(ok, isTrue);
+    expect(store.decks['d1']!.isReady, isTrue);
+  });
+
+  test('downloads at most four media files at a time', () async {
+    var active = 0;
+    var peak = 0;
+    final ok = await build(
+      pages: [
+        [
+          for (var i = 0; i < 10; i++)
+            _fact('f$i', entries: [FactEntry(audio: 'a$i')]),
+        ],
+      ],
+      downloadMedia: (url, path) async {
+        peak = ++active > peak ? active : peak;
+        await Future<void>.delayed(Duration.zero);
+        active--;
+        return writeMedia(url, path);
+      },
+    ).download('d1');
+
+    expect(ok, isTrue);
+    expect(downloadedUrls, hasLength(10));
+    expect(store.media, hasLength(10));
+    expect(peak, OfflinePackageDownloader.mediaDownloadConcurrency);
   });
 
   test('media failures still return true', () async {

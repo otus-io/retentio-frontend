@@ -238,6 +238,27 @@ void main() {
     expect(await store.getMediaPath('m1'), '/files/m1.mp3');
   });
 
+  test('getCard reads one card of the deck', () async {
+    await store.putCards([_card('c1', due: 5), _card('c1', deckId: 'd2')]);
+
+    expect((await store.getCard('d1', 'c1'))?.dueDate, 5);
+    expect(await store.getCard('d1', 'missing'), isNull);
+    expect(await store.getCard('d3', 'c1'), isNull);
+  });
+
+  test('getMediaPaths lists only this account media', () async {
+    final bob = await HiveOfflineLearningStore.open(accountId: 'bob');
+    await store.putMediaPath('m1', '/a/m1.png');
+    await store.putMediaPath('m2?v=3', '/a/m2_v=3.mp3');
+    await bob.putMediaPath('m9', '/b/m9');
+
+    expect(await store.getMediaPaths(), {
+      'm1': '/a/m1.png',
+      'm2?v=3': '/a/m2_v=3.mp3',
+    });
+    expect(await bob.getMediaPaths(), {'m9': '/b/m9'});
+  });
+
   test('open accepts a cipher', () async {
     await Hive.close();
     final cipher = HiveAesCipher(List<int>.generate(32, (i) => i));

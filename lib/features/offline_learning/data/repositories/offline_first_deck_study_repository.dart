@@ -148,12 +148,16 @@ class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
 
   @override
   Future<bool> submitCard(DeckStudySubmitRequest request) async {
-    if (await _localDeck(request.deckId) == null) {
-      return _remote.submitCard(request);
+    var deck = await _localDeck(request.deckId);
+    if (deck == null && !await _isOnline()) {
+      // Went offline while the deck was served remotely: a download that
+      // finished meanwhile lets the review be queued instead of lost.
+      _localDecks.remove(request.deckId);
+      deck = await _localDeck(request.deckId);
     }
+    if (deck == null) return _remote.submitCard(request);
     final store = (await _store)!;
-    final cards = await store.getCards(request.deckId);
-    final card = cards.where((c) => c.id == request.cardId).firstOrNull;
+    final card = await store.getCard(request.deckId, request.cardId);
     if (card == null) return false;
     final now = _nowSec();
     final isReview = request.type == DeckStudySubmitType.review;

@@ -105,6 +105,46 @@ void main() {
     },
   );
 
+  test('online: drops the copy of a deck the server no longer lists', () async {
+    final decks = await catalog().decks(() async => [_remote('d3')]);
+
+    expect(decks.map((d) => d.id), ['d3']);
+    expect(await store.getDeck('d1'), isNull);
+    expect(await store.getCards('d1'), isEmpty);
+    expect(await store.getDeck('d2'), isNotNull);
+  });
+
+  test('online: an empty list never drops downloaded decks', () async {
+    await catalog().decks(() async => []);
+
+    expect(await store.getDeck('d1'), isNotNull);
+  });
+
+  test('online: a failing removal still lists the decks', () async {
+    var calls = 0;
+    final failing = OfflineDeckCatalog(
+      session: () {
+        if (++calls > 1) throw StateError('no storage');
+        return Future.value(
+          OfflineLearningSession(
+            accountId: 'u1',
+            store: store,
+            downloader: _Unused(),
+            sync: _Unused(),
+            mediaRootDir: dir.path,
+          ),
+        );
+      },
+      isOnline: () async => true,
+      nowSec: () => 1000,
+    );
+
+    final decks = await failing.decks(() async => [_remote('d3')]);
+
+    expect(decks.map((d) => d.id), ['d3']);
+    expect(await store.getDeck('d1'), isNotNull);
+  });
+
   test('offline: lists only downloaded decks from local data', () async {
     online = false;
     var fetched = false;

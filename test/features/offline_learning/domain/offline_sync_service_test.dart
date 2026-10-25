@@ -25,6 +25,15 @@ class _FakeStore implements OfflineLearningStore {
       cards.values.where((c) => c.deckId == deckId).toList();
 
   @override
+  Future<OfflineCard?> getCard(String deckId, String cardId) async {
+    final card = cards[cardId];
+    return card?.deckId == deckId ? card : null;
+  }
+
+  @override
+  Future<Map<String, String>> getMediaPaths() => throw UnimplementedError();
+
+  @override
   Future<void> putCards(List<OfflineCard> list) async {
     for (final c in list) {
       cards[c.id] = c;
@@ -368,6 +377,16 @@ void main() {
       expect(op.attempts, 1);
       expect(op.httpAttempts, 1);
       expect(op.nextRetryAt, _now + 30);
+    });
+
+    test('retryFailed clears the previous error text', () async {
+      store.ops['a'] = store.ops['a']!.copyWith(lastError: 'HTTP 400');
+      online = false;
+
+      await service().retryFailed();
+
+      expect(store.ops['a']!.status, StudySyncStatus.pending);
+      expect(store.ops['a']!.lastError, isNull);
     });
 
     test('discardFailed removes failed ops and recomputes phase', () async {
@@ -900,7 +919,7 @@ void main() {
       },
     );
 
-    test('resends when the server schedule differs or is unknown', () async {
+    test('resends when the server schedule differs', () async {
       queue([
         _review('a', 1).copyWith(maybeApplied: true),
         const StudySyncOperation(
@@ -912,19 +931,55 @@ void main() {
           createdAt: 0,
           maybeApplied: true,
         ),
-        _review(
-          'c',
-          3,
-          deckId: 'd2',
-          cardId: 'c3',
-        ).copyWith(maybeApplied: true),
       ]);
       remote.serverCards['d1'] = [_card('c1'), _card('c2')];
 
       await service().flush(force: true);
 
-      expect(remote.cardRequests, ['d1', 'd2']);
-      expect(remote.patched, ['a', 'b', 'c']);
+      expect(remote.cardRequests, ['d1']);
+      expect(remote.patched, ['a', 'b']);
+    });
+
+    test(
+      'waits instead of resending when the server cards are unknown',
+      () async {
+        queue([
+          _review('a', 1).copyWith(maybeApplied: true),
+          _review('b', 2).copyWith(maybeApplied: true),
+          _review('c', 3, cardId: 'c2'),
+        ]);
+
+        final result = await service().flush(force: true);
+
+        expect(remote.cardRequests, ['d1']);
+        expect(remote.patched, ['c']);
+        expect(result.status, OfflineSyncStatus.partial);
+        expect(store.ops.keys, containsAll(['a', 'b']));
+        expect(store.ops['a']!.attempts, 0);
+        expect(store.ops['a']!.status, StudySyncStatus.pending);
+      },
+    );
+
+    for (final status in [502, 503, 504]) {
+      test('HTTP $status marks a review but not a hide', () async {
+        queue([_review('a', 1), _hide('h', 2, cardId: 'c2')]);
+        remote.statusByOp['a'] = status;
+        remote.statusByOp['h'] = status;
+
+        await service().flush(force: true);
+
+        expect(store.ops['a']!.maybeApplied, isTrue);
+        expect(store.ops['h']!.maybeApplied, isFalse);
+      });
+    }
+
+    test('other HTTP errors do not mark a review', () async {
+      queue([_review('a', 1)]);
+      remote.statusByOp['a'] = 500;
+
+      await service().flush(force: true);
+
+      expect(store.ops['a']!.maybeApplied, isFalse);
     });
   });
 }

@@ -104,6 +104,16 @@ void main() {
     expect(await const LocalAuthDataSource().readUsername(), 'tester');
   });
 
+  test('does not fetch a missing username when told not to', () async {
+    attachFakeProfileApiInterceptor();
+
+    expect(
+      await OfflineLearningSessions().current(fetchMissingUsername: false),
+      isNull,
+    );
+    expect(await const LocalAuthDataSource().readUsername(), isNull);
+  });
+
   test('returns null when the account cannot be identified', () async {
     networkDioClient.dio.interceptors.add(_FailingInterceptor());
     expect(await OfflineLearningSessions().current(), isNull);
@@ -446,6 +456,23 @@ void main() {
     expect(await store.getMediaPath('gone'), isNull);
     expect(shared.existsSync(), isTrue);
     expect(await store.getMediaPath('shared'), shared.path);
+  });
+
+  test('removeDeck also deletes media left over from deleted facts', () async {
+    final session = (await OfflineLearningSessions(
+      readUsername: () async => 'alice',
+      documentsDir: () async => dir.path,
+    ).current())!;
+    final store = session.store;
+    final orphan = File('${session.mediaRootDir}/d1/orphan.png')
+      ..createSync(recursive: true);
+    await store.putMediaPath('orphan', orphan.path);
+    await store.putDeck(const OfflineDeck(id: 'd1', name: 'd1', fields: []));
+
+    await session.removeDeck('d1');
+
+    expect(orphan.existsSync(), isFalse);
+    expect(await store.getMediaPath('orphan'), isNull);
   });
 
   test('removeDeck deletes pinned media but keeps the unpinned copy', () async {

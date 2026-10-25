@@ -173,6 +173,8 @@ void main() {
     expect(back.maybeApplied, isTrue);
     expect(op.maybeApplied, isFalse);
     expect(op.copyWith().toJson(), op.toJson());
+    expect(failed.copyWith().lastError, '400');
+    expect(failed.copyWith(clearLastError: true).lastError, isNull);
 
     final defaults = StudySyncOperation.fromJson({});
     expect(defaults.type, StudySyncType.review);

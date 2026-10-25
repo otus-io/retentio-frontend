@@ -20,7 +20,8 @@ Future<bool> settleOfflineDataBeforeLogout(
   try {
     return await _settle(
       context,
-      session ?? OfflineLearningSessions.instance.current(),
+      session ??
+          OfflineLearningSessions.instance.current(fetchMissingUsername: false),
     );
   } catch (e) {
     logger.w('offline logout: $e');

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:path/path.dart' as p;
 
@@ -17,10 +18,11 @@ class CardImage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final file = File(url);
-    if (isLocalImagePath(url) && file.existsSync()) {
-      return Image.file(file, fit: BoxFit.contain);
-    }
+    final isLocalFile = useMemoized(
+      () => isLocalImagePath(url) && File(url).existsSync(),
+      [url],
+    );
+    if (isLocalFile) return Image.file(File(url), fit: BoxFit.contain);
     return CommonNetImage(url: url);
   }
 }

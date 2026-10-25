@@ -11,6 +11,7 @@ abstract class OfflineLearningStore {
   Future<void> putDeck(OfflineDeck deck);
 
   Future<List<OfflineCard>> getCards(String deckId);
+  Future<OfflineCard?> getCard(String deckId, String cardId);
 
   /// Upserts by card id.
   Future<void> putCards(List<OfflineCard> cards);
@@ -25,6 +26,9 @@ abstract class OfflineLearningStore {
 
   /// Absolute path of a downloaded media file, or null when not cached.
   Future<String?> getMediaPath(String mediaId);
+
+  /// Every cached media file of the account (media key → absolute path).
+  Future<Map<String, String>> getMediaPaths();
   Future<void> putMediaPath(String mediaId, String localPath);
   Future<void> deleteMedia(String mediaId);
 
