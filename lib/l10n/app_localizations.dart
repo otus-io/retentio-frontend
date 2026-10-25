@@ -190,6 +190,24 @@ abstract class AppLocalizations {
   /// **'Passwords do not match'**
   String get passwordNotMatch;
 
+  /// Username length must be 2 to 32 characters
+  ///
+  /// In en, this message translates to:
+  /// **'Username must be between 2 and 32 characters'**
+  String get usernameLengthInvalid;
+
+  /// Password shorter than 8 characters
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 8 characters'**
+  String get passwordTooShort;
+
+  /// Password longer than 64 characters or 72 bytes
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at most 64 characters'**
+  String get passwordTooLong;
+
   /// Success message after successful registration
   ///
   /// In en, this message translates to:

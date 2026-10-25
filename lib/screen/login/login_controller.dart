@@ -9,8 +9,18 @@ class LoginController {
   }) async {
     final loc = AppLocalizations.of(context)!;
 
-    if (username.isEmpty || password.isEmpty) {
+    final name = username.trim();
+    if (name.isEmpty || password.isEmpty) {
       showSnack(context, loc.pleaseFillAllFields);
+      return;
+    }
+    final limitMessage = AccountLimits.limitMessage(
+      loc,
+      username: name,
+      secret: password,
+    );
+    if (limitMessage != null) {
+      showSnack(context, limitMessage);
       return;
     }
 
@@ -18,7 +28,7 @@ class LoginController {
 
     try {
       final result = await AuthService.loginByAuthBloc(
-        username: username.trim(),
+        username: name,
         password: password,
       );
 

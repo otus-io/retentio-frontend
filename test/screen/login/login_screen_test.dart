@@ -88,6 +88,40 @@ void main() {
       expect(find.text('testuser'), findsOneWidget);
     });
 
+    testWidgets('rejects a username outside 2 to 32 characters', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).first, 'a');
+      await tester.enterText(find.byType(TextField).last, 'password1');
+      await tester.tap(find.text('Login'));
+      await tester.pump();
+
+      expect(
+        find.text('Username must be between 2 and 32 characters'),
+        findsOneWidget,
+      );
+      await tester.pump(const Duration(seconds: 2));
+    });
+
+    testWidgets('rejects a short secret', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).first, 'ab');
+      await tester.enterText(find.byType(TextField).last, 'short');
+      await tester.tap(find.text('Login'));
+      await tester.pump();
+
+      expect(
+        find.text('Password must be at least 8 characters'),
+        findsOneWidget,
+      );
+      await tester.pump(const Duration(seconds: 2));
+    });
+
     testWidgets('can enter password', (tester) async {
       await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
       await tester.pumpAndSettle();

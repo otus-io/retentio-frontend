@@ -70,6 +70,18 @@
   "@passwordNotMatch": {
     "description": "Validation error message when passwords don't match"
   },
+  "usernameLengthInvalid": "Username must be between 2 and 32 characters",
+  "@usernameLengthInvalid": {
+    "description": "Username length must be 2 to 32 characters"
+  },
+  "passwordTooShort": "Password must be at least 8 characters",
+  "@passwordTooShort": {
+    "description": "Password shorter than 8 characters"
+  },
+  "passwordTooLong": "Password must be at most 64 characters",
+  "@passwordTooLong": {
+    "description": "Password longer than 64 characters or 72 bytes"
+  },
   "registerSuccess": "Register Success",
   "@registerSuccess": {
     "description": "Success message after successful registration"

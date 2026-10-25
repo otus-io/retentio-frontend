@@ -56,6 +56,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get passwordNotMatch => 'パスワードが一致しません';
 
   @override
+  String get usernameLengthInvalid => 'ユーザー名は2〜32文字にしてください';
+
+  @override
+  String get passwordTooShort => 'パスワードは8文字以上にしてください';
+
+  @override
+  String get passwordTooLong => 'パスワードは64文字以内にしてください';
+
+  @override
   String get registerSuccess => '登録が完了しました';
 
   @override
