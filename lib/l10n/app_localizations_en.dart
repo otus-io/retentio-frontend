@@ -68,10 +68,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordTooShort => 'Password must be at least 8 characters';
 
   @override
+  String get passwordContainsSpaces => 'Password must not contain spaces';
+
+  @override
   String get passwordTooLong => 'Password must be at most 64 characters';
 
   @override
-  String get passwordTooManyBytes => 'Password must be at most 72 bytes';
+  String get passwordTooManyBytes =>
+      'Password is too long when encoded (contains too many multi-byte characters)';
 
   @override
   String get registerSuccess => 'Register Success';

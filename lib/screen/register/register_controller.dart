@@ -27,7 +27,6 @@ class RegisterController {
       loc,
       username: username,
       secret: password,
-      rejectSpaces: true,
     );
     if (limitMessage != null) {
       showSnack(context, limitMessage);

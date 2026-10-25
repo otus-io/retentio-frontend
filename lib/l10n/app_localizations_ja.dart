@@ -65,10 +65,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get passwordTooShort => 'パスワードは8文字以上にしてください';
 
   @override
+  String get passwordContainsSpaces => 'パスワードにスペースは使えません';
+
+  @override
   String get passwordTooLong => 'パスワードは64文字以内にしてください';
 
   @override
-  String get passwordTooManyBytes => 'パスワードは72バイト以内にしてください';
+  String get passwordTooManyBytes => 'パスワードはエンコードすると長すぎます（マルチバイト文字が多すぎます）';
 
   @override
   String get registerSuccess => '登録が完了しました';

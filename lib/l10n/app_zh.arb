@@ -27,11 +27,15 @@
   "@passwordTooShort": {
     "description": "Password shorter than 8 characters"
   },
+  "passwordContainsSpaces": "密码不能包含空格",
+  "@passwordContainsSpaces": {
+    "description": "Password contains whitespace"
+  },
   "passwordTooLong": "密码最多 64 个字符",
   "@passwordTooLong": {
     "description": "Password longer than 64 characters"
   },
-  "passwordTooManyBytes": "密码最多 72 字节",
+  "passwordTooManyBytes": "密码按编码计算过长（多字节字符过多）",
   "@passwordTooManyBytes": {
     "description": "Password longer than bcrypt's 72-byte limit"
   },

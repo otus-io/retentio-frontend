@@ -43,11 +43,18 @@ void main() {
         zh.passwordTooShort,
       );
       expect(
+        ApiErrorMessages.resolve('Password must not contain spaces', en),
+        en.passwordContainsSpaces,
+      );
+      expect(
         ApiErrorMessages.resolve('Password must be at most 64 characters', en),
         en.passwordTooLong,
       );
       expect(
-        ApiErrorMessages.resolve('Password must be at most 72 bytes', zh),
+        ApiErrorMessages.resolve(
+          'Password is too long when encoded (contains too many multi-byte characters)',
+          zh,
+        ),
         zh.passwordTooManyBytes,
       );
     });

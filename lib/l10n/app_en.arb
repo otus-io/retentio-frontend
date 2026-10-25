@@ -82,11 +82,15 @@
   "@passwordTooShort": {
     "description": "Password shorter than 8 characters"
   },
+  "passwordContainsSpaces": "Password must not contain spaces",
+  "@passwordContainsSpaces": {
+    "description": "Password contains whitespace"
+  },
   "passwordTooLong": "Password must be at most 64 characters",
   "@passwordTooLong": {
     "description": "Password longer than 64 characters"
   },
-  "passwordTooManyBytes": "Password must be at most 72 bytes",
+  "passwordTooManyBytes": "Password is too long when encoded (contains too many multi-byte characters)",
   "@passwordTooManyBytes": {
     "description": "Password longer than bcrypt's 72-byte limit"
   },

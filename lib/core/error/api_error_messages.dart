@@ -69,8 +69,10 @@ class ApiErrorMessages {
         loc.usernameLengthInvalid,
     'Username must not contain spaces': (loc) => loc.usernameContainsSpaces,
     'Password must be at least 8 characters': (loc) => loc.passwordTooShort,
+    'Password must not contain spaces': (loc) => loc.passwordContainsSpaces,
     'Password must be at most 64 characters': (loc) => loc.passwordTooLong,
-    'Password must be at most 72 bytes': (loc) => loc.passwordTooManyBytes,
+    'Password is too long when encoded (contains too many multi-byte characters)':
+        (loc) => loc.passwordTooManyBytes,
     'Username and password are required': (loc) => loc.apiLoginFieldsRequired,
     'Error checking username': (loc) => loc.apiServerCheckUsername,
     'Error checking email': (loc) => loc.apiServerCheckEmail,

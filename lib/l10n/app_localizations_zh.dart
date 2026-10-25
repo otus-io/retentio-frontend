@@ -65,10 +65,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get passwordTooShort => '密码至少需要 8 个字符';
 
   @override
+  String get passwordContainsSpaces => '密码不能包含空格';
+
+  @override
   String get passwordTooLong => '密码最多 64 个字符';
 
   @override
-  String get passwordTooManyBytes => '密码最多 72 字节';
+  String get passwordTooManyBytes => '密码按编码计算过长（多字节字符过多）';
 
   @override
   String get registerSuccess => '注册成功';
