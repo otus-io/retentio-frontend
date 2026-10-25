@@ -18,6 +18,7 @@ class LoginController {
       loc,
       username: name,
       secret: password,
+      rejectSecretWhitespace: false,
     );
     if (limitMessage != null) {
       showSnack(context, limitMessage);

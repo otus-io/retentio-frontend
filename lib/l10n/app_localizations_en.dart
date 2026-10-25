@@ -58,7 +58,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordNotMatch => 'Passwords do not match';
 
   @override
-  String get usernameContainsSpaces => 'Username must not contain spaces';
+  String get usernameContainsSpaces => 'Username must not contain whitespace';
 
   @override
   String get usernameLengthInvalid =>
@@ -68,7 +68,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordTooShort => 'Password must be at least 8 characters';
 
   @override
-  String get passwordContainsSpaces => 'Password must not contain spaces';
+  String get passwordContainsSpaces => 'Password must not contain whitespace';
 
   @override
   String get passwordTooLong => 'Password must be at most 64 characters';

@@ -70,9 +70,9 @@
   "@passwordNotMatch": {
     "description": "Validation error message when passwords don't match"
   },
-  "usernameContainsSpaces": "Username must not contain spaces",
+  "usernameContainsSpaces": "Username must not contain whitespace",
   "@usernameContainsSpaces": {
-    "description": "Username contains a space after trim"
+    "description": "Username contains whitespace after trim"
   },
   "usernameLengthInvalid": "Username must be between 2 and 32 characters",
   "@usernameLengthInvalid": {
@@ -82,7 +82,7 @@
   "@passwordTooShort": {
     "description": "Password shorter than 8 characters"
   },
-  "passwordContainsSpaces": "Password must not contain spaces",
+  "passwordContainsSpaces": "Password must not contain whitespace",
   "@passwordContainsSpaces": {
     "description": "Password contains whitespace"
   },

@@ -107,4 +107,42 @@ void main() {
   test('skips the username check when no username is provided', () {
     expect(AccountLimits.limitMessage(en, secret: 'password'), isNull);
   });
+
+  test('allows whitespace in a secret when login does not reject it', () {
+    expect(
+      AccountLimits.limitMessage(
+        en,
+        username: 'ab',
+        secret: 'pass word',
+        rejectSecretWhitespace: false,
+      ),
+      isNull,
+    );
+    expect(
+      AccountLimits.limitMessage(
+        en,
+        username: 'ab',
+        secret: 'pass\tword',
+        rejectSecretWhitespace: false,
+      ),
+      isNull,
+    );
+    expect(
+      AccountLimits.limitMessage(
+        en,
+        username: 'a b',
+        secret: 'pass word',
+        rejectSecretWhitespace: false,
+      ),
+      en.usernameContainsSpaces,
+    );
+    expect(
+      AccountLimits.limitMessage(
+        en,
+        secret: 'short',
+        rejectSecretWhitespace: false,
+      ),
+      en.passwordTooShort,
+    );
+  });
 }

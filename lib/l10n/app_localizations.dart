@@ -190,10 +190,10 @@ abstract class AppLocalizations {
   /// **'Passwords do not match'**
   String get passwordNotMatch;
 
-  /// Username contains a space after trim
+  /// Username contains whitespace after trim
   ///
   /// In en, this message translates to:
-  /// **'Username must not contain spaces'**
+  /// **'Username must not contain whitespace'**
   String get usernameContainsSpaces;
 
   /// Username length must be 2 to 32 characters
@@ -211,7 +211,7 @@ abstract class AppLocalizations {
   /// Password contains whitespace
   ///
   /// In en, this message translates to:
-  /// **'Password must not contain spaces'**
+  /// **'Password must not contain whitespace'**
   String get passwordContainsSpaces;
 
   /// Password longer than 64 characters

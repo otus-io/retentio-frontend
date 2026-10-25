@@ -35,7 +35,7 @@ void main() {
         en.usernameLengthInvalid,
       );
       expect(
-        ApiErrorMessages.resolve('Username must not contain spaces', zh),
+        ApiErrorMessages.resolve('Username must not contain whitespace', zh),
         zh.usernameContainsSpaces,
       );
       expect(
@@ -43,7 +43,7 @@ void main() {
         zh.passwordTooShort,
       );
       expect(
-        ApiErrorMessages.resolve('Password must not contain spaces', en),
+        ApiErrorMessages.resolve('Password must not contain whitespace', en),
         en.passwordContainsSpaces,
       );
       expect(
@@ -57,6 +57,16 @@ void main() {
         ),
         zh.passwordTooManyBytes,
       );
+    });
+
+    test('whitespace errors say whitespace in every locale', () {
+      final ja = lookupAppLocalizations(const Locale('ja'));
+      expect(en.usernameContainsSpaces, 'Username must not contain whitespace');
+      expect(en.passwordContainsSpaces, 'Password must not contain whitespace');
+      expect(zh.usernameContainsSpaces, '用户名不能包含空白字符');
+      expect(zh.passwordContainsSpaces, '密码不能包含空白字符');
+      expect(ja.usernameContainsSpaces, 'ユーザー名に空白文字は使えません');
+      expect(ja.passwordContainsSpaces, 'パスワードに空白文字は使えません');
     });
 
     test('maps deck sharing errors', () {

@@ -15,9 +15,9 @@
   "confirmPassword": "确认密码",
   "pleaseFillAllFields": "请填写所有字段",
   "passwordNotMatch": "两次密码输入不一致",
-  "usernameContainsSpaces": "用户名不能包含空格",
+  "usernameContainsSpaces": "用户名不能包含空白字符",
   "@usernameContainsSpaces": {
-    "description": "Username contains a space after trim"
+    "description": "Username contains whitespace after trim"
   },
   "usernameLengthInvalid": "用户名须为 2 到 32 个字符",
   "@usernameLengthInvalid": {
@@ -27,7 +27,7 @@
   "@passwordTooShort": {
     "description": "Password shorter than 8 characters"
   },
-  "passwordContainsSpaces": "密码不能包含空格",
+  "passwordContainsSpaces": "密码不能包含空白字符",
   "@passwordContainsSpaces": {
     "description": "Password contains whitespace"
   },

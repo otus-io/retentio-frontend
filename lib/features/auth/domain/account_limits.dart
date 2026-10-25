@@ -3,8 +3,9 @@ import 'dart:convert';
 import 'package:retentio/l10n/app_localizations.dart';
 
 /// Username is 2–32 Unicode characters after trim, with no whitespace left
-/// inside. Password is 8–64 Unicode characters, no whitespace, and at most
-/// 72 UTF-8 bytes so bcrypt can hash it.
+/// inside. A new password is 8–64 Unicode characters, with no whitespace, and
+/// at most 72 UTF-8 bytes so bcrypt can hash it. Login can skip that
+/// whitespace check so an older password can still be submitted.
 class AccountLimits {
   const AccountLimits._();
 
@@ -19,12 +20,15 @@ class AccountLimits {
   /// Returns a localized limit error, or null when [secret] and [username] are allowed.
   ///
   /// Pass [username] when the form collects one. Omit it when only a new password is set.
-  /// Leading and trailing username whitespace is ignored. A space left inside the
-  /// username or anywhere in the password is refused.
+  /// Leading and trailing username whitespace is ignored. Whitespace left inside
+  /// the username is refused. Whitespace in [secret] is refused unless
+  /// [rejectSecretWhitespace] is false, which login uses so a password saved
+  /// before that rule can still be submitted.
   static String? limitMessage(
     AppLocalizations loc, {
     String? username,
     required String secret,
+    bool rejectSecretWhitespace = true,
   }) {
     if (username != null) {
       final trimmed = username.trim();
@@ -36,7 +40,9 @@ class AccountLimits {
         return loc.usernameLengthInvalid;
       }
     }
-    if (_whitespace.hasMatch(secret)) return loc.passwordContainsSpaces;
+    if (rejectSecretWhitespace && _whitespace.hasMatch(secret)) {
+      return loc.passwordContainsSpaces;
+    }
     final chars = secret.runes.length;
     if (chars < passwordMin) return loc.passwordTooShort;
     if (chars > passwordMax) return loc.passwordTooLong;
