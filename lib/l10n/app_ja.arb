@@ -205,6 +205,8 @@
   "discoveryFavoritesEmpty": "お気に入りのデッキはありません",
   "discoveryImport": "インポート",
   "discoveryImporting": "インポート中…",
+  "offlineDownloading": "オフライン学習用にダウンロード中…",
+  "offlineDownloadFailed": "ダウンロードに失敗しました。タップして再試行",
   "discoveryImported": "インポート済み",
   "discoveryGoStudy": "学習する",
   "discoveryImportSuccess": "デッキに追加しました",

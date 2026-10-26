@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:retentio/core/network/connectivity_service.dart';
 import 'package:retentio/features/offline_learning/data/remote_offline_package_data_source.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_card.dart';
@@ -47,8 +48,13 @@ class OfflinePackageDownloader {
 
   static const int factsPageSize = 200;
   static const int versionLookupConcurrency = 4;
-  static const int mediaDownloadConcurrency = 4;
+  static const int mediaDownloadConcurrency = 16;
   static const int refreshIntervalSec = 3600;
+
+  // Share of the progress each stage fills; media takes the rest.
+  static const double _deckShare = 0.05;
+  static const double _factsShare = 0.30;
+  static const double _cardsShare = 0.05;
 
   final OfflineLearningStore _store;
   final String _mediaRootDir;
@@ -62,7 +68,28 @@ class OfflinePackageDownloader {
   final Future<bool> Function() _isOnline;
   final Map<String, Future<bool>> _inFlight = {};
   final Map<String, int> _halts = {};
+  final Map<String, ValueNotifier<double?>> _progress = {};
+  final Map<String, ValueNotifier<bool>> _failed = {};
   var _haltsAll = 0;
+
+  /// Download progress of [deckId] from 0 to 1, or null when none is running.
+  /// Never decreases during a run; concurrent callers share one run.
+  ValueListenable<double?> progressOf(String deckId) => _notifier(deckId);
+
+  ValueNotifier<double?> _notifier(String deckId) =>
+      _progress[deckId] ??= ValueNotifier(null);
+
+  /// True once the last download of [deckId] failed (not when it was stopped
+  /// for removal); reset when the next one starts.
+  ValueListenable<bool> failedOf(String deckId) => _failedNotifier(deckId);
+
+  ValueNotifier<bool> _failedNotifier(String deckId) =>
+      _failed[deckId] ??= ValueNotifier(false);
+
+  void _report(String deckId, double fraction) {
+    final progress = _notifier(deckId);
+    if (fraction > (progress.value ?? 0)) progress.value = fraction.clamp(0, 1);
+  }
 
   bool _isHalted(String deckId) => _haltsAll > 0 || _halts.containsKey(deckId);
 
@@ -137,18 +164,23 @@ class OfflinePackageDownloader {
   }
 
   Future<bool> _download(String deckId) async {
+    final progress = _notifier(deckId)..value = 0;
+    _failedNotifier(deckId).value = false;
     try {
       _checkHalted(deckId);
       final fetchedAt = _nowSec();
       final remote = await _fetchDeck(deckId);
       _checkHalted(deckId);
+      _report(deckId, _deckShare);
       final before = await _store.getDeck(deckId);
       final (facts, tags) = await _syncFacts(
         deckId,
         _buildDeck(deckId, remote, before, const []),
       );
-      await _seedCards(deckId);
       final mediaComplete = await _downloadFactMedia(deckId, facts);
+      // Last, so reviews made online while the deck was downloading (the
+      // study screen serves it remotely until it is ready) are not lost.
+      await _seedCards(deckId);
       // Re-read: sync flushes and tag loads may have written the row meanwhile.
       final local = await _store.getDeck(deckId);
       _checkHalted(deckId);
@@ -171,13 +203,17 @@ class OfflinePackageDownloader {
       } catch (e) {
         logger.w('Offline media cleanup of deck=$deckId failed: $e');
       }
+      _report(deckId, 1);
       return true;
     } on _DownloadHalted {
       logger.i('Offline download of deck=$deckId stopped for removal');
       return false;
     } catch (e, s) {
       logger.e('Offline download failed for deck=$deckId: $e', stackTrace: s);
+      _failedNotifier(deckId).value = true;
       return false;
+    } finally {
+      progress.value = null;
     }
   }
 
@@ -230,6 +266,7 @@ class OfflinePackageDownloader {
         : <String, OfflineFact>{};
     final all = <OfflineFact>[];
     final tags = <String, Tag>{};
+    final total = await _factCount(deckId);
     OfflineFactsPage page;
     do {
       page = await _fetchFactsPage(deckId, factsPageSize, all.length);
@@ -242,9 +279,22 @@ class OfflinePackageDownloader {
       for (final t in page.tags) {
         tags[t.id] = t;
       }
+      if (total != null && total > 0) {
+        _report(deckId, _deckShare + _factsShare * all.length / total);
+      }
     } while (page.hasMore && page.facts.isNotEmpty);
+    _report(deckId, _deckShare + _factsShare);
     await _dropDeletedFacts(deckId);
     return (all, tags.values.toList()..sort((a, b) => a.id.compareTo(b.id)));
+  }
+
+  /// Fact count for the progress only; null when it cannot be read.
+  Future<int?> _factCount(String deckId) async {
+    try {
+      return (await _fetchFactIds(deckId))?.length;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Offset paging skips facts when the deck changes meanwhile, so only the
@@ -372,6 +422,7 @@ class OfflinePackageDownloader {
     var complete = true;
     final keys = mediaKeys.toList();
     var next = 0;
+    var done = 0;
     Future<void> worker() async {
       while (next < keys.length) {
         final key = keys[next++];
@@ -383,6 +434,9 @@ class OfflinePackageDownloader {
           complete = false;
           logger.e('Offline media $key failed: $e', stackTrace: s);
         }
+        const started = _deckShare + _factsShare;
+        const span = 1 - _cardsShare - started;
+        _report(deckId, started + span * ++done / keys.length);
       }
     }
 

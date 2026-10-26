@@ -840,6 +840,14 @@
   "@discoveryImporting": {
     "description": "Import in-progress label"
   },
+  "offlineDownloading": "Downloading for offline study…",
+  "@offlineDownloading": {
+    "description": "Label beside the progress ring while a deck downloads for offline study"
+  },
+  "offlineDownloadFailed": "Download failed. Tap to retry",
+  "@offlineDownloadFailed": {
+    "description": "Retry button label after a deck's offline download failed"
+  },
   "discoveryImported": "Imported",
   "@discoveryImported": {
     "description": "Already imported badge"

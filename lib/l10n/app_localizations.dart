@@ -1330,6 +1330,18 @@ abstract class AppLocalizations {
   /// **'Importing…'**
   String get discoveryImporting;
 
+  /// Label beside the progress ring while a deck downloads for offline study
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading for offline study…'**
+  String get offlineDownloading;
+
+  /// Retry button label after a deck's offline download failed
+  ///
+  /// In en, this message translates to:
+  /// **'Download failed. Tap to retry'**
+  String get offlineDownloadFailed;
+
   /// Already imported badge
   ///
   /// In en, this message translates to:

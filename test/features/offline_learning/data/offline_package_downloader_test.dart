@@ -409,6 +409,210 @@ void main() {
     });
   });
 
+  group('progress', () {
+    /// Every value [OfflinePackageDownloader.progressOf] announces for
+    /// 'd1' while [run] executes.
+    Future<List<double?>> record(
+      OfflinePackageDownloader downloader,
+      Future<void> Function() run,
+    ) async {
+      final values = <double?>[];
+      final progress = downloader.progressOf('d1');
+      void listener() => values.add(progress.value);
+      progress.addListener(listener);
+      await run();
+      progress.removeListener(listener);
+      return values;
+    }
+
+    void expectValues(List<double?> actual, List<double?> expected) {
+      expect(actual, hasLength(expected.length), reason: '$actual');
+      for (var i = 0; i < expected.length; i++) {
+        if (expected[i] == null) {
+          expect(actual[i], isNull, reason: '$actual');
+        } else {
+          expect(actual[i], closeTo(expected[i]!, 1e-9), reason: '$actual');
+        }
+      }
+    }
+
+    final twoMedia = [
+      [
+        _fact(
+          'f1',
+          entries: const [
+            FactEntry(audio: 'a1'),
+            FactEntry(audio: 'a2'),
+          ],
+        ),
+        _fact('f2'),
+      ],
+    ];
+
+    test('is idle before and after a download', () async {
+      final downloader = build();
+      expect(downloader.progressOf('d1').value, isNull);
+      await downloader.download('d1');
+      expect(downloader.progressOf('d1').value, isNull);
+    });
+
+    test('moves through every stage up to 1 and then clears', () async {
+      final downloader = build(pages: twoMedia, factIds: ['f1', 'f2']);
+
+      final values = await record(downloader, () => downloader.download('d1'));
+
+      expectValues(values, [0, 0.05, 0.35, 0.65, 0.95, 1, null]);
+    });
+
+    test('counts a failed media file as done', () async {
+      final downloader = build(
+        pages: twoMedia,
+        factIds: ['f1', 'f2'],
+        downloadMedia: (url, path) async =>
+            url.endsWith('a1') ? throw StateError('x') : writeMedia(url, path),
+      );
+
+      final values = await record(downloader, () => downloader.download('d1'));
+
+      expectValues(values, [0, 0.05, 0.35, 0.65, 0.95, 1, null]);
+    });
+
+    test('reports the facts share per page of the id list total', () async {
+      final downloader = build(
+        pages: [
+          List.generate(200, (i) => _fact('a$i')),
+          [_fact('b0')],
+        ],
+        factIds: [for (var i = 0; i < 200; i++) 'a$i', 'b0'],
+      );
+
+      final values = await record(downloader, () => downloader.download('d1'));
+
+      expectValues(values, [0, 0.05, 0.05 + 0.30 * 200 / 201, 0.35, 1, null]);
+    });
+
+    for (final (name, ids, error) in [
+      ('is unavailable', null, null),
+      ('is empty', <String>[], null),
+      ('cannot be read', null, StateError('x')),
+    ]) {
+      test('jumps over the facts stage when the id list $name', () async {
+        final downloader = build(
+          pages: twoMedia,
+          factIds: ids,
+          factIdsError: error,
+        );
+
+        final values = await record(
+          downloader,
+          () => downloader.download('d1'),
+        );
+
+        expectValues(values, [0, 0.05, 0.35, 0.65, 0.95, 1, null]);
+      });
+    }
+
+    test('clears when the download fails', () async {
+      final downloader = build(factsError: StateError('x'));
+
+      final values = await record(downloader, () => downloader.download('d1'));
+
+      expectValues(values, [0, 0.05, null]);
+    });
+
+    test('clears when the deck is halted', () async {
+      final gate = Completer<void>();
+      final downloader = build(
+        fetchDeck: (_) async {
+          await gate.future;
+          return _deck;
+        },
+      );
+
+      final values = await record(downloader, () async {
+        final running = downloader.download('d1');
+        final halted = downloader.whileHalted('d1', () async {});
+        gate.complete();
+        await halted;
+        await running;
+      });
+
+      expectValues(values, [0, null]);
+    });
+
+    test('concurrent callers share one progress', () async {
+      final downloader = build(pages: twoMedia, factIds: ['f1', 'f2']);
+
+      final values = await record(downloader, () async {
+        await Future.wait([
+          downloader.download('d1'),
+          downloader.download('d1'),
+        ]);
+      });
+
+      expectValues(values, [0, 0.05, 0.35, 0.65, 0.95, 1, null]);
+    });
+
+    test('reads failed after a failure until the next run starts', () async {
+      var fail = true;
+      final downloader = build(
+        fetchDeck: (_) async => fail ? throw StateError('x') : _deck,
+      );
+      final failed = downloader.failedOf('d1');
+      expect(failed.value, isFalse);
+
+      expect(await downloader.download('d1'), isFalse);
+      expect(failed.value, isTrue);
+
+      fail = false;
+      final seen = <bool>[];
+      failed.addListener(() => seen.add(failed.value));
+      expect(await downloader.download('d1'), isTrue);
+      expect(failed.value, isFalse);
+      expect(seen, [false]);
+    });
+
+    test('a download stopped for removal is not a failure', () async {
+      final gate = Completer<void>();
+      final downloader = build(
+        fetchDeck: (_) async {
+          await gate.future;
+          return _deck;
+        },
+      );
+
+      final running = downloader.download('d1');
+      final halted = downloader.whileHalted('d1', () async {});
+      gate.complete();
+      await halted;
+      await running;
+
+      expect(downloader.failedOf('d1').value, isFalse);
+    });
+  });
+
+  test('seeds cards after the media so online reviews are not lost', () async {
+    final order = <String>[];
+    await build(
+      pages: [
+        [
+          _fact('f1', entries: const [FactEntry(audio: 'aud')]),
+        ],
+      ],
+      fetchCards: (_) async {
+        order.add('cards');
+        return [_card('c1')];
+      },
+      downloadMedia: (url, path) {
+        order.add('media');
+        return writeMedia(url, path);
+      },
+    ).download('d1');
+
+    expect(order, ['media', 'cards']);
+    expect(store.cards.keys, ['c1']);
+  });
+
   group('refreshIfStale', () {
     const ready = OfflineDeck(
       id: 'd1',
@@ -1030,13 +1234,13 @@ void main() {
     expect(store.decks['d1']!.isReady, isTrue);
   });
 
-  test('downloads at most four media files at a time', () async {
+  test('downloads at most sixteen media files at a time', () async {
     var active = 0;
     var peak = 0;
     final ok = await build(
       pages: [
         [
-          for (var i = 0; i < 10; i++)
+          for (var i = 0; i < 40; i++)
             _fact('f$i', entries: [FactEntry(audio: 'a$i')]),
         ],
       ],
@@ -1049,8 +1253,9 @@ void main() {
     ).download('d1');
 
     expect(ok, isTrue);
-    expect(downloadedUrls, hasLength(10));
-    expect(store.media, hasLength(10));
+    expect(downloadedUrls, hasLength(40));
+    expect(store.media, hasLength(40));
+    expect(OfflinePackageDownloader.mediaDownloadConcurrency, 16);
     expect(peak, OfflinePackageDownloader.mediaDownloadConcurrency);
   });
 

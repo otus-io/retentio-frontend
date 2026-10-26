@@ -652,6 +652,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get discoveryImporting => '导入中…';
 
   @override
+  String get offlineDownloading => '正在下载以便离线学习…';
+
+  @override
+  String get offlineDownloadFailed => '下载失败，点按重试';
+
+  @override
   String get discoveryImported => '已导入';
 
   @override

@@ -652,6 +652,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get discoveryImporting => 'インポート中…';
 
   @override
+  String get offlineDownloading => 'オフライン学習用にダウンロード中…';
+
+  @override
+  String get offlineDownloadFailed => 'ダウンロードに失敗しました。タップして再試行';
+
+  @override
   String get discoveryImported => 'インポート済み';
 
   @override

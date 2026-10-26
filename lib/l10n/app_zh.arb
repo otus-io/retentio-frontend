@@ -223,6 +223,8 @@
   "discoveryFavoritesEmpty": "暂无收藏卡组",
   "discoveryImport": "导入",
   "discoveryImporting": "导入中…",
+  "offlineDownloading": "正在下载以便离线学习…",
+  "offlineDownloadFailed": "下载失败，点按重试",
   "discoveryImported": "已导入",
   "discoveryGoStudy": "去学习",
   "discoveryImportSuccess": "已添加到你的卡组",

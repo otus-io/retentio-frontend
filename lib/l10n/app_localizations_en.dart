@@ -670,6 +670,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get discoveryImporting => 'Importing…';
 
   @override
+  String get offlineDownloading => 'Downloading for offline study…';
+
+  @override
+  String get offlineDownloadFailed => 'Download failed. Tap to retry';
+
+  @override
   String get discoveryImported => 'Imported';
 
   @override

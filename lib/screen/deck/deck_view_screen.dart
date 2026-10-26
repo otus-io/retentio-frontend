@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:retentio/features/offline_learning/offline_learning_session.dart';
+import 'package:retentio/features/offline_learning/presentation/offline_download_indicator.dart';
 import 'package:retentio/features/offline_learning/presentation/offline_study_lifecycle.dart';
 import 'package:retentio/features/offline_learning/presentation/offline_sync_indicator.dart';
 import 'package:retentio/models/deck.dart';
@@ -109,7 +110,12 @@ class _DeckViewScreenState extends State<DeckViewScreen> {
               ),
             ),
           ),
-          body: const DeckViewBody(),
+          body: Column(
+            children: [
+              OfflineDownloadIndicator(session: session, deckId: deck.id),
+              const Expanded(child: DeckViewBody()),
+            ],
+          ),
         ),
       ),
     );
