@@ -56,7 +56,6 @@ class _UnusedStore implements OfflineLearningStore {
 
 class _FakeCatalog implements OfflineDeckCatalog {
   final removed = <String>[];
-  Set<String> ready = {'d1'};
   bool fail = false;
   Object? fetchError;
 
@@ -71,7 +70,7 @@ class _FakeCatalog implements OfflineDeckCatalog {
   }
 
   @override
-  Future<Set<String>> readyDeckIds() async => ready;
+  Future<Set<String>> readyDeckIds() async => {'d1'};
 
   @override
   Future<void> remove(String deckId) async {
@@ -197,21 +196,5 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 20));
 
     expect(cubit.state.downloader, isNull);
-  });
-
-  test('refreshOfflineReady rereads the ids without refetching', () async {
-    networkDioClient.dio.interceptors.add(_DeckApi(deleteOk: true));
-    final catalog = _FakeCatalog();
-    final cubit = DeckListCubit(offlineCatalog: catalog);
-    await cubit.onRefresh();
-    catalog.ready = {'d1', 'd2'};
-
-    await cubit.refreshOfflineReady();
-    expect(cubit.state.offlineReadyDeckIds, {'d1', 'd2'});
-
-    await cubit.close();
-    catalog.ready = {};
-    await cubit.refreshOfflineReady();
-    expect(cubit.state.offlineReadyDeckIds, {'d1', 'd2'});
   });
 }

@@ -7,10 +7,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/network/network.dart';
-import 'package:retentio/features/offline_learning/data/offline_deck_catalog.dart';
 import 'package:retentio/features/offline_learning/data/offline_package_downloader.dart';
 import 'package:retentio/models/deck.dart';
-import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/decks/bloc/deck_sharing_status_cubit.dart';
 import 'package:retentio/screen/decks/widgets/badged_app_icon_button.dart';
 import 'package:retentio/screen/decks/widgets/deck_list_card.dart';
@@ -51,23 +49,6 @@ class _ProgressDownloader implements OfflinePackageDownloader {
 
   @override
   ValueListenable<bool> failedOf(String deckId) => ValueNotifier(false);
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-class _ReadyCatalog implements OfflineDeckCatalog {
-  var readCount = 0;
-
-  @override
-  Future<List<Deck>> decks(Future<List<Deck>> Function() fetchRemote) async =>
-      const [];
-
-  @override
-  Future<Set<String>> readyDeckIds() async {
-    readCount++;
-    return {'deck-dl'};
-  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -155,7 +136,9 @@ void main() {
       },
     );
 
-    testWidgets('marks decks that are available offline', (tester) async {
+    testWidgets('shows no marker for decks that are available offline', (
+      tester,
+    ) async {
       final deck = Deck.fromJson({'id': 'deck-offline-1', 'name': 'Offline'});
 
       await tester.pumpWidget(_wrapCard(deck));
@@ -171,28 +154,18 @@ void main() {
           ),
         ),
       );
-      expect(find.byTooltip('Available offline'), findsOneWidget);
-      expect(find.byIcon(LucideIcons.circleCheck), findsOneWidget);
+      expect(find.byTooltip('Available offline'), findsNothing);
+      expect(find.byIcon(LucideIcons.circleCheck), findsNothing);
     });
 
-    testWidgets('rereads the offline-ready decks when its download ends', (
-      tester,
-    ) async {
+    testWidgets('shows the download state of the deck', (tester) async {
       final deck = Deck.fromJson({'id': 'deck-dl', 'name': 'Downloading'});
       final downloader = _ProgressDownloader();
-      final catalog = _ReadyCatalog();
-      final cubit = DeckListCubit(offlineCatalog: catalog);
-      addTearDown(cubit.close);
-      await tester.pump();
-      final before = catalog.readCount;
 
       await tester.pumpWidget(
         buildTestableWidgetWithoutProvider(
-          MultiBlocProvider(
-            providers: [
-              BlocProvider<DeckListCubit>.value(value: cubit),
-              BlocProvider(create: (_) => DeckSharingStatusCubit()),
-            ],
+          BlocProvider(
+            create: (_) => DeckSharingStatusCubit(),
             child: Scaffold(
               body: DeckListCard(deck: deck, downloader: downloader),
             ),
@@ -203,10 +176,7 @@ void main() {
 
       downloader.progress.value = null;
       await tester.pump();
-      await tester.pump();
-
-      expect(catalog.readCount, before + 1);
-      expect(cubit.state.offlineReadyDeckIds, {'deck-dl'});
+      expect(find.byTooltip('Downloading for offline study…'), findsNothing);
     });
 
     testWidgets('shows update publish tooltip for published source', (

@@ -31,55 +31,37 @@ class _FakeDownloader implements OfflinePackageDownloader {
 
 void main() {
   late _FakeDownloader downloader;
-  late int downloaded;
 
-  setUp(() {
-    downloader = _FakeDownloader();
-    downloaded = 0;
-  });
+  setUp(() => downloader = _FakeDownloader());
 
-  Widget status({
-    String deckId = 'd1',
-    bool availableOffline = false,
-    OfflinePackageDownloader? downloader,
-  }) => buildTestableWidget(
+  Widget status({OfflinePackageDownloader? downloader}) => buildTestableWidget(
     Scaffold(
-      body: DeckOfflineStatus(
-        deckId: deckId,
-        availableOffline: availableOffline,
-        downloader: downloader,
-        onDownloaded: () => downloaded++,
-      ),
+      body: DeckOfflineStatus(deckId: 'd1', downloader: downloader),
     ),
   );
 
-  final check = find.byIcon(LucideIcons.circleCheck);
   final alert = find.byIcon(LucideIcons.cloudAlert);
 
-  testWidgets('shows nothing by default', (tester) async {
-    await tester.pumpWidget(status(downloader: downloader));
+  testWidgets('shows nothing without a downloader', (tester) async {
+    await tester.pumpWidget(status());
 
-    expect(check, findsNothing);
-    expect(alert, findsNothing);
+    expect(find.byType(Icon), findsNothing);
     expect(find.byType(ProgressRing), findsNothing);
   });
 
-  testWidgets('shows a check for a downloaded deck, without a downloader', (
+  testWidgets('shows nothing when idle, so a downloaded deck has no marker', (
     tester,
   ) async {
-    await tester.pumpWidget(status(availableOffline: true));
+    await tester.pumpWidget(status(downloader: downloader));
 
-    expect(check, findsOneWidget);
-    expect(find.byTooltip('Available offline'), findsOneWidget);
+    expect(find.byType(Icon), findsNothing);
+    expect(find.byType(ProgressRing), findsNothing);
   });
 
   testWidgets('shows a ring without a number while downloading', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      status(availableOffline: true, downloader: downloader),
-    );
-    expect(check, findsOneWidget);
+    await tester.pumpWidget(status(downloader: downloader));
 
     downloader.progress.value = 0.4;
     await tester.pump();
@@ -87,30 +69,13 @@ void main() {
     expect(find.byType(ProgressRing), findsOneWidget);
     expect(find.textContaining('%'), findsNothing);
     expect(find.byTooltip('Downloading for offline study…'), findsOneWidget);
-    expect(check, findsNothing);
-    expect(downloaded, 0);
-  });
-
-  testWidgets('reports when a running download stops', (tester) async {
-    downloader.progress.value = 0.2;
-    await tester.pumpWidget(status(downloader: downloader));
-    expect(find.byType(ProgressRing), findsOneWidget);
-
-    downloader.progress.value = 0.9;
-    await tester.pump();
-    expect(downloaded, 0);
 
     downloader.progress.value = null;
     await tester.pump();
-    expect(downloaded, 1);
     expect(find.byType(ProgressRing), findsNothing);
-
-    downloader.failed.value = true;
-    await tester.pump();
-    expect(downloaded, 1);
   });
 
-  testWidgets('shows retry for a failed deck that was never ready', (
+  testWidgets('shows retry after a failure, which downloads again', (
     tester,
   ) async {
     await tester.pumpWidget(status(downloader: downloader));
@@ -122,54 +87,20 @@ void main() {
 
     await tester.tap(alert);
     expect(downloader.downloads, ['d1']);
-  });
 
-  testWidgets('a ready deck keeps its check after a failed refresh', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      status(availableOffline: true, downloader: downloader),
-    );
-
-    downloader.failed.value = true;
+    downloader.failed.value = false;
     await tester.pump();
-
-    expect(check, findsOneWidget);
     expect(alert, findsNothing);
   });
 
-  testWidgets('follows a replaced downloader', (tester) async {
-    final other = _FakeDownloader();
+  testWidgets('progress wins over a stale failure', (tester) async {
     await tester.pumpWidget(status(downloader: downloader));
-    await tester.pumpWidget(status(downloader: other));
 
-    downloader.progress.value = 0.5;
+    downloader.failed.value = true;
+    downloader.progress.value = 0.1;
     await tester.pump();
-    expect(find.byType(ProgressRing), findsNothing);
 
-    other.progress.value = 0.5;
-    await tester.pump();
     expect(find.byType(ProgressRing), findsOneWidget);
-    other.progress.value = null;
-    await tester.pump();
-    expect(downloaded, 1);
-  });
-
-  testWidgets('follows a replaced deck id', (tester) async {
-    await tester.pumpWidget(status(downloader: downloader));
-    await tester.pumpWidget(status(deckId: 'd2', downloader: downloader));
-
-    downloader.progress.value = 0.5;
-    await tester.pump();
-    expect(find.byType(ProgressRing), findsOneWidget);
-  });
-
-  testWidgets('stops listening once removed', (tester) async {
-    downloader.progress.value = 0.5;
-    await tester.pumpWidget(status(downloader: downloader));
-    await tester.pumpWidget(const SizedBox());
-
-    downloader.progress.value = null;
-    expect(downloaded, 0);
+    expect(alert, findsNothing);
   });
 }

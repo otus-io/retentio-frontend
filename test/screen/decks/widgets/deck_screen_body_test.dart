@@ -50,9 +50,7 @@ class _Catalog implements OfflineDeckCatalog {
 }
 
 void main() {
-  testWidgets('only offline-ready decks show the offline marker', (
-    tester,
-  ) async {
+  testWidgets('passes the offline-ready state to its cards', (tester) async {
     final cubit = _ReadyCubit();
     addTearDown(cubit.close);
 
@@ -71,7 +69,11 @@ void main() {
 
     expect(find.text('Downloaded'), findsOneWidget);
     expect(find.text('Online only'), findsOneWidget);
-    expect(find.byTooltip('Available offline'), findsOneWidget);
+    bool offlineOf(String name) => tester
+        .widget<DeckListCard>(find.widgetWithText(DeckListCard, name))
+        .availableOffline;
+    expect(offlineOf('Downloaded'), isTrue);
+    expect(offlineOf('Online only'), isFalse);
 
     cubit.setOfflineReady({'d2'});
     await tester.pump();

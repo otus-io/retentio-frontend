@@ -154,14 +154,6 @@ class DeckListCubit extends Cubit<DeckListState> {
     emit(state.copyWith(downloader: downloader));
   }
 
-  /// Rereads which decks are study-ready offline, without refetching the
-  /// list (a download just finished).
-  Future<void> refreshOfflineReady() async {
-    final ids = await _offlineCatalog.readyDeckIds();
-    if (_disposed) return;
-    emit(state.copyWith(offlineReadyDeckIds: ids));
-  }
-
   Future<void> onLoading() async {
     if (refreshController.isRefresh) {
       _safe(refreshController.loadComplete);

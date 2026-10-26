@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -93,14 +91,7 @@ class DeckListCard extends StatelessWidget {
                     style: DeckTextStyles.deckTitle(theme),
                   ),
                 ),
-                DeckOfflineStatus(
-                  deckId: deck.id,
-                  availableOffline: availableOffline,
-                  downloader: downloader,
-                  onDownloaded: () => unawaited(
-                    context.read<DeckListCubit>().refreshOfflineReady(),
-                  ),
-                ),
+                DeckOfflineStatus(deckId: deck.id, downloader: downloader),
                 const SizedBox(width: 4),
                 if (!deck.isImported) ...[
                   BadgedAppIconButton(
