@@ -131,6 +131,7 @@ class DeckListCubit extends Cubit<DeckListState> {
           offlineReadyDeckIds: offlineReadyDeckIds,
         ),
       );
+      _resumeDownloads();
     } catch (e) {
       _safe(refreshController.refreshFailed);
       if (_disposed) {
@@ -152,6 +153,16 @@ class DeckListCubit extends Cubit<DeckListState> {
     }
     if (_disposed || downloader == null) return;
     emit(state.copyWith(downloader: downloader));
+    _resumeDownloads();
+  }
+
+  /// Picks up decks whose download never finished (for example the app was
+  /// closed meanwhile). Needs both the deck ids and the downloader, so it
+  /// runs when either arrives last.
+  void _resumeDownloads() {
+    final downloader = state.downloader;
+    if (downloader == null || state.decks.isEmpty) return;
+    unawaited(downloader.resumeMissing([for (final d in state.decks) d.id]));
   }
 
   Future<void> onLoading() async {

@@ -27,12 +27,16 @@ class _FakeStore implements OfflineLearningStore {
   final ops = <StudySyncOperation>[];
   bool failGetMediaPath = false;
   bool failGetMediaPaths = false;
+  bool failGetDecks = false;
 
   @override
   Future<List<StudySyncOperation>> getOperations() async => ops;
 
   @override
-  Future<List<OfflineDeck>> getDecks() async => decks.values.toList();
+  Future<List<OfflineDeck>> getDecks() async {
+    if (failGetDecks) throw StateError('store broken');
+    return decks.values.toList();
+  }
 
   @override
   Future<Map<String, String>> getMediaPaths() async {
@@ -611,6 +615,131 @@ void main() {
 
     expect(order, ['media', 'cards']);
     expect(store.cards.keys, ['c1']);
+  });
+
+  group('resumeMissing', () {
+    var online = true;
+    late List<String> fetched;
+
+    setUp(() {
+      online = true;
+      fetched = [];
+    });
+
+    OfflinePackageDownloader resumer({Future<Deck> Function(String)? fetch}) =>
+        OfflinePackageDownloader(
+          store: store,
+          mediaRootDir: tmp.path,
+          fetchDeck:
+              fetch ??
+              (id) async {
+                fetched.add(id);
+                return _deck;
+              },
+          fetchFactsPage: (_, _, _) async =>
+              const OfflineFactsPage(facts: [], hasMore: false),
+          fetchFactIds: (_) async => null,
+          fetchCards: (_) async => [],
+          fetchMediaVersions: (_, _) async => const {},
+          nowSec: () => 1,
+          isOnline: () async => online,
+        );
+
+    test('downloads the decks that are not ready and skips the rest', () async {
+      store.decks['r'] = const OfflineDeck(
+        id: 'r',
+        name: 'Ready',
+        fields: [],
+        downloadedAt: 5,
+      );
+
+      await resumer().resumeMissing(['r', 'a', 'b']);
+
+      expect(fetched, unorderedEquals(['a', 'b']));
+      expect(store.decks.keys, unorderedEquals(['r', 'a', 'b']));
+      expect(store.decks['a']!.isReady, isTrue);
+    });
+
+    test('waits until the device is online', () async {
+      final downloader = resumer();
+      online = false;
+      await downloader.resumeMissing(['a']);
+      expect(fetched, isEmpty);
+
+      online = true;
+      await downloader.resumeMissing(['a']);
+      expect(fetched, ['a']);
+    });
+
+    test(
+      'tries each deck once per run, so a failing deck is not repeated',
+      () async {
+        var attempts = 0;
+        final downloader = resumer(
+          fetch: (_) async {
+            attempts++;
+            throw StateError('server down');
+          },
+        );
+
+        await downloader.resumeMissing(['bad']);
+        await downloader.resumeMissing(['bad']);
+
+        expect(attempts, 1);
+        expect(downloader.failedOf('bad').value, isTrue);
+      },
+    );
+
+    test('downloads at most two decks at a time', () async {
+      final gate = Completer<void>();
+      var active = 0;
+      var peak = 0;
+      final downloader = resumer(
+        fetch: (id) async {
+          peak = ++active > peak ? active : peak;
+          await gate.future;
+          active--;
+          return _deck;
+        },
+      );
+
+      final running = downloader.resumeMissing(['a', 'b', 'c', 'd', 'e']);
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      gate.complete();
+      await running;
+
+      expect(OfflinePackageDownloader.resumeConcurrency, 2);
+      expect(peak, 2);
+      expect(store.decks, hasLength(5));
+    });
+
+    test('joins a download that is already running', () async {
+      final gate = Completer<void>();
+      final downloader = resumer(
+        fetch: (id) async {
+          fetched.add(id);
+          await gate.future;
+          return _deck;
+        },
+      );
+
+      final running = downloader.download('a');
+      final resumed = downloader.resumeMissing(['a']);
+      await Future<void>.delayed(Duration.zero);
+      gate.complete();
+      await Future.wait([running, resumed]);
+
+      expect(fetched, ['a']);
+    });
+
+    test('a broken store is logged, not thrown', () async {
+      store.failGetDecks = true;
+
+      await resumer().resumeMissing(['a']);
+
+      expect(fetched, isEmpty);
+    });
   });
 
   group('refreshIfStale', () {

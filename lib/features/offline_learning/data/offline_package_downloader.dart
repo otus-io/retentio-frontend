@@ -50,6 +50,7 @@ class OfflinePackageDownloader {
   static const int versionLookupConcurrency = 4;
   static const int mediaDownloadConcurrency = 16;
   static const int refreshIntervalSec = 3600;
+  static const int resumeConcurrency = 2;
 
   // Share of the progress each stage fills; media takes the rest.
   static const double _deckShare = 0.05;
@@ -70,6 +71,7 @@ class OfflinePackageDownloader {
   final Map<String, int> _halts = {};
   final Map<String, ValueNotifier<double?>> _progress = {};
   final Map<String, ValueNotifier<bool>> _failed = {};
+  final Set<String> _resumed = {};
   var _haltsAll = 0;
 
   /// Download progress of [deckId] from 0 to 1, or null when none is running.
@@ -137,6 +139,35 @@ class OfflinePackageDownloader {
       return;
     }
     await download(deckId);
+  }
+
+  /// Downloads the decks of [deckIds] that are not study-ready yet, picking up
+  /// downloads cut short by closing the app, [resumeConcurrency] at a time.
+  /// Only when online, and each deck at most once per app run, so a deck that
+  /// keeps failing is not retried on every list refresh (its retry button
+  /// still works). A deck being downloaded already is joined, not repeated.
+  Future<void> resumeMissing(Iterable<String> deckIds) async {
+    try {
+      if (!await _isOnline()) return;
+      final ready = {
+        for (final d in await _store.getDecks())
+          if (d.isReady) d.id,
+      };
+      final pending = [
+        for (final id in deckIds)
+          if (!ready.contains(id) && _resumed.add(id)) id,
+      ];
+      var next = 0;
+      Future<void> worker() async {
+        while (next < pending.length) {
+          await download(pending[next++]);
+        }
+      }
+
+      await Future.wait([for (var w = 0; w < resumeConcurrency; w++) worker()]);
+    } catch (e) {
+      logger.w('Offline download resume failed: $e');
+    }
   }
 
   /// Returns true when the deck is study-ready offline. Concurrent calls for

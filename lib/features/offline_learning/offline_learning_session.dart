@@ -148,6 +148,7 @@ class OfflineLearningSessions {
       downloader: OfflinePackageDownloader(
         store: store,
         mediaRootDir: mediaRoot,
+        isOnline: _isOnline,
       ),
       sync: OfflineSyncService(
         store: store,
