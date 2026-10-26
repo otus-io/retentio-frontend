@@ -1,13 +1,16 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/network/network.dart';
+import 'package:retentio/features/offline_learning/data/offline_deck_catalog.dart';
+import 'package:retentio/features/offline_learning/data/offline_package_downloader.dart';
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/decks/bloc/deck_sharing_status_cubit.dart';
 import 'package:retentio/screen/decks/widgets/badged_app_icon_button.dart';
 import 'package:retentio/screen/decks/widgets/deck_list_card.dart';
@@ -38,6 +41,36 @@ class _EmptyContributionsAdapter implements HttpClientAdapter {
 
   @override
   void close({bool force = false}) {}
+}
+
+class _ProgressDownloader implements OfflinePackageDownloader {
+  final progress = ValueNotifier<double?>(0.3);
+
+  @override
+  ValueListenable<double?> progressOf(String deckId) => progress;
+
+  @override
+  ValueListenable<bool> failedOf(String deckId) => ValueNotifier(false);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _ReadyCatalog implements OfflineDeckCatalog {
+  var readCount = 0;
+
+  @override
+  Future<List<Deck>> decks(Future<List<Deck>> Function() fetchRemote) async =>
+      const [];
+
+  @override
+  Future<Set<String>> readyDeckIds() async {
+    readCount++;
+    return {'deck-dl'};
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 Widget _wrapCard(Deck deck, {DeckSharingStatusCubit? cubit}) {
@@ -82,37 +115,45 @@ void main() {
       expect(find.byTooltip('Contributions'), findsOneWidget);
     });
 
-    testWidgets('shows check-updates refresh for imported decks', (
-      tester,
-    ) async {
-      final deck = Deck.fromJson({
-        'id': 'deck-imported-1',
-        'name': 'Imported Deck',
-        'source_deck_id': 'source-123',
-        'stats': {
-          'cards_count': 10,
-          'unseen_cards': 5,
-          'due_cards': 2,
-          'facts_count': 4,
-          'reviewed_cards': 5,
-          'hidden_cards': 0,
-          'new_cards_today': 0,
-          'last_reviewed_at': 0,
-        },
-        'rate': 30,
-        'min_interval': 60,
-        'def_interval': 300,
-        'max_interval': 86400,
-        'owner': {'username': 'u', 'email': 'u@t.com'},
-        'fields': ['Front', 'Back'],
-      });
+    testWidgets(
+      'shows check-updates refresh for imported decks with an update',
+      (tester) async {
+        final deck = Deck.fromJson({
+          'id': 'deck-imported-1',
+          'name': 'Imported Deck',
+          'source_deck_id': 'source-123',
+          'stats': {
+            'cards_count': 10,
+            'unseen_cards': 5,
+            'due_cards': 2,
+            'facts_count': 4,
+            'reviewed_cards': 5,
+            'hidden_cards': 0,
+            'new_cards_today': 0,
+            'last_reviewed_at': 0,
+          },
+          'rate': 30,
+          'min_interval': 60,
+          'def_interval': 300,
+          'max_interval': 86400,
+          'owner': {'username': 'u', 'email': 'u@t.com'},
+          'fields': ['Front', 'Back'],
+        });
 
-      await tester.pumpWidget(_wrapCard(deck));
+        await tester.pumpWidget(_wrapCard(deck));
 
-      expect(find.byTooltip('Publish Deck'), findsNothing);
-      expect(find.byTooltip('Contributions'), findsNothing);
-      expect(find.byTooltip('Check updates'), findsOneWidget);
-    });
+        expect(find.byTooltip('Publish Deck'), findsNothing);
+        expect(find.byTooltip('Contributions'), findsNothing);
+        // The sync button only shows once the original deck has an update.
+        expect(find.byTooltip('Check updates'), findsNothing);
+
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpWidget(
+          _wrapCard(deck, cubit: DeckSharingStatusCubit()..markDirty(deck.id)),
+        );
+        expect(find.byTooltip('Check updates'), findsOneWidget);
+      },
+    );
 
     testWidgets('marks decks that are available offline', (tester) async {
       final deck = Deck.fromJson({'id': 'deck-offline-1', 'name': 'Offline'});
@@ -131,7 +172,41 @@ void main() {
         ),
       );
       expect(find.byTooltip('Available offline'), findsOneWidget);
-      expect(find.byIcon(LucideIcons.hardDriveDownload), findsOneWidget);
+      expect(find.byIcon(LucideIcons.circleCheck), findsOneWidget);
+    });
+
+    testWidgets('rereads the offline-ready decks when its download ends', (
+      tester,
+    ) async {
+      final deck = Deck.fromJson({'id': 'deck-dl', 'name': 'Downloading'});
+      final downloader = _ProgressDownloader();
+      final catalog = _ReadyCatalog();
+      final cubit = DeckListCubit(offlineCatalog: catalog);
+      addTearDown(cubit.close);
+      await tester.pump();
+      final before = catalog.readCount;
+
+      await tester.pumpWidget(
+        buildTestableWidgetWithoutProvider(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<DeckListCubit>.value(value: cubit),
+              BlocProvider(create: (_) => DeckSharingStatusCubit()),
+            ],
+            child: Scaffold(
+              body: DeckListCard(deck: deck, downloader: downloader),
+            ),
+          ),
+        ),
+      );
+      expect(find.byTooltip('Downloading for offline study…'), findsOneWidget);
+
+      downloader.progress.value = null;
+      await tester.pump();
+      await tester.pump();
+
+      expect(catalog.readCount, before + 1);
+      expect(cubit.state.offlineReadyDeckIds, {'deck-dl'});
     });
 
     testWidgets('shows update publish tooltip for published source', (

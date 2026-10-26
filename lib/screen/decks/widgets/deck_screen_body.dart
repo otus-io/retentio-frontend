@@ -25,7 +25,8 @@ class DeckScreenBody extends StatelessWidget {
           prev.decks != curr.decks ||
           prev.isLoading != curr.isLoading ||
           prev.error != curr.error ||
-          prev.offlineReadyDeckIds != curr.offlineReadyDeckIds,
+          prev.offlineReadyDeckIds != curr.offlineReadyDeckIds ||
+          prev.downloader != curr.downloader,
       builder: (context, state) {
         if (state.isLoading && state.decks.isEmpty) {
           return Center(
@@ -96,6 +97,7 @@ class DeckScreenBody extends StatelessWidget {
                 child: DeckListCard(
                   deck: deck,
                   availableOffline: state.offlineReadyDeckIds.contains(deck.id),
+                  downloader: state.downloader,
                 ),
               );
             },

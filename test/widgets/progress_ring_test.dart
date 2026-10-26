@@ -47,6 +47,26 @@ void main() {
     );
   });
 
+  testWidgets('hides the number when showPercent is off', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: ProgressRing(value: 0.5, size: 16, showPercent: false),
+        ),
+      ),
+    );
+
+    expect(find.textContaining('%'), findsNothing);
+    expect(
+      tester
+          .widget<CircularProgressIndicator>(
+            find.byType(CircularProgressIndicator),
+          )
+          .value,
+      0.5,
+    );
+  });
+
   testWidgets('exposes the percent to accessibility once', (tester) async {
     final handle = tester.ensureSemantics();
     await _pump(tester, 0.5);

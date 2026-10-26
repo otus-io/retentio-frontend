@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/features/offline_learning/data/offline_deck_catalog.dart';
+import 'package:retentio/features/offline_learning/data/offline_package_downloader.dart';
+import 'package:retentio/features/offline_learning/offline_learning_session.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/services/apis/deck_service.dart';
 import 'package:retentio/utils/log.dart';
@@ -12,6 +16,7 @@ class DeckListState {
     this.isLoading = true,
     this.error,
     this.offlineReadyDeckIds = const <String>{},
+    this.downloader,
   });
 
   final List<Deck> decks;
@@ -19,30 +24,40 @@ class DeckListState {
   final String? error;
   final Set<String> offlineReadyDeckIds;
 
+  /// Offline downloader of the signed-in account; null when unavailable.
+  final OfflinePackageDownloader? downloader;
+
   DeckListState copyWith({
     List<Deck>? decks,
     bool? isLoading,
     String? error,
     bool clearError = false,
     Set<String>? offlineReadyDeckIds,
+    OfflinePackageDownloader? downloader,
   }) {
     return DeckListState(
       decks: decks ?? this.decks,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
       offlineReadyDeckIds: offlineReadyDeckIds ?? this.offlineReadyDeckIds,
+      downloader: downloader ?? this.downloader,
     );
   }
 }
 
 class DeckListCubit extends Cubit<DeckListState> {
-  DeckListCubit({OfflineDeckCatalog? offlineCatalog})
-    : _offlineCatalog = offlineCatalog ?? OfflineDeckCatalog(),
-      super(const DeckListState()) {
+  DeckListCubit({
+    OfflineDeckCatalog? offlineCatalog,
+    OfflineLearningSessions? sessions,
+  }) : _offlineCatalog = offlineCatalog ?? OfflineDeckCatalog(),
+       _sessions = sessions ?? OfflineLearningSessions.instance,
+       super(const DeckListState()) {
+    unawaited(_loadDownloader());
     onRefresh();
   }
 
   final OfflineDeckCatalog _offlineCatalog;
+  final OfflineLearningSessions _sessions;
 
   final RefreshController refreshController = RefreshController();
 
@@ -123,6 +138,28 @@ class DeckListCubit extends Cubit<DeckListState> {
       }
       emit(state.copyWith(isLoading: false, error: rawApiErrorMessage(e)));
     }
+  }
+
+  /// Loaded apart from the list, which must not wait for the session.
+  Future<void> _loadDownloader() async {
+    final OfflinePackageDownloader? downloader;
+    try {
+      downloader = (await _sessions.current(
+        fetchMissingUsername: false,
+      ))?.downloader;
+    } catch (_) {
+      return;
+    }
+    if (_disposed || downloader == null) return;
+    emit(state.copyWith(downloader: downloader));
+  }
+
+  /// Rereads which decks are study-ready offline, without refetching the
+  /// list (a download just finished).
+  Future<void> refreshOfflineReady() async {
+    final ids = await _offlineCatalog.readyDeckIds();
+    if (_disposed) return;
+    emit(state.copyWith(offlineReadyDeckIds: ids));
   }
 
   Future<void> onLoading() async {

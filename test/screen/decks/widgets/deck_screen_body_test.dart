@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/features/offline_learning/data/offline_deck_catalog.dart';
+import 'package:retentio/features/offline_learning/data/offline_package_downloader.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/decks/bloc/deck_sharing_status_cubit.dart';
@@ -16,6 +18,21 @@ class _ReadyCubit extends DeckListCubit {
   void setOfflineReady(Set<String> ids) {
     emit(state.copyWith(offlineReadyDeckIds: ids));
   }
+
+  void setDownloader(OfflinePackageDownloader downloader) {
+    emit(state.copyWith(downloader: downloader));
+  }
+}
+
+class _IdleDownloader implements OfflinePackageDownloader {
+  @override
+  ValueListenable<double?> progressOf(String deckId) => ValueNotifier(null);
+
+  @override
+  ValueListenable<bool> failedOf(String deckId) => ValueNotifier(false);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _Catalog implements OfflineDeckCatalog {
@@ -74,5 +91,31 @@ void main() {
           .availableOffline,
       isTrue,
     );
+  });
+
+  testWidgets('hands the account downloader to every card', (tester) async {
+    final cubit = _ReadyCubit();
+    addTearDown(cubit.close);
+    await tester.pumpWidget(
+      buildTestableWidgetWithoutProvider(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<DeckListCubit>.value(value: cubit),
+            BlocProvider(create: (_) => DeckSharingStatusCubit()),
+          ],
+          child: const Scaffold(body: DeckScreenBody()),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final downloader = _IdleDownloader();
+    cubit.setDownloader(downloader);
+    await tester.pump();
+    await tester.pump();
+
+    final cards = tester.widgetList<DeckListCard>(find.byType(DeckListCard));
+    expect(cards, hasLength(2));
+    expect(cards.map((c) => c.downloader), everyElement(same(downloader)));
   });
 }

@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 
-/// Circular progress with the whole percent in the middle. A null [value]
+/// Circular progress with the whole percent in the middle (unless
+/// [showPercent] is off, for sizes too small to read it). A null [value]
 /// shows an indeterminate spinner without a number.
 class ProgressRing extends StatelessWidget {
-  const ProgressRing({super.key, this.value, this.size = 48});
+  const ProgressRing({
+    super.key,
+    this.value,
+    this.size = 48,
+    this.showPercent = true,
+  });
 
   /// Progress from 0 to 1, or null when unknown.
   final double? value;
   final double size;
+  final bool showPercent;
 
   @override
   Widget build(BuildContext context) {
@@ -25,13 +32,13 @@ class ProgressRing extends StatelessWidget {
             SizedBox.expand(
               child: CircularProgressIndicator(
                 value: value,
-                strokeWidth: 4,
+                strokeWidth: size / 10,
                 backgroundColor: theme.colorScheme.outline.withValues(
                   alpha: 0.2,
                 ),
               ),
             ),
-            if (percent != null)
+            if (percent != null && showPercent)
               ExcludeSemantics(
                 child: Text(
                   '$percent%',
