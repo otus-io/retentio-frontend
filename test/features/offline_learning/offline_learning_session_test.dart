@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
+import 'package:logger/logger.dart';
 import 'package:retentio/core/network/network.dart';
 import 'package:retentio/features/auth/data/datasources/local_auth_data_source.dart';
 import 'package:retentio/features/deck_study/data/repositories/deck_study_legacy_service_repository.dart';
@@ -62,6 +63,25 @@ class _GatedRemote implements StudySyncRemoteDataSource {
 
   @override
   Future<List<OfflineCard>?> fetchCards(String deckId) async => null;
+}
+
+/// Resolves to [session] on the first `then` and to null afterwards.
+class _SessionThenNull implements Future<OfflineLearningSession?> {
+  _SessionThenNull(this.session);
+
+  final OfflineLearningSession session;
+  var _calls = 0;
+
+  @override
+  Future<R> then<R>(
+    FutureOr<R> Function(OfflineLearningSession?) onValue, {
+    Function? onError,
+  }) => Future<OfflineLearningSession?>.value(
+    _calls++ == 0 ? session : null,
+  ).then(onValue, onError: onError);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 void main() {
@@ -227,6 +247,41 @@ void main() {
 
     expect(saved, isTrue);
     expect(session.sync.phase.value, OfflineSyncPhase.failed);
+  });
+
+  test('a local change without a session logs no warning', () async {
+    final session = (await OfflineLearningSessions(
+      readUsername: () async => 'alice',
+    ).current())!;
+    await session.store.putDeck(
+      const OfflineDeck(id: 'd1', name: 'N5', fields: ['W'], downloadedAt: 1),
+    );
+    await session.store.putCards(const [
+      OfflineCard(
+        deckId: 'd1',
+        id: 'c1',
+        factId: 'f1',
+        template: [],
+        lastReview: 0,
+        dueDate: 1,
+      ),
+    ]);
+    final warnings = <String>[];
+    void listen(LogEvent e) => warnings.add('${e.message}');
+    Logger.addLogListener(listen);
+    addTearDown(() => Logger.removeLogListener(listen));
+    final repo = offlineFirstStudyRepository(
+      _SessionThenNull(session),
+      remote: DeckStudyLegacyServiceRepository(),
+    );
+
+    final saved = await repo.submitCard(
+      DeckStudySubmitRequest.hide(deckId: 'd1', cardId: 'c1'),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    expect(saved, isTrue);
+    expect(warnings, isEmpty);
   });
 
   test('study repository re-downloads after a fact edit', () async {

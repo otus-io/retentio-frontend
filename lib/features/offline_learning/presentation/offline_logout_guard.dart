@@ -57,7 +57,8 @@ Future<bool> _settle(
       await s.clear();
       return true;
     }
-    if (!context.mounted) return false;
+    // The user already chose to log out; if the screen is gone, keep the data.
+    if (!context.mounted) return true;
     choice = await _ask(context, loc.logoutSyncIncomplete, [
       (_LogoutChoice.keep, loc.logoutKeepAndLogout),
       (_LogoutChoice.discard, loc.logoutDiscardAndLogout),

@@ -274,6 +274,51 @@ void main() {
     expect(store.ops, hasLength(1));
   });
 
+  testWidgets('a screen closed during the sync keeps the data and logs out', (
+    tester,
+  ) async {
+    store.ops.add(_op);
+    sync
+      ..uploads = false
+      ..gate = Completer<void>();
+    final showButton = ValueNotifier(true);
+    final results = <bool>[];
+    await tester.pumpWidget(
+      buildTestableWidget(
+        ValueListenableBuilder<bool>(
+          valueListenable: showButton,
+          builder: (_, show, _) => show
+              ? Builder(
+                  builder: (context) => TextButton(
+                    onPressed: () async => results.add(
+                      await settleOfflineDataBeforeLogout(
+                        context,
+                        session: Future.value(session),
+                      ),
+                    ),
+                    child: const Text('go'),
+                  ),
+                )
+              : const SizedBox(),
+        ),
+      ),
+    );
+    await tester.tap(find.text('go'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sync and log out'));
+    await tester.pump();
+    await tester.pump();
+
+    showButton.value = false;
+    await tester.pump();
+    sync.gate!.complete();
+    await tester.pumpAndSettle();
+
+    expect(results, [true]);
+    expect(store.clears, 0);
+    expect(store.ops, hasLength(1));
+  });
+
   testWidgets('a storage error does not block logout', (tester) async {
     store.failReads = true;
 

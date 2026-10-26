@@ -38,6 +38,9 @@ class HiveOfflineLearningStore implements OfflineLearningStore {
   final Box<dynamic> _study;
   final Box<dynamic> _meta;
 
+  /// An already open box is reused as is, whatever cipher it was opened with,
+  /// so production must always pass the cipher on the first open of a process
+  /// (only `OfflineLearningSessions` opens these boxes).
   static Future<HiveOfflineLearningStore> open({
     required String accountId,
     HiveCipher? cipher,

@@ -85,7 +85,7 @@ Future<void> _runSessionTask(
   Future<Object?> Function(OfflineLearningSession session) task,
   String label,
 ) => session
-    .then<void>((s) => task(s!))
+    .then<void>((s) => s == null ? null : task(s))
     .then<void>((_) {}, onError: (Object e) => logger.w('$label: $e'));
 
 /// Resolves the [OfflineLearningSession] of the logged-in account, or null
