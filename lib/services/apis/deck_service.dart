@@ -30,9 +30,16 @@ class DeckService {
   }
 
   /// 获取单个 deck 的详细信息（包含 facts）
-  Future<Deck> getDeckDetail(String deckId) async {
+  Future<Deck> getDeckDetail(
+    String deckId, {
+    Map<String, dynamic>? extra,
+  }) async {
     try {
-      final res = await ApiService.get(Api.deck, pathParams: {'id': deckId});
+      final res = await ApiService.get(
+        Api.deck,
+        pathParams: {'id': deckId},
+        extra: extra,
+      );
       final raw = res?.data;
       if (raw is! Map) {
         throw StateError(

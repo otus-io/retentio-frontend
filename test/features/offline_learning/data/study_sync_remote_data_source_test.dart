@@ -23,6 +23,9 @@ class _StudyApiAdapter implements HttpClientAdapter {
   ) async {
     requests.add(options);
     if (options.method == 'GET') {
+      if (options.path.startsWith('/api/decks/auth')) {
+        return _json({'msg': 'unauthorized'}, 401);
+      }
       if (options.path != '/api/decks/deck-1') {
         return _json({'msg': 'deck not found'}, 404);
       }
@@ -197,6 +200,24 @@ void main() {
       });
       expect(ApiService.authorization, 't');
     });
+
+    test(
+      'the flush GETs (server cards, deck counts) keep the session',
+      () async {
+        expect(await source.fetchDeckCounts('auth'), isNull);
+        expect(await source.fetchCards('auth'), isNull);
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+
+        expect(adapter.requests, hasLength(2));
+        for (final request in adapter.requests) {
+          expect(request.method, 'GET');
+          expect(request.extra, {
+            ResponseNormalizeInterceptor.keepSessionOn401: true,
+          });
+        }
+        expect(ApiService.authorization, 't');
+      },
+    );
 
     test('other requests still clear the session', () async {
       await ApiService.patch(

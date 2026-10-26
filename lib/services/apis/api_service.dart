@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart' show Options;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retentio/core/network/network.dart';
 import 'package:retentio/models/api_response.dart';
@@ -75,11 +76,13 @@ class ApiService {
     String endpoint, {
     Map<String, String>? pathParams,
     Map<String, dynamic>? queryParams,
+    Map<String, dynamic>? extra,
   }) async {
     final response = await networkDioClient.get(
       endpoint,
       pathParams: pathParams,
       params: queryParams,
+      options: extra == null ? null : Options(extra: extra),
     );
     return response;
   }

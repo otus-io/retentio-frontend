@@ -56,8 +56,20 @@ class StudySyncRemoteDataSource {
     DeckDetailFn? deckDetailFn,
     FetchCardsFn? fetchCardsFn,
   }) : _patchFn = patchFn ?? _defaultPatch,
-       _deckDetailFn = deckDetailFn ?? DeckService.of.getDeckDetail,
-       _fetchCardsFn = fetchCardsFn ?? fetchOfflineCards;
+       _deckDetailFn = deckDetailFn ?? _defaultDeckDetail,
+       _fetchCardsFn = fetchCardsFn ?? _defaultFetchCards;
+
+  /// Flush requests run in the background: a stale token must surface as
+  /// `needsLogin`, not log the user out via the global 401 handler.
+  static const _keepSession = {
+    ResponseNormalizeInterceptor.keepSessionOn401: true,
+  };
+
+  static Future<Deck> _defaultDeckDetail(String deckId) =>
+      DeckService.of.getDeckDetail(deckId, extra: _keepSession);
+
+  static Future<List<OfflineCard>> _defaultFetchCards(String deckId) =>
+      fetchOfflineCards(deckId, extra: _keepSession);
 
   final StudyPatchFn _patchFn;
   final DeckDetailFn _deckDetailFn;
@@ -72,7 +84,7 @@ class StudySyncRemoteDataSource {
     pathParams: {'id': deckId},
     params: body,
     headers: headers,
-    extra: const {ResponseNormalizeInterceptor.keepSessionOn401: true},
+    extra: _keepSession,
   );
 
   Future<StudyPatchResult> patchCard(

@@ -606,6 +606,19 @@ void main() {
     expect((await sync.flush(force: true)).status, OfflineSyncStatus.synced);
   });
 
+  test('403 marks the op failed without retrying', () async {
+    queue([_review('a', 1)]);
+    remote.statusByOp['a'] = 403;
+
+    final result = await service().flush(force: true);
+
+    expect(result.failed, 1);
+    final failed = store.ops['a']!;
+    expect(failed.status, StudySyncStatus.failed);
+    expect(failed.lastError, 'HTTP 403');
+    expect(failed.httpAttempts, 0);
+  });
+
   test('400 holds back later ops of its card', () async {
     queue([_review('a', 1), _review('b', 2)]);
     remote.statusByOp['a'] = 400;

@@ -278,11 +278,13 @@ class OfflineSyncService {
     switch (result.httpStatus) {
       case 401:
         return _OpOutcome.unauthorized;
-      case 400:
+      // 400 (rejected body) and 403 (not the deck's owner any more) are
+      // permanent; retrying cannot succeed.
+      case 400 || 403:
         await _store.updateOperation(
           op.copyWith(
             status: StudySyncStatus.failed,
-            lastError: result.message ?? 'HTTP 400',
+            lastError: result.message ?? 'HTTP ${result.httpStatus}',
           ),
         );
         return _OpOutcome.failed;
