@@ -8,4 +8,7 @@ class GetNextDueCardUseCase {
   Future<DeckStudyLoadResult> call({required String deckId, String? tagId}) {
     return _repository.loadNextDueCard(deckId: deckId, tagId: tagId);
   }
+
+  Future<bool> resyncLocalCopy(String deckId) =>
+      _repository.resyncLocalCopy(deckId);
 }

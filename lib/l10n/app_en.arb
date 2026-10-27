@@ -840,6 +840,14 @@
   "@discoveryImporting": {
     "description": "Import in-progress label"
   },
+  "offlineDownloading": "Downloading for offline study…",
+  "@offlineDownloading": {
+    "description": "Label beside the progress ring while a deck downloads for offline study"
+  },
+  "offlineDownloadFailed": "Download failed. Tap to retry",
+  "@offlineDownloadFailed": {
+    "description": "Retry button label after a deck's offline download failed"
+  },
   "discoveryImported": "Imported",
   "@discoveryImported": {
     "description": "Already imported badge"
@@ -2278,5 +2286,74 @@
   "apiServerVerifyEmail": "Could not verify email. Please try again.",
   "@apiServerVerifyEmail": {
     "description": "API error verifying email"
+  },
+  "offlineDeckNeedsDownload": "Connect to the internet to download this deck for offline study",
+  "@offlineDeckNeedsDownload": {
+    "description": "Shown when an undownloaded deck is opened offline"
+  },
+  "offlineSyncOffline": "Offline",
+  "@offlineSyncOffline": {
+    "description": "Sync status: device offline"
+  },
+  "offlineSyncPending": "Pending sync",
+  "@offlineSyncPending": {
+    "description": "Sync status: reviews waiting to upload"
+  },
+  "offlineSyncSyncing": "Syncing",
+  "@offlineSyncSyncing": {
+    "description": "Sync status: uploading reviews"
+  },
+  "offlineSyncFailed": "Sync failed",
+  "@offlineSyncFailed": {
+    "description": "Sync status: some reviews were rejected"
+  },
+  "offlineSyncNeedsLogin": "Re-login required",
+  "@offlineSyncNeedsLogin": {
+    "description": "Sync status: login expired"
+  },
+  "offlineSyncNow": "Sync now",
+  "@offlineSyncNow": {
+    "description": "Tooltip for the manual sync button"
+  },
+  "logoutPendingSyncMessage": "Some reviews have not been uploaded yet.",
+  "@logoutPendingSyncMessage": {
+    "description": "Logout dialog when the offline queue is not empty"
+  },
+  "logoutSyncAndLogout": "Sync and log out",
+  "@logoutSyncAndLogout": {
+    "description": "Logout option: upload first"
+  },
+  "logoutKeepAndLogout": "Keep and log out",
+  "@logoutKeepAndLogout": {
+    "description": "Logout option: keep unsynced reviews"
+  },
+  "logoutDiscardAndLogout": "Discard and log out",
+  "@logoutDiscardAndLogout": {
+    "description": "Logout option: delete unsynced reviews"
+  },
+  "logoutSyncIncomplete": "Some reviews could not be uploaded. Keep them or discard them?",
+  "@logoutSyncIncomplete": {
+    "description": "Logout dialog after a failed upload"
+  },
+  "offlineSyncRejectedTitle": "Reviews not uploaded",
+  "@offlineSyncRejectedTitle": {
+    "description": "Title of the dialog for reviews the server rejected"
+  },
+  "offlineSyncRejectedMessage": "{count, plural, =1{The server rejected 1 review.} other{The server rejected {count} reviews.}}",
+  "@offlineSyncRejectedMessage": {
+    "description": "Dialog message: number of queued reviews the server rejected",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "offlineSyncDiscardRejected": "Discard",
+  "@offlineSyncDiscardRejected": {
+    "description": "Dialog action: delete the reviews the server rejected"
+  },
+  "deckAvailableOffline": "Available offline",
+  "@deckAvailableOffline": {
+    "description": "Tooltip for the deck list marker of decks downloaded for offline study"
+  },
+  "logoutSyncInProgress": "Uploading reviews…",
+  "@logoutSyncInProgress": {
+    "description": "Progress dialog while unsynced reviews upload before logout"
   }
 }

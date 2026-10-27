@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/core/network/network.dart';
+import 'package:retentio/features/auth/data/datasources/local_auth_data_source.dart';
+import 'package:retentio/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:retentio/models/api_response.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/apis/auth_service.dart';
@@ -115,6 +117,15 @@ void main() {
       expect(result['token'], isNull);
       expect(result['message'], 'Invalid username or password');
       expect(ApiService.authorization, '');
+    });
+
+    test('repository login stores the username for offline data', () async {
+      const local = LocalAuthDataSource();
+      await const AuthRepositoryImpl(
+        local,
+      ).login(username: 'valid-user', password: 'valid-password');
+
+      expect(await local.readUsername(), 'valid-user');
     });
 
     test(

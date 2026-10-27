@@ -2,6 +2,8 @@
 
 Chinese: [offline_learning_cache_plan_zh.md](offline_learning_cache_plan_zh.md)
 
+Implemented business rules: [offline_learning_logic.md](offline_learning_logic.md).
+
 The Flutter app uses local-first learning: deck metadata, facts, media, and card scheduling are downloaded to Hive in one pass; card delivery and review run locally using the same card-selection rules as the backend, without waiting on the network for every tap.
 
 Review/hide actions are written to a local queue first, then synced in the background—progress is uploaded card-by-card via `PATCH /api/decks/{id}/card`, and after each batch finishes, `GET /api/decks/{id}` aligns stats; flushing is triggered when the queue reaches 100 entries or more, when leaving study, or when the network is restored, and server `cards[]` must not overwrite local scheduling.

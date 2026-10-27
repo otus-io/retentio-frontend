@@ -1330,6 +1330,18 @@ abstract class AppLocalizations {
   /// **'Importing…'**
   String get discoveryImporting;
 
+  /// Label beside the progress ring while a deck downloads for offline study
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading for offline study…'**
+  String get offlineDownloading;
+
+  /// Retry button label after a deck's offline download failed
+  ///
+  /// In en, this message translates to:
+  /// **'Download failed. Tap to retry'**
+  String get offlineDownloadFailed;
+
   /// Already imported badge
   ///
   /// In en, this message translates to:
@@ -3537,6 +3549,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not verify email. Please try again.'**
   String get apiServerVerifyEmail;
+
+  /// Shown when an undownloaded deck is opened offline
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet to download this deck for offline study'**
+  String get offlineDeckNeedsDownload;
+
+  /// Sync status: device offline
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get offlineSyncOffline;
+
+  /// Sync status: reviews waiting to upload
+  ///
+  /// In en, this message translates to:
+  /// **'Pending sync'**
+  String get offlineSyncPending;
+
+  /// Sync status: uploading reviews
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing'**
+  String get offlineSyncSyncing;
+
+  /// Sync status: some reviews were rejected
+  ///
+  /// In en, this message translates to:
+  /// **'Sync failed'**
+  String get offlineSyncFailed;
+
+  /// Sync status: login expired
+  ///
+  /// In en, this message translates to:
+  /// **'Re-login required'**
+  String get offlineSyncNeedsLogin;
+
+  /// Tooltip for the manual sync button
+  ///
+  /// In en, this message translates to:
+  /// **'Sync now'**
+  String get offlineSyncNow;
+
+  /// Logout dialog when the offline queue is not empty
+  ///
+  /// In en, this message translates to:
+  /// **'Some reviews have not been uploaded yet.'**
+  String get logoutPendingSyncMessage;
+
+  /// Logout option: upload first
+  ///
+  /// In en, this message translates to:
+  /// **'Sync and log out'**
+  String get logoutSyncAndLogout;
+
+  /// Logout option: keep unsynced reviews
+  ///
+  /// In en, this message translates to:
+  /// **'Keep and log out'**
+  String get logoutKeepAndLogout;
+
+  /// Logout option: delete unsynced reviews
+  ///
+  /// In en, this message translates to:
+  /// **'Discard and log out'**
+  String get logoutDiscardAndLogout;
+
+  /// Logout dialog after a failed upload
+  ///
+  /// In en, this message translates to:
+  /// **'Some reviews could not be uploaded. Keep them or discard them?'**
+  String get logoutSyncIncomplete;
+
+  /// Title of the dialog for reviews the server rejected
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews not uploaded'**
+  String get offlineSyncRejectedTitle;
+
+  /// Dialog message: number of queued reviews the server rejected
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The server rejected 1 review.} other{The server rejected {count} reviews.}}'**
+  String offlineSyncRejectedMessage(int count);
+
+  /// Dialog action: delete the reviews the server rejected
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get offlineSyncDiscardRejected;
+
+  /// Tooltip for the deck list marker of decks downloaded for offline study
+  ///
+  /// In en, this message translates to:
+  /// **'Available offline'**
+  String get deckAvailableOffline;
+
+  /// Progress dialog while unsynced reviews upload before logout
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading reviews…'**
+  String get logoutSyncInProgress;
 }
 
 class _AppLocalizationsDelegate

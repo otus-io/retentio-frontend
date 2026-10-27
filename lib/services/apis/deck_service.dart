@@ -8,10 +8,12 @@ class DeckService {
   static final DeckService of = DeckService._();
   DeckService._();
 
-  /// 获取所有 decks
-  Future<List<Deck>> getDecks() async {
+  /// 获取所有 decks；[throwOnError] 时请求失败抛出异常而不是返回空列表
+  Future<List<Deck>> getDecks({bool throwOnError = false}) async {
     try {
       final res = await ApiService.get(Api.decks);
+      final error = res?.exception;
+      if (throwOnError && error != null) throw error;
       final data = res?.data;
       // `res?.data['k']` is parsed as `(res?.data)['k']` — subscript on null throws.
       if (data is Map && data['decks'] is List) {

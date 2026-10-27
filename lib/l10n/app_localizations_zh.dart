@@ -652,6 +652,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get discoveryImporting => '导入中…';
 
   @override
+  String get offlineDownloading => '正在下载以便离线学习…';
+
+  @override
+  String get offlineDownloadFailed => '下载失败，点按重试';
+
+  @override
   String get discoveryImported => '已导入';
 
   @override
@@ -1854,4 +1860,57 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get apiServerVerifyEmail => '无法验证邮箱，请重试';
+
+  @override
+  String get offlineDeckNeedsDownload => '请联网下载此卡组后再离线学习';
+
+  @override
+  String get offlineSyncOffline => '离线学习';
+
+  @override
+  String get offlineSyncPending => '待同步';
+
+  @override
+  String get offlineSyncSyncing => '同步中';
+
+  @override
+  String get offlineSyncFailed => '同步失败';
+
+  @override
+  String get offlineSyncNeedsLogin => '需要重新登录';
+
+  @override
+  String get offlineSyncNow => '立即同步';
+
+  @override
+  String get logoutPendingSyncMessage => '还有学习记录没有上传。';
+
+  @override
+  String get logoutSyncAndLogout => '同步后退出';
+
+  @override
+  String get logoutKeepAndLogout => '保留并退出';
+
+  @override
+  String get logoutDiscardAndLogout => '丢弃并退出';
+
+  @override
+  String get logoutSyncIncomplete => '部分记录上传失败，保留还是丢弃？';
+
+  @override
+  String get offlineSyncRejectedTitle => '学习记录未上传';
+
+  @override
+  String offlineSyncRejectedMessage(int count) {
+    return '服务器拒绝了 $count 条学习记录。';
+  }
+
+  @override
+  String get offlineSyncDiscardRejected => '丢弃';
+
+  @override
+  String get deckAvailableOffline => '可离线学习';
+
+  @override
+  String get logoutSyncInProgress => '正在上传学习记录…';
 }

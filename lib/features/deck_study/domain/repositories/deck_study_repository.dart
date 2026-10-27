@@ -55,6 +55,7 @@ class DeckStudyLoadResult {
     this.nextCardDetail,
     this.refreshedCardsCount,
     this.refreshedDueCardsCount,
+    this.needsDownload = false,
   });
 
   final CardDetail? cardDetail;
@@ -70,6 +71,9 @@ class DeckStudyLoadResult {
   /// Live due count from card stats (deck-wide or tag-scoped).
   final int? refreshedDueCardsCount;
 
+  /// The deck is not downloaded for offline study and the device is offline.
+  final bool needsDownload;
+
   bool get hasCard => cardDetail != null;
 }
 
@@ -78,6 +82,10 @@ abstract class DeckStudyRepository {
     required String deckId,
     String? tagId,
   });
+
+  /// Re-downloads a local copy after facts changed online. Returns false
+  /// without doing anything when the deck is served remotely.
+  Future<bool> resyncLocalCopy(String deckId);
 
   Future<List<Tag>> loadDeckTags({required String deckId});
 

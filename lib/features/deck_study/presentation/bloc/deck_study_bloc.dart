@@ -54,19 +54,7 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
       return;
     }
     if (event is DeckStudyTagFilterChanged) {
-      _emit(
-        state.copyWith(
-          activeTagId: event.tagId,
-          clearActiveTagId: event.tagId == null,
-          cardsStudied: 0,
-          resetCardDetail: true,
-          clearPrefetchedCard: true,
-          clearRefreshedCardsCount: true,
-          clearRefreshedDueCardsCount: true,
-          clearSessionDueTarget: true,
-        ),
-      );
-      await _loadCard(resetProgress: false);
+      await _handleTagFilterChanged(event.tagId);
       return;
     }
     if (event is DeckStudyIntervalSelected) {
@@ -74,36 +62,15 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
       return;
     }
     if (event is DeckStudyReviewAgainRequested) {
-      _emit(
-        state.copyWith(
-          loadingPhase: DeckStudyLoadingPhase.initial,
-          isHide: false,
-          cardsStudied: 0,
-          isLoading: true,
-          resetCardDetail: true,
-          clearPrefetchedCard: true,
-          clearRefreshedCardsCount: true,
-          clearRefreshedDueCardsCount: true,
-          clearSessionDueTarget: true,
-        ),
-      );
-      await _loadCard(resetProgress: false);
+      await _handleReviewAgain();
       return;
     }
     if (event is DeckStudyReloadRequested) {
-      // If the deck was in caught-up/empty state, reset session counters so
-      // newly added cards are picked up and shown immediately.
-      final wasCaughtUp = state.cardDetail == null;
-      if (wasCaughtUp) {
-        _emit(
-          state.copyWith(
-            clearRefreshedCardsCount: true,
-            clearRefreshedDueCardsCount: true,
-            clearSessionDueTarget: true,
-          ),
-        );
-      }
-      await _loadCard(resetProgress: wasCaughtUp);
+      await _handleReload();
+      return;
+    }
+    if (event is DeckStudyLocalCopyResynced) {
+      await _loadCard(resetProgress: false);
       return;
     }
     if (event is DeckStudyNextCardRequested) {
@@ -112,6 +79,67 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
     }
     if (event is DeckStudyDeleteCurrentCardRequested) {
       await _handleDeleteCurrentCard();
+    }
+  }
+
+  Future<void> _handleTagFilterChanged(String? tagId) async {
+    _emit(
+      state.copyWith(
+        activeTagId: tagId,
+        clearActiveTagId: tagId == null,
+        cardsStudied: 0,
+        resetCardDetail: true,
+        clearPrefetchedCard: true,
+        clearRefreshedCardsCount: true,
+        clearRefreshedDueCardsCount: true,
+        clearSessionDueTarget: true,
+      ),
+    );
+    await _loadCard(resetProgress: false);
+  }
+
+  Future<void> _handleReviewAgain() async {
+    _emit(
+      state.copyWith(
+        loadingPhase: DeckStudyLoadingPhase.initial,
+        isHide: false,
+        cardsStudied: 0,
+        isLoading: true,
+        resetCardDetail: true,
+        clearPrefetchedCard: true,
+        clearRefreshedCardsCount: true,
+        clearRefreshedDueCardsCount: true,
+        clearSessionDueTarget: true,
+      ),
+    );
+    await _loadCard(resetProgress: false);
+  }
+
+  Future<void> _handleReload() async {
+    // Caught-up/empty sessions reset counters so newly added cards show.
+    final wasCaughtUp = state.cardDetail == null;
+    if (wasCaughtUp) {
+      _emit(
+        state.copyWith(
+          clearRefreshedCardsCount: true,
+          clearRefreshedDueCardsCount: true,
+          clearSessionDueTarget: true,
+        ),
+      );
+    }
+    await _loadCard(resetProgress: wasCaughtUp);
+    unawaited(_resyncInBackground());
+  }
+
+  /// A local copy picks up the edit only after a re-download, which can take
+  /// long; the card shows at once and is redrawn when the copy is fresh.
+  Future<void> _resyncInBackground() async {
+    try {
+      if (await _getNextDueCardUseCase.resyncLocalCopy(state.deckId)) {
+        add(const DeckStudyLocalCopyResynced());
+      }
+    } catch (_) {
+      // The local copy stays as it was; the next refresh retries.
     }
   }
 
@@ -216,6 +244,7 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
         cardsStudied:
             cardsStudiedOverride ?? (resetProgress ? 0 : state.cardsStudied),
         clearErrorMessage: true,
+        needsDownload: false,
       ),
     );
 
@@ -241,6 +270,7 @@ class DeckStudyBloc extends Cubit<DeckStudyState> {
     _emit(
       _withRefreshedCounts(state, result).copyWith(
         resetCardDetail: true,
+        needsDownload: result.needsDownload,
         clearPrefetchedCard: true,
         isLoading: false,
         isHide: false,
