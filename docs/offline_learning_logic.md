@@ -125,11 +125,13 @@ Per record:
 
 Records are FIFO per card: a failed record, or one waiting out its backoff, holds back every later record of the same card, so a newer schedule never lands before an older one. Other cards keep uploading.
 
-The server ignores `Idempotency-Key`, so a review whose request failed with a network error may already be applied. Before resending such a review, the app reads the server card list (once per deck per batch). If the server card already has that review’s schedule, the record is confirmed from it and not sent again, so the review is not counted twice. Otherwise, or if the list cannot be read, it is resent.
+The server ignores `Idempotency-Key`, so a review whose request failed with a network error may already be applied. Before resending such a review, the app reads the server card list (once per deck per batch). If the server card already has that review’s schedule, the record is confirmed from it and not sent again, so the review is not counted twice. Otherwise it is resent. If the list cannot be read, the record waits for the next run instead of being resent.
 
 Failed records are not sent again automatically. From the “Sync failed” status the user can **retry** (send them now, followed by the records they held back) or **discard** them (local card changes are kept, and the held records upload as usual). A card with nothing else queued loses its unconfirmed mark, so later downloads update its schedule again.
 
-For each deck that had a success in the batch, the app fetches deck detail once and updates only the lifetime and today review counts. If that request fails, the deck is retried on the next upload run while the app stays open. The server card list does not replace local schedules.
+For each deck that had a success in the batch, the app fetches deck detail once and updates only the lifetime and today review counts. If that request fails, the deck is retried on the next upload run while the app stays open.
+
+These background reads (server card list, deck detail) do not log the user out on HTTP 401. Like a 401 on an upload, they stop the batch and the status becomes “Re-login required”; records already sent stay removed, and decks whose counts were not refreshed are retried on a later run. Other read failures do not change the status. The server card list does not replace local schedules.
 
 Status shown in the UI (hidden once synced), in this order:
 

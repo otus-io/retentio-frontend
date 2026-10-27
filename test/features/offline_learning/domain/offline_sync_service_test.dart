@@ -102,6 +102,10 @@ class _FakeRemote implements StudySyncRemoteDataSource {
 
   /// Server cards per deck; a missing deck reads as a failed request.
   final serverCards = <String, List<OfflineCard>>{};
+
+  /// Decks whose reads get HTTP 401.
+  final unauthorizedCardDecks = <String>{};
+  final unauthorizedCountDecks = <String>{};
   Completer<void>? gate;
 
   /// Throws once from the next [patchCard].
@@ -134,12 +138,18 @@ class _FakeRemote implements StudySyncRemoteDataSource {
   @override
   Future<OfflineDeckCounts?> fetchDeckCounts(String deckId) async {
     countRequests.add(deckId);
+    if (unauthorizedCountDecks.contains(deckId)) {
+      throw const StudySyncUnauthorizedException();
+    }
     return counts[deckId];
   }
 
   @override
   Future<List<OfflineCard>?> fetchCards(String deckId) async {
     cardRequests.add(deckId);
+    if (unauthorizedCardDecks.contains(deckId)) {
+      throw const StudySyncUnauthorizedException();
+    }
     return serverCards[deckId];
   }
 }
@@ -563,6 +573,37 @@ void main() {
     expect(remote.countRequests, isEmpty);
   });
 
+  test('a 401 on the deck counters needs login after the uploads', () async {
+    for (final id in ['d1', 'd2']) {
+      store.decks[id] = OfflineDeck(id: id, name: id, fields: const []);
+    }
+    queue([_review('a', 1), _review('b', 2, cardId: 'c2', deckId: 'd2')]);
+    remote.unauthorizedCountDecks.add('d1');
+    final sync = service();
+
+    final result = await sync.flush(force: true);
+
+    expect(result.status, OfflineSyncStatus.needsLogin);
+    expect(result.sent, 2);
+    expect(sync.phase.value, OfflineSyncPhase.needsLogin);
+    expect(store.ops, isEmpty);
+    expect(remote.countRequests, ['d1']);
+
+    // Both decks are still stale and refresh once the login is back.
+    remote.unauthorizedCountDecks.clear();
+    for (final id in ['d1', 'd2']) {
+      remote.counts[id] = const OfflineDeckCounts(
+        totalReviews: 4,
+        totalReviewsToday: 2,
+      );
+    }
+    final next = await sync.flush(force: true);
+
+    expect(next.status, OfflineSyncStatus.synced);
+    expect(remote.countRequests, ['d1', 'd1', 'd2']);
+    expect(store.decks['d2']!.totalReviews, 4);
+  });
+
   test('400 marks the op failed, keeps payload, and continues', () async {
     queue([_review('a', 1), _review('b', 2, cardId: 'c2')]);
     remote.statusByOp['a'] = 400;
@@ -961,17 +1002,39 @@ void main() {
           _review('b', 2).copyWith(maybeApplied: true),
           _review('c', 3, cardId: 'c2'),
         ]);
+        final sync = service();
 
-        final result = await service().flush(force: true);
+        final result = await sync.flush(force: true);
 
         expect(remote.cardRequests, ['d1']);
         expect(remote.patched, ['c']);
         expect(result.status, OfflineSyncStatus.partial);
+        expect(sync.phase.value, OfflineSyncPhase.pending);
         expect(store.ops.keys, containsAll(['a', 'b']));
         expect(store.ops['a']!.attempts, 0);
         expect(store.ops['a']!.status, StudySyncStatus.pending);
       },
     );
+
+    test('a 401 on the server cards needs login without resending', () async {
+      queue([
+        _review('a', 1).copyWith(maybeApplied: true),
+        _review('b', 2, cardId: 'c2'),
+      ]);
+      remote.unauthorizedCardDecks.add('d1');
+      final sync = service();
+
+      final result = await sync.flush(force: true);
+
+      expect(result.status, OfflineSyncStatus.needsLogin);
+      expect(sync.phase.value, OfflineSyncPhase.needsLogin);
+      expect(remote.cardRequests, ['d1']);
+      expect(remote.patched, isEmpty);
+      expect(remote.countRequests, isEmpty);
+      expect(store.ops.keys, ['a', 'b']);
+      expect(store.ops['a']!.attempts, 0);
+      expect(store.ops['a']!.maybeApplied, isTrue);
+    });
 
     for (final status in [502, 503, 504]) {
       test('HTTP $status marks a review but not a hide', () async {

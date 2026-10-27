@@ -240,12 +240,19 @@ class OfflineSyncService {
         break;
       }
     }
-    for (final deckId in {...syncedDecks, ..._staleCountDecks}) {
+    _staleCountDecks.addAll(syncedDecks);
+    for (final deckId in _staleCountDecks.toList()) {
       if (_halts > 0) break;
-      if (await _refreshDeckCounts(deckId, now)) {
-        _staleCountDecks.remove(deckId);
-      } else {
-        _staleCountDecks.add(deckId);
+      try {
+        if (await _refreshDeckCounts(deckId, now)) {
+          _staleCountDecks.remove(deckId);
+        }
+      } on StudySyncUnauthorizedException {
+        return OfflineSyncResult(
+          OfflineSyncStatus.needsLogin,
+          sent: sent,
+          failed: failed,
+        );
       }
     }
     final status = retry || failed > 0
@@ -261,7 +268,12 @@ class OfflineSyncService {
   ) async {
     if (op.maybeApplied) {
       // Resending without knowing the server state could count it twice.
-      final applied = await _appliedOnServer(op, serverCards);
+      final bool? applied;
+      try {
+        applied = await _appliedOnServer(op, serverCards);
+      } on StudySyncUnauthorizedException {
+        return _OpOutcome.unauthorized;
+      }
       if (applied == null) return _OpOutcome.retry;
       if (applied) return _OpOutcome.sent;
     }
@@ -330,7 +342,8 @@ class OfflineSyncService {
   /// The server ignores `Idempotency-Key`, so resending a review it already
   /// applied would count it twice. Confirms the op from the server card when
   /// its schedule is exactly the reviewed one. Null when the server cards
-  /// could not be read, so the state is unknown.
+  /// could not be read, so the state is unknown; throws
+  /// [StudySyncUnauthorizedException] on HTTP 401.
   Future<bool?> _appliedOnServer(
     StudySyncOperation op,
     Map<String, Future<List<OfflineCard>?>> serverCards,
@@ -387,6 +400,7 @@ class OfflineSyncService {
   }
 
   /// Returns false when the counters could not be read (retried next flush).
+  /// Throws [StudySyncUnauthorizedException] on HTTP 401.
   Future<bool> _refreshDeckCounts(String deckId, int now) async {
     final counts = await _remote.fetchDeckCounts(deckId);
     if (counts == null) return false;

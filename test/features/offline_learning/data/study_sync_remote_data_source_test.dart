@@ -26,6 +26,19 @@ class _StudyApiAdapter implements HttpClientAdapter {
       if (options.path.startsWith('/api/decks/auth')) {
         return _json({'msg': 'unauthorized'}, 401);
       }
+      if (options.path == '/api/decks/deck-1/cards') {
+        return _json({
+          'code': 0,
+          'data': {
+            'cards': [
+              {'id': 'c1', 'fact_id': 'f1', 'last_review': 5, 'due_date': 9},
+            ],
+          },
+        }, 200);
+      }
+      if (options.path == '/api/decks/list') {
+        return _json({'code': 0, 'data': []}, 200);
+      }
       if (options.path != '/api/decks/deck-1') {
         return _json({'msg': 'deck not found'}, 404);
       }
@@ -201,23 +214,27 @@ void main() {
       expect(ApiService.authorization, 't');
     });
 
-    test(
-      'the flush GETs (server cards, deck counts) keep the session',
-      () async {
-        expect(await source.fetchDeckCounts('auth'), isNull);
-        expect(await source.fetchCards('auth'), isNull);
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+    test('the flush GETs (server cards, deck counts) keep the session and '
+        'report the 401', () async {
+      await expectLater(
+        source.fetchDeckCounts('auth'),
+        throwsA(isA<StudySyncUnauthorizedException>()),
+      );
+      await expectLater(
+        source.fetchCards('auth'),
+        throwsA(isA<StudySyncUnauthorizedException>()),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 50));
 
-        expect(adapter.requests, hasLength(2));
-        for (final request in adapter.requests) {
-          expect(request.method, 'GET');
-          expect(request.extra, {
-            ResponseNormalizeInterceptor.keepSessionOn401: true,
-          });
-        }
-        expect(ApiService.authorization, 't');
-      },
-    );
+      expect(adapter.requests, hasLength(2));
+      for (final request in adapter.requests) {
+        expect(request.method, 'GET');
+        expect(request.extra, {
+          ResponseNormalizeInterceptor.keepSessionOn401: true,
+        });
+      }
+      expect(ApiService.authorization, 't');
+    });
 
     test('other requests still clear the session', () async {
       await ApiService.patch(
@@ -254,6 +271,10 @@ void main() {
       expect(await source.fetchDeckCounts('missing'), isNull);
     });
 
+    test('returns null when the deck detail is not a map', () async {
+      expect(await source.fetchDeckCounts('list'), isNull);
+    });
+
     test('uses the injected deck detail function', () async {
       final injected = StudySyncRemoteDataSource(
         deckDetailFn: (id) async => Deck.fromJson({
@@ -270,6 +291,20 @@ void main() {
   });
 
   group('fetchCards', () {
+    test('reads the server cards of the deck', () async {
+      final cards = await source.fetchCards('deck-1');
+
+      expect(adapter.requests.single.path, '/api/decks/deck-1/cards');
+      expect(cards?.single.id, 'c1');
+      expect(cards?.single.deckId, 'deck-1');
+      expect(cards?.single.lastReview, 5);
+      expect(cards?.single.dueDate, 9);
+    });
+
+    test('returns null when a non-401 error fails the request', () async {
+      expect(await source.fetchCards('missing'), isNull);
+    });
+
     test('returns the injected server cards', () async {
       const card = OfflineCard(
         deckId: 'd1',

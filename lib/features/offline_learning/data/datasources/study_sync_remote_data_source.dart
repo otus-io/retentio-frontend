@@ -4,7 +4,6 @@ import 'package:retentio/features/offline_learning/domain/entities/offline_card.
 import 'package:retentio/models/api_response.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/services/apis/api_service.dart';
-import 'package:retentio/services/apis/deck_service.dart';
 import 'package:retentio/services/index.dart';
 
 typedef StudyPatchFn =
@@ -39,6 +38,11 @@ class StudyPatchResult {
       httpStatus != null && httpStatus! >= 200 && httpStatus! < 300;
 }
 
+/// A flush read got HTTP 401: the token is no longer valid.
+class StudySyncUnauthorizedException implements Exception {
+  const StudySyncUnauthorizedException();
+}
+
 /// Server review counters from `GET /api/decks/{id}` `stats`.
 class OfflineDeckCounts {
   const OfflineDeckCounts({
@@ -65,11 +69,27 @@ class StudySyncRemoteDataSource {
     ResponseNormalizeInterceptor.keepSessionOn401: true,
   };
 
-  static Future<Deck> _defaultDeckDetail(String deckId) =>
-      DeckService.of.getDeckDetail(deckId, extra: _keepSession);
+  /// The 401 is kept from the global handler, so report it here.
+  static Future<ApiResponse?> _get(String endpoint, String deckId) async {
+    final res = await ApiService.get(
+      endpoint,
+      pathParams: {'id': deckId},
+      extra: _keepSession,
+    );
+    if (res?.exception?.response?.statusCode == 401) {
+      throw const StudySyncUnauthorizedException();
+    }
+    return res;
+  }
 
-  static Future<List<OfflineCard>> _defaultFetchCards(String deckId) =>
-      fetchOfflineCards(deckId, extra: _keepSession);
+  static Future<Deck> _defaultDeckDetail(String deckId) async {
+    final raw = (await _get(Api.deck, deckId))?.data;
+    if (raw is! Map) throw StateError('deck response is not a map');
+    return Deck.fromJson(Map<String, dynamic>.from(raw));
+  }
+
+  static Future<List<OfflineCard>> _defaultFetchCards(String deckId) async =>
+      parseOfflineCards(deckId, (await _get(Api.cards, deckId))?.data);
 
   final StudyPatchFn _patchFn;
   final DeckDetailFn _deckDetailFn;
@@ -108,14 +128,18 @@ class StudySyncRemoteDataSource {
   }
 
   /// Server schedules of the deck's cards, or null when they cannot be read.
+  /// Throws [StudySyncUnauthorizedException] on HTTP 401.
   Future<List<OfflineCard>?> fetchCards(String deckId) async {
     try {
       return await _fetchCardsFn(deckId);
+    } on StudySyncUnauthorizedException {
+      rethrow;
     } catch (_) {
       return null;
     }
   }
 
+  /// Throws [StudySyncUnauthorizedException] on HTTP 401.
   Future<OfflineDeckCounts?> fetchDeckCounts(String deckId) async {
     try {
       final stats = (await _deckDetailFn(deckId)).stats;
@@ -123,6 +147,8 @@ class StudySyncRemoteDataSource {
         totalReviews: stats.totalReviews,
         totalReviewsToday: stats.totalReviewsToday,
       );
+    } on StudySyncUnauthorizedException {
+      rethrow;
     } catch (_) {
       return null;
     }

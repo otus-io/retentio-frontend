@@ -62,15 +62,8 @@ Future<Map<String, int>?> fetchOfflineMediaVersions(
   String factId,
 ) async => (await CardService.getFactDetail(deckId, factId))?.mediaVersions;
 
-Future<List<OfflineCard>> fetchOfflineCards(
-  String deckId, {
-  Map<String, dynamic>? extra,
-}) async {
-  final res = await ApiService.get(
-    Api.cards,
-    pathParams: {'id': deckId},
-    extra: extra,
-  );
+Future<List<OfflineCard>> fetchOfflineCards(String deckId) async {
+  final res = await ApiService.get(Api.cards, pathParams: {'id': deckId});
   return parseOfflineCards(deckId, res?.data);
 }
 
