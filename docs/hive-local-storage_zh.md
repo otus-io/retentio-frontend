@@ -156,4 +156,4 @@ v1 **不在**用户正在学习时用定时器刷写（避免卡顿）；≥ N �
 
 在 B/C 落地前，建议 **以一台设备为主学习**，或接受：Web 上的复习不会自动改写手机本地队列。
 
-**相关：** [offline_learning_cache_plan_zh.md](offline_learning_cache_plan_zh.md)；[api_zh.md](api_zh.md)；`hydrated_storage.dart`；`features/deck_study/`；outbox 刷写用 typed PATCH 封装（非 `CardService.updateCard` 的 `bool?`）。
+**相关：** [offline_learning_logic_zh.md](offline_learning_logic_zh.md)；[offline_learning_cache_plan_zh.md](offline_learning_cache_plan_zh.md)；[api_zh.md](api_zh.md)；`hydrated_storage.dart`；`features/deck_study/`；outbox 刷写用 typed PATCH 封装（非 `CardService.updateCard` 的 `bool?`）。

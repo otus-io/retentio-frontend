@@ -63,6 +63,7 @@ flutter build ipa --release --dart-define=API_ENV=release
 | ---- | ---- |
 | [flutter_commands_zh.md](flutter_commands_zh.md) | Flutter CLI 命令（设备、运行、构建、`API_ENV`） |
 | [api_zh.md](api_zh.md) | 前端 API 用法（[English](api.md)） |
+| [offline_learning_logic_zh.md](offline_learning_logic_zh.md) | 离线学习业务规则（[English](offline_learning_logic.md)） |
 | [frontend_tests_zh.md](frontend_tests_zh.md) | 测试命令与结构（[English](frontend_tests.md)） |
 | [contributing_zh.md](contributing_zh.md) | 代码规范与 PR 流程（[English](contributing.md)） |
 | [pre_commit_hook_zh.md](pre_commit_hook_zh.md) | Pre-commit 钩子（[English](pre_commit_hook.md)） |

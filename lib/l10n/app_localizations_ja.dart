@@ -652,6 +652,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get discoveryImporting => 'インポート中…';
 
   @override
+  String get offlineDownloading => 'オフライン学習用にダウンロード中…';
+
+  @override
+  String get offlineDownloadFailed => 'ダウンロードに失敗しました。タップして再試行';
+
+  @override
   String get discoveryImported => 'インポート済み';
 
   @override
@@ -1857,4 +1863,64 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get apiServerVerifyEmail => 'メールを確認できませんでした。もう一度お試しください。';
+
+  @override
+  String get offlineDeckNeedsDownload =>
+      'オフライン学習するには、ネットに接続してこのデッキをダウンロードしてください';
+
+  @override
+  String get offlineSyncOffline => 'オフライン';
+
+  @override
+  String get offlineSyncPending => '同期待ち';
+
+  @override
+  String get offlineSyncSyncing => '同期中';
+
+  @override
+  String get offlineSyncFailed => '同期失敗';
+
+  @override
+  String get offlineSyncNeedsLogin => '再ログインが必要です';
+
+  @override
+  String get offlineSyncNow => '今すぐ同期';
+
+  @override
+  String get logoutPendingSyncMessage => 'まだアップロードされていない学習記録があります。';
+
+  @override
+  String get logoutSyncAndLogout => '同期してログアウト';
+
+  @override
+  String get logoutKeepAndLogout => '保持してログアウト';
+
+  @override
+  String get logoutDiscardAndLogout => '破棄してログアウト';
+
+  @override
+  String get logoutSyncIncomplete => '一部の記録をアップロードできませんでした。保持しますか、破棄しますか？';
+
+  @override
+  String get offlineSyncRejectedTitle => '学習記録が未アップロードです';
+
+  @override
+  String offlineSyncRejectedMessage(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'サーバーが$count件の学習記録を拒否しました。',
+      one: 'サーバーが1件の学習記録を拒否しました。',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get offlineSyncDiscardRejected => '破棄';
+
+  @override
+  String get deckAvailableOffline => 'オフラインで利用可能';
+
+  @override
+  String get logoutSyncInProgress => '学習記録をアップロード中…';
 }

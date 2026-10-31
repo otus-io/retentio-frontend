@@ -2,6 +2,8 @@
 
 英文版：[offline_learning_cache_plan.md](offline_learning_cache_plan.md)
 
+已实现的业务规则见 [offline_learning_logic_zh.md](offline_learning_logic_zh.md)。
+
 Flutter 应用采用本地优先学习：卡组元数据、词条、媒体和卡片调度一次性下载到 Hive 后，出卡与复习都在本地完成，沿用后端同一套选卡规则，无需每次点击都等网络。
 
 复习/隐藏先写入本地队列，后台批量同步——逐条 `PATCH /api/decks/{id}/card` 上传进度，批次结束后再 `GET /api/decks/{id}` 对齐统计；队列达到 100 条及以上或离开学习/恢复网络时触发，且不用服务端 `cards[]` 覆盖本地调度。

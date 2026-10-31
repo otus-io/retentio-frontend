@@ -37,6 +37,11 @@ class DeckStudyReloadRequested extends DeckStudyEvent {
   const DeckStudyReloadRequested();
 }
 
+/// The deck's local copy was re-downloaded after an edit.
+class DeckStudyLocalCopyResynced extends DeckStudyEvent {
+  const DeckStudyLocalCopyResynced();
+}
+
 class DeckStudyDeleteCurrentCardRequested extends DeckStudyEvent {
   const DeckStudyDeleteCurrentCardRequested();
 }

@@ -176,5 +176,12 @@ void main() {
 
       expect(result, tags);
     });
+
+    test('resyncLocalCopy is a no-op', () async {
+      expect(
+        await DeckStudyLegacyServiceRepository().resyncLocalCopy('deck-1'),
+        isFalse,
+      );
+    });
   });
 }
