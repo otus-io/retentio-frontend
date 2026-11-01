@@ -567,6 +567,47 @@ void main() {
     expect(await store.getMediaPath('aud'), owned.path);
   });
 
+  test(
+    'a failed wipe is finished before the account is opened again',
+    () async {
+      SharedPreferences.setMockInitialValues({'username': 'alice'});
+      final seeded = await HiveOfflineLearningStore.open(accountId: 'alice');
+      await seeded.putDeck(const OfflineDeck(id: 'd1', name: 'd1', fields: []));
+      var opens = 0;
+      final sessions = OfflineLearningSessions(
+        documentsDir: () async => dir.path,
+        openStore: (accountId) async {
+          if (++opens <= 2) throw StateError('keychain locked');
+          return HiveOfflineLearningStore.open(accountId: accountId);
+        },
+      );
+      Future<List<String>?> pending() async =>
+          (await SharedPreferences.getInstance()).getStringList(
+            OfflineLearningSessions.pendingWipeKey,
+          );
+
+      await expectLater(sessions.wipeCurrentAccount(), throwsStateError);
+      await expectLater(sessions.wipeCurrentAccount(), throwsStateError);
+      expect(await pending(), ['alice']);
+
+      final session = await sessions.current();
+
+      expect(await session!.store.getDecks(), isEmpty);
+      expect(await pending(), isEmpty);
+    },
+  );
+
+  test('wipeCurrentAccount does nothing without a stored username', () async {
+    for (final name in [null, '']) {
+      await OfflineLearningSessions(
+        readUsername: () async => name,
+      ).wipeCurrentAccount();
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getStringList(OfflineLearningSessions.pendingWipeKey), isNull);
+  });
+
   test('switching accounts opens a separate session', () async {
     var name = 'alice';
     final sessions = OfflineLearningSessions(readUsername: () async => name);

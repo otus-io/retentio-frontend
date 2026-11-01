@@ -86,7 +86,7 @@ void main() {
     Future<bool> Function()? isOnline,
   }) {
     final c = ProfileCubit(
-      offlineSession: () async => offline,
+      wipeOfflineData: () async => offline?.clear(),
       isOnline: isOnline ?? () async => true,
     );
     addTearDown(c.close);

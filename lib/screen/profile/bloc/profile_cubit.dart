@@ -37,19 +37,17 @@ enum ProfileStatus { loading, loaded, error }
 
 class ProfileCubit extends Cubit<ProfileState> {
   ProfileCubit({
-    Future<OfflineLearningSession?> Function()? offlineSession,
+    Future<void> Function()? wipeOfflineData,
     Future<bool> Function()? isOnline,
-  }) : _offlineSession =
-           offlineSession ??
-           (() => OfflineLearningSessions.instance.current(
-             fetchMissingUsername: false,
-           )),
+  }) : _wipeOfflineData =
+           wipeOfflineData ??
+           OfflineLearningSessions.instance.wipeCurrentAccount,
        _isOnline = isOnline ?? hasNetworkConnection,
        super(ProfileState.initial()) {
     getProfile();
   }
 
-  final Future<OfflineLearningSession?> Function() _offlineSession;
+  final Future<void> Function() _wipeOfflineData;
   final Future<bool> Function() _isOnline;
   bool _disposed = false;
   int _requestEpoch = 0;
@@ -121,7 +119,8 @@ class ProfileCubit extends Cubit<ProfileState> {
   }
 
   /// Deletes the account and its offline data. Returns null on success,
-  /// otherwise the raw server message. The caller logs out on success.
+  /// otherwise the raw server message. The caller logs out on success; a
+  /// failed offline wipe is retried before the account id is opened again.
   Future<String?> deleteAccount(String password) async {
     if (!await _isOnline().catchError((Object _) => true)) {
       return 'Connect error';
@@ -131,7 +130,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       return res?.msg ?? 'Unknown error';
     }
     try {
-      await (await _offlineSession())?.clear();
+      await _wipeOfflineData();
     } catch (e) {
       logger.w('offline delete account: $e');
     }

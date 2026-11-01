@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retentio/screen/deck/bloc/fact_submit_guard_cubit.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_add.dart';
 import 'package:retentio/screen/decks/providers/deck_list.dart';
+import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_toast.dart';
 
 import '../../helpers/card_test_samples.dart';
@@ -100,6 +104,97 @@ void main() {
 
       AppToast.dismiss();
       await tester.pumpAndSettle();
+    });
+
+    testWidgets('a pending connectivity check blocks a second submit', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      final interceptor = attachFakeFactApiInterceptor();
+      final gate = Completer<bool>();
+      var checks = 0;
+      final guard = FactSubmitGuardCubit(
+        isOnline: () {
+          checks++;
+          return gate.future;
+        },
+      );
+      addTearDown(() async {
+        detachFakeFactApiInterceptor(interceptor);
+        await guard.close();
+        tearDownTestEnvironment();
+      });
+
+      final deck = sampleDeck();
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          Scaffold(
+            body: FactAdd(deck: deck, submitGuard: guard),
+          ),
+          overrides: [
+            deckListProvider.overrideWith(() => FakeDeckListNotifier([deck])),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final textFields = find.byType(TextField);
+      await tester.enterText(textFields.at(0), 'Hello');
+      await tester.enterText(textFields.at(1), 'World');
+      await tester.pump();
+
+      await tester.tap(find.byType(AppButton));
+      await tester.pump();
+      await tester.tap(find.byType(AppButton), warnIfMissed: false);
+      await tester.pump();
+      expect(checks, 1);
+
+      gate.complete(true);
+      await tester.pumpAndSettle();
+      expect(interceptor.addFactsCount, 1);
+
+      AppToast.dismiss();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('unmounting during the connectivity check skips the API', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      final interceptor = attachFakeFactApiInterceptor();
+      final gate = Completer<bool>();
+      final guard = FactSubmitGuardCubit(isOnline: () => gate.future);
+      addTearDown(() async {
+        detachFakeFactApiInterceptor(interceptor);
+        await guard.close();
+        tearDownTestEnvironment();
+      });
+
+      final deck = sampleDeck();
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          Scaffold(
+            body: FactAdd(deck: deck, submitGuard: guard),
+          ),
+          overrides: [
+            deckListProvider.overrideWith(() => FakeDeckListNotifier([deck])),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final textFields = find.byType(TextField);
+      await tester.enterText(textFields.at(0), 'Hello');
+      await tester.enterText(textFields.at(1), 'World');
+      await tester.pump();
+
+      await tester.tap(find.text('Save fact'));
+      await tester.pump();
+      await tester.pumpWidget(const SizedBox());
+      gate.complete(true);
+      await tester.pumpAndSettle();
+
+      expect(interceptor.addFactsCount, 0);
     });
 
     testWidgets('saving resets the media target to the first row', (

@@ -6,7 +6,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/error/api_error_messages.dart';
-import 'package:retentio/core/network/connectivity_service.dart';
 import 'package:retentio/features/contributions/pending_contributions_store.dart';
 import 'package:retentio/features/contributions/submit_imported_fact_edit.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
@@ -20,6 +19,7 @@ import 'package:retentio/screen/deck/fact_add_composer/media_play_url.dart';
 import 'package:retentio/screen/deck/fact_add_composer/media_handling_coordinator.dart';
 import 'package:retentio/screen/deck/providers/card_audio_mic_handoff.dart';
 import 'package:retentio/screen/deck/fact_add_composer/toolbars.dart';
+import 'package:retentio/screen/deck/bloc/fact_submit_guard_cubit.dart';
 import 'package:record/record.dart';
 import 'package:retentio/services/apis/media_service.dart';
 import 'package:retentio/services/apis/tag_service.dart';
@@ -50,11 +50,15 @@ class FactEdit extends StatefulHookConsumerWidget {
     required this.onSaved,
     this.contributionMessage,
     this.contributionEntryIndex,
+    this.submitGuard,
   });
 
   final Deck deck;
   final String factId;
   final Future<void> Function() onSaved;
+
+  /// Overrides the connectivity guard in tests; defaults to a real one.
+  final FactSubmitGuardCubit? submitGuard;
 
   /// Optional note / column hint when auto-submitting on an imported deck.
   final String? contributionMessage;
@@ -81,6 +85,7 @@ class _FactEditState extends ConsumerState<FactEdit>
 
   bool _recordingVoice = false;
   late final AudioRecorder _voiceRecorder;
+  late final FactSubmitGuardCubit _submitGuard;
 
   List<GlobalKey> get _hostKeys => [for (final r in _rows ?? []) r.row.hostKey];
 
@@ -105,6 +110,7 @@ class _FactEditState extends ConsumerState<FactEdit>
   void initState() {
     super.initState();
     _voiceRecorder = AudioRecorder();
+    _submitGuard = widget.submitGuard ?? FactSubmitGuardCubit();
     FocusManager.instance.addListener(_onFocusChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadFact());
   }
@@ -293,13 +299,14 @@ class _FactEditState extends ConsumerState<FactEdit>
       }
     }
 
-    if (!await hasNetworkConnection().catchError((Object _) => true)) {
-      _snack(loc.noNetworkConnection);
-      return;
-    }
-
     setState(() => _submitting = true);
     try {
+      if (!await _submitGuard.canSubmit()) {
+        _snack(loc.noNetworkConnection);
+        return;
+      }
+      if (!mounted) return;
+
       final entries = <FactEntry>[];
       for (final row in rows) {
         final imageId = await _resolveMediaIdForSubmit(
@@ -458,6 +465,7 @@ class _FactEditState extends ConsumerState<FactEdit>
   void dispose() {
     FocusManager.instance.removeListener(_onFocusChanged);
     unawaited(_voiceRecorder.dispose());
+    if (widget.submitGuard == null) unawaited(_submitGuard.close());
     for (final model in _rows ?? <FactEditRowModel>[]) {
       model.row.dispose();
     }

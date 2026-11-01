@@ -124,6 +124,11 @@ void main() {
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(deleteEnabled(tester), isTrue);
     expect(cubit.logouts, 0);
+
+    // Error clears as the user re-types the corrected password.
+    await tester.enterText(find.byType(TextField), 'wrong2');
+    await tester.pump();
+    expect(find.text('Incorrect password'), findsNothing);
   });
 
   testWidgets('other errors use the shared API messages', (tester) async {

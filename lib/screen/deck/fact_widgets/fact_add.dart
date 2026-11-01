@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/error/api_error_messages.dart';
-import 'package:retentio/core/network/connectivity_service.dart';
 import 'package:retentio/features/contributions/pending_contributions_store.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/features/tags/widgets/tag_chip.dart';
@@ -19,6 +18,7 @@ import 'package:retentio/screen/deck/fact_add_composer/media_handling_coordinato
 import 'package:retentio/screen/deck/fact_add_composer/payload.dart';
 import 'package:retentio/screen/deck/fact_add_composer/row_model.dart';
 import 'package:retentio/screen/deck/fact_add_composer/toolbars.dart';
+import 'package:retentio/screen/deck/bloc/fact_submit_guard_cubit.dart';
 import 'package:retentio/screen/deck/providers/card_audio_mic_handoff.dart';
 import 'package:retentio/screen/decks/providers/deck_list.dart';
 import 'package:record/record.dart';
@@ -38,9 +38,17 @@ const _kToolbarRowsSpacing = 6.0;
 const _kSubmitTopSpacing = 16.0;
 
 class FactAdd extends StatefulHookConsumerWidget {
-  const FactAdd({super.key, required this.deck, this.onStudyQueueRefresh});
+  const FactAdd({
+    super.key,
+    required this.deck,
+    this.onStudyQueueRefresh,
+    this.submitGuard,
+  });
 
   final Deck deck;
+
+  /// Overrides the connectivity guard in tests; defaults to a real one.
+  final FactSubmitGuardCubit? submitGuard;
 
   /// Refresh the current study card queue (via DeckStudy BLoC). Must be supplied
   /// from a [WidgetRef] scoped under [currentDeckProvider] — the modal sheet is
@@ -58,6 +66,7 @@ class _FactAddState extends ConsumerState<FactAdd>
   bool _submitting = false;
   bool _recordingVoice = false;
   late final AudioRecorder _voiceRecorder;
+  late final FactSubmitGuardCubit _submitGuard;
 
   // ── tag state ────────────────────────────────────────────
   Set<String> _selectedTagIds = {};
@@ -87,6 +96,7 @@ class _FactAddState extends ConsumerState<FactAdd>
     super.initState();
     _rows = AddFactRowModel.listForDeckFields(widget.deck.fields);
     _voiceRecorder = AudioRecorder();
+    _submitGuard = widget.submitGuard ?? FactSubmitGuardCubit();
     FocusManager.instance.addListener(_onFocusChanged);
   }
 
@@ -100,6 +110,7 @@ class _FactAddState extends ConsumerState<FactAdd>
   void dispose() {
     FocusManager.instance.removeListener(_onFocusChanged);
     unawaited(_voiceRecorder.dispose());
+    if (widget.submitGuard == null) unawaited(_submitGuard.close());
     for (final r in _rows) {
       r.dispose();
     }
@@ -191,14 +202,15 @@ class _FactAddState extends ConsumerState<FactAdd>
       }
     }
 
-    if (!await hasNetworkConnection().catchError((Object _) => true)) {
-      _snack(loc.noNetworkConnection);
-      return;
-    }
-
     setState(() => _submitting = true);
 
     try {
+      if (!await _submitGuard.canSubmit()) {
+        _snack(loc.noNetworkConnection);
+        return;
+      }
+      if (!mounted) return;
+
       final entries = <Map<String, dynamic>>[];
 
       for (var i = 0; i < _rows.length; i++) {

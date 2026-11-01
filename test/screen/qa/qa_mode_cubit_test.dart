@@ -711,6 +711,81 @@ void main() {
       await cubit.close();
     });
 
+    test(
+      'is busy during the connectivity check and rejects re-entry',
+      () async {
+        final gate = Completer<bool>();
+        final cubit = QaModeCubit(
+          deckId: 'imp-1',
+          deckFieldCount: 2,
+          isOnline: () => gate.future,
+        );
+        await startWalk(cubit);
+        cubit.toggleColumn(0);
+
+        final first = cubit.verify();
+        expect(cubit.state.busy, isTrue);
+        expect(await cubit.verify(), isNull);
+
+        gate.complete(true);
+        expect(await first, isNull);
+        expect(adapter.qualityPuts, hasLength(1));
+        await cubit.close();
+      },
+    );
+
+    test('stops when closed during the connectivity check', () async {
+      final gate = Completer<bool>();
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () => gate.future,
+      );
+      await startWalk(cubit);
+      cubit.toggleColumn(0);
+
+      final pending = cubit.verify();
+      await cubit.close();
+      gate.complete(true);
+
+      expect(await pending, isNull);
+      expect(adapter.qualityPuts, isEmpty);
+    });
+
+    test(
+      'abandons when the fact changes during the connectivity check',
+      () async {
+        buildAdapter(
+          factIds: const ['fact-1', 'fact-2', 'fact-3'],
+          stats: {
+            'verified_aspects': 0,
+            'total_aspects': 3,
+            'cursors': {'0': 'fact-1'},
+          },
+        );
+        final gate = Completer<bool>();
+        final cubit = QaModeCubit(
+          deckId: 'imp-1',
+          deckFieldCount: 2,
+          isOnline: () => gate.future,
+        );
+        await startWalk(cubit);
+        expect(cubit.state.factId, 'fact-1');
+        cubit.toggleColumn(0);
+
+        final walk = cubit.startWalk({0});
+        final pending = cubit.verify();
+        await walk;
+        expect(cubit.state.factId, 'fact-2');
+        gate.complete(true);
+
+        expect(await pending, isNull);
+        expect(adapter.qualityPuts, isEmpty);
+        expect(cubit.state.busy, isFalse);
+        await cubit.close();
+      },
+    );
+
     test('does nothing without checked columns', () async {
       final cubit = QaModeCubit(
         deckId: 'imp-1',

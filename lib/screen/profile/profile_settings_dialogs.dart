@@ -222,7 +222,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
               obscureText: true,
               enabled: !_loading,
               errorText: _error,
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => setState(() => _error = null),
             ),
           ],
         ),

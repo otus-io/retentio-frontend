@@ -345,11 +345,16 @@ class QaModeCubit extends Cubit<QaModeState> {
 
   Future<String?> verify() async {
     final factId = state.factId;
-    if (factId == null || state.checkedIndexes.isEmpty) return null;
-    if (!await _isOnline().catchError((Object _) => true)) {
-      return 'Connect error';
+    if (factId == null || state.checkedIndexes.isEmpty || state.busy) {
+      return null;
     }
     emit(state.copyWith(busy: true));
+    final online = await _isOnline().catchError((Object _) => true);
+    if (isClosed) return null;
+    if (!online || state.factId != factId) {
+      emit(state.copyWith(busy: false));
+      return online ? null : 'Connect error';
+    }
     try {
       await FactQualityService.of.putFactQuality(
         deckId: deckId,
