@@ -153,9 +153,8 @@ void main() {
       },
     );
 
-    testWidgets('fullScreen sheet fills viewport and is not draggable', (
-      tester,
-    ) async {
+    testWidgets('fullScreen sheet fills viewport and is not draggable when '
+        'enableDrag is false', (tester) async {
       _setViewLogicalSize(tester, const Size(400, 800));
 
       await tester.pumpWidget(
@@ -170,6 +169,7 @@ void main() {
                         context: context,
                         title: 'Add fact',
                         fullScreen: true,
+                        enableDrag: false,
                         child: const Text('Composer body'),
                       );
                     },
@@ -199,6 +199,131 @@ void main() {
         reason: 'fullScreen sheet should fill the viewport edge-to-edge',
       );
       expect(find.byType(SafeArea), findsWidgets);
+    });
+
+    for (final title in <String?>['Add fact', null]) {
+      testWidgets('fullScreen sheet closes via close button (title: $title)', (
+        tester,
+      ) async {
+        _setViewLogicalSize(tester, const Size(400, 800));
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return Center(
+                    child: TextButton(
+                      onPressed: () {
+                        showCommonBottomSheet<void>(
+                          context: context,
+                          title: title,
+                          fullScreen: true,
+                          child: const Text('Composer body'),
+                        );
+                      },
+                      child: const Text('Open'),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+        expect(find.text('Composer body'), findsOneWidget);
+
+        await tester.tap(find.byKey(const Key('sheet_close_button')));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Composer body'), findsNothing);
+      });
+    }
+
+    group('fullScreen swipe down on iOS (long, scrolling form)', () {
+      Future<void> openLongSheet(
+        WidgetTester tester, {
+        bool enableDrag = true,
+      }) async {
+        _setViewLogicalSize(tester, const Size(400, 800));
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: ThemeData(platform: TargetPlatform.iOS),
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => Center(
+                  child: TextButton(
+                    onPressed: () => showCommonBottomSheet<void>(
+                      context: context,
+                      title: 'Add fact',
+                      fullScreen: true,
+                      enableDrag: enableDrag,
+                      child: const SizedBox(
+                        key: Key('long_body'),
+                        height: 3000,
+                      ),
+                    ),
+                    child: const Text('Open'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('long_body')), findsOneWidget);
+      }
+
+      testWidgets('dragging the header handle closes the sheet', (
+        tester,
+      ) async {
+        await openLongSheet(tester);
+
+        await tester.drag(
+          find.byKey(const Key('sheet_drag_handle')),
+          const Offset(0, 500),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('long_body')), findsNothing);
+      });
+
+      testWidgets('pulling content down past the top closes only the sheet', (
+        tester,
+      ) async {
+        await openLongSheet(tester);
+
+        await tester.dragFrom(const Offset(200, 300), const Offset(0, 500));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('long_body')), findsNothing);
+        expect(find.text('Open'), findsOneWidget);
+      });
+
+      testWidgets('a short pull on content keeps the sheet open', (
+        tester,
+      ) async {
+        await openLongSheet(tester);
+
+        await tester.dragFrom(const Offset(200, 300), const Offset(0, 60));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('long_body')), findsOneWidget);
+      });
+
+      testWidgets('enableDrag false ignores pulling content down', (
+        tester,
+      ) async {
+        await openLongSheet(tester, enableDrag: false);
+
+        await tester.dragFrom(const Offset(200, 300), const Offset(0, 500));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('long_body')), findsOneWidget);
+      });
     });
   });
 }

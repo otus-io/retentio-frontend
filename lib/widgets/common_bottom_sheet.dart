@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/widgets/app_icon_button.dart';
 import 'package:retentio/widgets/dismiss_keyboard_on_tap.dart';
 
 const double _kSheetTopRadius = 20;
@@ -14,6 +16,7 @@ const double _kSheetTitleGapDraggable = 48;
 const double _kSheetTitleGapCompact = 20;
 const double _kSheetHandleOpacity = 0.6;
 const double _kSheetBarrierOpacity = 0.44;
+const double _kSheetPullToDismissDistance = 80;
 
 Future<T?> showCommonBottomSheet<T>({
   required BuildContext context,
@@ -58,8 +61,7 @@ Future<T?> showCommonBottomSheet<T>({
   // Full-screen sheets paint edge-to-edge; SafeArea is applied inside the
   // surface so the home-indicator region is not left as blank barrier.
   final resolvedUseSafeArea = fullScreen ? false : useSafeArea;
-  final resolvedEnableDrag = fullScreen ? false : enableDrag;
-  final resolvedShowHandle = showDragHandle ?? resolvedEnableDrag;
+  final resolvedShowHandle = showDragHandle ?? enableDrag;
   final resolvedSheetAnimationStyle = sheetAnimationStyle;
   final resolvedBackgroundColor = liftWithKeyboard
       ? (backgroundColor ?? Colors.transparent)
@@ -100,6 +102,7 @@ Future<T?> showCommonBottomSheet<T>({
           handle: handle,
           resolvedShowHandle: resolvedShowHandle,
           title: title,
+          enableDrag: enableDrag,
           child: child,
         );
       }
@@ -158,7 +161,7 @@ Future<T?> showCommonBottomSheet<T>({
     isScrollControlled: isScrollControlled,
     useRootNavigator: useRootNavigator,
     isDismissible: isDismissible,
-    enableDrag: resolvedEnableDrag,
+    enableDrag: enableDrag,
     useSafeArea: resolvedUseSafeArea,
     transitionAnimationController: transitionAnimationController,
     sheetAnimationStyle: resolvedSheetAnimationStyle,
@@ -176,6 +179,7 @@ Widget _fullScreenSheetLayout({
   required Widget handle,
   required bool resolvedShowHandle,
   required String? title,
+  required bool enableDrag,
   required Widget child,
 }) {
   final screenHeight = MediaQuery.sizeOf(context).height;
@@ -189,30 +193,84 @@ Widget _fullScreenSheetLayout({
         color: scheme.surface,
         child: SafeArea(
           child: DismissKeyboardOnTap(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.only(
-                left: _kSheetHorizontalPadding,
-                top: _kSheetTopPadding,
-                right: _kSheetHorizontalPadding,
-                bottom: _kSheetBottomPadding,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (resolvedShowHandle) handle,
-                  if (title != null && title.isNotEmpty)
-                    Text(title, style: titleStyle),
-                  const SizedBox(height: _kSheetTitleGapFullScreen),
-                  child,
-                ],
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header stays outside the scroll view so dragging it always
+                // reaches the sheet's drag-to-dismiss, even on long forms.
+                Padding(
+                  padding: const EdgeInsets.only(
+                    left: _kSheetHorizontalPadding,
+                    top: _kSheetTopPadding,
+                    right: _kSheetHorizontalPadding,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (resolvedShowHandle) handle,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: title != null && title.isNotEmpty
+                                ? Text(title, style: titleStyle)
+                                : const SizedBox.shrink(),
+                          ),
+                          AppIconButton(
+                            key: const Key('sheet_close_button'),
+                            icon: LucideIcons.x,
+                            tooltip: MaterialLocalizations.of(
+                              context,
+                            ).closeButtonTooltip,
+                            onPressed: () => Navigator.of(context).maybePop(),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: NotificationListener<ScrollUpdateNotification>(
+                    onNotification: enableDrag
+                        ? (n) => _popOnPullDownPastTop(context, n)
+                        : null,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.only(
+                        left: _kSheetHorizontalPadding,
+                        top: _kSheetTitleGapFullScreen,
+                        right: _kSheetHorizontalPadding,
+                        bottom: _kSheetBottomPadding,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [child],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       ),
     ),
   );
+}
+
+/// iOS bouncing scroll keeps downward drags on overflowing content, so the
+/// sheet never sees them; dismiss once the user pulls past the top instead.
+bool _popOnPullDownPastTop(
+  BuildContext context,
+  ScrollUpdateNotification notification,
+) {
+  final pulledPastTop =
+      notification.dragDetails != null &&
+      notification.metrics.pixels < -_kSheetPullToDismissDistance;
+  // isCurrent guards against popping the page underneath on later updates.
+  if (pulledPastTop && (ModalRoute.of(context)?.isCurrent ?? false)) {
+    Navigator.of(context).maybePop();
+  }
+  return false;
 }
 
 Widget _liftWithKeyboardSheetLayout({
