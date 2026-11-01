@@ -36,7 +36,7 @@ enum AppRoutes {
   /// Returns [from] when it is a deck page the user may return to after login.
   static String? loginReturnPath(String? from) {
     if (from == null) return null;
-    final normalized = normalizePath(from);
+    final normalized = normalizePath(Uri(path: from).normalizePath().path);
     return normalized.startsWith('/discovery/') ? normalized : null;
   }
 

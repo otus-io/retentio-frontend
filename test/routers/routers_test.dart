@@ -58,6 +58,19 @@ void main() {
       expect(AppRoutes.loginReturnPath('https://evil.test/x'), isNull);
     });
 
+    test('login return path resolves dot segments before allowlisting', () {
+      expect(
+        AppRoutes.loginReturnPath('/discovery/abc/../other'),
+        '/discovery/other',
+      );
+      expect(
+        AppRoutes.loginReturnPath('/discovery/./src-1'),
+        '/discovery/src-1',
+      );
+      expect(AppRoutes.loginReturnPath('/discovery/../study'), isNull);
+      expect(AppRoutes.loginReturnPath('/discovery/..'), isNull);
+    });
+
     test('all enum values are defined', () {
       expect(AppRoutes.values.length, 8);
       expect(AppRoutes.values, contains(AppRoutes.login));
