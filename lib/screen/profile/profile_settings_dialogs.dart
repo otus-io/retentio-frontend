@@ -188,7 +188,12 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
       _loading = true;
       _error = null;
     });
-    final error = await widget.profileCubit.deleteAccount(_password.text);
+    String? error;
+    try {
+      error = await widget.profileCubit.deleteAccount(_password.text);
+    } catch (_) {
+      error = 'Unknown error';
+    }
     if (!mounted) return;
     if (error == null) {
       Navigator.of(context).pop(true);

@@ -71,6 +71,14 @@ void main() {
       expect(AppRoutes.loginReturnPath('/discovery/..'), isNull);
     });
 
+    test('discovery deck paths must have exactly one non-empty id segment', () {
+      expect(AppRoutes.loginReturnPath('/discovery/a/b'), isNull);
+      expect(AppRoutes.loginReturnPath('/discovery//a'), isNull);
+      expect(AppRoutes.loginReturnPath('/discovery//'), isNull);
+      expect(AppRoutes.isAuthExemptPath('/discovery/a/b'), isFalse);
+      expect(AppRoutes.isAuthExemptPath('/discovery//a'), isFalse);
+    });
+
     test('all enum values are defined', () {
       expect(AppRoutes.values.length, 8);
       expect(AppRoutes.values, contains(AppRoutes.login));

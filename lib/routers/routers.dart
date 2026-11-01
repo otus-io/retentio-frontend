@@ -37,12 +37,20 @@ enum AppRoutes {
   static String? loginReturnPath(String? from) {
     if (from == null) return null;
     final normalized = normalizePath(Uri(path: from).normalizePath().path);
-    return normalized.startsWith('/discovery/') ? normalized : null;
+    return _isDiscoveryDetailPath(normalized) ? normalized : null;
   }
 
   static bool isAuthExemptPath(String path) {
     final normalized = normalizePath(path);
     return authExemptPaths.contains(normalized) ||
-        normalized.startsWith('/discovery/');
+        _isDiscoveryDetailPath(normalized);
+  }
+
+  /// Matches [discoveryDetail]: `/discovery/<id>` with one non-empty segment.
+  static bool _isDiscoveryDetailPath(String normalized) {
+    final segments = normalized.split('/');
+    return segments.length == 3 &&
+        segments[1] == 'discovery' &&
+        segments[2].isNotEmpty;
   }
 }

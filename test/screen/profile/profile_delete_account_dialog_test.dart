@@ -146,4 +146,38 @@ void main() {
     );
     expect(cubit.logouts, 0);
   });
+
+  testWidgets('unexpected failure shows the fallback error and unlocks', (
+    tester,
+  ) async {
+    await open(tester);
+    await tester.enterText(find.byType(TextField), 'secret');
+    await tester.pump();
+
+    await tester.tap(deleteButton());
+    cubit.result.completeError(StateError('boom'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('An unexpected error occurred'), findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(deleteEnabled(tester), isTrue);
+    expect(cubit.logouts, 0);
+  });
+
+  testWidgets('unexpected failure after the dialog closes is ignored', (
+    tester,
+  ) async {
+    await open(tester);
+    await tester.enterText(find.byType(TextField), 'secret');
+    await tester.pump();
+
+    await tester.tap(deleteButton());
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox());
+    cubit.result.completeError(StateError('boom'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(cubit.logouts, 0);
+  });
 }
