@@ -38,6 +38,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get loginTagline => '千里の道も一歩から';
 
   @override
+  String get loginOr => 'または';
+
+  @override
+  String get loginBrowseDiscovery => '公開デッキを見る';
+
+  @override
   String get registerPageTitle => 'アカウントを作成';
 
   @override
@@ -731,6 +737,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get discoveryLoginToImport => 'インポートするにはログインしてください';
+
+  @override
+  String get discoveryLoginRequiredTitle => 'ログインしていません';
 
   @override
   String get discoveryRetry => '再試行';

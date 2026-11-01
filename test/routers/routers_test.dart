@@ -27,6 +27,10 @@ void main() {
       expect(AppRoutes.study.path, '/study');
     });
 
+    test('discovery has correct path', () {
+      expect(AppRoutes.discovery.path, '/discovery');
+    });
+
     test('discovery detail has correct path', () {
       expect(AppRoutes.discoveryDetail.path, '/discovery/:id');
     });
@@ -34,19 +38,35 @@ void main() {
     test('auth-exempt includes login, reset, and verify but not main', () {
       expect(AppRoutes.isAuthExemptPath('/login'), isTrue);
       expect(AppRoutes.isAuthExemptPath('/'), isFalse);
+      expect(AppRoutes.isAuthExemptPath('/discovery'), isTrue);
+      expect(AppRoutes.isAuthExemptPath('/discovery/'), isTrue);
       expect(AppRoutes.isAuthExemptPath('/discovery/deck-123'), isTrue);
       expect(AppRoutes.isAuthExemptPath('/reset-password'), isTrue);
       expect(AppRoutes.isAuthExemptPath('/verify-email'), isTrue);
     });
 
+    test('login return path only allows discovery deck pages', () {
+      expect(AppRoutes.loginReturnPath(null), isNull);
+      expect(AppRoutes.loginReturnPath('/discovery/src-1'), '/discovery/src-1');
+      expect(
+        AppRoutes.loginReturnPath('/discovery/src-1/'),
+        '/discovery/src-1',
+      );
+      expect(AppRoutes.loginReturnPath('/discovery'), isNull);
+      expect(AppRoutes.loginReturnPath('/login'), isNull);
+      expect(AppRoutes.loginReturnPath('/study'), isNull);
+      expect(AppRoutes.loginReturnPath('https://evil.test/x'), isNull);
+    });
+
     test('all enum values are defined', () {
-      expect(AppRoutes.values.length, 7);
+      expect(AppRoutes.values.length, 8);
       expect(AppRoutes.values, contains(AppRoutes.login));
       expect(AppRoutes.values, contains(AppRoutes.main));
       expect(AppRoutes.values, contains(AppRoutes.register));
       expect(AppRoutes.values, contains(AppRoutes.resetPassword));
       expect(AppRoutes.values, contains(AppRoutes.verifyEmail));
       expect(AppRoutes.values, contains(AppRoutes.study));
+      expect(AppRoutes.values, contains(AppRoutes.discovery));
       expect(AppRoutes.values, contains(AppRoutes.discoveryDetail));
     });
   });

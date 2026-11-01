@@ -39,6 +39,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'A journey of a thousand miles begins with a single step';
 
   @override
+  String get loginOr => 'or';
+
+  @override
+  String get loginBrowseDiscovery => 'Browse public decks';
+
+  @override
   String get registerPageTitle => 'Create Account';
 
   @override
@@ -749,6 +755,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get discoveryLoginToImport => 'Sign in to import';
+
+  @override
+  String get discoveryLoginRequiredTitle => 'You\'re not logged in';
 
   @override
   String get discoveryRetry => 'Retry';

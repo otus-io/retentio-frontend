@@ -7,6 +7,7 @@ enum AppRoutes {
   resetPassword('/reset-password'),
   verifyEmail('/verify-email'),
   study('/study'),
+  discovery('/discovery'),
   discoveryDetail('/discovery/:id');
 
   final String path;
@@ -18,6 +19,7 @@ enum AppRoutes {
     '/register',
     '/reset-password',
     '/verify-email',
+    '/discovery',
   };
 
   /// Normalizes paths to keep routing checks compatible with trailing slash input.
@@ -29,6 +31,13 @@ enum AppRoutes {
       return path.substring(0, path.length - 1);
     }
     return path;
+  }
+
+  /// Returns [from] when it is a deck page the user may return to after login.
+  static String? loginReturnPath(String? from) {
+    if (from == null) return null;
+    final normalized = normalizePath(from);
+    return normalized.startsWith('/discovery/') ? normalized : null;
   }
 
   static bool isAuthExemptPath(String path) {

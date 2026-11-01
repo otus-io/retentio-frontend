@@ -46,6 +46,14 @@
   "@loginTagline": {
     "description": "Brand tagline under the app name on the login screen"
   },
+  "loginOr": "or",
+  "@loginOr": {
+    "description": "Divider label between the login card and the guest discovery button"
+  },
+  "loginBrowseDiscovery": "Browse public decks",
+  "@loginBrowseDiscovery": {
+    "description": "Login screen button that opens the public discovery catalog without signing in"
+  },
   "registerPageTitle": "Create Account",
   "@registerPageTitle": {
     "description": "Register page title heading"
@@ -967,6 +975,10 @@
   "discoveryLoginToImport": "Sign in to import",
   "@discoveryLoginToImport": {
     "description": "Prompt for unauthenticated import"
+  },
+  "discoveryLoginRequiredTitle": "You're not logged in",
+  "@discoveryLoginRequiredTitle": {
+    "description": "Title of the dialog shown when a guest taps Import on a discovery deck"
   },
   "discoveryRetry": "Retry",
   "@discoveryRetry": {

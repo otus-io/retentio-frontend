@@ -38,6 +38,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loginTagline => '日积跬步，以至千里。';
 
   @override
+  String get loginOr => '或';
+
+  @override
+  String get loginBrowseDiscovery => '浏览公开卡组';
+
+  @override
   String get registerPageTitle => '创建账号';
 
   @override
@@ -731,6 +737,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get discoveryLoginToImport => '请登录后导入';
+
+  @override
+  String get discoveryLoginRequiredTitle => '你尚未登录';
 
   @override
   String get discoveryRetry => '重试';
