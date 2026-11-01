@@ -6,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/error/api_error_messages.dart';
+import 'package:retentio/core/network/connectivity_service.dart';
 import 'package:retentio/features/contributions/pending_contributions_store.dart';
 import 'package:retentio/features/contributions/submit_imported_fact_edit.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
@@ -290,6 +291,11 @@ class _FactEditState extends ConsumerState<FactEdit>
         _snack(loc.addFactEntryNeedsContent);
         return;
       }
+    }
+
+    if (!await hasNetworkConnection().catchError((Object _) => true)) {
+      _snack(loc.noNetworkConnection);
+      return;
     }
 
     setState(() => _submitting = true);

@@ -2355,5 +2355,25 @@
   "logoutSyncInProgress": "Uploading reviews…",
   "@logoutSyncInProgress": {
     "description": "Progress dialog while unsynced reviews upload before logout"
+  },
+  "deleteAccount": "Delete account",
+  "@deleteAccount": {
+    "description": "Profile row, dialog title, and confirm button for account deletion"
+  },
+  "deleteAccountMessage": "This permanently deletes your account, your private decks, and your study progress. Published decks stay available to people who imported them, without your name. Enter your password to confirm.",
+  "@deleteAccountMessage": {
+    "description": "Account deletion confirmation dialog message"
+  },
+  "deleteAccountWrongPassword": "Incorrect password",
+  "@deleteAccountWrongPassword": {
+    "description": "Account deletion error when the password is wrong"
+  },
+  "apiPasswordRequired": "Password is required",
+  "@apiPasswordRequired": {
+    "description": "API error: apiPasswordRequired"
+  },
+  "apiTooManyDeleteAttempts": "Too many attempts. Please try again later.",
+  "@apiTooManyDeleteAttempts": {
+    "description": "API error: apiTooManyDeleteAttempts"
   }
 }

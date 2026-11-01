@@ -1923,4 +1923,20 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get logoutSyncInProgress => '学習記録をアップロード中…';
+
+  @override
+  String get deleteAccount => 'アカウントを削除';
+
+  @override
+  String get deleteAccountMessage =>
+      'アカウント、非公開のデッキ、学習記録が完全に削除されます。公開済みのデッキは、インポートした人が引き続き利用できますが、あなたの名前は表示されません。確認のためパスワードを入力してください。';
+
+  @override
+  String get deleteAccountWrongPassword => 'パスワードが正しくありません';
+
+  @override
+  String get apiPasswordRequired => 'パスワードを入力してください';
+
+  @override
+  String get apiTooManyDeleteAttempts => '試行回数が多すぎます。しばらくしてからもう一度お試しください。';
 }

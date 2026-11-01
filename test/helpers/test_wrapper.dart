@@ -11,6 +11,7 @@ import 'package:retentio/services/index.dart';
 import 'package:retentio/services/storage/hydrated_storage.dart';
 import 'package:retentio/utils/log.dart';
 
+import 'connectivity_mock.dart';
 import 'path_provider_mock.dart';
 import 'shared_preferences_mock.dart';
 
@@ -25,6 +26,9 @@ Future<void> setupTestEnvironment() async {
 
   // Setup shared_preferences mock
   SharedPreferencesMock.setup();
+
+  // Report an online interface by default; offline cases override it.
+  ConnectivityMock.setup();
 
   // Setup shared preferences legacy mock values
   SharedPreferences.setMockInitialValues({});
@@ -44,6 +48,9 @@ void tearDownTestEnvironment() {
 
   // Clear shared_preferences mock
   SharedPreferencesMock.teardown();
+
+  // Clear connectivity mock
+  ConnectivityMock.teardown();
 
   // Clear hydrated storage
   HydratedStorage.instance = null;

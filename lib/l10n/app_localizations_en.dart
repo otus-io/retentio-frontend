@@ -2035,4 +2035,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logoutSyncInProgress => 'Uploading reviews…';
+
+  @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountMessage =>
+      'This permanently deletes your account, your private decks, and your study progress. Published decks stay available to people who imported them, without your name. Enter your password to confirm.';
+
+  @override
+  String get deleteAccountWrongPassword => 'Incorrect password';
+
+  @override
+  String get apiPasswordRequired => 'Password is required';
+
+  @override
+  String get apiTooManyDeleteAttempts =>
+      'Too many attempts. Please try again later.';
 }

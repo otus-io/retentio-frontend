@@ -20,6 +20,7 @@ import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_toast.dart';
 
 import '../../helpers/card_test_samples.dart';
+import '../../helpers/connectivity_mock.dart';
 import '../../helpers/fake_deck_study_bloc.dart';
 import '../../helpers/fake_fact_api_interceptor.dart';
 import '../../helpers/test_wrapper.dart';
@@ -125,6 +126,88 @@ void main() {
 
       expect(interceptor.patchFactCount, 1);
       expect(saved, isTrue);
+    });
+
+    testWidgets('offline shows a network message and skips the API', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      ConnectivityMock.interfaces = const ['none'];
+      final interceptor = attachFakeFactApiInterceptor();
+      final harness = FakeDeckStudyBlocHarness(
+        deckId: sampleDeck().id,
+        loadResults: [DeckStudyLoadResult(cardDetail: sampleCardDetail())],
+      );
+      addTearDown(() async {
+        AppToast.dismiss();
+        detachFakeFactApiInterceptor(interceptor);
+        await harness.dispose();
+        tearDownTestEnvironment();
+      });
+
+      final router = GoRouter(
+        initialLocation: '/base',
+        routes: [
+          GoRoute(
+            path: '/base',
+            builder: (_, _) => const Scaffold(body: Text('base')),
+          ),
+          GoRoute(
+            path: '/edit',
+            builder: (_, _) => Scaffold(
+              body: FactEdit(
+                deck: sampleDeck(),
+                factId: 'fact-test-1',
+                onSaved: () async {},
+              ),
+            ),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            currentDeckProvider.overrideWithValue(sampleDeck()),
+            deckStudyBlocProvider.overrideWithValue(harness.bloc),
+          ],
+          child: MaterialApp.router(
+            locale: const Locale('en'),
+            supportedLocales: const [Locale('en')],
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            routerConfig: router,
+          ),
+        ),
+      );
+
+      router.push('/edit');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pumpAndSettle();
+
+      final alphaField = find.byWidgetPredicate(
+        (w) => w is TextField && w.controller?.text == 'Alpha',
+      );
+      await tester.enterText(alphaField, 'Alpha offline');
+      await tester.pump();
+      await tester.tap(find.byType(AppButton));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      expect(interceptor.patchFactCount, 0);
+      expect(
+        find.text(
+          'No network connection. Please check your internet settings.',
+        ),
+        findsOneWidget,
+      );
+      AppToast.dismiss();
     });
 
     testWidgets('plays pinned import audio and saves the raw media id', (

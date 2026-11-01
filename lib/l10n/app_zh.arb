@@ -1401,5 +1401,10 @@
   "offlineSyncRejectedMessage": "服务器拒绝了 {count} 条学习记录。",
   "offlineSyncDiscardRejected": "丢弃",
   "deckAvailableOffline": "可离线学习",
-  "logoutSyncInProgress": "正在上传学习记录…"
+  "logoutSyncInProgress": "正在上传学习记录…",
+  "deleteAccount": "删除账号",
+  "deleteAccountMessage": "这将永久删除你的账号、私有卡组和学习记录。已发布的卡组仍可供已导入的用户使用，但不再显示你的名字。请输入密码确认。",
+  "deleteAccountWrongPassword": "密码错误",
+  "apiPasswordRequired": "请输入密码",
+  "apiTooManyDeleteAttempts": "尝试次数过多，请稍后再试。"
 }

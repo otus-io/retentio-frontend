@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/features/offline_learning/presentation/offline_logout_guard.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -8,6 +9,7 @@ import 'package:retentio/providers/theme_provider.dart';
 import 'package:retentio/screen/profile/bloc/profile_cubit.dart';
 import 'package:retentio/theme/theme_tokens.dart';
 import 'package:retentio/widgets/app_button.dart';
+import 'package:retentio/widgets/app_input.dart';
 
 const _kDialogOptionPadding = EdgeInsets.symmetric(horizontal: 2);
 
@@ -146,6 +148,100 @@ void showProfileLogoutDialog(
       ],
     ),
   );
+}
+
+Future<void> showProfileDeleteAccountDialog(
+  BuildContext context,
+  ProfileCubit profileCubit,
+) async {
+  final deleted = await showDialog<bool>(
+    context: context,
+    builder: (_) => _DeleteAccountDialog(profileCubit: profileCubit),
+  );
+  if (deleted == true) {
+    await profileCubit.logout();
+  }
+}
+
+class _DeleteAccountDialog extends StatefulWidget {
+  const _DeleteAccountDialog({required this.profileCubit});
+
+  final ProfileCubit profileCubit;
+
+  @override
+  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
+  final _password = TextEditingController();
+  bool _loading = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _password.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    final error = await widget.profileCubit.deleteAccount(_password.text);
+    if (!mounted) return;
+    if (error == null) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+    final loc = AppLocalizations.of(context)!;
+    setState(() {
+      _loading = false;
+      _error = error == 'Invalid credentials'
+          ? loc.deleteAccountWrongPassword
+          : ApiErrorMessages.resolve(error, loc);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return PopScope(
+      canPop: !_loading,
+      child: AlertDialog(
+        title: Text(loc.deleteAccount),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(loc.deleteAccountMessage),
+            const SizedBox(height: AppThemeTokens.spaceMd),
+            AppInput(
+              controller: _password,
+              label: loc.password,
+              obscureText: true,
+              enabled: !_loading,
+              errorText: _error,
+              onChanged: (_) => setState(() {}),
+            ),
+          ],
+        ),
+        actions: [
+          AppButton(
+            label: loc.cancel,
+            variant: AppButtonVariant.ghost,
+            onPressed: _loading ? null : () => Navigator.of(context).pop(),
+          ),
+          AppButton(
+            label: loc.deleteAccount,
+            variant: AppButtonVariant.danger,
+            isLoading: _loading,
+            onPressed: _password.text.isEmpty ? null : _submit,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ProfileRadioDialog<T> extends StatelessWidget {

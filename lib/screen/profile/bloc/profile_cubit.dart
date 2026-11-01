@@ -1,8 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:retentio/core/network/connectivity_service.dart';
+import 'package:retentio/features/offline_learning/offline_learning_session.dart';
 import 'package:retentio/models/user.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/apis/auth_service.dart';
 import 'package:retentio/services/index.dart';
+import 'package:retentio/utils/log.dart';
 
 class ProfileState {
   const ProfileState({
@@ -33,10 +36,21 @@ class ProfileState {
 enum ProfileStatus { loading, loaded, error }
 
 class ProfileCubit extends Cubit<ProfileState> {
-  ProfileCubit() : super(ProfileState.initial()) {
+  ProfileCubit({
+    Future<OfflineLearningSession?> Function()? offlineSession,
+    Future<bool> Function()? isOnline,
+  }) : _offlineSession =
+           offlineSession ??
+           (() => OfflineLearningSessions.instance.current(
+             fetchMissingUsername: false,
+           )),
+       _isOnline = isOnline ?? hasNetworkConnection,
+       super(ProfileState.initial()) {
     getProfile();
   }
 
+  final Future<OfflineLearningSession?> Function() _offlineSession;
+  final Future<bool> Function() _isOnline;
   bool _disposed = false;
   int _requestEpoch = 0;
 
@@ -104,5 +118,23 @@ class ProfileCubit extends Cubit<ProfileState> {
       ),
     );
     await AuthService.logoutByAuthBloc();
+  }
+
+  /// Deletes the account and its offline data. Returns null on success,
+  /// otherwise the raw server message. The caller logs out on success.
+  Future<String?> deleteAccount(String password) async {
+    if (!await _isOnline().catchError((Object _) => true)) {
+      return 'Connect error';
+    }
+    final res = await AuthService.deleteAccount(password: password);
+    if (res?.isSuccess != true) {
+      return res?.msg ?? 'Unknown error';
+    }
+    try {
+      await (await _offlineSession())?.clear();
+    } catch (e) {
+      logger.w('offline delete account: $e');
+    }
+    return null;
   }
 }

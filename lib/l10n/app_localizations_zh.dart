@@ -1913,4 +1913,20 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get logoutSyncInProgress => '正在上传学习记录…';
+
+  @override
+  String get deleteAccount => '删除账号';
+
+  @override
+  String get deleteAccountMessage =>
+      '这将永久删除你的账号、私有卡组和学习记录。已发布的卡组仍可供已导入的用户使用，但不再显示你的名字。请输入密码确认。';
+
+  @override
+  String get deleteAccountWrongPassword => '密码错误';
+
+  @override
+  String get apiPasswordRequired => '请输入密码';
+
+  @override
+  String get apiTooManyDeleteAttempts => '尝试次数过多，请稍后再试。';
 }

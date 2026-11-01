@@ -5,6 +5,7 @@ import 'package:retentio/screen/decks/providers/deck_list.dart';
 import 'package:retentio/widgets/app_toast.dart';
 
 import '../../helpers/card_test_samples.dart';
+import '../../helpers/connectivity_mock.dart';
 import '../../helpers/fake_deck_list_notifier.dart';
 import '../../helpers/fake_fact_api_interceptor.dart';
 import '../../helpers/test_wrapper.dart';
@@ -57,6 +58,49 @@ void main() {
         await tester.pumpAndSettle();
       },
     );
+
+    testWidgets('offline shows a network message and skips the API', (
+      tester,
+    ) async {
+      await setupTestEnvironment();
+      ConnectivityMock.interfaces = const ['none'];
+      final interceptor = attachFakeFactApiInterceptor();
+      addTearDown(() {
+        detachFakeFactApiInterceptor(interceptor);
+        tearDownTestEnvironment();
+      });
+
+      final deck = sampleDeck();
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          Scaffold(body: FactAdd(deck: deck)),
+          overrides: [
+            deckListProvider.overrideWith(() => FakeDeckListNotifier([deck])),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final textFields = find.byType(TextField);
+      await tester.enterText(textFields.at(0), 'Hello');
+      await tester.enterText(textFields.at(1), 'World');
+      await tester.pump();
+
+      await tester.tap(find.text('Save fact'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(interceptor.addFactsCount, 0);
+      expect(
+        find.text(
+          'No network connection. Please check your internet settings.',
+        ),
+        findsOneWidget,
+      );
+
+      AppToast.dismiss();
+      await tester.pumpAndSettle();
+    });
 
     testWidgets('saving resets the media target to the first row', (
       tester,
