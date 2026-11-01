@@ -24,6 +24,17 @@ void main() {
         en.authInvalidCredentials,
       );
       expect(
+        ApiErrorMessages.resolve('Password is required', zh),
+        zh.apiPasswordRequired,
+      );
+      expect(
+        ApiErrorMessages.resolve(
+          'Too many delete attempts. Try again later.',
+          en,
+        ),
+        en.apiTooManyDeleteAttempts,
+      );
+      expect(
         ApiErrorMessages.resolve('Username already exists', zh),
         zh.authUsernameAlreadyExists,
       );

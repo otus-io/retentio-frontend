@@ -54,6 +54,23 @@ void main() {
       expect(find.byIcon(LucideIcons.globe), findsOneWidget);
     });
 
+    testWidgets('delete account row opens the confirmation dialog', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestableWidget(const ProfileScreen()));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(ProfileScreen));
+      final loc = AppLocalizations.of(context)!;
+      final row = find.widgetWithText(ListTile, loc.deleteAccount);
+      await tester.ensureVisible(row);
+      await tester.pumpAndSettle();
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+
+      expect(find.text(loc.deleteAccountMessage), findsOneWidget);
+    });
+
     testWidgets('opens review statistics from the profile list', (
       tester,
     ) async {
@@ -128,7 +145,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
-      expect(tiles, hasLength(5));
+      expect(tiles, hasLength(6));
       for (final tile in tiles) {
         expect(
           tile.trailing,

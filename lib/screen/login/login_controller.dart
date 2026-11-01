@@ -6,6 +6,7 @@ class LoginController {
     required String username,
     required String password,
     required Function(bool) setLoading,
+    String? returnTo,
   }) async {
     final loc = AppLocalizations.of(context)!;
 
@@ -42,7 +43,7 @@ class LoginController {
         context,
         listen: false,
       ).read(selectedTabIndexProvider.notifier).setIndex(0);
-      context.go(AppRoutes.main.path);
+      context.go(returnTo ?? AppRoutes.main.path);
     } catch (e) {
       if (!context.mounted) return;
       showSnack(context, ApiErrorMessages.resolve(rawApiErrorMessage(e), loc));

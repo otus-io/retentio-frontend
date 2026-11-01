@@ -11,6 +11,7 @@ import 'package:retentio/screen/verify_email/verify_email_screen.dart';
 import 'package:retentio/core/di/app_service_locator.dart';
 import 'package:retentio/core/navigation/router_refresh_bridge.dart';
 import 'package:retentio/features/discovery/presentation/discovery_detail_screen.dart';
+import 'package:retentio/features/discovery/presentation/discovery_screen.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/features/auth/presentation/bloc/auth_bloc.dart'
     as feature_auth;
@@ -47,7 +48,11 @@ class AppPages {
     routes: [
       GoRoute(
         path: AppRoutes.login.path,
-        builder: (context, state) => const LoginScreen(),
+        builder: (context, state) => LoginScreen(
+          returnTo: AppRoutes.loginReturnPath(
+            state.uri.queryParameters['from'],
+          ),
+        ),
       ),
       GoRoute(
         path: AppRoutes.register.path,
@@ -66,6 +71,10 @@ class AppPages {
       GoRoute(
         path: AppRoutes.main.path,
         builder: (context, state) => const MainTabScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.discovery.path,
+        builder: (context, state) => const DiscoveryScreen(),
       ),
       GoRoute(
         path: AppRoutes.discoveryDetail.path,
@@ -117,7 +126,8 @@ class AppPages {
         return AppRoutes.login.path;
       }
       if (isLoggedIn && path == AppRoutes.login.path) {
-        return AppRoutes.main.path;
+        return AppRoutes.loginReturnPath(state.uri.queryParameters['from']) ??
+            AppRoutes.main.path;
       }
       return null;
     },

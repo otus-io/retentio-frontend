@@ -1,8 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:retentio/core/network/connectivity_service.dart';
+import 'package:retentio/features/offline_learning/offline_learning_session.dart';
 import 'package:retentio/models/user.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/apis/auth_service.dart';
 import 'package:retentio/services/index.dart';
+import 'package:retentio/utils/log.dart';
 
 class ProfileState {
   const ProfileState({
@@ -33,10 +36,19 @@ class ProfileState {
 enum ProfileStatus { loading, loaded, error }
 
 class ProfileCubit extends Cubit<ProfileState> {
-  ProfileCubit() : super(ProfileState.initial()) {
+  ProfileCubit({
+    Future<void> Function()? wipeOfflineData,
+    Future<bool> Function()? isOnline,
+  }) : _wipeOfflineData =
+           wipeOfflineData ??
+           OfflineLearningSessions.instance.wipeCurrentAccount,
+       _isOnline = isOnline ?? hasNetworkConnection,
+       super(ProfileState.initial()) {
     getProfile();
   }
 
+  final Future<void> Function() _wipeOfflineData;
+  final Future<bool> Function() _isOnline;
   bool _disposed = false;
   int _requestEpoch = 0;
 
@@ -104,5 +116,24 @@ class ProfileCubit extends Cubit<ProfileState> {
       ),
     );
     await AuthService.logoutByAuthBloc();
+  }
+
+  /// Deletes the account and its offline data. Returns null on success,
+  /// otherwise the raw server message. The caller logs out on success; a
+  /// failed offline wipe is retried before the account id is opened again.
+  Future<String?> deleteAccount(String password) async {
+    if (!await _isOnline().catchError((Object _) => true)) {
+      return 'Connect error';
+    }
+    final res = await AuthService.deleteAccount(password: password);
+    if (res?.isSuccess != true) {
+      return res?.msg ?? 'Unknown error';
+    }
+    try {
+      await _wipeOfflineData();
+    } catch (e) {
+      logger.w('offline delete account: $e');
+    }
+    return null;
   }
 }

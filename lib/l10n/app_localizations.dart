@@ -154,6 +154,18 @@ abstract class AppLocalizations {
   /// **'A journey of a thousand miles begins with a single step'**
   String get loginTagline;
 
+  /// Divider label between the login card and the guest discovery button
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get loginOr;
+
+  /// Login screen button that opens the public discovery catalog without signing in
+  ///
+  /// In en, this message translates to:
+  /// **'Browse public decks'**
+  String get loginBrowseDiscovery;
+
   /// Register page title heading
   ///
   /// In en, this message translates to:
@@ -1467,6 +1479,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in to import'**
   String get discoveryLoginToImport;
+
+  /// Title of the dialog shown when a guest taps Import on a discovery deck
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re not logged in'**
+  String get discoveryLoginRequiredTitle;
 
   /// Retry button in discovery error state
   ///
@@ -3651,6 +3669,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Uploading reviews…'**
   String get logoutSyncInProgress;
+
+  /// Profile row, dialog title, and confirm button for account deletion
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get deleteAccount;
+
+  /// Account deletion confirmation dialog message
+  ///
+  /// In en, this message translates to:
+  /// **'This permanently deletes your account, your private decks, and your study progress. Published decks stay available to people who imported them, without your name. Enter your password to confirm.'**
+  String get deleteAccountMessage;
+
+  /// Account deletion error when the password is wrong
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect password'**
+  String get deleteAccountWrongPassword;
+
+  /// API error: apiPasswordRequired
+  ///
+  /// In en, this message translates to:
+  /// **'Password is required'**
+  String get apiPasswordRequired;
+
+  /// API error: apiTooManyDeleteAttempts
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Please try again later.'**
+  String get apiTooManyDeleteAttempts;
 }
 
 class _AppLocalizationsDelegate

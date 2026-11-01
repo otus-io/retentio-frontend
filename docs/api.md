@@ -1192,6 +1192,7 @@ Same as a normal owned deck: `GET/POST/PATCH/DELETE` card routes work; schedulin
 - Importers download published author media via `GET /api/media/{id}?v=<version>`.
 - Bytes are served from the **versioned** blob, not the author’s working copy.
 - `v` is required for non-owners and must be a positive integer.
+- Fact list/detail return raw media ids in `entries`. For a single fact, `GET …/facts/{factId}` may include sibling `data.media_versions` (`{ mediaId: pinnedVersion }`) for building `GET /api/media/{id}?v=…`. Do **not** use deck `source_version` as `v` (copy-on-write media may pin an older version). Next-card responses already embed `?v=` in media URLs.
 - Importers may upload **their own** media with `POST /api/media` and `deck_id={importId}` for private overlays / contributions.
 - Importers cannot upload or delete another user’s working-copy media.
 
@@ -1369,6 +1370,9 @@ Snapshot facts soft-hide privately; local-only facts are removed from the import
         { "text": "りんご" }
       ],
       "tags": []
+    },
+    "media_versions": {
+      "impaud0001": 2
     }
   },
   "meta": {
@@ -2098,6 +2102,29 @@ Each fact always includes **`tags`**: an array of `{ "id", "name", "description"
         { "id": "a1b2c3d4", "name": "food", "description": "" },
         { "id": "f6e5d4c3", "name": "noun", "description": "Parts of speech" }
       ]
+    }
+  },
+  "meta": { "msg": "Fact retrieved successfully" }
+}
+```
+
+On **imported** decks, when the pinned snapshot maps this fact’s user media ids to positive published versions, `data` also includes sibling **`media_versions`**: `{ "<mediaId>": <pinnedVersion>, … }`. Omitted when empty or on source decks. `entries` still carry raw media ids (not URLs). Download with `GET /api/media/{id}?v={media_versions[id]}` — do **not** use deck `source_version` as `v` (copy-on-write may pin an older media version). Fact **list** (`GET …/facts`) does not include `media_versions`.
+
+**Imported-deck example** (when pins exist):
+
+```json
+{
+  "data": {
+    "fact": {
+      "id": "fact0001",
+      "entries": [
+        { "text": "Apple", "audio": "impaud0001" },
+        { "text": "りんご" }
+      ],
+      "tags": []
+    },
+    "media_versions": {
+      "impaud0001": 2
     }
   },
   "meta": { "msg": "Fact retrieved successfully" }
@@ -3029,7 +3056,7 @@ Returns metadata only (id, owner, filename, mime, size, checksum, created_at), n
 
 Returns the media file (binary) for user-owned media by ID. Requires `Authorization: Bearer <token>`. Response headers include `Content-Type`, `Content-Length`, and `ETag` (same as `checksum`). Send `If-None-Match: <ETag>` to get `304 Not Modified` when the file is unchanged. The **Get Next Card** response puts full URLs in the `audio`, `image`, and `video` fields of each front/back entry (e.g. `https://api.retentio.app:8443/api/media/{id}`); use that URL with the same auth header to load the file.
 
-**Published media:** Any authenticated user may download immutable published bytes by passing **`?v=<version>`** with a positive version. Without `v`, only the media owner may download the working copy. Import-deck card responses include the pinned `?v=` in media URLs automatically.
+**Published media:** Any authenticated user may download immutable published bytes by passing **`?v=<version>`** with a positive version. Without `v`, only the media owner may download the working copy. Import-deck card responses include the pinned `?v=` in media URLs automatically. For fact detail / grid playback without a card URL, take `v` from GetFact `media_versions`, not deck `source_version`.
 
 ### Delete media
 
@@ -3702,7 +3729,7 @@ Contribution submit/inbox errors: [Deck sharing](#deck-sharing).
 | `/api/decks/{id}/facts/{op}`                  | POST        | Add facts: body `facts[]` with optional `tags` (names) per item; `{ "data": { "fact_length" }, "meta": { "msg" } }` (no tags in response)                  |
 | `/api/decks/{id}/card`                        | POST        | Add card from existing fact: `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                |
 | `/api/decks/{id}/facts`                       | GET         | `{ "data": { "facts": [ … ] }, "meta": { "msg", "count", "has_more", "limit", "offset", "total" } }` — defaults `limit` 50, `offset` 0 |
-| `/api/decks/{id}/facts/{factId}`              | GET         | `{ "data": { "fact": { …, "tags": [ … ] } }, "meta": { "msg" } }`                                                                                          |
+| `/api/decks/{id}/facts/{factId}`              | GET         | `{ "data": { "fact": { …, "tags": [ … ] }, "media_versions"?: { … } }, "meta": { "msg" } }`                                                                                          |
 | `/api/decks/{id}/facts/{factId}`              | PATCH       | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks/{id}/facts/{factId}`              | DELETE      | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks/{id}/facts/{factId}/quality`      | PUT         | `{ "data": { "quality": { "fact_id", "entries", "updated_at" } }, "meta": { "msg": "Quality updated successfully" } }` |

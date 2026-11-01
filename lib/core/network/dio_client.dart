@@ -104,12 +104,19 @@ class NetworkDioClient {
     String url, {
     Map<String, dynamic>? params,
     Map<String, dynamic>? pathParams,
+    Map<String, dynamic>? data,
+    Map<String, dynamic>? extra,
   }) async {
     _assertConfigured();
     url = _buildFinalUrl(url, pathParams);
 
     try {
-      final response = await _dio.delete(url, queryParameters: params);
+      final response = await _dio.delete(
+        url,
+        data: data,
+        queryParameters: params,
+        options: extra == null ? null : Options(extra: extra),
+      );
       final res = response.data as Map<String, dynamic>?;
       if (res == null) return null;
       return ApiResponse.fromJson(res);

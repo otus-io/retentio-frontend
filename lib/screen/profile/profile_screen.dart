@@ -174,6 +174,21 @@ class ProfileScreen extends HookConsumerWidget {
                                 loc,
                               ),
                             ),
+                            Divider(
+                              height: dividerTheme.space ?? 1,
+                              indent: _kDividerHorizontalInset,
+                              endIndent: _kDividerHorizontalInset,
+                            ),
+                            _ProfileTileWidget(
+                              icon: LucideIcons.trash2,
+                              title: loc.deleteAccount,
+                              titleColor: scheme.error,
+                              iconColor: scheme.error,
+                              onTap: () => showProfileDeleteAccountDialog(
+                                context,
+                                profileCubit,
+                              ),
+                            ),
                           ],
                         ),
                       ),

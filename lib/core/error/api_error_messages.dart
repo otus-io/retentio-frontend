@@ -88,6 +88,9 @@ class ApiErrorMessages {
     'Could not generate token': (loc) => loc.apiServerGenerateToken,
     'Error logging out': (loc) => loc.apiServerLogout,
     'Email is required': (loc) => loc.apiEmailRequired,
+    'Password is required': (loc) => loc.apiPasswordRequired,
+    'Too many delete attempts. Try again later.': (loc) =>
+        loc.apiTooManyDeleteAttempts,
     'Error generating reset token': (loc) => loc.apiServerGenerateResetToken,
     'Error storing reset token': (loc) => loc.apiServerStoreResetToken,
     'Token and new password are required': (loc) => loc.apiResetFieldsRequired,
