@@ -100,7 +100,6 @@ class _QaModeView extends StatelessWidget {
     await showCommonBottomSheet<void>(
       context: context,
       fullScreen: true,
-      enableDrag: false,
       title: loc.editFact,
       child: BlocProvider<TagManagerCubit>(
         create: (_) =>

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
+import 'package:retentio/core/network/connectivity_service.dart';
 import 'package:retentio/models/fact.dart';
 import 'package:retentio/models/fact_quality.dart';
 import 'package:retentio/screen/qa/qa_column_prefs.dart';
@@ -125,11 +126,16 @@ class QaModeState {
 /// `fact_edit` submission. Kept out of the study bloc so a broken quality API
 /// only affects this screen.
 class QaModeCubit extends Cubit<QaModeState> {
-  QaModeCubit({required this.deckId, required this.deckFieldCount})
-    : super(const QaModeState());
+  QaModeCubit({
+    required this.deckId,
+    required this.deckFieldCount,
+    Future<bool> Function()? isOnline,
+  }) : _isOnline = isOnline ?? hasNetworkConnection,
+       super(const QaModeState());
 
   final String deckId;
   final int deckFieldCount;
+  final Future<bool> Function() _isOnline;
 
   /// When true, the next [_refreshHeader] throws (cleared after throw).
   @visibleForTesting
@@ -339,8 +345,16 @@ class QaModeCubit extends Cubit<QaModeState> {
 
   Future<String?> verify() async {
     final factId = state.factId;
-    if (factId == null || state.checkedIndexes.isEmpty) return null;
+    if (factId == null || state.checkedIndexes.isEmpty || state.busy) {
+      return null;
+    }
     emit(state.copyWith(busy: true));
+    final online = await _isOnline().catchError((Object _) => true);
+    if (isClosed) return null;
+    if (!online || state.factId != factId) {
+      emit(state.copyWith(busy: false));
+      return online ? null : 'Connect error';
+    }
     try {
       await FactQualityService.of.putFactQuality(
         deckId: deckId,

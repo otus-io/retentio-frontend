@@ -27,7 +27,9 @@ import '../../services/apis/auth_service.dart';
 part 'login_controller.dart';
 
 class LoginScreen extends HookConsumerWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.returnTo});
+
+  final String? returnTo;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -57,15 +59,27 @@ class LoginScreen extends HookConsumerWidget {
           LoginGradientBackground(isDark: isDark),
           _LoginScrollBody(
             appearController: appearController,
-            panel: _LoginPanel(
-              isDark: isDark,
-              isLoading: isLoading.value,
-              loc: loc,
-              theme: theme,
-              scheme: scheme,
-              usernameController: usernameController,
-              passwordController: passwordController,
-              onLoadingChanged: (loading) => isLoading.value = loading,
+            panel: Column(
+              children: [
+                _LoginPanel(
+                  isDark: isDark,
+                  isLoading: isLoading.value,
+                  loc: loc,
+                  theme: theme,
+                  scheme: scheme,
+                  usernameController: usernameController,
+                  passwordController: passwordController,
+                  onLoadingChanged: (loading) => isLoading.value = loading,
+                  returnTo: returnTo,
+                ),
+                const SizedBox(height: LoginTokens.spaceXl),
+                _LoginDiscoveryEntry(
+                  isLoading: isLoading.value,
+                  loc: loc,
+                  theme: theme,
+                  scheme: scheme,
+                ),
+              ],
             ),
           ),
           LoginToolbarControls(isLoading: isLoading.value, isDark: isDark),
@@ -115,6 +129,7 @@ class _LoginPanel extends StatelessWidget {
     required this.usernameController,
     required this.passwordController,
     required this.onLoadingChanged,
+    this.returnTo,
   });
 
   final bool isDark;
@@ -125,6 +140,7 @@ class _LoginPanel extends StatelessWidget {
   final TextEditingController usernameController;
   final TextEditingController passwordController;
   final ValueChanged<bool> onLoadingChanged;
+  final String? returnTo;
 
   BoxDecoration get _decoration => BoxDecoration(
     color: scheme.surfaceContainerHighest.withValues(
@@ -171,10 +187,68 @@ class _LoginPanel extends StatelessWidget {
               usernameController: usernameController,
               passwordController: passwordController,
               onLoadingChanged: onLoadingChanged,
+              returnTo: returnTo,
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _LoginDiscoveryEntry extends StatelessWidget {
+  const _LoginDiscoveryEntry({
+    required this.isLoading,
+    required this.loc,
+    required this.theme,
+    required this.scheme,
+  });
+
+  final bool isLoading;
+  final AppLocalizations loc;
+  final ThemeData theme;
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    final dividerColor = scheme.outline.withValues(alpha: 0.4);
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(child: Divider(color: dividerColor)),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: LoginTokens.spaceMd,
+              ),
+              child: Text(
+                loc.loginOr,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            Expanded(child: Divider(color: dividerColor)),
+          ],
+        ),
+        const SizedBox(height: LoginTokens.spaceMd),
+        AppButton(
+          label: loc.loginBrowseDiscovery,
+          variant: AppButtonVariant.secondary,
+          size: AppButtonSize.lg,
+          fullWidth: true,
+          leading: Icon(LucideIcons.compass, size: LoginTokens.arrowIconSize),
+          style: OutlinedButton.styleFrom(
+            backgroundColor: scheme.surface.withValues(alpha: 0.9),
+            shape: RoundedRectangleBorder(
+              borderRadius: LoginTokens.fieldRadius,
+            ),
+          ),
+          onPressed: isLoading
+              ? null
+              : () => context.push(AppRoutes.discovery.path),
+        ),
+      ],
     );
   }
 }
@@ -305,6 +379,7 @@ class _LoginActions extends StatelessWidget {
     required this.usernameController,
     required this.passwordController,
     required this.onLoadingChanged,
+    this.returnTo,
   });
 
   final bool isLoading;
@@ -313,6 +388,7 @@ class _LoginActions extends StatelessWidget {
   final TextEditingController usernameController;
   final TextEditingController passwordController;
   final ValueChanged<bool> onLoadingChanged;
+  final String? returnTo;
 
   @override
   Widget build(BuildContext context) {
@@ -342,6 +418,7 @@ class _LoginActions extends StatelessWidget {
                     username: usernameController.text,
                     password: passwordController.text,
                     setLoading: onLoadingChanged,
+                    returnTo: returnTo,
                   );
                 },
         ),

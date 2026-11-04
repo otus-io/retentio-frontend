@@ -12,12 +12,32 @@ import 'package:retentio/services/apis/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeHttpClientAdapter implements HttpClientAdapter {
+  RequestOptions? lastDelete;
+
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    if (options.path == '/api/profile' && options.method == 'DELETE') {
+      lastDelete = options;
+      final ok = (options.data as Map)['password'] == 'valid-password';
+      return ResponseBody.fromString(
+        jsonEncode(
+          ok
+              ? {
+                  'data': {'msg': 'Account deleted successfully'},
+                }
+              : {'msg': 'Invalid credentials'},
+        ),
+        ok ? 200 : 401,
+        headers: {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+        },
+      );
+    }
+
     if (options.path == '/auth/login' && options.method == 'POST') {
       final body = options.data is Map<String, dynamic>
           ? options.data as Map<String, dynamic>
@@ -83,6 +103,8 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('AuthService side effects', () {
+    late _FakeHttpClientAdapter adapter;
+
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
       await ApiService.clearToken();
@@ -90,8 +112,10 @@ void main() {
       networkDioClient.configure(
         baseUrl: 'http://localhost',
         options: BaseOptions(),
+        interceptors: [ResponseNormalizeInterceptor()],
       );
-      networkDioClient.dio.httpClientAdapter = _FakeHttpClientAdapter();
+      adapter = _FakeHttpClientAdapter();
+      networkDioClient.dio.httpClientAdapter = adapter;
     });
 
     tearDown(() async {
@@ -140,5 +164,23 @@ void main() {
         expect(ApiService.authorization, '');
       },
     );
+
+    test('deleteAccount sends the password in a DELETE body', () async {
+      final res = await AuthService.deleteAccount(password: 'valid-password');
+
+      expect(res?.isSuccess, isTrue);
+      expect(adapter.lastDelete?.data, {'password': 'valid-password'});
+      expect(adapter.lastDelete?.queryParameters, isEmpty);
+    });
+
+    test('deleteAccount with a wrong password keeps the session', () async {
+      await ApiService.setToken('live-token');
+
+      final res = await AuthService.deleteAccount(password: 'wrong');
+
+      expect(res?.isSuccess, isFalse);
+      expect(res?.msg, 'Invalid credentials');
+      expect(ApiService.authorization, 'live-token');
+    });
   });
 }

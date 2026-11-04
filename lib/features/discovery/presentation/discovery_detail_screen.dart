@@ -52,12 +52,48 @@ class _DiscoveryDetailScreenState extends State<DiscoveryDetailScreen> {
     return sl<feature_auth.AuthBloc>().state.status == AuthStatus.authenticated;
   }
 
-  void _onImportTap(AppLocalizations loc) {
+  Future<void> _onImportTap(AppLocalizations loc) async {
     if (!_isLoggedIn) {
-      context.push(AppRoutes.login.path);
+      final goToLogin = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(loc.discoveryLoginRequiredTitle),
+          content: Text(loc.discoveryLoginToImport),
+          actions: [
+            AppButton(
+              label: loc.cancel,
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              variant: AppButtonVariant.ghost,
+            ),
+            AppButton(
+              label: loc.login,
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+            ),
+          ],
+        ),
+      );
+      if (goToLogin != true || !mounted) return;
+      final deckPath = AppRoutes.discoveryDetail.path.replaceFirst(
+        ':id',
+        widget.sourceDeckId,
+      );
+      context.push(
+        Uri(
+          path: AppRoutes.login.path,
+          queryParameters: {'from': deckPath},
+        ).toString(),
+      );
       return;
     }
     _cubit.importDeck();
+  }
+
+  void _backToDiscoveryTab() {
+    ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(selectedTabIndexProvider.notifier).setIndex(1);
+    context.go(AppRoutes.main.path);
   }
 
   void _showImportSuccess(BuildContext context, AppLocalizations loc) {
@@ -105,6 +141,9 @@ class _DiscoveryDetailScreenState extends State<DiscoveryDetailScreen> {
         child: Scaffold(
           appBar: AppBar(
             scrolledUnderElevation: 0,
+            leading: context.canPop()
+                ? null
+                : BackButton(onPressed: _backToDiscoveryTab),
             actions: [
               BlocBuilder<DiscoveryDetailCubit, DiscoveryDetailState>(
                 buildWhen: (p, c) => p.isFavorite != c.isFavorite,

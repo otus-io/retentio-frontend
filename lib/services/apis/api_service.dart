@@ -67,8 +67,15 @@ class ApiService {
   static Future<ApiResponse?> delete(
     String endpoint, {
     Map<String, String>? pathParams,
+    Map<String, dynamic>? body,
+    Map<String, dynamic>? extra,
   }) {
-    return networkDioClient.delete(endpoint, pathParams: pathParams);
+    return networkDioClient.delete(
+      endpoint,
+      pathParams: pathParams,
+      data: body,
+      extra: extra,
+    );
   }
 
   /// 通用 GET 请求

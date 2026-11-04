@@ -110,7 +110,6 @@ class DeckMenu extends StatelessWidget {
                     context: context,
                     title: loc.addFact,
                     fullScreen: true,
-                    enableDrag: false,
                     child: BlocProvider<TagManagerCubit>(
                       create: (_) =>
                           TagManagerCubit(usedOn: 'fact', deckId: deck.id)

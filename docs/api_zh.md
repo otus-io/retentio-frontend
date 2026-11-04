@@ -1151,6 +1151,7 @@
 - 导入者可通过 `GET /api/media/{id}?v=<version>` 下载作者已发布的媒体。
 - 返回**版本化**二进制，非作者工作副本。
 - 非所有者必须提供 `v`，且 `v` 必须为正整数。
+- 词条列表/详情的 `entries` 中仍是原始媒体 id。单条 `GET …/facts/{factId}` 可能在同级返回 `data.media_versions`（`{ mediaId: pinnedVersion }`），用于拼 `GET /api/media/{id}?v=…`。不要用卡组 `source_version` 当作 `v`（媒体 copy-on-write 可能钉在更旧的版本）。下一张卡片响应已在媒体 URL 中嵌入 `?v=`。
 - 导入者可用 `POST /api/media` 且 `deck_id={importId}` 上传**自己的**媒体，用于私有 overlay / 贡献。
 - 导入者不能上传或删除他人工作副本媒体。
 
@@ -1328,6 +1329,9 @@
         { "text": "りんご" }
       ],
       "tags": []
+    },
+    "media_versions": {
+      "impaud0001": 2
     }
   },
   "meta": {
@@ -2056,11 +2060,33 @@ Authorization: Bearer <token>
     "fact": {
       "id": "x9k2m4np",
       "entries": [{ "text": "Apple" }, { "text": "りんご" }],
-      "fields": ["English", "Japanese"],
       "tags": [
         { "id": "a1b2c3d4", "name": "food", "description": "" },
         { "id": "f6e5d4c3", "name": "noun", "description": "Parts of speech" }
       ]
+    }
+  },
+  "meta": { "msg": "Fact retrieved successfully" }
+}
+```
+
+在**导入卡组**上，当钉住快照把该词条中的用户媒体 id 映射到正整数已发布版本时，`data` 还会同级包含 **`media_versions`**：`{ "<mediaId>": <pinnedVersion>, … }`。为空或源卡组时省略。`entries` 仍为原始媒体 id（非 URL）。下载使用 `GET /api/media/{id}?v={media_versions[id]}`——不要用卡组 `source_version` 当作 `v`（媒体 copy-on-write 可能钉在更旧版本）。词条**列表**（`GET …/facts`）不返回 `media_versions`。
+
+**导入卡组示例**（存在 pin 时）：
+
+```json
+{
+  "data": {
+    "fact": {
+      "id": "fact0001",
+      "entries": [
+        { "text": "Apple", "audio": "impaud0001" },
+        { "text": "りんご" }
+      ],
+      "tags": []
+    },
+    "media_versions": {
+      "impaud0001": 2
     }
   },
   "meta": { "msg": "Fact retrieved successfully" }
@@ -2976,7 +3002,7 @@ Accept: application/json
 
 按 ID 返回用户拥有的媒体文件（二进制）。需在请求头中携带 `Authorization: Bearer <token>`。响应头包含 `Content-Type`、`Content-Length` 和 `ETag`（与 `checksum` 一致）。请求头中携带 `If-None-Match: <ETag>` 可在文件未变更时获得 `304 Not Modified`。**获取下一张卡片** 接口会在每个正面/背面词条对象的 `audio`、`image`、`video` 字段中给出完整 URL（如 `https://api.retentio.app:8443/api/media/{id}`）；使用该 URL 并携带相同认证头即可加载文件。
 
-**已发布媒体：** 任何已认证用户均可通过正整数 **`?v=<version>`** 下载不可变的已发布字节。不提供 `v` 时，仅媒体所有者可下载工作副本。导入卡组的卡片响应会自动在媒体 URL 中包含钉住的 `?v=`。
+**已发布媒体：** 任何已认证用户均可通过正整数 **`?v=<version>`** 下载不可变的已发布字节。不提供 `v` 时，仅媒体所有者可下载工作副本。导入卡组的卡片响应会自动在媒体 URL 中包含钉住的 `?v=`。无卡片 URL、仅有词条详情/表格播放时，应从 GetFact 的 `media_versions` 取 `v`，不要用卡组 `source_version`。
 
 ### 删除媒体
 
@@ -3646,7 +3672,7 @@ p_good = (score + 1) / (score + 1 + 20 * reports + 10)
 | `/api/decks/{id}/facts/{op}`                  | POST        | 添加词条：body `facts[]` 每项可选 `tags`（名称）或 `tag_ids`（同条互斥）；`{ "data": { "fact_length" }, "meta": { "msg" } }`（响应不含标签）       |
 | `/api/decks/{id}/card`                        | POST        | 为已有词条加卡：`{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                       |
 | `/api/decks/{id}/facts`                       | GET         | `{ "data": { "facts": [ … ] }, "meta": { "msg", "count", "has_more", "limit", "offset", "total" } }` — 默认 `limit` 50、`offset` 0                  |
-| `/api/decks/{id}/facts/{factId}`              | GET         | `{ "data": { "fact": { …, "tags": [ … ] } }, "meta": { "msg" } }`                                                                                    |
+| `/api/decks/{id}/facts/{factId}`              | GET         | `{ "data": { "fact": { …, "tags": [ … ] }, "media_versions"?: { … } }, "meta": { "msg" } }`                                                                                    |
 | `/api/decks/{id}/facts/{factId}`              | PATCH       | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                       |
 | `/api/decks/{id}/facts/{factId}`              | DELETE      | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                       |
 | `/api/decks/{id}/facts/{factId}/quality`      | PUT         | `{ "data": { "quality": { "fact_id", "entries", "updated_at" } }, "meta": { "msg": "Quality updated successfully" } }` |

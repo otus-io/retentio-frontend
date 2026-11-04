@@ -39,6 +39,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'A journey of a thousand miles begins with a single step';
 
   @override
+  String get loginOr => 'or';
+
+  @override
+  String get loginBrowseDiscovery => 'Browse public decks';
+
+  @override
   String get registerPageTitle => 'Create Account';
 
   @override
@@ -749,6 +755,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get discoveryLoginToImport => 'Sign in to import';
+
+  @override
+  String get discoveryLoginRequiredTitle => 'You\'re not logged in';
 
   @override
   String get discoveryRetry => 'Retry';
@@ -2035,4 +2044,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logoutSyncInProgress => 'Uploading reviews…';
+
+  @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountMessage =>
+      'This permanently deletes your account, your private decks, and your study progress. Published decks stay available to people who imported them, without your name. Enter your password to confirm.';
+
+  @override
+  String get deleteAccountWrongPassword => 'Incorrect password';
+
+  @override
+  String get apiPasswordRequired => 'Password is required';
+
+  @override
+  String get apiTooManyDeleteAttempts =>
+      'Too many attempts. Please try again later.';
 }

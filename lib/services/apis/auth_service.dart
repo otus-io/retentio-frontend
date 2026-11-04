@@ -1,4 +1,5 @@
 // auth_service.dart
+import 'package:retentio/core/network/interceptors/response_normalize_interceptor.dart';
 import 'package:retentio/models/api_response.dart';
 import 'package:retentio/core/di/app_service_locator.dart';
 import 'package:retentio/features/auth/presentation/bloc/auth_bloc.dart'
@@ -123,6 +124,16 @@ class AuthService {
     final res = await ApiService.post(Api.logout);
     await ApiService.clearToken();
     return res;
+  }
+
+  /// Permanently deletes the account. A wrong password answers 401, which
+  /// must not end the session so the user can retry.
+  static Future<ApiResponse?> deleteAccount({required String password}) {
+    return ApiService.delete(
+      Api.profile,
+      body: {'password': password},
+      extra: {ResponseNormalizeInterceptor.keepSessionOn401: true},
+    );
   }
 
   /// Logout via AuthBloc (DI). AuthRepository handles server/local cleanup.

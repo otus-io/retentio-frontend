@@ -15,6 +15,7 @@ import 'package:retentio/features/offline_learning/domain/services/offline_sync_
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/services/index.dart';
 import 'package:retentio/utils/log.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Offline study objects for one account.
 class OfflineLearningSession {
@@ -130,13 +131,43 @@ class OfflineLearningSessions {
       await _saveUsername(name);
     }
     final opening = _sessions[name] ??= _open(name);
+    final OfflineLearningSession session;
     try {
-      return await opening;
+      session = await opening;
     } catch (_) {
       // Retry on the next call (e.g. the keychain was locked).
       if (identical(_sessions[name], opening)) _sessions.remove(name);
       rethrow;
     }
+    await _finishPendingWipe(session);
+    return session;
+  }
+
+  /// Deletes the logged-in account's offline data. The wipe is recorded
+  /// first so a failure is retried before that account id is opened again
+  /// (a deleted username can be registered by someone else).
+  Future<void> wipeCurrentAccount() async {
+    final name = await _readUsername();
+    if (name == null || name.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    final pending = prefs.getStringList(pendingWipeKey) ?? const <String>[];
+    if (!pending.contains(name)) {
+      await prefs.setStringList(pendingWipeKey, [...pending, name]);
+    }
+    await current(fetchMissingUsername: false);
+  }
+
+  static const String pendingWipeKey = 'offline_pending_wipe';
+
+  Future<void> _finishPendingWipe(OfflineLearningSession session) async {
+    final prefs = await SharedPreferences.getInstance();
+    final pending = prefs.getStringList(pendingWipeKey) ?? const <String>[];
+    if (!pending.contains(session.accountId)) return;
+    await session.clear();
+    await prefs.setStringList(
+      pendingWipeKey,
+      pending.where((id) => id != session.accountId).toList(),
+    );
   }
 
   Future<OfflineLearningSession> _open(String accountId) async {

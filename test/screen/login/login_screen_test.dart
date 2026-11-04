@@ -3,9 +3,13 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/network/network.dart';
+import 'package:retentio/features/discovery/presentation/discovery_screen.dart';
 import 'package:retentio/l10n/app_localizations.dart';
+import 'package:retentio/routers/app_pages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retentio/screen/login/login_screen.dart';
 import 'package:retentio/services/storage/hydrated_storage.dart';
@@ -53,7 +57,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Login'), findsOneWidget);
-      expect(find.byType(AppButton), findsNWidgets(3));
+      expect(find.byType(AppButton), findsNWidgets(4));
     });
 
     testWidgets('displays register button', (tester) async {
@@ -181,7 +185,111 @@ void main() {
 
       expect(find.byType(DropdownButton<Locale>), findsOneWidget);
     });
+
+    testWidgets('displays browse discovery entry', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('or'), findsOneWidget);
+      expect(find.text('Browse public decks'), findsOneWidget);
+      expect(find.byIcon(LucideIcons.compass), findsOneWidget);
+    });
+
+    testWidgets('browse discovery opens the discovery route', (tester) async {
+      networkDioClient.configure(
+        baseUrl: 'http://localhost',
+        options: BaseOptions(),
+      );
+      final previous = networkDioClient.dio.httpClientAdapter;
+      networkDioClient.dio.httpClientAdapter = _DelayedErrorAdapter();
+      addTearDown(() {
+        networkDioClient.dio.httpClientAdapter = previous;
+      });
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp.router(
+            routerConfig: AppPages.routes,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Browse public decks'));
+      await tester.tap(find.text('Browse public decks'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DiscoveryScreen), findsOneWidget);
+    });
+
+    testWidgets('browse discovery is disabled while logging in', (
+      tester,
+    ) async {
+      networkDioClient.configure(
+        baseUrl: 'http://localhost',
+        options: BaseOptions(),
+      );
+      final previous = networkDioClient.dio.httpClientAdapter;
+      networkDioClient.dio.httpClientAdapter = _DelayedErrorAdapter(
+        delay: const Duration(seconds: 1),
+      );
+      addTearDown(() {
+        networkDioClient.dio.httpClientAdapter = previous;
+      });
+
+      await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
+      await tester.pumpAndSettle();
+
+      AppButton browseButton() => tester.widget<AppButton>(
+        find.widgetWithText(AppButton, 'Browse public decks'),
+      );
+      expect(browseButton().onPressed, isNotNull);
+
+      await tester.enterText(find.byType(TextField).first, 'a');
+      await tester.enterText(find.byType(TextField).last, 'short');
+      await tester.tap(find.text('Login'));
+      await tester.pump();
+
+      expect(browseButton().onPressed, isNull);
+
+      await tester.pump(const Duration(seconds: 9));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(browseButton().onPressed, isNotNull);
+      await tester.pump(const Duration(seconds: 2));
+    });
   });
+}
+
+class _DelayedErrorAdapter implements HttpClientAdapter {
+  _DelayedErrorAdapter({this.delay = Duration.zero});
+
+  final Duration delay;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) => Future.delayed(
+    delay,
+    () => ResponseBody.fromString(
+      jsonEncode({
+        'code': -1,
+        'msg': 'Invalid username or password',
+        'data': null,
+      }),
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    ),
+  );
+
+  @override
+  void close({bool force = false}) {}
 }
 
 class _LoginRequestAdapter implements HttpClientAdapter {
