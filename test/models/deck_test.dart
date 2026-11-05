@@ -146,6 +146,16 @@ void main() {
           'fields': ['a'],
         });
         expect(withoutDesc.description, '');
+
+        final nonString = Deck.fromJson({
+          'id': 'd',
+          'name': 'n',
+          'stats': <String, dynamic>{},
+          'owner': 'o',
+          'fields': ['a'],
+          'description': false,
+        });
+        expect(nonString.description, '');
       });
 
       test('copyWith updates and preserves description', () {

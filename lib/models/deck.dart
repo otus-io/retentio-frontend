@@ -200,5 +200,8 @@ Map<String, dynamic> _normalizeDeckJson(Map<String, dynamic> raw) {
     json['stats'] = <String, dynamic>{};
   }
 
+  final description = json['description'];
+  json['description'] = description is String ? description : '';
+
   return json;
 }

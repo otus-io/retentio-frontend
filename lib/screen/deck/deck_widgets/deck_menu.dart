@@ -137,7 +137,7 @@ class DeckMenu extends StatelessWidget {
               final deckListCubit = context.read<DeckListCubit>();
               await Future<void>.delayed(const Duration(milliseconds: 10));
               if (!context.mounted) return;
-              final value = await Navigator.of(context).push<String>(
+              final value = await Navigator.of(context).push<(String, String)?>(
                 MaterialPageRoute(
                   builder: (_) => MultiBlocProvider(
                     providers: [
@@ -159,8 +159,10 @@ class DeckMenu extends StatelessWidget {
                   ),
                 ),
               );
-              if (value != null && value.isNotEmpty) {
-                deckContextCubit.updateDeck(deck.copyWith(name: value));
+              if (value != null) {
+                deckContextCubit.updateDeck(
+                  deck.copyWith(name: value.$1, description: value.$2),
+                );
               }
             },
             icon: LucideIcons.squarePen,

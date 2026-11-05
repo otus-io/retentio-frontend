@@ -10,7 +10,7 @@ class Tag {
     @JsonKey(defaultValue: '') required this.description,
     @JsonKey(name: 'deck_count', defaultValue: 0) this.deckCount = 0,
     @JsonKey(name: 'fact_count', defaultValue: 0) this.factCount = 0,
-    @JsonKey(name: 'used_on', defaultValue: <String>[]) this.usedOn = const [],
+    @JsonKey(name: 'used_on', fromJson: _usedOnFromJson) this.usedOn = const [],
   });
 
   final String id;
@@ -44,6 +44,10 @@ class Tag {
     return id;
   }
 }
+
+List<String> _usedOnFromJson(List<dynamic>? json) =>
+    json?.map((e) => e is String ? e : e?.toString() ?? '').toList() ??
+    const [];
 
 /// Row from `GET /api/tags/{tagId}/facts`.
 class TagFactRef {

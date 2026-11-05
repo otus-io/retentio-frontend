@@ -554,7 +554,12 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
             if (!mounted) {
               return;
             }
-            navigator.pop(result.updatedDeckName);
+            final updatedName = result.updatedDeckName;
+            if (updatedName == null) {
+              navigator.pop();
+              return;
+            }
+            navigator.pop((updatedName, result.updatedDescription!));
           },
         ),
         if (_submitError != null)

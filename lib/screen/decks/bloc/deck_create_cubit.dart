@@ -95,6 +95,7 @@ class DeckCreateResult {
     this.message,
     this.error,
     this.updatedDeckName,
+    this.updatedDescription,
     this.newDeckId,
   });
 
@@ -104,6 +105,7 @@ class DeckCreateResult {
   final String? message;
   final DeckCreateError? error;
   final String? updatedDeckName;
+  final String? updatedDescription;
 
   /// Populated after a successful CREATE; null in edit mode.
   final String? newDeckId;
@@ -234,7 +236,11 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
     );
     if (res?.isSuccess == true) {
       emit(state.copyWith(loadingState: DeckCreateLoadingState.loaded));
-      return DeckCreateResult(success: true, updatedDeckName: name);
+      return DeckCreateResult(
+        success: true,
+        updatedDeckName: name,
+        updatedDescription: description,
+      );
     }
 
     emit(state.copyWith(loadingState: DeckCreateLoadingState.error));

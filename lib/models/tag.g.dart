@@ -12,9 +12,7 @@ Tag _$TagFromJson(Map<String, dynamic> json) => Tag(
   description: json['description'] as String? ?? '',
   deckCount: (json['deck_count'] as num?)?.toInt() ?? 0,
   factCount: (json['fact_count'] as num?)?.toInt() ?? 0,
-  usedOn:
-      (json['used_on'] as List<dynamic>?)?.map((e) => e as String).toList() ??
-      [],
+  usedOn: _usedOnFromJson(json['used_on'] as List?),
 );
 
 Map<String, dynamic> _$TagToJson(Tag instance) => <String, dynamic>{
