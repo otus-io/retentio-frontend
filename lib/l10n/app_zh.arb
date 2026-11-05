@@ -1185,11 +1185,7 @@
   },
   "deckUpdatesDescriptionSection": "描述已更改",
   "@deckUpdatesDescriptionSection": {
-    "description": "Section title when the deck description differs between source and latest"
-  },
-  "deckUpdatesDescriptionEmpty": "（空）",
-  "@deckUpdatesDescriptionEmpty": {
-    "description": "Placeholder shown when a before/after deck description is empty"
+    "description": "Shown when the deck description differs between source and latest"
   },
   "deckUpdatesAccept": "接受",
   "@deckUpdatesAccept": {

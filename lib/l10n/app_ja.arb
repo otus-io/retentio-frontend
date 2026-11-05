@@ -482,7 +482,6 @@
   "deckUpdatesMediaSection": "メディア変更（{count}）",
   "deckUpdatesTemplatesSection": "カードテンプレート変更（{count}）",
   "deckUpdatesDescriptionSection": "説明が変更されました",
-  "deckUpdatesDescriptionEmpty": "（なし）",
   "deckUpdatesAccept": "承認",
   "deckUpdatesKeepLocal": "拒否",
   "deckUpdatesAligned": "揃っています",

@@ -2030,11 +2030,7 @@
   },
   "deckUpdatesDescriptionSection": "Description changed",
   "@deckUpdatesDescriptionSection": {
-    "description": "Section title when the deck description differs between source and latest"
-  },
-  "deckUpdatesDescriptionEmpty": "(empty)",
-  "@deckUpdatesDescriptionEmpty": {
-    "description": "Placeholder shown when a before/after deck description is empty"
+    "description": "Shown when the deck description differs between source and latest"
   },
   "deckUpdatesAccept": "Accept",
   "@deckUpdatesAccept": {

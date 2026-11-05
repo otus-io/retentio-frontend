@@ -1619,9 +1619,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deckUpdatesDescriptionSection => 'Description changed';
 
   @override
-  String get deckUpdatesDescriptionEmpty => '(empty)';
-
-  @override
   String get deckUpdatesAccept => 'Accept';
 
   @override

@@ -252,11 +252,8 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
         Text(summary.changeSummary, style: theme.textTheme.bodySmall),
       ],
       if (summary.descriptionChanged) ...[
-        const SizedBox(height: 12),
-        DeckUpdatesDescriptionChange(
-          before: summary.descriptionBefore,
-          after: summary.descriptionAfter,
-        ),
+        const SizedBox(height: 6),
+        const DeckUpdatesDescriptionChange(),
       ],
       if (summary.hasContentChanges && reviewableIds.isNotEmpty) ...[
         const SizedBox(height: 12),
@@ -412,70 +409,16 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
   }
 }
 
-/// Shows the deck description before/after when it changed in an update.
+/// Label shown when the published deck description differs from the pinned one.
 class DeckUpdatesDescriptionChange extends StatelessWidget {
-  const DeckUpdatesDescriptionChange({
-    super.key,
-    required this.before,
-    required this.after,
-  });
-
-  final String before;
-  final String after;
+  const DeckUpdatesDescriptionChange({super.key});
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    Widget line(String label, String value) {
-      final text = value.trim();
-      final empty = text.isEmpty;
-      return Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              empty ? loc.deckUpdatesDescriptionEmpty : text,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontStyle: empty ? FontStyle.italic : null,
-                color: empty ? scheme.onSurfaceVariant : null,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.2)),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            loc.deckUpdatesDescriptionSection,
-            style: theme.textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          line(loc.deckUpdatesBefore, before),
-          line(loc.deckUpdatesAfter, after),
-        ],
-      ),
+    return Text(
+      loc.deckUpdatesDescriptionSection,
+      style: Theme.of(context).textTheme.bodyMedium,
     );
   }
 }

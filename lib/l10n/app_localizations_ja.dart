@@ -1521,9 +1521,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deckUpdatesDescriptionSection => '説明が変更されました';
 
   @override
-  String get deckUpdatesDescriptionEmpty => '（なし）';
-
-  @override
   String get deckUpdatesAccept => '承認';
 
   @override

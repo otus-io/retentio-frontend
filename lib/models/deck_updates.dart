@@ -248,8 +248,6 @@ class DeckUpdatesSummary {
     this.cardTemplateChangeCount = 0,
     this.changeSummary = '',
     this.descriptionChanged = false,
-    this.descriptionBefore = '',
-    this.descriptionAfter = '',
   });
 
   final int sourceVersion;
@@ -261,8 +259,6 @@ class DeckUpdatesSummary {
   final int cardTemplateChangeCount;
   final String changeSummary;
   final bool descriptionChanged;
-  final String descriptionBefore;
-  final String descriptionAfter;
 
   bool get hasContentChanges =>
       addedFactIds.isNotEmpty ||
@@ -290,8 +286,6 @@ class DeckUpdatesSummary {
       cardTemplateChangeCount: _toInt(data['card_template_change_count']) ?? 0,
       changeSummary: data['change_summary']?.toString() ?? '',
       descriptionChanged: data['description_changed'] == true,
-      descriptionBefore: data['description_before']?.toString() ?? '',
-      descriptionAfter: data['description_after']?.toString() ?? '',
     );
   }
 }

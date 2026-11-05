@@ -10,29 +10,11 @@ Widget _wrap(Widget child) => MaterialApp(
 );
 
 void main() {
-  testWidgets('shows before/after description text', (tester) async {
-    await tester.pumpWidget(
-      _wrap(
-        const DeckUpdatesDescriptionChange(
-          before: 'Old blurb',
-          after: 'New blurb',
-        ),
-      ),
-    );
+  testWidgets('shows that the description changed', (tester) async {
+    await tester.pumpWidget(_wrap(const DeckUpdatesDescriptionChange()));
 
     expect(find.text('Description changed'), findsOneWidget);
-    expect(find.text('Before update'), findsOneWidget);
-    expect(find.text('After update'), findsOneWidget);
-    expect(find.text('Old blurb'), findsOneWidget);
-    expect(find.text('New blurb'), findsOneWidget);
-  });
-
-  testWidgets('renders empty placeholder when a side is blank', (tester) async {
-    await tester.pumpWidget(
-      _wrap(const DeckUpdatesDescriptionChange(before: '', after: 'New blurb')),
-    );
-
-    expect(find.text('(empty)'), findsOneWidget);
-    expect(find.text('New blurb'), findsOneWidget);
+    expect(find.text('Before update'), findsNothing);
+    expect(find.text('After update'), findsNothing);
   });
 }

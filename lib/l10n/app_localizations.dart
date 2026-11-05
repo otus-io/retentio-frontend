@@ -2986,17 +2986,11 @@ abstract class AppLocalizations {
   /// **'Card template changes ({count})'**
   String deckUpdatesTemplatesSection(int count);
 
-  /// Section title when the deck description differs between source and latest
+  /// Shown when the deck description differs between source and latest
   ///
   /// In en, this message translates to:
   /// **'Description changed'**
   String get deckUpdatesDescriptionSection;
-
-  /// Placeholder shown when a before/after deck description is empty
-  ///
-  /// In en, this message translates to:
-  /// **'(empty)'**
-  String get deckUpdatesDescriptionEmpty;
 
   /// Accept author publish for this fact on sync
   ///

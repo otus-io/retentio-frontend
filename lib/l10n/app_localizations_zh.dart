@@ -1519,9 +1519,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deckUpdatesDescriptionSection => '描述已更改';
 
   @override
-  String get deckUpdatesDescriptionEmpty => '（空）';
-
-  @override
   String get deckUpdatesAccept => '接受';
 
   @override
