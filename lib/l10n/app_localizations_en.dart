@@ -271,6 +271,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createInputDeckNameHint => 'Set a name for your deck';
 
   @override
+  String get createInputDeckDescription => 'Description (optional)';
+
+  @override
+  String get createInputDeckDescriptionHint =>
+      'Describe this deck for people who discover it';
+
+  @override
   String get deckEditorFieldHint => 'e.g. English';
 
   @override

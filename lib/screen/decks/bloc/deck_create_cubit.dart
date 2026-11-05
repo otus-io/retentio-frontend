@@ -21,13 +21,19 @@ Map<String, dynamic> buildDeckEditorSubmitParams({
   required bool isImported,
   required int rate,
   required String name,
+  required String description,
   required List<String> fields,
 }) {
   final clampedRate = clampDeckEditorRate(rate);
   if (cardType == DeckCardType.edit && isImported) {
     return {'rate': clampedRate};
   }
-  return {'name': name, 'fields': fields, 'rate': clampedRate};
+  return {
+    'name': name,
+    'description': description,
+    'fields': fields,
+    'rate': clampedRate,
+  };
 }
 
 enum DeckCardType { add, edit }
@@ -109,6 +115,7 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
     required int rate,
     required String deckId,
     required DeckCardType cardType,
+    String description = '',
     bool isImported = false,
   }) : super(
          DeckCreateState(
@@ -120,13 +127,16 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
          ),
        ) {
     nameController.text = name;
+    descriptionController.text = description;
   }
 
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
 
   @override
   Future<void> close() {
     nameController.dispose();
+    descriptionController.dispose();
     return super.close();
   }
 
@@ -135,10 +145,14 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
     required int rate,
     required DeckCardType cardType,
     required String deckId,
+    String description = '',
     bool isImported = false,
   }) {
     if (nameController.text != name) {
       nameController.text = name;
+    }
+    if (descriptionController.text != description) {
+      descriptionController.text = description;
     }
     emit(
       state.copyWith(
@@ -178,11 +192,13 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
       );
     }
 
+    final description = descriptionController.text.trim();
     final params = buildDeckEditorSubmitParams(
       cardType: state.cardType,
       isImported: state.isImported,
       rate: state.rate,
       name: name,
+      description: description,
       fields: fields,
     );
 

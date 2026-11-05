@@ -83,6 +83,8 @@
   "createDeck": "デッキを作成",
   "createInputDeckName": "デッキ名",
   "createInputDeckNameHint": "デッキ名を入力してください",
+  "createInputDeckDescription": "説明（任意）",
+  "createInputDeckDescriptionHint": "このデッキを見つけた人向けの説明",
   "deckEditorFieldHint": "例：英語",
   "deckEditorFieldHintSecond": "例：日本語",
   "deckEditorAddFieldTooltip": "列見出しを追加",

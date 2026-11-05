@@ -13,8 +13,8 @@ Tag _$TagFromJson(Map<String, dynamic> json) => Tag(
   deckCount: (json['deck_count'] as num?)?.toInt() ?? 0,
   factCount: (json['fact_count'] as num?)?.toInt() ?? 0,
   usedOn:
-      (json['used_on'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
-      const [],
+      (json['used_on'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      [],
 );
 
 Map<String, dynamic> _$TagToJson(Tag instance) => <String, dynamic>{

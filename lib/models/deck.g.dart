@@ -45,6 +45,7 @@ Map<String, dynamic> _$DeckStatsToJson(DeckStats instance) => <String, dynamic>{
 Deck _$DeckFromJson(Map<String, dynamic> json) => Deck(
   id: json['id'] as String? ?? '',
   name: json['name'] as String? ?? '',
+  description: json['description'] as String? ?? '',
   stats: json['stats'] == null
       ? _emptyDeckStats
       : DeckStats.fromJson(json['stats'] as Map<String, dynamic>),
@@ -73,6 +74,7 @@ Deck _$DeckFromJson(Map<String, dynamic> json) => Deck(
 Map<String, dynamic> _$DeckToJson(Deck instance) => <String, dynamic>{
   'id': instance.id,
   'name': instance.name,
+  'description': instance.description,
   'stats': instance.stats.toJson(),
   'rate': instance.rate,
   'owner': _ownerToJson(instance.owner),

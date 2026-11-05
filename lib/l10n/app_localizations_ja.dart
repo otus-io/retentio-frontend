@@ -266,6 +266,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get createInputDeckNameHint => 'デッキ名を入力してください';
 
   @override
+  String get createInputDeckDescription => '説明（任意）';
+
+  @override
+  String get createInputDeckDescriptionHint => 'このデッキを見つけた人向けの説明';
+
+  @override
   String get deckEditorFieldHint => '例：英語';
 
   @override

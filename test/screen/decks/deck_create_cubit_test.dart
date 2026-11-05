@@ -53,39 +53,47 @@ void main() {
         isImported: true,
         rate: 45,
         name: 'Ignored name',
+        description: 'Ignored description',
         fields: ['field-a', 'field-b'],
       );
 
       expect(params, {'rate': 45});
     });
 
-    test('non-imported edit deck sends name, fields, and rate', () {
-      final params = buildDeckEditorSubmitParams(
-        cardType: DeckCardType.edit,
-        isImported: false,
-        rate: 45,
-        name: 'My deck',
-        fields: ['field-a', 'field-b'],
-      );
+    test(
+      'non-imported edit deck sends name, description, fields, and rate',
+      () {
+        final params = buildDeckEditorSubmitParams(
+          cardType: DeckCardType.edit,
+          isImported: false,
+          rate: 45,
+          name: 'My deck',
+          description: 'A helpful deck',
+          fields: ['field-a', 'field-b'],
+        );
 
-      expect(params, {
-        'name': 'My deck',
-        'fields': ['field-a', 'field-b'],
-        'rate': 45,
-      });
-    });
+        expect(params, {
+          'name': 'My deck',
+          'description': 'A helpful deck',
+          'fields': ['field-a', 'field-b'],
+          'rate': 45,
+        });
+      },
+    );
 
-    test('create deck sends name, fields, and rate', () {
+    test('create deck sends name, description, fields, and rate', () {
       final params = buildDeckEditorSubmitParams(
         cardType: DeckCardType.add,
         isImported: false,
         rate: 2000,
         name: 'New deck',
+        description: '',
         fields: ['front'],
       );
 
       expect(params, {
         'name': 'New deck',
+        'description': '',
         'fields': ['front'],
         'rate': 1000,
       });

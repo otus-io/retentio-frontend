@@ -137,6 +137,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
       createCubit.setMode(
         name: widget.deck!.name,
         rate: widget.deck!.rate,
+        description: widget.deck!.description,
         cardType: DeckCardType.edit,
         deckId: widget.deck!.id,
         isImported: widget.deck!.isImported,
@@ -485,6 +486,23 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
             ],
           ],
         ),
+        if (!isImported) ...[
+          const SizedBox(height: 14),
+          AppInput(
+            controller: createCubit.descriptionController,
+            label: loc.createInputDeckDescription,
+            hint: loc.createInputDeckDescriptionHint,
+            maxLines: 4,
+            minLines: 2,
+            maxLength: 500,
+            textCapitalization: TextCapitalization.sentences,
+            onChanged: (_) {
+              if (_submitError != null) {
+                setState(() => _submitError = null);
+              }
+            },
+          ),
+        ],
         const SizedBox(height: 14),
 
         AppButton(

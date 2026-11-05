@@ -69,6 +69,7 @@ class Deck {
   const Deck({
     @JsonKey(defaultValue: '') required this.id,
     @JsonKey(defaultValue: '') required this.name,
+    @JsonKey(defaultValue: '') this.description = '',
     this.stats = _emptyDeckStats,
     @JsonKey(defaultValue: 0) required this.rate,
     this.owner = const DeckOwner(username: 'unknown', email: ''),
@@ -86,6 +87,7 @@ class Deck {
 
   final String id;
   final String name;
+  final String description;
   final DeckStats stats;
   final int rate;
   @JsonKey(fromJson: _ownerFromJson, toJson: _ownerToJson)
@@ -117,9 +119,10 @@ class Deck {
   /// Source deck that has at least one published snapshot.
   bool get isPublishedSource => !isImported && publishedVersion > 0;
 
-  Deck copyWith({required String name}) => Deck(
+  Deck copyWith({String? name, String? description}) => Deck(
     id: id,
-    name: name,
+    name: name ?? this.name,
+    description: description ?? this.description,
     stats: stats,
     rate: rate,
     owner: owner,

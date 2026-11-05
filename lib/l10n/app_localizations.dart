@@ -598,6 +598,18 @@ abstract class AppLocalizations {
   /// **'Set a name for your deck'**
   String get createInputDeckNameHint;
 
+  /// Label for optional deck description input field
+  ///
+  /// In en, this message translates to:
+  /// **'Description (optional)'**
+  String get createInputDeckDescription;
+
+  /// Hint text for deck description input field
+  ///
+  /// In en, this message translates to:
+  /// **'Describe this deck for people who discover it'**
+  String get createInputDeckDescriptionHint;
+
   /// Hint for first (and other non-second) deck column header row
   ///
   /// In en, this message translates to:

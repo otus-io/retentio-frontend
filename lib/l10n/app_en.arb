@@ -360,6 +360,14 @@
   "@createInputDeckNameHint": {
     "description": "Hint text for deck name input field"
   },
+  "createInputDeckDescription": "Description (optional)",
+  "@createInputDeckDescription": {
+    "description": "Label for optional deck description input field"
+  },
+  "createInputDeckDescriptionHint": "Describe this deck for people who discover it",
+  "@createInputDeckDescriptionHint": {
+    "description": "Hint text for deck description input field"
+  },
   "deckEditorFieldHint": "e.g. English",
   "@deckEditorFieldHint": {
     "description": "Hint for first (and other non-second) deck column header row"

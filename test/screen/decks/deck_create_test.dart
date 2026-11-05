@@ -92,13 +92,14 @@ void main() {
     });
 
     testWidgets(
-      'shows name field, two default column inputs, and save button',
+      'shows name, description, two default column inputs, and save button',
       (tester) async {
         await tester.pumpWidget(buildDeckCreateHarness(const DeckCreate()));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 400));
 
-        expect(find.byType(TextField), findsNWidgets(3));
+        // 1 name + 2 column fields + 1 description = 4 text fields.
+        expect(find.byType(TextField), findsNWidgets(4));
         expect(find.byType(FilledButton), findsOneWidget);
       },
     );
@@ -110,8 +111,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
-      // Initially: 1 name TextField + 2 field TextFields.
-      expect(find.byType(TextField), findsNWidgets(3));
+      // Initially: 1 name + 2 field + 1 description TextField.
+      expect(find.byType(TextField), findsNWidgets(4));
 
       // Add one more field so that delete is enabled.
       // Use the localized English text from deckCreateAddField.
@@ -120,8 +121,8 @@ void main() {
       await tester.tap(addFieldButton);
       await tester.pumpAndSettle();
 
-      // Now: 1 name TextField + 3 field TextFields.
-      expect(find.byType(TextField), findsNWidgets(4));
+      // Now: 1 name + 3 field + 1 description TextField.
+      expect(find.byType(TextField), findsNWidgets(5));
       final textFields = find.byType(TextField);
 
       // Focus one field first so the delete button becomes visible.
@@ -134,8 +135,8 @@ void main() {
       await tester.tap(removeButtons.first);
       await tester.pumpAndSettle();
 
-      // Back to 1 name TextField + 2 field TextFields (or equivalent visible count).
-      expect(find.byType(TextField).evaluate().length <= 3, isTrue);
+      // Back to 1 name + 2 field + 1 description TextField (or fewer visible).
+      expect(find.byType(TextField).evaluate().length <= 4, isTrue);
     });
 
     testWidgets('reorders fields when dragged', (tester) async {
@@ -221,6 +222,88 @@ void main() {
       expect(find.byType(ReorderableDelayedDragStartListener), findsWidgets);
     });
 
+    testWidgets('edit deck seeds the description field', (tester) async {
+      final deck = Deck.fromJson({
+        'id': 'd1',
+        'name': 'My deck',
+        'description': 'Seeded summary',
+        'rate': 20,
+        'owner': {'username': 'u', 'email': 'u@e.com'},
+        'fields': ['Front', 'Back'],
+      });
+
+      await tester.pumpWidget(
+        buildTestableWidget(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<TagManagerCubit>(
+                create: (_) => _FakeTagManagerCubit(),
+              ),
+              BlocProvider<DeckListCubit>(create: (_) => _FakeDeckListCubit()),
+              BlocProvider(
+                create: (_) => DeckCreateCubit(
+                  name: '',
+                  rate: kDeckEditorRateDefault,
+                  deckId: '',
+                  cardType: DeckCardType.add,
+                ),
+              ),
+            ],
+            child: Scaffold(
+              body: SingleChildScrollView(child: DeckCreate(deck: deck)),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Seeded summary'), findsOneWidget);
+    });
+
+    testWidgets('imported deck hides the description field', (tester) async {
+      final imported = Deck.fromJson({
+        'id': 'd1',
+        'name': 'Imported deck',
+        'description': 'Author summary',
+        'rate': 20,
+        'source_deck_id': 'src-1',
+        'owner': {'username': 'u', 'email': 'u@e.com'},
+        'fields': ['Front', 'Back'],
+      });
+
+      await tester.pumpWidget(
+        buildTestableWidget(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<TagManagerCubit>(
+                create: (_) => _FakeTagManagerCubit(),
+              ),
+              BlocProvider<DeckListCubit>(create: (_) => _FakeDeckListCubit()),
+              BlocProvider(
+                create: (_) => DeckCreateCubit(
+                  name: '',
+                  rate: kDeckEditorRateDefault,
+                  deckId: '',
+                  cardType: DeckCardType.add,
+                ),
+              ),
+            ],
+            child: Scaffold(
+              body: SingleChildScrollView(child: DeckCreate(deck: imported)),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Author summary'), findsNothing);
+      expect(find.text('Description (optional)'), findsNothing);
+    });
+
     testWidgets('shows validation error when any field name is blank', (
       tester,
     ) async {
@@ -233,6 +316,8 @@ void main() {
       await tester.enterText(textFields.at(1), 'Front');
       await tester.enterText(textFields.at(2), '');
 
+      await tester.ensureVisible(find.byType(FilledButton));
+      await tester.pumpAndSettle();
       await tester.tap(find.byType(FilledButton));
       await tester.pumpAndSettle();
 
@@ -251,6 +336,8 @@ void main() {
       await tester.enterText(textFields.at(1), 'Front');
       await tester.enterText(textFields.at(2), '');
 
+      await tester.ensureVisible(find.byType(FilledButton));
+      await tester.pumpAndSettle();
       await tester.tap(find.byType(FilledButton));
       await tester.pumpAndSettle();
 
@@ -269,6 +356,8 @@ void main() {
       await tester.enterText(textFields.at(1), 'Front');
       await tester.enterText(textFields.at(2), 'Back');
 
+      await tester.ensureVisible(find.byType(FilledButton));
+      await tester.pumpAndSettle();
       await tester.tap(find.byType(FilledButton));
       await tester.pumpAndSettle();
 
@@ -295,6 +384,8 @@ void main() {
         await tester.enterText(textFields.at(1), 'Front');
         await tester.enterText(textFields.at(2), 'Back');
 
+        await tester.ensureVisible(find.byType(FilledButton));
+        await tester.pumpAndSettle();
         await tester.tap(find.byType(FilledButton));
         await tester.pumpAndSettle();
 
