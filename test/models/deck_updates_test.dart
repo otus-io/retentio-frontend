@@ -159,6 +159,36 @@ void main() {
       expect(summary.editedFactIds, ['e1', 'e2']);
       expect(summary.mediaChangeCount, 12);
       expect(summary.hasUpdates, isTrue);
+      expect(summary.descriptionChanged, isFalse);
+      expect(summary.descriptionBefore, '');
+      expect(summary.descriptionAfter, '');
+    });
+    test('DeckUpdatesSummary fromJson parses description change', () {
+      final summary = DeckUpdatesSummary.fromJson({
+        'source_version': 2,
+        'latest_version': 3,
+        'description_changed': true,
+        'description_before': 'Old blurb',
+        'description_after': 'New blurb',
+      });
+      expect(summary.descriptionChanged, isTrue);
+      expect(summary.descriptionBefore, 'Old blurb');
+      expect(summary.descriptionAfter, 'New blurb');
+      expect(summary.hasContentChanges, isTrue);
+      expect(summary.hasUpdates, isTrue);
+    });
+    test('description-only change counts as content updates', () {
+      final summary = DeckUpdatesSummary.fromJson({
+        'source_version': 3,
+        'latest_version': 3,
+        'description_changed': true,
+        'description_after': 'New blurb',
+      });
+      expect(summary.hasContentChanges, isTrue);
+      expect(summary.hasUpdates, isTrue);
+      expect(summary.addedFactIds, isEmpty);
+      expect(summary.editedFactIds, isEmpty);
+      expect(summary.removedFactIds, isEmpty);
     });
   });
 

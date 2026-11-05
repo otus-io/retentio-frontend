@@ -301,7 +301,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Author summary'), findsNothing);
-      expect(find.text('Description (optional)'), findsNothing);
+      expect(find.text('Description'), findsNothing);
     });
 
     testWidgets('shows validation error when any field name is blank', (
@@ -312,9 +312,11 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       final textFields = find.byType(TextField);
+      // Order: name, field1, field2, description.
       await tester.enterText(textFields.at(0), 'Japanese');
       await tester.enterText(textFields.at(1), 'Front');
       await tester.enterText(textFields.at(2), '');
+      await tester.enterText(textFields.at(3), 'A helpful deck');
 
       await tester.ensureVisible(find.byType(FilledButton));
       await tester.pumpAndSettle();
@@ -322,6 +324,27 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Fill in every column header'), findsOneWidget);
+    });
+
+    testWidgets('shows validation error when description is blank', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildDeckCreateHarness(const DeckCreate()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final textFields = find.byType(TextField);
+      await tester.enterText(textFields.at(0), 'Japanese');
+      await tester.enterText(textFields.at(1), 'Front');
+      await tester.enterText(textFields.at(2), 'Back');
+      await tester.enterText(textFields.at(3), '   ');
+
+      await tester.ensureVisible(find.byType(FilledButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FilledButton));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Please enter a deck description'), findsOneWidget);
     });
 
     testWidgets('validation errors are localized', (tester) async {
@@ -335,6 +358,7 @@ void main() {
       await tester.enterText(textFields.at(0), 'Japanese');
       await tester.enterText(textFields.at(1), 'Front');
       await tester.enterText(textFields.at(2), '');
+      await tester.enterText(textFields.at(3), '説明');
 
       await tester.ensureVisible(find.byType(FilledButton));
       await tester.pumpAndSettle();
@@ -383,6 +407,7 @@ void main() {
         await tester.enterText(textFields.at(0), 'Japanese');
         await tester.enterText(textFields.at(1), 'Front');
         await tester.enterText(textFields.at(2), 'Back');
+        await tester.enterText(textFields.at(3), 'A helpful deck');
 
         await tester.ensureVisible(find.byType(FilledButton));
         await tester.pumpAndSettle();

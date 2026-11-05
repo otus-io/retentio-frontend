@@ -87,7 +87,7 @@ class DeckCreateState {
 
 /// Client-side validation failures. The cubit has no [BuildContext], so it
 /// reports the reason and the call-site localizes it.
-enum DeckCreateError { nameEmpty, blankFieldName }
+enum DeckCreateError { nameEmpty, descriptionEmpty, blankFieldName }
 
 class DeckCreateResult {
   const DeckCreateResult({
@@ -184,6 +184,15 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
       );
     }
 
+    final description = descriptionController.text.trim();
+    // Imports only PATCH rate; description is author-owned and not shown.
+    if (!state.isImported && description.isEmpty) {
+      return const DeckCreateResult(
+        success: false,
+        error: DeckCreateError.descriptionEmpty,
+      );
+    }
+
     final fields = normalizeDeckFieldNames(fieldNames);
     if (hasBlankDeckFieldNames(fields)) {
       return const DeckCreateResult(
@@ -192,7 +201,6 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
       );
     }
 
-    final description = descriptionController.text.trim();
     final params = buildDeckEditorSubmitParams(
       cardType: state.cardType,
       isImported: state.isImported,

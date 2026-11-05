@@ -598,10 +598,10 @@ abstract class AppLocalizations {
   /// **'Set a name for your deck'**
   String get createInputDeckNameHint;
 
-  /// Label for optional deck description input field
+  /// Label for deck description input field
   ///
   /// In en, this message translates to:
-  /// **'Description (optional)'**
+  /// **'Description'**
   String get createInputDeckDescription;
 
   /// Hint text for deck description input field
@@ -609,6 +609,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Describe this deck for people who discover it'**
   String get createInputDeckDescriptionHint;
+
+  /// Snackbar when saving deck without a description
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a deck description'**
+  String get deckEditorDescriptionRequired;
 
   /// Hint for first (and other non-second) deck column header row
   ///
@@ -2979,6 +2985,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Card template changes ({count})'**
   String deckUpdatesTemplatesSection(int count);
+
+  /// Section title when the deck description differs between source and latest
+  ///
+  /// In en, this message translates to:
+  /// **'Description changed'**
+  String get deckUpdatesDescriptionSection;
+
+  /// Placeholder shown when a before/after deck description is empty
+  ///
+  /// In en, this message translates to:
+  /// **'(empty)'**
+  String get deckUpdatesDescriptionEmpty;
 
   /// Accept author publish for this fact on sync
   ///

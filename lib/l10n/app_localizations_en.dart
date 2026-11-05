@@ -271,11 +271,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createInputDeckNameHint => 'Set a name for your deck';
 
   @override
-  String get createInputDeckDescription => 'Description (optional)';
+  String get createInputDeckDescription => 'Description';
 
   @override
   String get createInputDeckDescriptionHint =>
       'Describe this deck for people who discover it';
+
+  @override
+  String get deckEditorDescriptionRequired => 'Please enter a deck description';
 
   @override
   String get deckEditorFieldHint => 'e.g. English';
@@ -1611,6 +1614,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String deckUpdatesTemplatesSection(int count) {
     return 'Card template changes ($count)';
   }
+
+  @override
+  String get deckUpdatesDescriptionSection => 'Description changed';
+
+  @override
+  String get deckUpdatesDescriptionEmpty => '(empty)';
 
   @override
   String get deckUpdatesAccept => 'Accept';

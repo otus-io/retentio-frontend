@@ -524,6 +524,8 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
             if (!result.success) {
               final msg = switch (result.error) {
                 DeckCreateError.nameEmpty => loc.deckEditorNameRequired,
+                DeckCreateError.descriptionEmpty =>
+                  loc.deckEditorDescriptionRequired,
                 DeckCreateError.blankFieldName =>
                   loc.deckEditorFieldNamesRequired,
                 // Server failure: resolve() localizes known messages below and

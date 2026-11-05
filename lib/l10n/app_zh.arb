@@ -101,8 +101,9 @@
   "createDeck": "创建卡组",
   "createInputDeckName": "卡组名称",
   "createInputDeckNameHint": "为你的deck设置name",
-  "createInputDeckDescription": "简介（可选）",
+  "createInputDeckDescription": "简介",
   "createInputDeckDescriptionHint": "为发现此卡组的用户添加简介",
+  "deckEditorDescriptionRequired": "请输入卡组简介",
   "deckEditorFieldHint": "例如：英语",
   "deckEditorFieldHintSecond": "例如：日语",
   "deckEditorAddFieldTooltip": "添加列标题",
@@ -1181,6 +1182,14 @@
   "deckUpdatesTemplatesSection": "卡片模板变更（{count}）",
   "@deckUpdatesTemplatesSection": {
     "placeholders": { "count": { "type": "int" } }
+  },
+  "deckUpdatesDescriptionSection": "描述已更改",
+  "@deckUpdatesDescriptionSection": {
+    "description": "Section title when the deck description differs between source and latest"
+  },
+  "deckUpdatesDescriptionEmpty": "（空）",
+  "@deckUpdatesDescriptionEmpty": {
+    "description": "Placeholder shown when a before/after deck description is empty"
   },
   "deckUpdatesAccept": "接受",
   "@deckUpdatesAccept": {

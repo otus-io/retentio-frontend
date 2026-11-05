@@ -81,6 +81,7 @@ void main() {
       await tester.enterText(textFields.at(0), 'My new deck');
       await tester.enterText(textFields.at(1), 'Front');
       await tester.enterText(textFields.at(2), 'Back');
+      await tester.enterText(textFields.at(3), 'A study collection');
       await tester.pump();
 
       final saveButton = find.widgetWithText(FilledButton, 'Save');

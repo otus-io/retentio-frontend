@@ -360,13 +360,17 @@
   "@createInputDeckNameHint": {
     "description": "Hint text for deck name input field"
   },
-  "createInputDeckDescription": "Description (optional)",
+  "createInputDeckDescription": "Description",
   "@createInputDeckDescription": {
-    "description": "Label for optional deck description input field"
+    "description": "Label for deck description input field"
   },
   "createInputDeckDescriptionHint": "Describe this deck for people who discover it",
   "@createInputDeckDescriptionHint": {
     "description": "Hint text for deck description input field"
+  },
+  "deckEditorDescriptionRequired": "Please enter a deck description",
+  "@deckEditorDescriptionRequired": {
+    "description": "Snackbar when saving deck without a description"
   },
   "deckEditorFieldHint": "e.g. English",
   "@deckEditorFieldHint": {
@@ -2023,6 +2027,14 @@
   "deckUpdatesTemplatesSection": "Card template changes ({count})",
   "@deckUpdatesTemplatesSection": {
     "placeholders": { "count": { "type": "int" } }
+  },
+  "deckUpdatesDescriptionSection": "Description changed",
+  "@deckUpdatesDescriptionSection": {
+    "description": "Section title when the deck description differs between source and latest"
+  },
+  "deckUpdatesDescriptionEmpty": "(empty)",
+  "@deckUpdatesDescriptionEmpty": {
+    "description": "Placeholder shown when a before/after deck description is empty"
   },
   "deckUpdatesAccept": "Accept",
   "@deckUpdatesAccept": {

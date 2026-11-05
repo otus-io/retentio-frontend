@@ -266,10 +266,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get createInputDeckNameHint => 'デッキ名を入力してください';
 
   @override
-  String get createInputDeckDescription => '説明（任意）';
+  String get createInputDeckDescription => '説明';
 
   @override
   String get createInputDeckDescriptionHint => 'このデッキを見つけた人向けの説明';
+
+  @override
+  String get deckEditorDescriptionRequired => 'デッキの説明を入力してください';
 
   @override
   String get deckEditorFieldHint => '例：英語';
@@ -1513,6 +1516,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String deckUpdatesTemplatesSection(int count) {
     return 'カードテンプレート変更（$count）';
   }
+
+  @override
+  String get deckUpdatesDescriptionSection => '説明が変更されました';
+
+  @override
+  String get deckUpdatesDescriptionEmpty => '（なし）';
 
   @override
   String get deckUpdatesAccept => '承認';

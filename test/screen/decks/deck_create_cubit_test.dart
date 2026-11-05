@@ -37,11 +37,24 @@ void main() {
     test('blank column header reports a typed error', () async {
       final cubit = buildCubit('Japanese');
       addTearDown(cubit.close);
+      cubit.descriptionController.text = 'A helpful deck';
 
       final result = await cubit.submit(fieldNames: ['Front', '   ']);
 
       expect(result.success, isFalse);
       expect(result.error, DeckCreateError.blankFieldName);
+      expect(result.message, isNull);
+    });
+
+    test('empty description reports a typed error', () async {
+      final cubit = buildCubit('Japanese');
+      addTearDown(cubit.close);
+      cubit.descriptionController.text = '   ';
+
+      final result = await cubit.submit(fieldNames: ['Front', 'Back']);
+
+      expect(result.success, isFalse);
+      expect(result.error, DeckCreateError.descriptionEmpty);
       expect(result.message, isNull);
     });
   });
