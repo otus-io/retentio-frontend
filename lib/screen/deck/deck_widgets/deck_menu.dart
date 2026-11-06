@@ -146,6 +146,7 @@ class DeckMenu extends StatelessWidget {
                         create: (_) => DeckCreateCubit(
                           name: deck.name,
                           rate: deck.rate,
+                          description: deck.description,
                           deckId: deck.id,
                           cardType: DeckCardType.edit,
                           isImported: deck.isImported,
