@@ -262,7 +262,9 @@ void main() {
       expect(find.text('Seeded summary'), findsOneWidget);
     });
 
-    testWidgets('imported deck hides the description field', (tester) async {
+    testWidgets('imported deck shows the description read-only', (
+      tester,
+    ) async {
       final imported = Deck.fromJson({
         'id': 'd1',
         'name': 'Imported deck',
@@ -300,8 +302,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
 
-      expect(find.text('Author summary'), findsNothing);
-      expect(find.text('Description'), findsNothing);
+      final field = find.widgetWithText(TextField, 'Author summary');
+      expect(field, findsOneWidget);
+      expect(tester.widget<TextField>(field).enabled, isFalse);
     });
 
     testWidgets('shows validation error when any field name is blank', (

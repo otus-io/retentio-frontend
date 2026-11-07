@@ -187,7 +187,7 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
     }
 
     final description = descriptionController.text.trim();
-    // Imports only PATCH rate; description is author-owned and not shown.
+    // Imports only PATCH rate; description is author-owned and read-only.
     if (!state.isImported && description.isEmpty) {
       return const DeckCreateResult(
         success: false,
