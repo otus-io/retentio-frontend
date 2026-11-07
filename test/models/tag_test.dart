@@ -86,6 +86,16 @@ void main() {
       expect(tag.usedOn, isEmpty);
     });
 
+    test('fromJson stringifies non-string used_on entries', () {
+      final tag = Tag.fromJson({
+        'id': 'tag-1',
+        'name': 'Flutter',
+        'description': 'desc',
+        'used_on': ['deck', 2, null],
+      });
+      expect(tag.usedOn, ['deck', '2', '']);
+    });
+
     test('TagFactRef.fromJson parses deck_id and fact_id', () {
       final ref = TagFactRef.fromJson({
         'deck_id': 'dk7xm2n9pq4w',

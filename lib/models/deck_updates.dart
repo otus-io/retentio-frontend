@@ -247,6 +247,7 @@ class DeckUpdatesSummary {
     this.mediaChangeCount = 0,
     this.cardTemplateChangeCount = 0,
     this.changeSummary = '',
+    this.descriptionChanged = false,
   });
 
   final int sourceVersion;
@@ -257,13 +258,15 @@ class DeckUpdatesSummary {
   final int mediaChangeCount;
   final int cardTemplateChangeCount;
   final String changeSummary;
+  final bool descriptionChanged;
 
   bool get hasContentChanges =>
       addedFactIds.isNotEmpty ||
       removedFactIds.isNotEmpty ||
       editedFactIds.isNotEmpty ||
       mediaChangeCount > 0 ||
-      cardTemplateChangeCount > 0;
+      cardTemplateChangeCount > 0 ||
+      descriptionChanged;
 
   bool get hasUpdates => latestVersion > sourceVersion || hasContentChanges;
 
@@ -282,6 +285,7 @@ class DeckUpdatesSummary {
       mediaChangeCount: _toInt(data['media_change_count']) ?? 0,
       cardTemplateChangeCount: _toInt(data['card_template_change_count']) ?? 0,
       changeSummary: data['change_summary']?.toString() ?? '',
+      descriptionChanged: data['description_changed'] == true,
     );
   }
 }

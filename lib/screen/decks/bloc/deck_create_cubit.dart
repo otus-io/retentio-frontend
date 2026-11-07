@@ -21,13 +21,19 @@ Map<String, dynamic> buildDeckEditorSubmitParams({
   required bool isImported,
   required int rate,
   required String name,
+  required String description,
   required List<String> fields,
 }) {
   final clampedRate = clampDeckEditorRate(rate);
   if (cardType == DeckCardType.edit && isImported) {
     return {'rate': clampedRate};
   }
-  return {'name': name, 'fields': fields, 'rate': clampedRate};
+  return {
+    'name': name,
+    'description': description,
+    'fields': fields,
+    'rate': clampedRate,
+  };
 }
 
 enum DeckCardType { add, edit }
@@ -81,7 +87,7 @@ class DeckCreateState {
 
 /// Client-side validation failures. The cubit has no [BuildContext], so it
 /// reports the reason and the call-site localizes it.
-enum DeckCreateError { nameEmpty, blankFieldName }
+enum DeckCreateError { nameEmpty, descriptionEmpty, blankFieldName }
 
 class DeckCreateResult {
   const DeckCreateResult({
@@ -89,6 +95,7 @@ class DeckCreateResult {
     this.message,
     this.error,
     this.updatedDeckName,
+    this.updatedDescription,
     this.newDeckId,
   });
 
@@ -98,6 +105,7 @@ class DeckCreateResult {
   final String? message;
   final DeckCreateError? error;
   final String? updatedDeckName;
+  final String? updatedDescription;
 
   /// Populated after a successful CREATE; null in edit mode.
   final String? newDeckId;
@@ -109,6 +117,7 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
     required int rate,
     required String deckId,
     required DeckCardType cardType,
+    String description = '',
     bool isImported = false,
   }) : super(
          DeckCreateState(
@@ -120,13 +129,16 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
          ),
        ) {
     nameController.text = name;
+    descriptionController.text = description;
   }
 
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
 
   @override
   Future<void> close() {
     nameController.dispose();
+    descriptionController.dispose();
     return super.close();
   }
 
@@ -135,10 +147,14 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
     required int rate,
     required DeckCardType cardType,
     required String deckId,
+    String description = '',
     bool isImported = false,
   }) {
     if (nameController.text != name) {
       nameController.text = name;
+    }
+    if (descriptionController.text != description) {
+      descriptionController.text = description;
     }
     emit(
       state.copyWith(
@@ -170,6 +186,15 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
       );
     }
 
+    final description = descriptionController.text.trim();
+    // Imports only PATCH rate; description is author-owned and read-only.
+    if (!state.isImported && description.isEmpty) {
+      return const DeckCreateResult(
+        success: false,
+        error: DeckCreateError.descriptionEmpty,
+      );
+    }
+
     final fields = normalizeDeckFieldNames(fieldNames);
     if (hasBlankDeckFieldNames(fields)) {
       return const DeckCreateResult(
@@ -183,6 +208,7 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
       isImported: state.isImported,
       rate: state.rate,
       name: name,
+      description: description,
       fields: fields,
     );
 
@@ -210,7 +236,11 @@ class DeckCreateCubit extends Cubit<DeckCreateState> {
     );
     if (res?.isSuccess == true) {
       emit(state.copyWith(loadingState: DeckCreateLoadingState.loaded));
-      return DeckCreateResult(success: true, updatedDeckName: name);
+      return DeckCreateResult(
+        success: true,
+        updatedDeckName: name,
+        updatedDescription: description,
+      );
     }
 
     emit(state.copyWith(loadingState: DeckCreateLoadingState.error));

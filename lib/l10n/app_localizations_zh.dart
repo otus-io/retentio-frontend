@@ -266,6 +266,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get createInputDeckNameHint => '为你的deck设置name';
 
   @override
+  String get createInputDeckDescription => '简介';
+
+  @override
+  String get createInputDeckDescriptionHint => '为发现此卡组的用户添加简介';
+
+  @override
+  String get deckEditorDescriptionRequired => '请输入卡组简介';
+
+  @override
   String get deckEditorFieldHint => '例如：英语';
 
   @override
@@ -1505,6 +1514,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String deckUpdatesTemplatesSection(int count) {
     return '卡片模板变更（$count）';
   }
+
+  @override
+  String get deckUpdatesDescriptionSection => '描述已更改';
 
   @override
   String get deckUpdatesAccept => '接受';

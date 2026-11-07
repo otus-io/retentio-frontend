@@ -124,6 +124,51 @@ void main() {
         expect(deck.visibility, '');
         expect(deck.sourceVersion, 0);
         expect(deck.isPublishedSource, isFalse);
+        expect(deck.description, '');
+      });
+
+      test('parses description and defaults to empty when absent', () {
+        final withDesc = Deck.fromJson({
+          'id': 'd',
+          'name': 'n',
+          'stats': <String, dynamic>{},
+          'owner': 'o',
+          'fields': ['a'],
+          'description': 'A helpful deck',
+        });
+        expect(withDesc.description, 'A helpful deck');
+
+        final withoutDesc = Deck.fromJson({
+          'id': 'd',
+          'name': 'n',
+          'stats': <String, dynamic>{},
+          'owner': 'o',
+          'fields': ['a'],
+        });
+        expect(withoutDesc.description, '');
+
+        final nonString = Deck.fromJson({
+          'id': 'd',
+          'name': 'n',
+          'stats': <String, dynamic>{},
+          'owner': 'o',
+          'fields': ['a'],
+          'description': false,
+        });
+        expect(nonString.description, '');
+      });
+
+      test('copyWith updates and preserves description', () {
+        final deck = Deck.fromJson({
+          'id': 'd',
+          'name': 'n',
+          'stats': <String, dynamic>{},
+          'owner': 'o',
+          'fields': ['a'],
+          'description': 'Original',
+        });
+        expect(deck.copyWith(name: 'New').description, 'Original');
+        expect(deck.copyWith(description: 'Updated').description, 'Updated');
       });
 
       test('parses sharing fields for source and import decks', () {

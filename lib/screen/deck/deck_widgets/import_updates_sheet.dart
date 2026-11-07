@@ -251,6 +251,10 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
         const SizedBox(height: 6),
         Text(summary.changeSummary, style: theme.textTheme.bodySmall),
       ],
+      if (summary.descriptionChanged) ...[
+        const SizedBox(height: 6),
+        const DeckUpdatesDescriptionChange(),
+      ],
       if (summary.hasContentChanges && reviewableIds.isNotEmpty) ...[
         const SizedBox(height: 12),
         AppButton(
@@ -401,6 +405,20 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Label shown when the published deck description differs from the pinned one.
+class DeckUpdatesDescriptionChange extends StatelessWidget {
+  const DeckUpdatesDescriptionChange({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return Text(
+      loc.deckUpdatesDescriptionSection,
+      style: Theme.of(context).textTheme.bodyMedium,
     );
   }
 }

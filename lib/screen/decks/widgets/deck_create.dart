@@ -137,6 +137,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
       createCubit.setMode(
         name: widget.deck!.name,
         rate: widget.deck!.rate,
+        description: widget.deck!.description,
         cardType: DeckCardType.edit,
         deckId: widget.deck!.id,
         isImported: widget.deck!.isImported,
@@ -486,6 +487,22 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
           ],
         ),
         const SizedBox(height: 14),
+        AppInput(
+          controller: createCubit.descriptionController,
+          label: loc.createInputDeckDescription,
+          hint: loc.createInputDeckDescriptionHint,
+          enabled: !isImported,
+          maxLines: 4,
+          minLines: 2,
+          maxLength: 500,
+          textCapitalization: TextCapitalization.sentences,
+          onChanged: (_) {
+            if (_submitError != null) {
+              setState(() => _submitError = null);
+            }
+          },
+        ),
+        const SizedBox(height: 14),
 
         AppButton(
           label: loc.save,
@@ -506,6 +523,8 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
             if (!result.success) {
               final msg = switch (result.error) {
                 DeckCreateError.nameEmpty => loc.deckEditorNameRequired,
+                DeckCreateError.descriptionEmpty =>
+                  loc.deckEditorDescriptionRequired,
                 DeckCreateError.blankFieldName =>
                   loc.deckEditorFieldNamesRequired,
                 // Server failure: resolve() localizes known messages below and
@@ -534,7 +553,12 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
             if (!mounted) {
               return;
             }
-            navigator.pop(result.updatedDeckName);
+            final updatedName = result.updatedDeckName;
+            if (updatedName == null) {
+              navigator.pop();
+              return;
+            }
+            navigator.pop((updatedName, result.updatedDescription!));
           },
         ),
         if (_submitError != null)
