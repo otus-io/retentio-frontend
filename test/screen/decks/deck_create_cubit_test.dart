@@ -1,4 +1,10 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retentio/core/network/network.dart';
 import 'package:retentio/screen/decks/bloc/deck_create_cubit.dart';
 
 void main() {
@@ -112,4 +118,120 @@ void main() {
       });
     });
   });
+
+  group('DeckCreateCubit.submit description request', () {
+    late _DeckWriteAdapter adapter;
+
+    setUp(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      networkDioClient.configure(
+        baseUrl: 'http://localhost',
+        options: BaseOptions(),
+      );
+      adapter = _DeckWriteAdapter();
+      networkDioClient.dio.httpClientAdapter = adapter;
+    });
+
+    tearDown(() {
+      networkDioClient.dio.httpClientAdapter = IOHttpClientAdapter();
+    });
+
+    test('create posts the trimmed description', () async {
+      final cubit = DeckCreateCubit(
+        name: 'Japanese',
+        rate: kDeckEditorRateDefault,
+        deckId: '',
+        cardType: DeckCardType.add,
+      );
+      addTearDown(cubit.close);
+      cubit.descriptionController.text = '  A helpful deck  ';
+
+      final result = await cubit.submit(fieldNames: ['Front', 'Back']);
+
+      expect(result.success, isTrue);
+      expect(adapter.writes, hasLength(1));
+      final write = adapter.writes.single;
+      expect(write.method, 'POST');
+      expect(write.path, '/api/decks');
+      expect(write.body, {
+        'name': 'Japanese',
+        'description': 'A helpful deck',
+        'fields': ['Front', 'Back'],
+        'rate': kDeckEditorRateDefault,
+      });
+    });
+
+    test('edit patches the trimmed description', () async {
+      final cubit = DeckCreateCubit(
+        name: 'Japanese',
+        rate: 45,
+        deckId: 'deck-1',
+        cardType: DeckCardType.edit,
+      );
+      addTearDown(cubit.close);
+      cubit.descriptionController.text = '  Updated blurb  ';
+
+      final result = await cubit.submit(fieldNames: ['Front', 'Back']);
+
+      expect(result.success, isTrue);
+      expect(result.updatedDescription, 'Updated blurb');
+      expect(adapter.writes, hasLength(1));
+      final write = adapter.writes.single;
+      expect(write.method, 'PATCH');
+      expect(write.path, '/api/decks/deck-1');
+      expect(write.body, {
+        'name': 'Japanese',
+        'description': 'Updated blurb',
+        'fields': ['Front', 'Back'],
+        'rate': 45,
+      });
+    });
+  });
+}
+
+class _DeckWrite {
+  const _DeckWrite({
+    required this.method,
+    required this.path,
+    required this.body,
+  });
+
+  final String method;
+  final String path;
+  final Map<String, dynamic> body;
+}
+
+class _DeckWriteAdapter implements HttpClientAdapter {
+  final writes = <_DeckWrite>[];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    writes.add(
+      _DeckWrite(
+        method: options.method,
+        path: options.uri.path,
+        body: options.data is Map
+            ? Map<String, dynamic>.from(options.data as Map)
+            : <String, dynamic>{},
+      ),
+    );
+    return ResponseBody.fromString(
+      jsonEncode({
+        'code': 0,
+        'msg': 'ok',
+        'data': {'deck_id': 'deck-1'},
+      }),
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
 }
