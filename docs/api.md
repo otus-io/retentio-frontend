@@ -19,6 +19,7 @@ This guide walks you through using the Retentio API via Swagger UI.
   - [Reset Password](#reset-password)
   - [Verify Email](#verify-email)
   - [Resend Verification](#resend-verification)
+  - [Delete Account](#delete-account)
 - [2. Decks](#2-decks)
   - [Create a Deck](#create-a-deck)
   - [Get a Single Deck](#get-a-single-deck)
@@ -111,6 +112,7 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/auth/verify-email`                          | POST   | Verify email with token from verification email                                                                                                                                                 |
 | `/auth/resend-verification`                   | POST   | Resend verification email (anti-enumeration)                                                                                                                                                    |
 | `/api/profile`                                | GET    | Get current user profile                                                                                                                                                                        |
+| `/api/profile`                                | DELETE | Delete the authenticated account (body: `password`). Account keys are removed first (gates the JWT), then unpublished source decks and import decks are removed; published source decks are anonymized (owner `deleted`). Failed password attempts: 5 / 15 min. See [Delete Account](#delete-account). |
 | `/api/decks`                                  | POST   | Create deck. Body: `name`, **`fields`** (≥1 column name, required), **`rate`** (required, 1–1000), optional **`tags`**.                                                                         |
 | `/api/decks`                                  | GET    | List all decks                                                                                                                                                                                  |
 | `/api/decks/{id}`                             | GET    | Get deck details. Source decks include `visibility`, `published_version`. Import decks include `source_deck_id`, `source_version`, `imported_at`.              |
@@ -340,6 +342,48 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 ```
 
 > Always returns **200** (anti-enumeration). Rate-limited per email (~60s).
+
+### Delete Account
+
+**Endpoint:** `DELETE /api/profile`
+
+Requires the `Authorization: Bearer <token>` header. Permanently deletes the authenticated user's account after password confirmation. Use this for in-app account deletion (e.g. Apple App Store guideline 5.1.1(v)).
+
+```json
+{
+  "password": "123456"
+}
+```
+
+**Response:**
+
+```json
+{
+  "data": {
+    "msg": "Account deleted successfully",
+    "username": "swagger",
+    "deleted_decks": 3,
+    "anonymized_published_decks": 1
+  },
+  "meta": null
+}
+```
+
+What the server does on success:
+
+- Deletes the account keys first (`user:{username}`, email index, verify cooldown, delete-attempt counter). `JwtAuthMiddleware` checks user-key existence, so this immediately gates the account even if later content cleanup fails.
+- Deletes all **import** decks and all **unpublished** source decks (`published_version == 0`) owned by the user, including their facts, cards, tag associations, and user-owned media.
+- **Anonymizes published source decks** (`published_version > 0`): the deck, its snapshots, and catalog listing are kept, but `owner` is set to `deleted` and the deck is removed from the user's deck set. Importers continue studying their pinned snapshots. Media still referenced by an anonymized deck is re-owned by `deleted` rather than deleted.
+- Removes leftover tags, the user media index, and daily counters.
+- Blacklists the current JWT (same mechanism as [Logout](#logout)), so the token can no longer be used.
+
+Notes:
+
+- Not idempotent: a second call with the same token returns **401** (token blacklisted / user gone).
+- Failed password confirmations are rate-limited per username: **5 attempts / 15 minutes** → **429** `Too many delete attempts. Try again later.` (correct password is also blocked while the window is open).
+- If content purge fails after account keys are removed (**500**), the account stays gated and the token is blacklisted; the client cannot retry. Orphaned decks/media may remain until an ops reconciliation job (not part of this API) cleans up decks whose `owner` has no `user:{username}` key. Prefer orphaned content over a live account with decks already gone.
+- `deleted` is a reserved username and cannot be registered.
+- The same email or username can be registered again afterward; anonymized published decks are **not** reattached to the new account.
 
 ---
 
@@ -914,7 +958,7 @@ Field meanings match the [list catalog](#deck-catalog) table. **`qa_verified`** 
 
 `has_unpublished_changes` matches whether `POST /publish` would succeed (false when publish would return **409**). When `published_version == 0`, the response is clean (`has_unpublished_changes: false`, zero counts).
 
-`meta_changed` can be true when only the deck **name** or **field order** differs from the last manifest — those are author-visible but **not** in the publish fingerprint. In that case `has_unpublished_changes` is false and `POST /publish` still returns **409**. Gate publish on `has_unpublished_changes`; treat `meta_changed` as display-only drift.
+`meta_changed` is true when the deck **name**, **description**, **fields**, and/or **rate** differ from the last manifest. All deck metadata is in the publish fingerprint, so a metadata-only edit also sets `has_unpublished_changes: true` and `POST /publish` succeeds.
 
 **Errors:**
 
@@ -1149,7 +1193,7 @@ When already up to date: `source_version == latest_version` and diff arrays are 
 }
 ```
 
-**Server behavior:** Bumps pinned version; rebuilds import fact set from target manifest; preserves private overlays / `local_facts` / `hidden_facts` according to decisions; removes importer cards only for facts the importer **accepts** as removed; adds cards for newly accepted facts. Also copies **`name`**, **`fields`**, and **`rate`** from the target snapshot manifest into the import deck row (overwriting any prior importer `rate` set via PATCH). Template removals never delete importer-owned cards.
+**Server behavior:** Bumps pinned version; rebuilds import fact set from target manifest; preserves private overlays / `local_facts` / `hidden_facts` according to decisions; removes importer cards only for facts the importer **accepts** as removed; adds cards for newly accepted facts. Also copies **`name`** and **`fields`** from the target snapshot manifest into the import deck row. **`rate`** is importer-owned study pacing and is **not** overwritten by sync (a prior importer `rate` set via PATCH is preserved). Template removals never delete importer-owned cards.
 
 **Errors:**
 
@@ -3367,19 +3411,19 @@ These appear on many authenticated routes.
 | Endpoint | Status | `msg` |
 | -------- | ------ | ----- |
 | `POST /auth/register` | **400** | `Invalid request payload` |
-| | **400** | `Username, password, and email are required` |
+| | **400** | `Username, password, and email are required`, `Username must be between 2 and 32 characters`, `Username must not contain whitespace`, `Invalid email address`, `Password must be at least 8 characters`, `Password must not contain whitespace`, `Password must be at most 64 characters`, `Password is too long when encoded (contains too many multi-byte characters)` |
 | | **409** | `Username already exists` |
 | | **409** | `Email already in use` |
 | | **500** | `Error checking username`, `Error checking email`, `Could not hash password`, `Error serializing user data`, `Error creating user` |
 | `POST /auth/login` | **400** | `Invalid request payload` |
-| | **400** | `Username and password are required` |
+| | **400** | `Username and password are required`, `Username must not contain whitespace` |
 | | **401** | `Invalid credentials` |
 | | **500** | `Error retrieving user data`, `Error parsing user data`, `Could not generate token` |
 | `POST /auth/logout` | **401** | `Authorization token required`, `Invalid or expired token` |
 | | **500** | `Error logging out` |
 | `POST /auth/forgot-password` | **400** | `Invalid request payload`, `Email is required` |
 | | **500** | `Error generating reset token`, `Error storing reset token` |
-| `POST /auth/reset-password` | **400** | `Invalid request payload`, `Token and new password are required`, `Invalid or expired reset token`, `User not found for reset token` |
+| `POST /auth/reset-password` | **400** | `Invalid request payload`, `Token and new password are required`, `Password must be at least 8 characters`, `Password must not contain whitespace`, `Password must be at most 64 characters`, `Password is too long when encoded (contains too many multi-byte characters)`, `Invalid or expired reset token`, `User not found for reset token` |
 | | **500** | `Error validating reset token`, `Error retrieving user data`, `Error parsing user data`, `Could not hash password`, `Error serializing user data`, `Error resetting password` |
 
 > **`POST /auth/forgot-password`** always returns **200** when the email is unknown (anti-enumeration). No error body in that case. Same for **`POST /auth/resend-verification`**.
@@ -3395,6 +3439,11 @@ These appear on many authenticated routes.
 | -------- | ------ | ----- |
 | `GET /api/profile` | **404** | `User not found` |
 | | **500** | `Error retrieving user profile`, `Error parsing user data` |
+| `DELETE /api/profile` | **400** | `Invalid request payload`, `Password is required` |
+| | **401** | `Invalid credentials` |
+| | **404** | `User not found` |
+| | **429** | `Too many delete attempts. Try again later.` |
+| | **500** | `Error deleting account` |
 
 Also subject to [JWT middleware errors](#cross-cutting-errors).
 
@@ -3655,6 +3704,7 @@ Contribution submit/inbox errors: [Deck sharing](#deck-sharing).
 | `/auth/verify-email`                          | POST        | `{ "data": { "msg": "Email verified successfully" }, "meta": null }`                                                                                       |
 | `/auth/resend-verification`                   | POST        | `{ "data": { "msg" }, "meta": null }` (always 200 when email valid shape)                                                                                  |
 | `/api/profile`                                | GET         | `{ "data": { user profile }, "meta": { "msg" } }`                                                                                                          |
+| `/api/profile`                                | DELETE      | `{ "data": { "msg": "Account deleted successfully", "username", "deleted_decks", "anonymized_published_decks" }, "meta": null }`                           |
 | `/api/decks`                                  | POST        | `{ "data": { "deck_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks`                                  | GET         | `{ "data": { "decks": [ … ] }, "meta": { "total", "msg" } }`                                                                                               |
 | `/api/decks/{id}`                             | GET         | `{ "data": { deck + stats }, "meta": { "msg" } }`                                                                                                          |
