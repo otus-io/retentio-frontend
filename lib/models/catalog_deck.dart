@@ -29,8 +29,8 @@ class CatalogDeck {
   final List<String> deckTagNames;
   final DateTime? publishedAt;
 
-  /// The author human-verified every text/audio field of the published
-  /// snapshot.
+  /// The author human-verified every text/audio field of the source deck's
+  /// current facts.
   @JsonKey(defaultValue: false)
   final bool qaVerified;
 
