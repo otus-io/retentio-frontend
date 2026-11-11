@@ -81,6 +81,7 @@ class Deck {
     this.sourceVersion = 0,
     this.publishedVersion = 0,
     this.visibility = '',
+    this.qaVerified = false,
     this.createdAt,
     this.updatedAt,
   });
@@ -111,6 +112,11 @@ class Deck {
   /// Source decks: `private` or `public`.
   @JsonKey(defaultValue: '')
   final String visibility;
+
+  /// Every text/audio field is human-verified (owner; imports: owner or the
+  /// source author).
+  @JsonKey(defaultValue: false)
+  final bool qaVerified;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -134,6 +140,7 @@ class Deck {
     sourceVersion: sourceVersion,
     publishedVersion: publishedVersion,
     visibility: visibility,
+    qaVerified: qaVerified,
     createdAt: createdAt,
     updatedAt: updatedAt,
   );
@@ -202,6 +209,7 @@ Map<String, dynamic> _normalizeDeckJson(Map<String, dynamic> raw) {
 
   final description = json['description'];
   json['description'] = description is String ? description : '';
+  json['qa_verified'] = json['qa_verified'] == true;
 
   return json;
 }

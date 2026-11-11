@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/network/network.dart';
 import 'package:retentio/features/discovery/presentation/discovery_detail_screen.dart';
 import 'package:retentio/l10n/app_localizations.dart';
@@ -12,6 +13,7 @@ import '../../helpers/test_wrapper.dart';
 
 class _CatalogApi extends Interceptor {
   final paths = <String>[];
+  bool qaVerified = false;
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -33,6 +35,7 @@ class _CatalogApi extends Interceptor {
             'owner': 'o',
             'published_version': 1,
             'fact_count': 1,
+            'qa_verified': qaVerified,
           },
         },
       ),
@@ -99,6 +102,16 @@ void main() {
       ProviderScope.containerOf(
         tester.element(finder),
       ).read(selectedTabIndexProvider);
+
+  testWidgets('shows the QA badge only for verified decks', (tester) async {
+    await pumpRouter(tester);
+    expect(find.byIcon(LucideIcons.badgeCheck), findsNothing);
+
+    api.qaVerified = true;
+    await tester.pumpWidget(const SizedBox());
+    await pumpRouter(tester);
+    expect(find.byIcon(LucideIcons.badgeCheck), findsOneWidget);
+  });
 
   testWidgets('guest import shows a not-logged-in dialog', (tester) async {
     await pumpGuestImportDialog(tester);

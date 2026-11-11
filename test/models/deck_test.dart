@@ -158,6 +158,22 @@ void main() {
         expect(nonString.description, '');
       });
 
+      test('parses qa_verified, tolerating missing or loose values', () {
+        Deck parse(Object? value) => Deck.fromJson({
+          'id': 'd',
+          'name': 'n',
+          'stats': <String, dynamic>{},
+          'owner': 'o',
+          'fields': ['a'],
+          'qa_verified': ?value,
+        });
+        expect(parse(true).qaVerified, isTrue);
+        expect(parse(null).qaVerified, isFalse);
+        expect(parse('true').qaVerified, isFalse);
+        expect(parse(true).copyWith(name: 'x').qaVerified, isTrue);
+        expect(parse(true).toJson()['qa_verified'], isTrue);
+      });
+
       test('copyWith updates and preserves description', () {
         final deck = Deck.fromJson({
           'id': 'd',

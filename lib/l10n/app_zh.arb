@@ -1312,7 +1312,8 @@
   "qaMode": "QA 模式",
   "qaModeEmpty": "该导入卡组没有可校验的词条。",
   "qaModeFactLoadFailed": "无法加载该词条。",
-  "qaModeProgress": "词条 {current} / {total}",
+  "qaModeProgress": "待校验 {current} / {total}",
+  "qaVerifiedBadge": "已完成人工校验",
   "@qaModeProgress": {
     "placeholders": { "current": { "type": "int" }, "total": { "type": "int" } }
   },

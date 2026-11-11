@@ -1808,8 +1808,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String qaModeProgress(int current, int total) {
-    return 'Fact $current / $total';
+    return '$current / $total to verify';
   }
+
+  @override
+  String get qaVerifiedBadge => 'Fully QA-verified';
 
   @override
   String qaModeVerifiedAspects(int verified, int total) {

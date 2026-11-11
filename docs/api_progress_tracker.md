@@ -28,7 +28,7 @@
 | 接口 | 说明 | 前端 | 后端 |
 | --- | --- | --- | --- |
 | `POST /api/decks` | 创建卡组（创建后自动预排24小时） | ✅ | ✅ |
-| `GET /api/decks` | 获取所有卡组 | ✅ | ✅ |
+| `GET /api/decks` | 获取所有卡组（含 `qa_verified` QA 徽章） | ✅ | ✅ |
 | `GET /api/decks/{id}` | 获取卡组详情 | ❌ | ✅ |
 | `PATCH /api/decks/{id}` | 更新卡组 | ✅ | ✅ |
 | `DELETE /api/decks/{id}` | 删除卡组 | ✅ | ✅ |
@@ -40,8 +40,9 @@
 
 | 接口 | 说明 | 前端 | 后端 |
 | --- | --- | --- | --- |
-| `POST /api/decks/{id}/facts/{operation}` | 添加词条 (append/prepend/shuffle/spread) | ❌ | ✅ |
+| `POST /api/decks/{id}/facts/{operation}` | 添加词条 (append/prepend/shuffle/spread)；应用内添加发送 `verified: true` | ✅ | ✅ |
 | `GET /api/decks/{id}/facts` | 获取所有词条（离线下载分页拉取 limit/offset） | ✅ | ✅ |
+| `GET /api/decks/{id}/facts/ids` | 词条 ID 列表；QA 用 `unverified_columns` 只取待校验词条 | ✅ | ✅ |
 | `GET /api/decks/{id}/facts/{factId}` | 获取单个词条 | ❌ | ✅ |
 | `PATCH /api/decks/{id}/facts/{factId}` | 更新词条 | ❌ | ✅ |
 | `DELETE /api/decks/{id}/facts/{factId}` | 删除词条 | ❌ | ✅ |

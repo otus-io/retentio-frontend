@@ -19,6 +19,7 @@ import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_icon_button.dart';
 import 'package:retentio/widgets/app_toast.dart';
 import 'package:retentio/core/di/app_service_locator.dart';
+import 'package:retentio/widgets/qa_verified_badge.dart';
 
 class DiscoveryDetailScreen extends StatefulWidget {
   const DiscoveryDetailScreen({super.key, required this.sourceDeckId});
@@ -229,11 +230,21 @@ class _DetailBody extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 标题
-                Text(
-                  deck.name,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        deck.name,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (deck.qaVerified) ...[
+                      const SizedBox(width: 6),
+                      const QaVerifiedBadge(size: 20),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 6),
                 // 作者

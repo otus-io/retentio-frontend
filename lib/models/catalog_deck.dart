@@ -14,6 +14,7 @@ class CatalogDeck {
     required this.factCount,
     required this.deckTagNames,
     this.publishedAt,
+    this.qaVerified = false,
   });
 
   final String id;
@@ -27,6 +28,11 @@ class CatalogDeck {
   @JsonKey(name: 'deck_tag_names', defaultValue: <String>[])
   final List<String> deckTagNames;
   final DateTime? publishedAt;
+
+  /// The author human-verified every text/audio field of the published
+  /// snapshot.
+  @JsonKey(defaultValue: false)
+  final bool qaVerified;
 
   factory CatalogDeck.fromJson(Map<String, dynamic> json) =>
       _$CatalogDeckFromJson(json);

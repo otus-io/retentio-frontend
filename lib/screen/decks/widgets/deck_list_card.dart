@@ -18,6 +18,7 @@ import 'package:retentio/utils/format_compact_count.dart';
 import 'package:retentio/widgets/common_bottom_sheet.dart';
 
 import '../../../routers/routers.dart';
+import 'package:retentio/widgets/qa_verified_badge.dart';
 
 class DeckListCard extends StatelessWidget {
   final Deck deck;
@@ -91,6 +92,10 @@ class DeckListCard extends StatelessWidget {
                     style: DeckTextStyles.deckTitle(theme),
                   ),
                 ),
+                if (deck.qaVerified) ...[
+                  const QaVerifiedBadge(),
+                  const SizedBox(width: 4),
+                ],
                 DeckOfflineStatus(deckId: deck.id, downloader: downloader),
                 const SizedBox(width: 4),
                 if (!deck.isImported) ...[

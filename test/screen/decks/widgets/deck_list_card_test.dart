@@ -96,6 +96,26 @@ void main() {
       expect(find.byTooltip('Contributions'), findsOneWidget);
     });
 
+    testWidgets('shows the QA badge only on fully verified decks', (
+      tester,
+    ) async {
+      Deck deck({required bool verified}) => Deck.fromJson({
+        'id': 'deck-qa-$verified',
+        'name': 'QA Deck',
+        'stats': <String, dynamic>{},
+        'owner': {'username': 'u', 'email': 'u@t.com'},
+        'fields': ['Front', 'Back'],
+        'qa_verified': verified,
+      });
+
+      await tester.pumpWidget(_wrapCard(deck(verified: true)));
+      expect(find.byIcon(LucideIcons.badgeCheck), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpWidget(_wrapCard(deck(verified: false)));
+      expect(find.byIcon(LucideIcons.badgeCheck), findsNothing);
+    });
+
     testWidgets(
       'shows check-updates refresh for imported decks with an update',
       (tester) async {

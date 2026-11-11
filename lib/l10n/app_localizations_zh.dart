@@ -1705,8 +1705,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String qaModeProgress(int current, int total) {
-    return '词条 $current / $total';
+    return '待校验 $current / $total';
   }
+
+  @override
+  String get qaVerifiedBadge => '已完成人工校验';
 
   @override
   String qaModeVerifiedAspects(int verified, int total) {

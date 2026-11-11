@@ -3313,8 +3313,14 @@ abstract class AppLocalizations {
   /// No description provided for @qaModeProgress.
   ///
   /// In en, this message translates to:
-  /// **'Fact {current} / {total}'**
+  /// **'{current} / {total} to verify'**
   String qaModeProgress(int current, int total);
+
+  /// Tooltip on the badge of a deck whose every text/audio field is human-verified
+  ///
+  /// In en, this message translates to:
+  /// **'Fully QA-verified'**
+  String get qaVerifiedBadge;
 
   /// No description provided for @qaModeVerifiedAspects.
   ///

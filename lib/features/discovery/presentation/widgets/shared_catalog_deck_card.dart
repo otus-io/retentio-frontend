@@ -5,6 +5,7 @@ import 'package:retentio/models/catalog_deck.dart';
 import 'package:retentio/screen/decks/deck_text_styles.dart';
 import 'package:retentio/theme/theme_tokens.dart';
 import 'package:retentio/widgets/app_icon_button.dart';
+import 'package:retentio/widgets/qa_verified_badge.dart';
 
 /// 社区共享卡组列表卡片（v2 — 4行固定骨架，无语言方向）。
 ///
@@ -126,6 +127,7 @@ class SharedCatalogDeckCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (deck.qaVerified) const QaVerifiedBadge(),
                   AppIconButton(
                     variant: AppIconButtonVariant.subtle,
                     icon: LucideIcons.heart,

@@ -4,7 +4,8 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 
-/// Serves the endpoints QA mode talks to: fact ids, fact detail, fact quality,
+/// Serves the endpoints QA mode talks to: fact ids (optionally unverified
+/// only), fact detail, fact quality,
 /// deck quality stats, and the `fact_edit` contribution POST.
 class FakeQaApiAdapter implements HttpClientAdapter {
   FakeQaApiAdapter({
@@ -15,7 +16,9 @@ class FakeQaApiAdapter implements HttpClientAdapter {
     Map<String, dynamic>? stats,
     this.qualityPutFails = false,
     this.contributionFails = false,
-  }) : stats = stats == null ? null : Map<String, dynamic>.from(stats);
+    Set<String> verifiedFactIds = const {},
+  }) : stats = stats == null ? null : Map<String, dynamic>.from(stats),
+       verifiedFactIds = Set<String>.of(verifiedFactIds);
 
   final List<String> factIds;
 
@@ -33,6 +36,13 @@ class FakeQaApiAdapter implements HttpClientAdapter {
 
   bool qualityPutFails;
   bool contributionFails;
+
+  /// Facts left out of `GET …/facts/ids?unverified_columns=…`. A successful
+  /// quality PUT adds its fact, like a server sign-off.
+  final Set<String> verifiedFactIds;
+
+  /// `unverified_columns` of each `GET …/facts/ids` (`null` when absent).
+  final List<String?> unverifiedColumnsQueries = [];
 
   final List<Map<String, dynamic>> qualityPuts = [];
   final List<Map<String, dynamic>> contributionPosts = [];
@@ -91,7 +101,7 @@ class FakeQaApiAdapter implements HttpClientAdapter {
             ? Map<String, dynamic>.from(options.data as Map)
             : <String, dynamic>{};
         qualityPuts.add(body);
-        _advanceCursors(factId, body['columns']);
+        verifiedFactIds.add(factId);
         final entries = body['entries'];
         return _ok({
           'quality': {
@@ -125,7 +135,14 @@ class FakeQaApiAdapter implements HttpClientAdapter {
 
     if (method == 'GET' && path.endsWith('/facts/ids')) {
       factIdsRequestCount++;
-      return _ok({'fact_ids': factIds});
+      final columns = options.queryParameters['unverified_columns']?.toString();
+      unverifiedColumnsQueries.add(columns);
+      return _ok({
+        'fact_ids': [
+          for (final id in factIds)
+            if (columns == null || !verifiedFactIds.contains(id)) id,
+        ],
+      });
     }
 
     if (method == 'GET' && path.contains('/facts/')) {
@@ -146,28 +163,6 @@ class FakeQaApiAdapter implements HttpClientAdapter {
     }
 
     return _error('not found', 404);
-  }
-
-  void _advanceCursors(String factId, Object? columnsRaw) {
-    if (columnsRaw is! List || columnsRaw.isEmpty) return;
-    final factIndex = factIds.indexOf(factId);
-    if (factIndex < 0) return;
-    final current = stats ?? <String, dynamic>{};
-    final cursors = Map<String, dynamic>.from(
-      current['cursors'] is Map
-          ? Map<String, dynamic>.from(current['cursors'] as Map)
-          : const <String, dynamic>{},
-    );
-    for (final col in columnsRaw) {
-      final key = '$col';
-      final stored = cursors[key]?.toString();
-      final storedIndex = stored == null || stored.isEmpty
-          ? -1
-          : factIds.indexOf(stored);
-      if (storedIndex >= factIndex) continue;
-      cursors[key] = factId;
-    }
-    stats = {...current, 'last_fact_id': factId, 'cursors': cursors};
   }
 
   String _factIdFrom(String path, {required String suffix}) {

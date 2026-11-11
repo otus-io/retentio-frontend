@@ -15,6 +15,10 @@ class AddFactPayload {
     return fallbackForIndex(columnIndex + 1);
   }
 
+  /// `POST …/facts/append` body for one fact typed in the app.
+  ///
+  /// `verified: true` records the owner's human sign-off on every text/audio
+  /// field (server ignores it on imported decks); bulk uploads omit it.
   static Map<String, dynamic> buildFactBody({
     required List<Map<String, dynamic>> entries,
     List<String>? tagNames,
@@ -29,6 +33,7 @@ class AddFactPayload {
     }
     return {
       'facts': [fact],
+      'verified': true,
     };
   }
 

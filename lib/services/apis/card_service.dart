@@ -233,9 +233,22 @@ class CardService {
     return res;
   }
 
-  /// Full fact-id list via `GET …/facts/ids`. Empty on failure.
-  static Future<List<String>> listFactIds(String deckId) async {
-    final res = await ApiService.get(Api.factIds, pathParams: {'id': deckId});
+  /// Fact ids via `GET …/facts/ids`. Empty on failure.
+  ///
+  /// With [unverifiedColumns], only facts still needing a human sign-off in
+  /// those columns (`unverified_columns`).
+  static Future<List<String>> listFactIds(
+    String deckId, {
+    Set<int>? unverifiedColumns,
+  }) async {
+    final columns = unverifiedColumns?.toList()?..sort();
+    final res = await ApiService.get(
+      Api.factIds,
+      pathParams: {'id': deckId},
+      queryParams: columns == null || columns.isEmpty
+          ? null
+          : {'unverified_columns': columns.join(',')},
+    );
     final data = res?.data;
     if (data is! Map || data['fact_ids'] is! List) return const [];
     return [

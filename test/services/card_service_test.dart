@@ -448,6 +448,26 @@ void main() {
 
       expect(ids, hasLength(450));
       expect(adapter.factIdsRequestCount, 1);
+      expect(adapter.unverifiedColumnsQueries, [null]);
+    });
+
+    test('asks for unverified facts in sorted columns', () async {
+      adapter.verifiedFactIds.add('fact-0');
+
+      final ids = await CardService.listFactIds(
+        'deck-1',
+        unverifiedColumns: {2, 0},
+      );
+
+      expect(adapter.unverifiedColumnsQueries, ['0,2']);
+      expect(ids, hasLength(449));
+      expect(ids, isNot(contains('fact-0')));
+    });
+
+    test('an empty column set sends no filter', () async {
+      await CardService.listFactIds('deck-1', unverifiedColumns: const {});
+
+      expect(adapter.unverifiedColumnsQueries, [null]);
     });
 
     test('skips null ids and answers empty on a bad payload', () async {

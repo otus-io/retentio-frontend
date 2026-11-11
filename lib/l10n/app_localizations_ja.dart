@@ -1707,8 +1707,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String qaModeProgress(int current, int total) {
-    return '項目 $current / $total';
+    return '要確認 $current / $total';
   }
+
+  @override
+  String get qaVerifiedBadge => 'QA確認済み';
 
   @override
   String qaModeVerifiedAspects(int verified, int total) {

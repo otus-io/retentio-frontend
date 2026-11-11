@@ -152,73 +152,27 @@ class QaModeCubit extends Cubit<QaModeState> {
         : saved.where((i) => i >= 0 && i < count).toSet();
   }
 
-  /// Locks the column filter for this walk and loads facts.
+  /// Locks the column filter for this walk and loads the facts that still
+  /// need a sign-off in those columns.
   ///
-  /// A different selection opens at the earliest per-column server cursor (the
-  /// first fact when any selected column has not been walked). Same columns
-  /// stay on the current fact unless every selected cursor is already on the
-  /// last fact — then [QaModeState.walkComplete] is set immediately.
+  /// The list is fetched once per start (always fresh: another device may
+  /// have verified facts since) and kept for the walk, so Prev can revisit a
+  /// fact verified here. An empty list opens [QaModeState.walkComplete].
   Future<void> startWalk(Set<int> activeColumnIndexes) async {
     if (activeColumnIndexes.isEmpty || state.busy) return;
     final columns = Set<int>.of(activeColumnIndexes);
     await QaColumnPrefs.save(deckId, columns);
     if (isClosed) return;
-    final factsLoaded = state.factIds.isNotEmpty;
-    final sameColumns =
-        factsLoaded && setEquals(state.activeColumnIndexes, columns);
-    var index = state.index;
-    var stats = state.stats;
-    if (factsLoaded) {
-      // Always refetch: another device may have advanced cursors since load.
-      // A failed read keeps the stats already on screen.
-      final fetched = await FactQualityService.of.getDeckQualityStats(deckId);
-      if (isClosed) return;
-      if (fetched != null) stats = fetched;
-      final cursors = stats?.cursors ?? const {};
-      if (qaColumnsWalkComplete(
-        columns: columns,
-        cursors: cursors,
-        factIds: state.factIds,
-      )) {
-        emit(
-          QaModeState(
-            pickingColumns: false,
-            walkComplete: true,
-            activeColumnIndexes: columns,
-            factIds: state.factIds,
-            index: state.factIds.length - 1,
-            stats: stats,
-            editedCount: stats?.editedCount ?? 0,
-          ),
-        );
-        return;
-      }
-      if (!sameColumns) {
-        final resumeId = qaResumeFactId(
-          columns: columns,
-          cursors: cursors,
-          factIds: state.factIds,
-        );
-        index = _resumeIndex(state.factIds, resumeId);
-      }
-    }
     emit(
       QaModeState(
         pickingColumns: false,
         loading: true,
         activeColumnIndexes: columns,
-        factIds: factsLoaded ? state.factIds : const [],
-        index: factsLoaded ? index : 0,
-        stats: stats,
-        editedCount: stats?.editedCount ?? state.editedCount,
+        stats: state.stats,
+        editedCount: state.editedCount,
       ),
     );
-    if (factsLoaded) {
-      await _loadCurrentFact();
-      await _refreshHeader();
-    } else {
-      await _loadFacts();
-    }
+    await _loadFacts();
   }
 
   /// Re-opens the column picker without losing walk progress counters.
@@ -249,48 +203,24 @@ class QaModeCubit extends Cubit<QaModeState> {
   }
 
   Future<void> _loadFacts() async {
-    final ids = await CardService.listFactIds(deckId);
+    final ids = await CardService.listFactIds(
+      deckId,
+      unverifiedColumns: state.activeColumnIndexes,
+    );
     if (isClosed) return;
     final stats = await FactQualityService.of.getDeckQualityStats(deckId);
     if (isClosed) return;
-    final cursors = stats?.cursors ?? const {};
-    final editedCount = stats?.editedCount ?? 0;
-    if (qaColumnsWalkComplete(
-      columns: state.activeColumnIndexes,
-      cursors: cursors,
-      factIds: ids,
-    )) {
-      emit(
-        state.copyWith(
-          loading: false,
-          factIds: ids,
-          index: ids.length - 1,
-          stats: stats,
-          editedCount: editedCount,
-          walkComplete: true,
-        ),
-      );
-      return;
-    }
-    final resumeId = qaResumeFactId(
-      columns: state.activeColumnIndexes,
-      cursors: cursors,
-      factIds: ids,
-    );
-    final startIndex = _resumeIndex(ids, resumeId);
     emit(
       state.copyWith(
         loading: ids.isNotEmpty,
         factIds: ids,
-        index: startIndex,
+        index: 0,
         stats: stats,
-        editedCount: editedCount,
+        editedCount: stats?.editedCount ?? state.editedCount,
+        walkComplete: ids.isEmpty && (stats?.totalAspects ?? 1) > 0,
       ),
     );
-    if (ids.isEmpty) {
-      emit(state.copyWith(loading: false));
-      return;
-    }
+    if (ids.isEmpty) return;
     await _loadCurrentFact();
     await _refreshHeader();
   }
@@ -360,13 +290,6 @@ class QaModeCubit extends Cubit<QaModeState> {
         deckId: deckId,
         factId: factId,
         entries: pendingPutEntries(),
-        // In-range active columns only (incl. empty); out-of-range deck
-        // fields would 400 on the server.
-        columns:
-            (state.activeColumnIndexes
-                .where((i) => i >= 0 && i < state.entries.length)
-                .toList()
-              ..sort()),
       );
     } catch (e) {
       if (!isClosed) emit(state.copyWith(busy: false));
@@ -448,18 +371,6 @@ class QaModeCubit extends Cubit<QaModeState> {
         checkedIndexes: const {},
       ),
     );
-  }
-
-  /// Index of the fact after [resumeId], or 0 when there is nothing to resume.
-  ///
-  /// The last fact stays put: signing it off has no later fact to open.
-  static int _resumeIndex(List<String> ids, String? resumeId) {
-    if (ids.isEmpty || resumeId == null) return 0;
-    final verifiedIndex = ids.indexOf(resumeId);
-    if (verifiedIndex < 0) return 0;
-    final next = verifiedIndex + 1;
-    if (next >= ids.length) return ids.length - 1;
-    return next;
   }
 
   Future<void> _refreshHeader() async {

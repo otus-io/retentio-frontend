@@ -2178,7 +2178,9 @@
   "qaMode": "QA mode",
   "qaModeEmpty": "This imported deck has no facts to review.",
   "qaModeFactLoadFailed": "Could not load this fact.",
-  "qaModeProgress": "Fact {current} / {total}",
+  "qaModeProgress": "{current} / {total} to verify",
+  "qaVerifiedBadge": "Fully QA-verified",
+  "@qaVerifiedBadge": { "description": "Tooltip on the badge of a deck whose every text/audio field is human-verified" },
   "@qaModeProgress": {
     "placeholders": { "current": { "type": "int" }, "total": { "type": "int" } }
   },

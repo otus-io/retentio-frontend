@@ -137,7 +137,7 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/api/decks/{id}/contributions/{contributionId}/media/{attachmentId}` | GET | **(Sharing)** Author: download immutable contribution attachment bytes. |
 | `/api/decks/{id}/facts/{operation}`           | POST   | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`). Body: `facts` (required), optional `template`, and optional **`tags`** or **`tag_ids`** per fact item (mutually exclusive per item; `tags` = names auto-created if missing, `tag_ids` = existing IDs). Column labels live on the deck (`PATCH /api/decks/{id}` → `fields`), not on each fact. To add a card for an existing fact, use POST `/api/decks/{id}/card` instead. On **imported** decks: private overlay + `local_facts` (no contribution). |
 | `/api/decks/{id}/facts`                       | GET    | List facts (paged): default `limit` **50**, `offset` **0**; max `limit` **200**. `meta`: `count`, `has_more`, `limit`, `offset`, `total`. |
-| `/api/decks/{id}/facts/ids`                   | GET    | Full list of fact ids (`data.fact_ids`) sorted ascending; **not paged** (`limit` / `offset` ignored). `meta`: `total`. Skips fact bodies and tags, so an id whose fact record is missing or unparseable is still listed. For QA flows that walk facts and fetch each on demand. |
+| `/api/decks/{id}/facts/ids`                   | GET    | Full list of fact ids (`data.fact_ids`) sorted ascending; **not paged** (`limit` / `offset` ignored). `meta`: `total`. Skips fact bodies and tags, so an id whose fact record is missing or unparseable is still listed. For QA flows that walk facts and fetch each on demand. Optional `unverified_columns=0,2` lists only facts still needing a human sign-off in those columns — see [Quality stats](#quality-stats). |
 | `/api/decks/{id}/facts/{factId}`              | GET    | Get a specific fact                                                                                                                                                                             |
 | `/api/decks/{id}/facts/{factId}`              | PATCH  | Update a fact’s `entries` only (column names are edited on the deck). On **imported** decks: private overlay only (no contribution).                                                                                                                               |
 | `/api/decks/{id}/facts/{factId}`              | DELETE | Delete a fact. On **imported** decks: soft-hide snapshot fact or drop local-only fact (no contribution).                                                                                                                                                       |
@@ -549,6 +549,7 @@ Omit both fields or use `[]` for an untagged deck. Sending **`tags` and `tag_ids
           "total_reviews": 0,
           "total_reviews_today": 0
         },
+        "qa_verified": false,
         "created_at": "2026-02-08T12:00:00Z",
         "updated_at": "2026-02-08T12:00:00Z"
       }
@@ -588,6 +589,10 @@ Omit both fields or use `[]` for an untagged deck. Sending **`tags` and `tag_ids
 > Unlike the card counts above, `total_reviews` / `total_reviews_today` count **review actions**: each interval update via `PATCH /api/decks/{id}/card` adds one. Hiding a card is not a review, and the counters start at `0` for decks reviewed before this was added. They are always deck-wide, even when `tag_id` narrows the other stats.
 >
 > `new_cards_today` and `total_reviews_today` use midnight **UTC**. Per-day review buckets live in `deck:{id}:reviews_by_day`; read a dense series via [Reviews by day](#reviews-by-day) (`GET /api/decks/{id}/reviews/by-day?days=7`).
+>
+> **`qa_verified`** is `true` when the deck has at least one text/audio aspect and every one is human-verified by a
+> trusted signer — the owner, plus the source author on imports (an import's local facts are not counted). Cached
+> for up to 10 minutes; quality writes, fact add/edit/delete, and sync refresh it immediately.
 >
 > Stats are computed on-the-fly. For a freshly created empty deck,
 > all values are `0`. After adding facts, `cards_count` and
@@ -747,7 +752,8 @@ Example: `GET /api/decks/catalog?limit=20&offset=0&query=JLPT`
         "published_version": 3,
         "fact_count": 120,
         "deck_tag_names": ["JLPT N5", "verbs"],
-        "published_at": "2026-05-22T12:00:00Z"
+        "published_at": "2026-05-22T12:00:00Z",
+        "qa_verified": true
       }
     ]
   },
@@ -792,7 +798,7 @@ Unpublished or non-public decks do not appear. Private decks never appear even i
 
 **Who:** Anyone (no `Authorization` header required).
 
-**Purpose:** Load **one** importable catalog row by **source deck ID** — same fields as a list entry (`id`, `name`, `description`, `owner`, `fields`, `published_version`, `fact_count`, `deck_tag_names`, `published_at`). Use for catalog detail pages or direct links without paging the full list.
+**Purpose:** Load **one** importable catalog row by **source deck ID** — same fields as a list entry (`id`, `name`, `description`, `owner`, `fields`, `published_version`, `fact_count`, `deck_tag_names`, `published_at`, `qa_verified`). Use for catalog detail pages or direct links without paging the full list.
 
 **Path parameter:** `{id}` — source deck ID (same value as `source_deck_id` for `POST /api/decks/import`).
 
@@ -811,7 +817,8 @@ Example: `GET /api/decks/catalog/a1b2c3d4e5f6`
     "published_version": 3,
     "fact_count": 120,
     "deck_tag_names": ["JLPT N5", "verbs"],
-    "published_at": "2026-05-22T12:00:00Z"
+    "published_at": "2026-05-22T12:00:00Z",
+    "qa_verified": true
   },
   "meta": {
     "msg": "ok"
@@ -819,7 +826,7 @@ Example: `GET /api/decks/catalog/a1b2c3d4e5f6`
 }
 ```
 
-Field meanings match the [list catalog](#deck-catalog) table. **`description`** comes from the latest published snapshot; if the snapshot has none, the server falls back to the source deck’s stored description.
+Field meanings match the [list catalog](#deck-catalog) table. **`qa_verified`** is `true` when the **author** human-verified every text/audio aspect of the published snapshot; importers' sign-offs never count (cached per published version, up to 1 hour). **`description`** comes from the latest published snapshot; if the snapshot has none, the server falls back to the source deck’s stored description.
 
 **Inclusion rules:** Same as the list — public, published source deck only. Private, unpublished, or import rows → **404**.
 
@@ -1907,7 +1914,7 @@ Editorial **quality**, community **confidence**, and importer **contributions** 
 - `id`: `a1b2c3d4e5f6` (your deck ID)
 - `operation`: `append`
 
-**Request Body:** An object with a required **`facts`** array and optional **`template`**. Each fact item has required **`entries`** and optional **`tags`** or **`tag_ids`** (not both on the same item). Each **entry** is an object with optional `text`, `audio`, `image`, `video`, `json` (at least one content field required across the fact). **`fields` are not sent per fact** — use **`GET /api/decks/{id}`** (or PATCH the deck) for the deck’s `fields` list; that list supplies labels when studying (e.g. next-card `field` on each entry). The server generates a unique fact ID for each fact and creates one or more **cards** per fact depending on `template` (see **Template: default and sibling cards** below).
+**Request Body:** An object with a required **`facts`** array and optional **`template`**. Each fact item has required **`entries`** and optional **`tags`** or **`tag_ids`** (not both on the same item). Optional top-level **`verified: true`** records the owner's human sign-off (`model: human`, score 10) on every text/audio aspect of the new facts — the app sends it for facts typed in; bulk uploads omit it so QA still covers them. Ignored on imported decks. Each **entry** is an object with optional `text`, `audio`, `image`, `video`, `json` (at least one content field required across the fact). **`fields` are not sent per fact** — use **`GET /api/decks/{id}`** (or PATCH the deck) for the deck’s `fields` list; that list supplies labels when studying (e.g. next-card `field` on each entry). The server generates a unique fact ID for each fact and creates one or more **cards** per fact depending on `template` (see **Template: default and sibling cards** below).
 
 #### Optional tags (per fact)
 
@@ -3202,14 +3209,16 @@ This list does **not** include `count` / `total` — use `total_entries` for the
 
 | Field | Meaning |
 |-------|---------|
-| `verified_aspects` / `total_aspects` | Human/10 scoreable text/audio aspects vs all non-empty text/audio fields |
+| `verified_aspects` / `total_aspects` | Human/10 scoreable text/audio aspects vs all non-empty text/audio fields. Only sign-offs by the deck owner count (imports: also the source author); an import's local facts are excluded |
 | `verified_facts` / `total_facts` | Facts fully human-verified vs facts with ≥1 scoreable aspect |
 | `edited_count` | Distinct facts with a new `fact_edit` on this deck; open-row refresh does not bump |
 | `last_fact_id` | Legacy deck-wide QA resume cursor; omitted when unset |
 | `cursors` | Per-column resume map (`"0"` → fact id); omitted when empty |
 | `last_fact_updated_at` | UTC RFC3339 when cursor was last written |
 
-**`PUT …/facts/{factId}/quality`** sets `last_fact_id` to that fact on success (no separate stats write needed).
+**`PUT …/facts/{factId}/quality`** sets `last_fact_id` to that fact on success (no separate stats write needed). Cursors are kept for older clients; new QA walks use `GET /api/decks/{id}/facts/ids?unverified_columns=0,2` instead, which lists (ascending) only facts with a text/audio aspect in those columns that no trusted signer has verified. Column indexes outside the deck's `fields` → **400** `unverified_columns must be deck field indexes`.
+
+**Sign-offs (`by`):** every `model: human` aspect stores its signer in `by`. On PUT, echoing the stored `by` of an unchanged sign-off keeps it; any other human aspect is stamped with the caller. On imported decks the source author's sign-offs survive an importer's PUT. Accepting a `fact_add` / `fact_edit` contribution signs off (text and audio) what it changed in the author's name; editing a source fact clears the sign-offs of the text/audio it changed.
 
 | Status | Typical `msg` |
 |--------|----------------|
@@ -3221,7 +3230,7 @@ Related routes (details in the subsections below):
 
 | Endpoint | Method | Who | Summary |
 |----------|--------|-----|---------|
-| `/api/decks/{id}/facts/{factId}/quality` | PUT | Deck owner (source or import) | Replace whole quality record. Import: pinned snapshot facts only; indexes validated against snapshot. Sets `verified_by` when any aspect uses `model: human`. On success, advances deck QA `last_fact_id` (see [Quality stats](#quality-stats)). |
+| `/api/decks/{id}/facts/{factId}/quality` | PUT | Deck owner (source or import) | Replace whole quality record. Import: pinned snapshot facts only; indexes validated against snapshot. Sets `verified_by` when any aspect uses `model: human` and `by` per human aspect. On success, advances deck QA `last_fact_id` (see [Quality stats](#quality-stats)). |
 | `/api/decks/{id}/facts/{factId}/quality` | GET | Deck owner | One fact; **404** if none stored. Source or imported. |
 | `/api/decks/{id}/facts/{factId}/quality` | DELETE | Source owner | Clear quality (ok if missing). |
 | `/api/decks/{id}/quality` | GET | Deck owner | This catalog (regen queue). Source or imported. |
@@ -3746,7 +3755,7 @@ Contribution submit/inbox errors: [Deck sharing](#deck-sharing).
 | `/api/decks/{id}/cards/{cardId}`              | DELETE      | `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks/{id}/reschedule`                  | POST        | **Not wired** — **404** (typically no JSON `{ "msg" }` body). See [Reschedule deck](#reschedule-deck). |
 | `/api/decks/catalog`                          | GET         | `{ "data": { "decks": [ … ] }, "meta": { "msg", "count", "total", "limit", "offset", "has_more" } }` — defaults `limit` 50, `offset` 0; optional `query` |
-| `/api/decks/catalog/{id}`                     | GET         | `{ "data": { "id", "name", "description", "owner", "fields", "published_version", "fact_count", "deck_tag_names", "published_at" }, "meta": { "msg" } }` — one catalog row; **404** if not importable |
+| `/api/decks/catalog/{id}`                     | GET         | `{ "data": { "id", "name", "description", "owner", "fields", "published_version", "fact_count", "deck_tag_names", "published_at", "qa_verified" }, "meta": { "msg" } }` — one catalog row; **404** if not importable |
 | `/api/decks/import`                           | POST        | **201** — `{ "data": { "id", "source_deck_id", "source_version", "imported_at" }, "meta": { "msg" } }`                                                    |
 | `/api/decks/{id}/publish`                     | POST        | `{ "data": { "published_version", "visibility" }, "meta": { "msg": "published" } }`                                                                      |
 | `/api/decks/{id}/publish-preview`             | GET         | `{ "data": { "published_version", "has_unpublished_changes", "facts", "media", "tags", … }, "meta": { "msg": "ok" } }` — optional `?detail=1` |
