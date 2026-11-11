@@ -76,7 +76,6 @@ This guide walks you through using the Retentio API via Swagger UI.
   - [Quality catalog](#quality-catalog)
   - [Quality stats](#quality-stats)
   - [Fact quality](#fact-quality)
-  - [Fact confidence](#fact-confidence)
   - [Contributions (quality-related)](#contributions-quality-related)
 - [Error responses reference](#error-responses-reference)
 - [Response examples reference](#response-examples-reference)
@@ -144,8 +143,6 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/api/decks/{id}/facts/{factId}/quality`      | PUT    | Upsert editorial quality scores for a fact (whole record replaced). Deck owner (source or import); import requires pinned snapshot fact. See [7. Quality](#7-quality). |
 | `/api/decks/{id}/facts/{factId}/quality`      | GET    | Get a fact's quality record; **404** when none stored.                                                                                                                                          |
 | `/api/decks/{id}/facts/{factId}/quality`      | DELETE | Clear a fact's quality record (succeeds even when none stored).                                                                                                                                 |
-| `/api/decks/{id}/facts/{factId}/confidence`   | GET    | Community confidence stats: capped review `score`, `reports`, derived `p_good`. Missing stats return zeros. See [Fact confidence](#fact-confidence).                                              |
-| `/api/decks/{id}/confidence`                  | GET    | List community confidence for all facts in a deck (weakest `p_good` first). Query: `limit`, `offset`. `meta`: `count`, `has_more`, `limit`, `offset`, `total`. See [Fact confidence](#fact-confidence). |
 | `/api/decks/{id}/quality`                     | GET    | **(Quality catalog)** List facts with quality, keeping only matching entries. Query: `max_score`, `entry`, `aspect`, `model`, `limit`, `offset`. `meta`: `effective_score`, `total_entries`, `has_more`, `limit`, `offset` (no `count`/`total`). See [Quality catalog](#quality-catalog). |
 | `/api/decks/{id}/quality/stats`               | GET    | Human-verification counts and QA resume cursor. See [Quality stats](#quality-stats). |
 | `/api/decks/{id}/card`                        | GET    | Get most urgent card. Optional query: `tag_id` to restrict selection to cards whose facts have this tag in this deck.                                                                        |
@@ -1901,7 +1898,7 @@ Allowed statuses: `open`, `resolved`, `dismissed`. Terminal cleanup on media-bea
 
 ## 3. Facts
 
-Editorial **quality**, community **confidence**, and importer **contributions** are in [7. Quality](#7-quality).
+Editorial **quality** and importer **contributions** are in [7. Quality](#7-quality).
 
 ### Add Facts
 
@@ -3087,15 +3084,14 @@ For full design (upload, delete, display, sync), see **[Media Upload design doc]
 
 ## 7. Quality
 
-Three separate stores. Do not mix them:
+Two separate stores. Do not mix them:
 
 | Layer | What it measures | Who writes | Per column? |
 |-------|------------------|------------|-------------|
 | **Quality** | Editorial score + producer `model` (`claude`, `elevenlabs`, `human`, …) | Source **owner** or import **owner** `PUT` | Yes (`entries["0"].text` / `.audio`) |
-| **Confidence** | Community `p_good` from SRS reviews vs `type=report` | Side effect of review / report (no PUT) | No (whole fact) |
 | **Contributions** | Importer proposals and issue reports to the author inbox | Importer `POST …/contributions/…`; author accept/resolve | `fact_edit` freezes overlay; `report` is message-only |
 
-Quality is not study content and is not published. Confidence keys are global per `fact_id` (shared across importers). Contributions never include `type` in the body (route sets it). Design notes: [`fact-quality.md`](fact-quality.md), [`import-local-overlays-contributions.md`](import-local-overlays-contributions.md).
+Quality is not study content and is not published. Contributions never include `type` in the body (route sets it). Design notes: [`fact-quality.md`](fact-quality.md), [`import-local-overlays-contributions.md`](import-local-overlays-contributions.md).
 
 ### Quality catalog
 
@@ -3103,7 +3099,7 @@ Quality is not study content and is not published. Confidence keys are global pe
 
 **Who:** Deck owner on a **source** or **imported** deck (`Authorization: Bearer <token>`).
 
-**Purpose:** Browse stored editorial quality as a **regen queue** — facts whose entry aspects match the filter, worst scores first. Per-fact write/read/clear is [Fact quality](#fact-quality). Community stats are [Fact confidence](#fact-confidence). Importer proposals are [Contributions (quality-related)](#contributions-quality-related). Design notes: [`fact-quality.md`](fact-quality.md).
+**Purpose:** Browse stored editorial quality as a **regen queue** — facts whose entry aspects match the filter, worst scores first. Per-fact write/read/clear is [Fact quality](#fact-quality). Importer proposals are [Contributions (quality-related)](#contributions-quality-related). Design notes: [`fact-quality.md`](fact-quality.md).
 
 Facts with **no** quality record, or with no matching aspects, are omitted. An empty `items` array is still **200**. Each returned item is flat (`fact_id`, `entries`, `updated_at`) — no nested `quality` wrapper. Matching items keep **only** matching indexes/aspects.
 
@@ -3234,13 +3230,11 @@ Related routes (details in the subsections below):
 | `/api/decks/{id}/facts/{factId}/quality` | GET | Deck owner | One fact; **404** if none stored. Source or imported. |
 | `/api/decks/{id}/facts/{factId}/quality` | DELETE | Source owner | Clear quality (ok if missing). |
 | `/api/decks/{id}/quality` | GET | Deck owner | This catalog (regen queue). Source or imported. |
-| `/api/decks/{id}/facts/{factId}/confidence` | GET | Deck owner (source or import) | `score`, `reports`, derived `p_good`. Missing keys → zeros (**200**). |
-| `/api/decks/{id}/confidence` | GET | Deck owner (source or import) | All facts, weakest `p_good` first. `limit` / `offset`. |
 | `/api/decks/{id}/contributions/facts/{factId}/edit` | POST | Import owner | `fact_edit` — freeze overlay. **201**. |
 | `/api/decks/{id}/contributions/facts/{factId}/add` | POST | Import owner | `fact_add`. **201**. |
 | `/api/decks/{id}/contributions/facts/{factId}/tags` | POST | Import owner | `fact_tag_update`. **201**. |
 | `/api/decks/{id}/contributions/facts/{factId}/templates` | POST | Import owner | `template_add`. **201**. |
-| `/api/decks/{id}/contributions/facts/{factId}/report` | POST | Import owner | `report` (increments confidence `reports`; cannot accept). **201**. |
+| `/api/decks/{id}/contributions/facts/{factId}/report` | POST | Import owner | `report` (cannot accept). **201**. |
 | `/api/decks/{id}/contributions/deck-tags` | POST | Import owner | `deck_tag_update`. **201**. |
 | `/api/decks/{id}/contributions/fields/rename` | POST | Import owner | `field_rename`. **201**. |
 | `/api/decks/{id}/contributions` | GET | Source owner | Author inbox. Query: `status`, `type`, `reporter`, `fact_id`, `media_type`, `limit`, `offset`. |
@@ -3248,7 +3242,7 @@ Related routes (details in the subsections below):
 | `/api/decks/{id}/contributions/{contributionId}/accept` | POST | Source owner | Accept into working copy (then [publish](#publish-a-deck)). |
 | `/api/decks/{id}/contributions/{contributionId}/media/{attachmentId}` | GET | Source owner | Download contribution attachment bytes. |
 
-Request/response examples for contributions: [Import overlays & contributions](#import-overlays--contributions). Errors: [Quality and confidence](#quality-and-confidence) and [Deck sharing](#deck-sharing) under [Error responses reference](#error-responses-reference).
+Request/response examples for contributions: [Import overlays & contributions](#import-overlays--contributions). Errors: [Quality errors](#quality-errors) and [Deck sharing](#deck-sharing) under [Error responses reference](#error-responses-reference).
 
 ### Fact quality
 
@@ -3296,79 +3290,16 @@ Each entry index (`"0"`, `"2"`, …, matching the fact's `entries` positions) ma
 
 **Endpoint:** `DELETE /api/decks/{id}/facts/{factId}/quality` — `{ "data": { "fact_id": "x9k2m4np" }, "meta": { "msg": "Quality deleted successfully" } }` even when nothing was stored.
 
-Deck-wide list/filter: [Quality catalog](#quality-catalog). Typical errors: [Quality and confidence](#quality-and-confidence) under [Error responses reference](#error-responses-reference).
-
-### Fact confidence
-
-Community exposure stats (not editorial [Fact quality](#fact-quality)). Written on card interval reviews and on `type=report` contributions. Keys are global per `fact_id`.
-
-| Stored field | Rule |
-|--------------|------|
-| Per-user reviews | +1 per successful interval review by that user, stop at **20** |
-| `score` | Sum of per-user reviews, stop at **100000** |
-| `reports` | +1 per successful report contribution (not deduped) |
-
-Derived on read (not stored):
-
-```text
-p_good = (score + 1) / (score + 1 + 20 * reports + 10)
-```
-
-There is **no PUT**. Missing Redis → `score: 0`, `reports: 0`, and the matching `p_good` (**200**, not 404). Deleting a source fact (or source deck) removes confidence keys; hiding a snapshot fact on an import does not.
-
-**Endpoint:** `GET /api/decks/{id}/facts/{factId}/confidence` — deck owner; fact belongs to the deck (source or import).
-
-```json
-{
-  "data": {
-    "fact_id": "a1b2c3d4",
-    "score": 12,
-    "reports": 0,
-    "p_good": 0.5652173913043478
-  },
-  "meta": { "msg": "ok" }
-}
-```
-
-**Endpoint:** `GET /api/decks/{id}/confidence` — deck owner; source or import. Every fact in the deck; weakest `p_good` first, then `fact_id`. Query: `limit` (default 50, max 200), `offset` (default 0). Cost tracks deck size (batch Redis + sort), not `limit`; sized for decks in the low thousands of facts.
-
-```json
-{
-  "data": {
-    "items": [
-      {
-        "fact_id": "weakfact1",
-        "score": 0,
-        "reports": 2,
-        "p_good": 0.03225806451612903
-      },
-      {
-        "fact_id": "a1b2c3d4",
-        "score": 12,
-        "reports": 0,
-        "p_good": 0.5652173913043478
-      }
-    ]
-  },
-  "meta": {
-    "msg": "ok",
-    "count": 2,
-    "has_more": false,
-    "limit": 50,
-    "offset": 0,
-    "total": 2
-  }
-}
-```
+Deck-wide list/filter: [Quality catalog](#quality-catalog). Typical errors: [Quality errors](#quality-errors) under [Error responses reference](#error-responses-reference).
 
 ### Contributions (quality-related)
 
 Importer **submit** routes use the **import** deck id. Author **inbox** routes use the **source** deck id. Overlay `PATCH`/`POST` facts do **not** create a contribution. Daily quota: max **200** new rows per source / UTC day (`contributionDailyLimit` in `api/deck/contribution.go`); refresh of an open dedupe target does not consume quota → **429** `daily contribution limit exceeded`.
 
-| Internal `type` | Submit route (import id) | Quality / confidence effect |
+| Internal `type` | Submit route (import id) | Quality effect |
 |-----------------|--------------------------|-----------------------------|
 | `fact_edit` | `POST …/contributions/facts/{factId}/edit` | Proposed overlay; author can **accept**. Optional `message`, `entry_index`. Dedupe `fact_edit:{factId}`. |
-| `report` | `POST …/contributions/facts/{factId}/report` | Message-only; **cannot accept**. Increments confidence `reports`. No server dedupe. |
+| `report` | `POST …/contributions/facts/{factId}/report` | Message-only; **cannot accept**. No server dedupe. |
 | `fact_add` | `POST …/contributions/facts/{factId}/add` | New local fact. |
 | `fact_tag_update` / `deck_tag_update` / `template_add` / `field_rename` | See catalog above | Structure/tags, not scores. |
 
@@ -3665,9 +3596,9 @@ Tag **name** validation (`POST /api/tags`, `PATCH /api/tags/{tagId}`, tag names 
 
 ---
 
-### Quality and confidence
+### Quality errors
 
-Also subject to [JWT middleware errors](#cross-cutting-errors). Quality GET/list allow deck owner on source and import; quality DELETE rejects imported decks with **400**; PUT quality requires deck owner (source or import). Confidence is allowed on source and import.
+Also subject to [JWT middleware errors](#cross-cutting-errors). Quality GET/list allow deck owner on source and import; quality DELETE rejects imported decks with **400**; PUT quality requires deck owner (source or import).
 
 | Endpoint | Status | `msg` |
 | -------- | ------ | ----- |
@@ -3697,12 +3628,6 @@ Also subject to [JWT middleware errors](#cross-cutting-errors). Quality GET/list
 | | **403** | `Not authorized to access this deck` |
 | | **404** | `Deck not found` |
 | | **500** | `Error retrieving quality` |
-| `GET /api/decks/{id}/facts/{factId}/confidence` | **403** | `Not authorized to access this deck` |
-| | **404** | `Deck not found`, `Fact not found` |
-| | **500** | `Error retrieving confidence`, `Error checking fact existence` |
-| `GET /api/decks/{id}/confidence` | **403** | `Not authorized to access this deck` |
-| | **404** | `Deck not found` |
-| | **500** | `Error retrieving facts`, `Error retrieving confidence` |
 
 Contribution submit/inbox errors: [Deck sharing](#deck-sharing).
 
@@ -3746,8 +3671,6 @@ Contribution submit/inbox errors: [Deck sharing](#deck-sharing).
 | `/api/decks/{id}/facts/{factId}/quality`      | DELETE      | `{ "data": { "fact_id" }, "meta": { "msg": "Quality deleted successfully" } }` — 200 even when nothing was stored |
 | `/api/decks/{id}/quality`                     | GET         | `{ "data": { "items": [ { "fact_id", "entries", "updated_at" } ] }, "meta": { "msg": "ok", "effective_score"?, "total_entries", "has_more", "limit", "offset" } }` — no `count`/`total`; defaults `limit` 50, `offset` 0 |
 | `/api/decks/{id}/quality/stats`               | GET         | `{ "data": { "verified_aspects", "total_aspects", "verified_facts", "total_facts", "edited_count", "last_fact_id"?, "cursors"?, "last_fact_updated_at"? }, "meta": { "msg": "ok" } }` — see [Quality stats](#quality-stats) |
-| `/api/decks/{id}/facts/{factId}/confidence`   | GET         | `{ "data": { "fact_id", "score", "reports", "p_good" }, "meta": { "msg": "ok" } }`                                                                          |
-| `/api/decks/{id}/confidence`                  | GET         | `{ "data": { "items": [ { "fact_id", "score", "reports", "p_good" } ] }, "meta": { "msg", "count", "has_more", "limit", "offset", "total" } }` — defaults `limit` 50, `offset` 0 |
 | `/api/decks/{id}/card`                        | GET         | Optional query `tag_id`. `{ "data": { "card": { id, fact_id, template, …, front[], back[] }, "urgency", "next_card"? }, "meta": { "msg", … } }` — `next_card` is second-most urgent when present (includes its own `urgency`) |
 | `/api/decks/{id}/card`                        | PATCH       | Interval: `{ "data": { "last_review", "due_date", "new_interval" }, "meta": { "msg" } }`; visibility: `{ "data": { "hidden_status" }, "meta": { "msg" } }` |
 | `/api/decks/{id}/cards`                       | GET         | Optional query `tag_id`, `stats_only`. `{ "data": { "stats", "cards"? }, "meta": { "msg" } }` — `stats` same shape as GET /api/decks/{id}; `cards` omitted when `stats_only=true` |
