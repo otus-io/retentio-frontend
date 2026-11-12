@@ -170,6 +170,7 @@ void main() {
     FetchMediaVersionsFn? fetchMediaVersions,
     bool online = true,
     int now = 1000,
+    int Function()? clock,
     ValueListenable<bool>? foreground,
   }) => OfflinePackageDownloader(
     store: store,
@@ -204,7 +205,7 @@ void main() {
           versionLookups.add(factId);
           return const {};
         },
-    nowSec: () => now,
+    nowSec: clock ?? () => now,
     isOnline: () async => online,
     foreground: foreground,
   );
@@ -775,6 +776,132 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(calls, 1);
       expect(downloader.failedOf('d1').value, isFalse);
+    });
+
+    group('resuming at the media', () {
+      late ValueNotifier<bool> foreground;
+      late int deckFetches;
+      late int factFetches;
+      late int mediaCalls;
+      late bool failCards;
+
+      /// The first media file fails with the screen off; the cards fail while
+      /// [failCards] is set.
+      OfflinePackageDownloader buildPausing({int Function()? clock}) {
+        foreground = ValueNotifier(true);
+        deckFetches = 0;
+        factFetches = 0;
+        mediaCalls = 0;
+        failCards = false;
+        return build(
+          foreground: foreground,
+          clock: clock,
+          fetchDeck: (_) async {
+            deckFetches++;
+            return _deck;
+          },
+          fetchFactsPage: (_, _, _) async {
+            factFetches++;
+            return OfflineFactsPage(
+              facts: [
+                _fact('f1', entries: const [FactEntry(audio: 'aud')]),
+              ],
+              hasMore: false,
+            );
+          },
+          downloadMedia: (url, path) async {
+            mediaCalls++;
+            if (mediaCalls == 1) {
+              foreground.value = false;
+              throw StateError('reset');
+            }
+            return writeMedia(url, path);
+          },
+          fetchCards: (_) async {
+            if (failCards) throw StateError('broken');
+            return const [];
+          },
+        );
+      }
+
+      Future<void> settle() async {
+        for (var i = 0; i < 50; i++) {
+          await Future<void>.delayed(Duration.zero);
+        }
+      }
+
+      test('skips the deck and facts already fetched', () async {
+        final downloader = buildPausing();
+
+        expect(await downloader.download('d1'), isFalse);
+        foreground.value = true;
+        await settle();
+
+        expect(mediaCalls, 2);
+        expect(deckFetches, 1);
+        expect(factFetches, 1);
+        expect(store.decks['d1']?.isReady, isTrue);
+        expect(store.decks['d1']?.totalReviews, 9);
+        expect(downloader.progressOf('d1').value, isNull);
+      });
+
+      test('fetches again after a long pause', () async {
+        var now = 1000;
+        final downloader = buildPausing(clock: () => now);
+
+        expect(await downloader.download('d1'), isFalse);
+        now += OfflinePackageDownloader.checkpointMaxAgeSec;
+        foreground.value = true;
+        await settle();
+
+        expect(deckFetches, 2);
+        expect(factFetches, 2);
+        expect(store.decks['d1']?.isReady, isTrue);
+      });
+
+      test(
+        'a fresh download fetches again and replaces the paused one',
+        () async {
+          final downloader = buildPausing();
+
+          expect(await downloader.download('d1'), isFalse);
+          expect(await downloader.download('d1', fresh: true), isTrue);
+          foreground.value = true;
+          await settle();
+
+          expect(deckFetches, 2);
+          expect(factFetches, 2);
+          expect(mediaCalls, 2);
+        },
+      );
+
+      test('a failure after resuming forgets the checkpoint', () async {
+        final downloader = buildPausing();
+
+        expect(await downloader.download('d1'), isFalse);
+        failCards = true;
+        foreground.value = true;
+        await settle();
+        expect(deckFetches, 1);
+        expect(downloader.failedOf('d1').value, isTrue);
+
+        failCards = false;
+        expect(await downloader.download('d1'), isTrue);
+        expect(deckFetches, 2);
+        expect(factFetches, 2);
+      });
+
+      test('removing the paused deck forgets the checkpoint', () async {
+        final downloader = buildPausing();
+
+        expect(await downloader.download('d1'), isFalse);
+        await downloader.whileHalted('d1', () async {});
+        foreground.value = true;
+
+        expect(await downloader.download('d1'), isTrue);
+        expect(deckFetches, 2);
+        expect(factFetches, 2);
+      });
     });
   });
 
