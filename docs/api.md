@@ -132,9 +132,11 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/api/decks/{id}/contributions/facts/{factId}/report` | POST | **(Sharing)** Importer: message-only `report` (no accept). **201**. |
 | `/api/decks/{id}/contributions/deck-tags`     | POST   | **(Sharing)** Importer: submit deck tag add/remove as `deck_tag_update`. **201**. |
 | `/api/decks/{id}/contributions/fields/rename` | POST   | **(Sharing)** Importer: submit same-length `proposed_fields` as `field_rename`. **201**. |
+| `/api/decks/{id}/contributions/qa-review`     | POST   | **(Sharing)** Importer: ask the author to adopt their QA sign-offs as `qa_review`. **201**. See [QA review request](#qa-review-request). |
 | `/api/decks/{id}/contributions`               | GET    | **(Sharing)** Author inbox on **source** deck. Query: `status`, `type`, `reporter`, `fact_id`, `media_type`, `limit`, `offset`. |
 | `/api/decks/{id}/contributions/{contributionId}` | PATCH | **(Sharing)** Author: set status `open` / `resolved` / `dismissed`. |
 | `/api/decks/{id}/contributions/{contributionId}/accept` | POST | **(Sharing)** Author: accept into working copy (then publish). **200**. |
+| `/api/decks/{id}/contributions/{contributionId}/qa-review` | GET | **(Sharing)** Author: live status of each sign-off in a `qa_review`. |
 | `/api/decks/{id}/contributions/{contributionId}/media/{attachmentId}` | GET | **(Sharing)** Author: download immutable contribution attachment bytes. |
 | `/api/decks/{id}/facts/{operation}`           | POST   | Add facts (operation: `append`, `prepend`, `shuffle`, `spread`). Body: `facts` (required), optional `template`, and optional **`tags`** or **`tag_ids`** per fact item (mutually exclusive per item; `tags` = names auto-created if missing, `tag_ids` = existing IDs). Column labels live on the deck (`PATCH /api/decks/{id}` → `fields`), not on each fact. To add a card for an existing fact, use POST `/api/decks/{id}/card` instead. On **imported** decks: private overlay + `local_facts` (no contribution). |
 | `/api/decks/{id}/facts`                       | GET    | List facts (paged): default `limit` **50**, `offset` **0**; max `limit` **200**. `meta`: `count`, `has_more`, `limit`, `offset`, `total`. |
@@ -1272,6 +1274,7 @@ Examples below use source `srcdeck12345`, import `impdeck12345`, and snapshot fa
 | `template_add` | `POST …/contributions/facts/{factId}/templates` |
 | `field_rename` | `POST …/contributions/fields/rename` |
 | `report` | `POST …/contributions/facts/{factId}/report` (inbox only; cannot accept) |
+| `qa_review` | `POST …/contributions/qa-review` (author adopts the importer's QA sign-offs) |
 
 #### Private overlay fact mutations
 
@@ -1662,6 +1665,67 @@ Reports appear in the author inbox but **cannot be accepted** (`report cannot be
 | **400** | `overlay required: fact has no private overlay`, `overlay must differ from snapshot`, `fact_id must be in local_facts`, `add_tags or remove_tags is required`, `proposed_fields length must match pinned fields`, `message is required`, … |
 | **403** | `Not authorized`, `contributions are only available on imported decks` |
 | **404** | `deck not found`, `fact not found`, `source deck not found` |
+
+##### QA review request
+
+**Endpoint:** `POST /api/decks/{importId}/contributions/qa-review`
+
+**Who:** Import deck owner. **Request body:** optional `{ "message": "…" }`.
+
+Asks the author to adopt the caller's QA sign-offs so they count toward the catalog badge. The server collects every
+human sign-off by the caller on the import's QA facts (local facts excluded) that carries a content `fingerprint`
+matching the author's **current** content, and freezes that list on the contribution. One open request per
+importer and deck: calling again refreshes it (new list, `updated_at` bumped, no quota). Design:
+[`qa-review-requests.md`](qa-review-requests.md).
+
+**Success (201):**
+
+```json
+{
+  "data": {
+    "contribution_id": "cont0009",
+    "source_deck_id": "srcdeck12345",
+    "type": "qa_review",
+    "status": "open",
+    "qa_review": { "facts": 120, "aspects": 240 }
+  },
+  "meta": { "msg": "contribution submitted" }
+}
+```
+
+| Status | `msg` |
+| ------ | ----- |
+| **400** | `nothing to review` (no transferable sign-offs), `cannot request review of your own deck`, `contributions are only available on imported decks`, `message must be between 1 and 2000 characters` |
+| **429** | `daily contribution limit exceeded` (new requests only) |
+
+**Preview (author):** `GET /api/decks/{sourceId}/contributions/{contributionId}/qa-review` evaluates each frozen
+sign-off now: `ready` (content matches, not yet signed by the author), `changed` (the author's content differs or
+the entry is gone), `verified` (already signed by the author), `removed` (fact no longer on the deck). Works for any
+status. **400** for other contribution types.
+
+```json
+{
+  "data": {
+    "summary": { "ready": 230, "changed": 6, "verified": 4, "removed": 0 },
+    "facts": [
+      {
+        "fact_id": "fact0001",
+        "preview": "Apple",
+        "aspects": [
+          { "entry": 0, "aspect": "text", "status": "ready" },
+          { "entry": 0, "aspect": "audio", "status": "changed" }
+        ]
+      }
+    ]
+  },
+  "meta": { "msg": "ok" }
+}
+```
+
+**Accept:** [Accept a contribution](#accept-a-contribution) signs every `ready` sign-off in the author's name and
+skips the rest; the response's `qa_review` adds `signed_aspects` and `skipped_aspects`. Accepting an already
+accepted `qa_review` → **400** `cannot modify accepted contribution`. Inbox rows carry the `qa_review` summary and
+no `fact_id`.
 | **429** | `daily contribution limit exceeded` |
 
 #### Author contribution inbox
@@ -3258,7 +3322,7 @@ This list does **not** include `count` / `total` — use `total_entries` for the
 
 **`PUT …/facts/{factId}/quality`** sets `last_fact_id` to that fact on success (no separate stats write needed). Cursors are kept for older clients; new QA walks use `GET /api/decks/{id}/facts/ids?unverified_columns=0,2` instead, which lists (ascending) only facts with a text/audio aspect in those columns that no trusted signer has verified. Column indexes outside the deck's `fields` → **400** `unverified_columns must be deck field indexes`.
 
-**Sign-offs (`by`):** every `model: human` aspect stores its signer in `by`. On PUT, echoing the stored `by` of an unchanged sign-off keeps it; any other human aspect is stamped with the caller. On imported decks the source author's sign-offs survive an importer's PUT. Accepting a `fact_add` / `fact_edit` contribution signs off (text and audio) what it changed in the author's name; editing a source fact clears the sign-offs of the text/audio it changed.
+**Sign-offs (`by`):** every `model: human` aspect stores its signer in `by`. On PUT, echoing the stored `by` of an unchanged sign-off keeps it; any other human aspect is stamped with the caller. On imported decks the source author's sign-offs survive an importer's PUT. Each fresh human sign-off also stores a server-assigned `fingerprint` of the content the signer saw (client values are ignored); an echoed sign-off keeps its stored one. Accepting a `fact_add` / `fact_edit` contribution signs off (text and audio) what it changed in the author's name; editing a source fact clears the sign-offs of the text/audio it changed.
 
 | Status | Typical `msg` |
 |--------|----------------|
@@ -3281,9 +3345,11 @@ Related routes (details in the subsections below):
 | `/api/decks/{id}/contributions/facts/{factId}/report` | POST | Import owner | `report` (cannot accept). **201**. |
 | `/api/decks/{id}/contributions/deck-tags` | POST | Import owner | `deck_tag_update`. **201**. |
 | `/api/decks/{id}/contributions/fields/rename` | POST | Import owner | `field_rename`. **201**. |
+| `/api/decks/{id}/contributions/qa-review` | POST | Import owner | `qa_review` — ask the author to adopt QA sign-offs. **201**. |
 | `/api/decks/{id}/contributions` | GET | Source owner | Author inbox. Query: `status`, `type`, `reporter`, `fact_id`, `media_type`, `limit`, `offset`. |
 | `/api/decks/{id}/contributions/{contributionId}` | PATCH | Source owner | Status `open` / `resolved` / `dismissed`. |
 | `/api/decks/{id}/contributions/{contributionId}/accept` | POST | Source owner | Accept into working copy (then [publish](#publish-a-deck)). |
+| `/api/decks/{id}/contributions/{contributionId}/qa-review` | GET | Source owner | Live status of a `qa_review`'s sign-offs. |
 | `/api/decks/{id}/contributions/{contributionId}/media/{attachmentId}` | GET | Source owner | Download contribution attachment bytes. |
 
 Request/response examples for contributions: [Import overlays & contributions](#import-overlays--contributions). Errors: [Quality errors](#quality-errors) and [Deck sharing](#deck-sharing) under [Error responses reference](#error-responses-reference).
@@ -3346,6 +3412,7 @@ Importer **submit** routes use the **import** deck id. Author **inbox** routes u
 | `report` | `POST …/contributions/facts/{factId}/report` | Message-only; **cannot accept**. No server dedupe. |
 | `fact_add` | `POST …/contributions/facts/{factId}/add` | New local fact. |
 | `fact_tag_update` / `deck_tag_update` / `template_add` / `field_rename` | See catalog above | Structure/tags, not scores. |
+| `qa_review` | `POST …/contributions/qa-review` | On accept, the author signs off the importer's matching sign-offs. Dedupe `qa_review` per importer. See [QA review request](#qa-review-request). |
 
 **`fact_edit` (QA edits):** overlay must exist and differ from the snapshot. Body does not include `entries` — the server freezes overlay as `proposed_entries`. Full example: [Fact edit (current overlay)](#fact-edit-current-overlay).
 

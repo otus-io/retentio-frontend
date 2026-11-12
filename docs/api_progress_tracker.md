@@ -49,6 +49,13 @@
 | `DELETE /api/decks/{id}/facts/{factId}` | 删除词条 | ❌ | ✅ |
 | `GET /api/decks/{id}/facts/search` | 模糊搜索词条（提前复习特定单词） | ❌ | ❌ |
 
+### QA 校验审核
+
+| 接口 | 说明 | 前端 | 后端 |
+| --- | --- | --- | --- |
+| `POST /api/decks/{id}/contributions/qa-review` | 导入者请作者采纳自己的 QA 校验（`qa_review`） | ✅ | ✅ |
+| `GET /api/decks/{id}/contributions/{contributionId}/qa-review` | 作者查看每项校验的实时状态 | ✅ | ✅ |
+
 ### 卡片
 
 | 接口 | 说明 | 前端 | 后端 |
