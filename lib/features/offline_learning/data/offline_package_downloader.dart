@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -20,6 +21,11 @@ int _defaultNowSec() => DateTime.now().millisecondsSinceEpoch ~/ 1000;
 /// Thrown inside a download whose deck is being removed.
 class _DownloadHalted implements Exception {}
 
+/// Thrown when a download stopped because the app left the foreground.
+class _DownloadInterrupted implements Exception {
+  const _DownloadInterrupted();
+}
+
 /// Assembles a deck's offline study package (deck, facts, cards, media) into
 /// [OfflineLearningStore]. Server card schedules replace local ones unless the
 /// card has unsynced local changes.
@@ -35,6 +41,7 @@ class OfflinePackageDownloader {
     FetchMediaVersionsFn? fetchMediaVersions,
     int Function()? nowSec,
     Future<bool> Function()? isOnline,
+    ValueListenable<bool>? foreground,
   }) : _store = store,
        _mediaRootDir = mediaRootDir,
        _fetchDeck = fetchDeck ?? DeckService.of.getDeckDetail,
@@ -44,7 +51,10 @@ class OfflinePackageDownloader {
        _downloadMedia = downloadMedia ?? ApiService.downloadFile,
        _fetchMediaVersions = fetchMediaVersions ?? fetchOfflineMediaVersions,
        _nowSec = nowSec ?? _defaultNowSec,
-       _isOnline = isOnline ?? hasNetworkConnection;
+       _isOnline = isOnline ?? hasNetworkConnection,
+       _foreground = foreground {
+    _foreground?.addListener(_onForeground);
+  }
 
   static const int factsPageSize = 200;
   static const int versionLookupConcurrency = 4;
@@ -67,11 +77,14 @@ class OfflinePackageDownloader {
   final FetchMediaVersionsFn _fetchMediaVersions;
   final int Function() _nowSec;
   final Future<bool> Function() _isOnline;
+  final ValueListenable<bool>? _foreground;
   final Map<String, Future<bool>> _inFlight = {};
   final Map<String, int> _halts = {};
   final Map<String, ValueNotifier<double?>> _progress = {};
   final Map<String, ValueNotifier<bool>> _failed = {};
   final Set<String> _resumed = {};
+  final Set<String> _leftForeground = {};
+  final Set<String> _resumeWhenForeground = {};
   var _haltsAll = 0;
 
   /// Download progress of [deckId] from 0 to 1, or null when none is running.
@@ -109,6 +122,7 @@ class OfflinePackageDownloader {
     } else {
       _halts.update(deckId, (n) => n + 1, ifAbsent: () => 1);
     }
+    _dropPaused(deckId);
     try {
       while (true) {
         final running = [
@@ -190,25 +204,71 @@ class OfflinePackageDownloader {
     late final Future<bool> tracked;
     tracked = started.whenComplete(() {
       if (identical(_inFlight[deckId], tracked)) _inFlight.remove(deckId);
+      _kickPaused();
     });
     return _inFlight[deckId] = tracked;
+  }
+
+  void _onForeground() {
+    if (_foreground?.value == true) _kickPaused();
+  }
+
+  /// A download cut off by leaving the app waits here instead of failing.
+  void _pauseForForeground(String deckId) {
+    if (_isHalted(deckId)) return;
+    _resumeWhenForeground.add(deckId);
+    _kickPaused();
+  }
+
+  void _dropPaused(String? deckId) {
+    final ids = deckId == null ? _resumeWhenForeground.toList() : [deckId];
+    for (final id in ids) {
+      if (!_resumeWhenForeground.remove(id)) continue;
+      _notifier(id).value = null;
+    }
+  }
+
+  void _kickPaused() {
+    if (_foreground?.value == false) return;
+    for (final id in _resumeWhenForeground.toList()) {
+      if (_inFlight.containsKey(id)) continue;
+      _resumeWhenForeground.remove(id);
+      unawaited(download(id));
+    }
   }
 
   Future<bool> _download(String deckId) async {
     final progress = _notifier(deckId)..value = 0;
     _failedNotifier(deckId).value = false;
+    void noteLeft() {
+      if (_foreground?.value == false) _leftForeground.add(deckId);
+    }
+
+    noteLeft();
+    _foreground?.addListener(noteLeft);
     try {
       return await _writePackage(deckId);
     } on _DownloadHalted {
       logger.i('Offline download of deck=$deckId stopped for removal');
       return false;
+    } on _DownloadInterrupted catch (e) {
+      return _pauseDownload(deckId, e);
     } catch (e, s) {
+      if (_leftForeground.contains(deckId)) return _pauseDownload(deckId, e);
       logger.e('Offline download failed for deck=$deckId: $e', stackTrace: s);
       _failedNotifier(deckId).value = true;
       return false;
     } finally {
-      progress.value = null;
+      _foreground?.removeListener(noteLeft);
+      _leftForeground.remove(deckId);
+      if (!_resumeWhenForeground.contains(deckId)) progress.value = null;
     }
+  }
+
+  bool _pauseDownload(String deckId, Object error) {
+    logger.w('Offline download of deck=$deckId paused with the app: $error');
+    _pauseForForeground(deckId);
+    return false;
   }
 
   Future<bool> _writePackage(String deckId) async {
@@ -455,19 +515,25 @@ class OfflinePackageDownloader {
         ],
     }..remove('');
     var complete = true;
+    var interrupted = false;
     final keys = mediaKeys.toList();
     var next = 0;
     var done = 0;
     Future<void> worker() async {
-      while (next < keys.length) {
+      while (next < keys.length && !interrupted) {
         final key = keys[next++];
         try {
           await _downloadOne(deckId, key);
         } on _DownloadHalted {
           rethrow;
         } catch (e, s) {
-          complete = false;
-          logger.e('Offline media $key failed: $e', stackTrace: s);
+          if (_leftForeground.contains(deckId)) {
+            interrupted = true;
+            logger.w('Offline media $key paused with the app: $e');
+          } else {
+            complete = false;
+            logger.e('Offline media $key failed: $e', stackTrace: s);
+          }
         }
         const started = _deckShare + _factsShare;
         const span = 1 - _cardsShare - started;
@@ -478,6 +544,7 @@ class OfflinePackageDownloader {
     await Future.wait([
       for (var w = 0; w < mediaDownloadConcurrency; w++) worker(),
     ]);
+    if (interrupted) throw const _DownloadInterrupted();
     return complete;
   }
 

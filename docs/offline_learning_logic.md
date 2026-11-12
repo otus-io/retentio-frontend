@@ -48,6 +48,8 @@ Each download:
 
 Concurrent downloads of the same deck share one run.
 
+Leaving the app, including turning the screen off, does not count as a failure. The download stays in progress and continues when the app is in the foreground again. A failure while the app stays in front still needs a retry.
+
 Removing a deck or clearing the account’s data first stops the running download at its next step (dropping a half-written media file) and waits for it, and no new download starts until the removal is done. Otherwise the download would write the deck back as ready.
 
 ## Deck list
