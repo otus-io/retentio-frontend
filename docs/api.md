@@ -867,7 +867,7 @@ Example: `GET /api/decks/catalog/a1b2c3d4e5f6`
 }
 ```
 
-Field meanings match the [list catalog](#deck-catalog) table. **`qa_verified`** is `true` when the **author** human-verified every text/audio aspect of the source deck's **current** facts; importers' sign-offs never count. The author's deck is the source of truth, so deleting a fact never turns the badge off and an unverified add turns it off before the next publish (cached up to 10 minutes; the author's writes refresh it immediately). **`description`** comes from the latest published snapshot; if the snapshot has none, the server falls back to the source deck’s stored description.
+Field meanings match the [list catalog](#deck-catalog) table. **`qa_verified`** is `true` when the **author** human-verified every text/audio aspect of the source deck's **current** facts; importers' sign-offs never count. The author's deck is the source of truth, so deleting a fact never turns the badge off while scoreable text/audio aspects remain (deleting the last one leaves none, and the badge needs at least one), and an unverified add turns it off before the next publish (cached up to 10 minutes; the author's writes refresh it immediately). **`description`** comes from the latest published snapshot; if the snapshot has none, the server falls back to the source deck’s stored description.
 
 **Inclusion rules:** Same as the list — public, published source deck only. Private, unpublished, or import rows → **404**.
 
