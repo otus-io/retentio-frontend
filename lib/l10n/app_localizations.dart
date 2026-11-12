@@ -3310,6 +3310,12 @@ abstract class AppLocalizations {
   /// **'Could not load this fact.'**
   String get qaModeFactLoadFailed;
 
+  /// No description provided for @qaModeFactsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load facts. Check your connection and try again.'**
+  String get qaModeFactsLoadFailed;
+
   /// No description provided for @qaModeProgress.
   ///
   /// In en, this message translates to:

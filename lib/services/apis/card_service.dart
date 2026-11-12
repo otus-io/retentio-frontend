@@ -233,11 +233,12 @@ class CardService {
     return res;
   }
 
-  /// Fact ids via `GET …/facts/ids`. Empty on failure.
+  /// Fact ids via `GET …/facts/ids`; `null` when the list cannot be read, so
+  /// callers can tell a failure from a deck with no matching facts.
   ///
   /// With [unverifiedColumns], only facts still needing a human sign-off in
   /// those columns (`unverified_columns`).
-  static Future<List<String>> listFactIds(
+  static Future<List<String>?> listFactIds(
     String deckId, {
     Set<int>? unverifiedColumns,
   }) async {
@@ -250,7 +251,9 @@ class CardService {
           : {'unverified_columns': columns.join(',')},
     );
     final data = res?.data;
-    if (data is! Map || data['fact_ids'] is! List) return const [];
+    if (res?.isSuccess != true || data is! Map || data['fact_ids'] is! List) {
+      return null;
+    }
     return [
       for (final id in data['fact_ids'] as List)
         if (id != null) id.toString(),

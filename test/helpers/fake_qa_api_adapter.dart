@@ -16,6 +16,7 @@ class FakeQaApiAdapter implements HttpClientAdapter {
     Map<String, dynamic>? stats,
     this.qualityPutFails = false,
     this.contributionFails = false,
+    this.factIdsFails = false,
     Set<String> verifiedFactIds = const {},
   }) : stats = stats == null ? null : Map<String, dynamic>.from(stats),
        verifiedFactIds = Set<String>.of(verifiedFactIds);
@@ -36,6 +37,9 @@ class FakeQaApiAdapter implements HttpClientAdapter {
 
   bool qualityPutFails;
   bool contributionFails;
+
+  /// When true, `GET …/facts/ids` answers 500.
+  bool factIdsFails;
 
   /// Facts left out of `GET …/facts/ids?unverified_columns=…`. A successful
   /// quality PUT adds its fact, like a server sign-off.
@@ -137,6 +141,7 @@ class FakeQaApiAdapter implements HttpClientAdapter {
       factIdsRequestCount++;
       final columns = options.queryParameters['unverified_columns']?.toString();
       unverifiedColumnsQueries.add(columns);
+      if (factIdsFails) return _error('Error listing facts', 500);
       return _ok({
         'fact_ids': [
           for (final id in factIds)

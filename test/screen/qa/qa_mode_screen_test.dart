@@ -586,6 +586,23 @@ void main() {
       );
     });
 
+    testWidgets('shows a load error when the fact list cannot load', (
+      tester,
+    ) async {
+      useAdapter();
+      adapter.factIdsFails = true;
+      await pumpQaMode(tester);
+
+      expect(
+        find.text('Could not load facts. Check your connection and try again.'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('This imported deck has no facts to review.'),
+        findsNothing,
+      );
+    });
+
     testWidgets('shows a failure message when the fact cannot load', (
       tester,
     ) async {

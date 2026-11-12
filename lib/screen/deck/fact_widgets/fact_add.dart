@@ -273,7 +273,7 @@ class _FactAddState extends ConsumerState<FactAdd>
       Set<String>? idsBefore;
       if (widget.deck.isImported) {
         try {
-          idsBefore = (await CardService.listFactIds(widget.deck.id)).toSet();
+          idsBefore = (await CardService.listFactIds(widget.deck.id))?.toSet();
         } catch (_) {
           // Unknown baseline — skip staging (idsBefore != null guard below).
           idsBefore = null;
@@ -285,7 +285,8 @@ class _FactAddState extends ConsumerState<FactAdd>
       if (res?.isSuccess == true) {
         if (widget.deck.isImported && idsBefore != null) {
           try {
-            final idsAfter = await CardService.listFactIds(widget.deck.id);
+            final idsAfter =
+                await CardService.listFactIds(widget.deck.id) ?? const [];
             final preview = PendingContributionsStore.previewFromEntryTexts(
               entries.map((e) => e['text']?.toString() ?? ''),
             );

@@ -22,6 +22,7 @@ void main() {
     Map<String, dynamic>? stats,
     bool qualityPutFails = false,
     bool contributionFails = false,
+    bool factIdsFails = false,
     Set<String> verifiedFactIds = const {},
   }) {
     adapter = FakeQaApiAdapter(
@@ -43,6 +44,7 @@ void main() {
       stats: stats,
       qualityPutFails: qualityPutFails,
       contributionFails: contributionFails,
+      factIdsFails: factIdsFails,
       verifiedFactIds: verifiedFactIds,
     );
     networkDioClient.dio.httpClientAdapter = adapter;
@@ -225,6 +227,42 @@ void main() {
       expect(cubit.state.loading, isFalse);
       expect(cubit.state.factIds, isEmpty);
       expect(cubit.state.factLoadFailed, isFalse);
+      await cubit.close();
+    });
+
+    test('flags a fact list that cannot be loaded, not complete', () async {
+      buildAdapter(factIdsFails: true);
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+      );
+
+      await startWalk(cubit);
+
+      expect(cubit.state.factIdsLoadFailed, isTrue);
+      expect(cubit.state.walkComplete, isFalse);
+      expect(cubit.state.loading, isFalse);
+      expect(cubit.state.factIds, isEmpty);
+      expect(adapter.statsRequestCount, 0);
+      await cubit.close();
+    });
+
+    test('a new walk clears an earlier fact list failure', () async {
+      buildAdapter(factIdsFails: true);
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+      );
+      await startWalk(cubit);
+      adapter.factIdsFails = false;
+
+      cubit.reopenColumnPicker();
+      await startWalk(cubit);
+
+      expect(cubit.state.factIdsLoadFailed, isFalse);
+      expect(cubit.state.factIds, ['fact-1', 'fact-2']);
       await cubit.close();
     });
 

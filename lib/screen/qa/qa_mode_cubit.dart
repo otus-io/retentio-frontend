@@ -26,6 +26,7 @@ class QaModeState {
     this.editedCount = 0,
     this.busy = false,
     this.walkComplete = false,
+    this.factIdsLoadFailed = false,
   });
 
   final bool loading;
@@ -53,6 +54,9 @@ class QaModeState {
 
   /// Set after Next signs off the last fact of this column set.
   final bool walkComplete;
+
+  /// The walk's fact list could not be fetched (offline or server error).
+  final bool factIdsLoadFailed;
 
   String? get factId =>
       index >= 0 && index < factIds.length ? factIds[index] : null;
@@ -105,6 +109,7 @@ class QaModeState {
     int? editedCount,
     bool? busy,
     bool? walkComplete,
+    bool? factIdsLoadFailed,
   }) => QaModeState(
     loading: loading ?? this.loading,
     pickingColumns: pickingColumns ?? this.pickingColumns,
@@ -119,6 +124,7 @@ class QaModeState {
     editedCount: editedCount ?? this.editedCount,
     busy: busy ?? this.busy,
     walkComplete: walkComplete ?? this.walkComplete,
+    factIdsLoadFailed: factIdsLoadFailed ?? this.factIdsLoadFailed,
   );
 }
 
@@ -208,6 +214,10 @@ class QaModeCubit extends Cubit<QaModeState> {
       unverifiedColumns: state.activeColumnIndexes,
     );
     if (isClosed) return;
+    if (ids == null) {
+      emit(state.copyWith(loading: false, factIdsLoadFailed: true));
+      return;
+    }
     final stats = await FactQualityService.of.getDeckQualityStats(deckId);
     if (isClosed) return;
     emit(
