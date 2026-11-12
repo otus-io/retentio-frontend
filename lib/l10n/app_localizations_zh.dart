@@ -1764,10 +1764,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get qaReviewSendToAuthor => '发送校验给作者';
-
-  @override
-  String get qaReviewSendHint => '请作者采纳你的校验，卡组即可在发现页获得 QA 徽章。';
+  String get qaReviewSharedNotice => '离开 QA 模式时，你的校验会分享给卡组作者。';
 
   @override
   String qaReviewSent(int aspects) {

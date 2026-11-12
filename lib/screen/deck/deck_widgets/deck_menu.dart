@@ -14,6 +14,7 @@ import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_add.dart';
 import 'package:retentio/screen/qa/qa_mode_screen.dart';
+import 'package:retentio/screen/qa/qa_share_with_author.dart';
 import 'package:retentio/screen/decks/widgets/deck_create.dart';
 import 'package:retentio/theme/theme_tokens.dart';
 import 'package:retentio/widgets/app_button.dart';
@@ -284,11 +285,20 @@ class DeckMenu extends StatelessWidget {
             onTap: () async {
               await Future<void>.delayed(const Duration(milliseconds: 10));
               if (!context.mounted) return;
+              var signed = false;
               await Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => QaModeScreen(deck: deck),
+                  builder: (_) => QaModeScreen(
+                    deck: deck,
+                    onSignedOff: () => signed = true,
+                  ),
                 ),
               );
+              if (!context.mounted) return;
+              // Importers' sign-offs go to the author automatically.
+              if (signed && deck.isImported) {
+                await shareQaSignOffsWithAuthor(context, deck.id);
+              }
               // Sign-offs can turn the QA badge on; show it on the deck list.
               if (context.mounted) {
                 await context.read<DeckListCubit>().onRefresh();

@@ -141,11 +141,15 @@ class QaModeCubit extends Cubit<QaModeState> {
     required this.deckId,
     required this.deckFieldCount,
     Future<bool> Function()? isOnline,
+    this.onSignedOff,
   }) : _isOnline = isOnline ?? hasNetworkConnection,
        super(const QaModeState());
 
   final String deckId;
   final int deckFieldCount;
+
+  /// Called after each successful sign-off (quality PUT).
+  final VoidCallback? onSignedOff;
   final Future<bool> Function() _isOnline;
 
   /// Bumped when a walk starts or the picker reopens, so a slower load for an
@@ -319,6 +323,7 @@ class QaModeCubit extends Cubit<QaModeState> {
       if (!isClosed) emit(state.copyWith(busy: false));
       return rawApiErrorMessage(e);
     }
+    onSignedOff?.call();
     FactQuality? quality;
     try {
       quality = await FactQualityService.of.getFactQuality(

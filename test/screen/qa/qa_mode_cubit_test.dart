@@ -336,6 +336,26 @@ void main() {
       await cubit.close();
     });
 
+    test('reports each successful sign-off, not failed ones', () async {
+      var signOffs = 0;
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+        onSignedOff: () => signOffs++,
+      );
+      await startWalk(cubit);
+      cubit.toggleColumn(0);
+      adapter.qualityPutFails = true;
+      expect(await cubit.verify(), isNotNull);
+      expect(signOffs, 0);
+
+      adapter.qualityPutFails = false;
+      expect(await cubit.verify(), isNull, reason: 'column stays checked');
+      expect(signOffs, 1);
+      await cubit.close();
+    });
+
     test('flags a fact that cannot be loaded', () async {
       buildAdapter(factIds: const ['missing']);
       final cubit = QaModeCubit(

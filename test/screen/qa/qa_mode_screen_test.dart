@@ -616,64 +616,25 @@ void main() {
       expect(find.text('Could not load this fact.'), findsOneWidget);
     });
 
-    group('send to author', () {
-      Future<void> pumpComplete(WidgetTester tester) async {
+    group('sharing with the author', () {
+      const notice =
+          'Your sign-offs are shared with the deck author when you leave QA mode.';
+
+      testWidgets('importers see that sign-offs are shared', (tester) async {
+        useAdapter(stats: {'verified_aspects': 0, 'total_aspects': 4});
+        await pumpQaMode(tester, startWalk: false);
+        expect(find.text(notice), findsOneWidget);
+      });
+
+      testWidgets('walk complete has no send step', (tester) async {
         useAdapter(
           factIds: const [],
           stats: {'verified_aspects': 4, 'total_aspects': 4},
         );
-        final human = {'score': 10, 'model': 'human'};
-        adapter.verifiedFactIds.add('fact-1');
-        adapter.qualityByFactId['fact-1'] = {
-          '0': {'text': human, 'audio': human},
-          '1': {'text': human, 'audio': human},
-        };
         await pumpQaMode(tester);
-        expect(find.text('Send verifications to author'), findsOneWidget);
-      }
-
-      testWidgets('walk complete sends the sign-offs', (tester) async {
-        await pumpComplete(tester);
-        await tester.tap(find.text('Send verifications to author'));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
-
-        expect(adapter.qaReviewPosts, 1);
-        expect(
-          find.text('Sent 4 verified fields to the author'),
-          findsOneWidget,
-        );
-        AppToast.dismiss();
-        await tester.pumpAndSettle();
-      });
-
-      testWidgets('nothing transferable shows why', (tester) async {
-        await pumpComplete(tester);
-        adapter.qaReviewError = 'nothing to review';
-        await tester.tap(find.text('Send verifications to author'));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
-
-        expect(
-          find.textContaining('Only fields you verified that still match'),
-          findsOneWidget,
-        );
-        AppToast.dismiss();
-        await tester.pumpAndSettle();
-      });
-
-      testWidgets('column picker offers it once something is verified', (
-        tester,
-      ) async {
-        useAdapter(stats: {'verified_aspects': 1, 'total_aspects': 4});
-        await pumpQaMode(tester, startWalk: false);
-        expect(find.text('Send verifications to author'), findsOneWidget);
-      });
-
-      testWidgets('column picker hides it before any sign-off', (tester) async {
-        useAdapter(stats: {'verified_aspects': 0, 'total_aspects': 4});
-        await pumpQaMode(tester, startWalk: false);
-        expect(find.text('Send verifications to author'), findsNothing);
+        expect(find.text('Back to Deck'), findsOneWidget);
+        expect(find.textContaining('author'), findsNothing);
+        expect(adapter.qaReviewPosts, 0, reason: 'sent by the opener on close');
       });
     });
 
@@ -705,10 +666,13 @@ void main() {
         expect(adapter.qualityPuts, hasLength(1));
       });
 
-      testWidgets('picker never offers sending to an author', (tester) async {
+      testWidgets('picker has no sharing notice', (tester) async {
         useAdapter(stats: {'verified_aspects': 3, 'total_aspects': 4});
         await pumpQaMode(tester, deck: _sourceDeck(), startWalk: false);
-        expect(find.text('Send verifications to author'), findsNothing);
+        expect(
+          find.textContaining('shared with the deck author'),
+          findsNothing,
+        );
       });
 
       testWidgets('walk complete offers only going back', (tester) async {
@@ -721,7 +685,7 @@ void main() {
           find.text("You're done with these columns. Thank you."),
           findsOneWidget,
         );
-        expect(find.text('Send verifications to author'), findsNothing);
+        expect(find.textContaining('author'), findsNothing);
       });
     });
   });

@@ -3406,17 +3406,11 @@ abstract class AppLocalizations {
   /// **'{facts, plural, =1{Verified 1 fact} other{Verified {facts} facts}} ({aspects, plural, =1{1 field} other{{aspects} fields}})'**
   String qaReviewSummary(int facts, int aspects);
 
-  /// No description provided for @qaReviewSendToAuthor.
+  /// No description provided for @qaReviewSharedNotice.
   ///
   /// In en, this message translates to:
-  /// **'Send verifications to author'**
-  String get qaReviewSendToAuthor;
-
-  /// No description provided for @qaReviewSendHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Ask the author to adopt your sign-offs so the deck can earn the QA badge in Discovery.'**
-  String get qaReviewSendHint;
+  /// **'Your sign-offs are shared with the deck author when you leave QA mode.'**
+  String get qaReviewSharedNotice;
 
   /// No description provided for @qaReviewSent.
   ///

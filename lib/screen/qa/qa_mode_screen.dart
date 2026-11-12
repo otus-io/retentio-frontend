@@ -12,7 +12,6 @@ import 'package:retentio/screen/deck/fact_add_composer/fact_edit_logic.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_content.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_edit.dart';
 import 'package:retentio/screen/qa/qa_mode_cubit.dart';
-import 'package:retentio/screen/qa/qa_send_to_author_button.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_icon_button.dart';
 import 'package:retentio/widgets/app_toast.dart';
@@ -48,9 +47,13 @@ String? qaAudioUrl({
 /// walk their own deck; importers walk their copy and can send the sign-offs to
 /// the author.
 class QaModeScreen extends StatelessWidget {
-  const QaModeScreen({super.key, required this.deck});
+  const QaModeScreen({super.key, required this.deck, this.onSignedOff});
 
   final Deck deck;
+
+  /// Called after each successful sign-off, so the opener can share the
+  /// reviewer's work with the author once QA mode closes.
+  final VoidCallback? onSignedOff;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +61,7 @@ class QaModeScreen extends StatelessWidget {
       create: (_) => QaModeCubit(
         deckId: deck.id,
         deckFieldCount: deck.fields.isNotEmpty ? deck.fields.length : 1,
+        onSignedOff: onSignedOff,
       ),
       child: _QaModeView(deck: deck),
     );
@@ -158,8 +162,6 @@ class _QaModeView extends StatelessWidget {
             }
             if (state.walkComplete) {
               return _QaWalkComplete(
-                deckId: deck.id,
-                isImported: deck.isImported,
                 onBack: () => Navigator.of(context).maybePop(),
               );
             }
@@ -221,14 +223,8 @@ class _QaModeView extends StatelessWidget {
 
 /// Shown after the last fact in the selected columns is signed off.
 class _QaWalkComplete extends StatelessWidget {
-  const _QaWalkComplete({
-    required this.deckId,
-    required this.isImported,
-    required this.onBack,
-  });
+  const _QaWalkComplete({required this.onBack});
 
-  final String deckId;
-  final bool isImported;
   final VoidCallback onBack;
 
   @override
@@ -253,10 +249,6 @@ class _QaWalkComplete extends StatelessWidget {
               style: theme.textTheme.headlineSmall,
             ),
             const SizedBox(height: 32),
-            if (isImported) ...[
-              QaSendToAuthorButton(importDeckId: deckId),
-              const SizedBox(height: 16),
-            ],
             AppButton(
               label: loc.backToDeck,
               fullWidth: true,
@@ -380,19 +372,16 @@ class _QaColumnPickerState extends State<_QaColumnPicker> {
             leading: const Icon(LucideIcons.play),
             onPressed: _selected.isEmpty || _starting ? null : _start,
           ),
-          BlocBuilder<QaModeCubit, QaModeState>(
-            buildWhen: (prev, next) => prev.stats != next.stats,
-            builder: (context, state) {
-              if (!widget.deck.isImported ||
-                  (state.stats?.verifiedAspects ?? 0) == 0) {
-                return const SizedBox.shrink();
-              }
-              return Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: QaSendToAuthorButton(importDeckId: widget.deck.id),
-              );
-            },
-          ),
+          if (widget.deck.isImported) ...[
+            const SizedBox(height: 8),
+            Text(
+              loc.qaReviewSharedNotice,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -1767,10 +1767,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get qaReviewSendToAuthor => '確認結果を作成者に送る';
-
-  @override
-  String get qaReviewSendHint => '作成者があなたの確認を採用すると、デッキが発見ページでQAバッジを獲得できます。';
+  String get qaReviewSharedNotice => 'QAモードを終了すると、あなたの確認結果はデッキの作成者と共有されます。';
 
   @override
   String qaReviewSent(int aspects) {

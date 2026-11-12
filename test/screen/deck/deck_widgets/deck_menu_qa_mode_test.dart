@@ -10,6 +10,7 @@ import 'package:retentio/screen/deck/deck_widgets/deck_menu.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/qa/qa_mode_screen.dart';
 import 'package:retentio/services/apis/api_service.dart';
+import 'package:retentio/widgets/app_toast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/fake_qa_api_adapter.dart';
@@ -36,6 +37,8 @@ class _CountingDeckListCubit extends DeckListCubit {
 }
 
 void main() {
+  late FakeQaApiAdapter adapter;
+
   setUp(() async {
     await setupTestEnvironment();
     await ApiService.clearToken();
@@ -44,7 +47,7 @@ void main() {
       baseUrl: 'http://localhost',
       options: BaseOptions(),
     );
-    networkDioClient.dio.httpClientAdapter = FakeQaApiAdapter(
+    adapter = FakeQaApiAdapter(
       factIds: const ['fact-1'],
       entriesByFactId: {
         'fact-1': [
@@ -52,6 +55,7 @@ void main() {
         ],
       },
     );
+    networkDioClient.dio.httpClientAdapter = adapter;
   });
 
   tearDown(() {
@@ -153,6 +157,79 @@ void main() {
 
       expect(find.byType(ContributionsInboxSheet), findsNothing);
       expect(deckList.refreshes, before + 1, reason: 'accepts may change it');
+    });
+
+    group('sharing sign-offs on close', () {
+      Future<void> walk(
+        WidgetTester tester, {
+        required bool imported,
+        required bool signOff,
+      }) async {
+        final deckList = _CountingDeckListCubit();
+        addTearDown(deckList.close);
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            BlocProvider<DeckListCubit>.value(
+              value: deckList,
+              child: Scaffold(
+                body: DeckMenu(deck: _deck(imported: imported)),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(DeckMenu));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('QA mode'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, 'Start QA'));
+        await tester.pumpAndSettle();
+        if (signOff) {
+          await tester.tap(find.byType(Checkbox).first);
+          await tester.pump();
+          await tester.tap(find.text('Next'));
+          await tester.pumpAndSettle();
+        }
+        await tester.pageBack();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+
+      testWidgets('an importer\'s sign-offs go to the author', (tester) async {
+        await walk(tester, imported: true, signOff: true);
+
+        expect(adapter.qualityPuts, hasLength(1));
+        expect(adapter.qaReviewPosts, 1);
+        expect(
+          find.text('Sent 1 verified field to the author'),
+          findsOneWidget,
+        );
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('nothing is sent without a sign-off', (tester) async {
+        await walk(tester, imported: true, signOff: false);
+        expect(adapter.qaReviewPosts, 0);
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('a failed send stays quiet', (tester) async {
+        adapter.qaReviewError = 'nothing to review';
+        await walk(tester, imported: true, signOff: true);
+
+        expect(adapter.qaReviewPosts, 1);
+        expect(find.textContaining('author'), findsNothing);
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('an author\'s own sign-offs are not sent', (tester) async {
+        await walk(tester, imported: false, signOff: true);
+
+        expect(adapter.qualityPuts, hasLength(1));
+        expect(adapter.qaReviewPosts, 0);
+        await tester.pumpAndSettle();
+      });
     });
   });
 }

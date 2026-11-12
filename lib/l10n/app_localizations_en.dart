@@ -1882,11 +1882,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get qaReviewSendToAuthor => 'Send verifications to author';
-
-  @override
-  String get qaReviewSendHint =>
-      'Ask the author to adopt your sign-offs so the deck can earn the QA badge in Discovery.';
+  String get qaReviewSharedNotice =>
+      'Your sign-offs are shared with the deck author when you leave QA mode.';
 
   @override
   String qaReviewSent(int aspects) {

@@ -2217,8 +2217,7 @@
   "@qaReviewSummary": {
     "placeholders": { "facts": { "type": "int" }, "aspects": { "type": "int" } }
   },
-  "qaReviewSendToAuthor": "Send verifications to author",
-  "qaReviewSendHint": "Ask the author to adopt your sign-offs so the deck can earn the QA badge in Discovery.",
+  "qaReviewSharedNotice": "Your sign-offs are shared with the deck author when you leave QA mode.",
   "qaReviewSent": "{aspects, plural, =1{Sent 1 verified field to the author} other{Sent {aspects} verified fields to the author}}",
   "@qaReviewSent": {
     "placeholders": { "aspects": { "type": "int" } }

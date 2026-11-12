@@ -6,9 +6,9 @@
 **QA mode** is a linear walk (not SRS) over a deck's facts. Each **column (entry)** has a checkbox. Header: **verified entries / total entries** (`model=human`) and, on imports, **edited** (`fact_edit`).
 
 - **Authors** walk their own **source** deck. Their sign-offs are what the catalog QA badge counts; edits save in place
-  (the server clears sign-offs on changed text/audio). No edited count and no "send to author".
-- **Importers** walk their copy. Edits become `fact_edit` contributions, and they can send their sign-offs to the
-  author (see [Send to author](#send-to-author)).
+  (the server clears sign-offs on changed text/audio). No edited count and nothing is sent.
+- **Importers** walk their copy. Edits become `fact_edit` contributions, and their sign-offs are shared with the
+  author when they leave QA mode (see [Send to author](#send-to-author)).
 
 Closing QA mode refreshes the deck list so a newly earned badge shows right away.
 
@@ -160,10 +160,11 @@ Fact ids come from one `GET …/facts/ids` (`CardService.listFactIds` → `data.
 
 ## Send to author
 
-The column picker (once anything is verified) and the walk-complete screen offer **Send verifications to author**
-(`QaSendToAuthorButton` → `POST /api/decks/{importId}/contributions/qa-review`). The server freezes the reviewer's
-sign-offs whose content fingerprint still matches the author's deck; one open request per reviewer, refreshed on
-resend. `nothing to review` shows a hint that only unchanged fields can be sent.
+Importers' sign-offs are shared automatically: when QA mode closes after at least one successful sign-off, the deck
+menu calls `shareQaSignOffsWithAuthor` (`POST /api/decks/{importId}/contributions/qa-review`) and toasts the sent
+count. The column picker says so up front. Failures (nothing transferable, offline, older server) stay silent and the
+next session retries; the server rebuilds the request from its sign-offs and keeps one open request per reviewer, so
+repeated sends never pile up. Authors' own sessions send nothing.
 
 The author sees a **QA review** row in the contributions inbox with the fact/field counts. **Review fields** opens
 `QaReviewPreviewSheet` (`GET …/contributions/{id}/qa-review`): per field `Ready`, `Changed since`, `Already verified`,
