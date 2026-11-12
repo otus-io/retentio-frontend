@@ -943,6 +943,100 @@ void main() {
         },
       );
     });
+
+    group('resuming the facts', () {
+      late ValueNotifier<bool> foreground;
+      late int deckFetches;
+      late List<int> offsets;
+      late List<String> ids;
+      late bool countUnknown;
+
+      /// Three fact pages; the second fails once with the screen off.
+      OfflinePackageDownloader buildPausing() {
+        foreground = ValueNotifier(true);
+        deckFetches = 0;
+        offsets = [];
+        ids = List.generate(401, (i) => 'f$i');
+        countUnknown = false;
+        var paused = false;
+        return OfflinePackageDownloader(
+          store: store,
+          mediaRootDir: tmp.path,
+          fetchDeck: (_) async {
+            deckFetches++;
+            return _deck;
+          },
+          fetchFactsPage: (_, limit, offset) async {
+            offsets.add(offset);
+            if (offset == limit && !paused) {
+              paused = true;
+              foreground.value = false;
+              throw StateError('connection lost');
+            }
+            final page = ids.skip(offset).take(limit);
+            return OfflineFactsPage(
+              facts: [for (final id in page) _fact(id)],
+              hasMore: offset + limit < ids.length,
+            );
+          },
+          fetchFactIds: (_) async => countUnknown ? null : ids,
+          fetchCards: (_) async => const [],
+          nowSec: () => 1000,
+          isOnline: () async => true,
+          foreground: foreground,
+        );
+      }
+
+      Future<void> settle() async {
+        for (var i = 0; i < 50; i++) {
+          await Future<void>.delayed(Duration.zero);
+        }
+      }
+
+      test('continues after the pages already fetched', () async {
+        final downloader = buildPausing();
+
+        expect(await downloader.download('d1'), isFalse);
+        final bar = downloader.progressOf('d1').value!;
+        final values = <double?>[];
+        downloader
+            .progressOf('d1')
+            .addListener(() => values.add(downloader.progressOf('d1').value));
+        foreground.value = true;
+        await settle();
+
+        expect(offsets, [0, 200, 200, 400]);
+        expect(deckFetches, 1);
+        expect(store.decks['d1']?.isReady, isTrue);
+        expect(store.facts.length, 401);
+        expect(values.first, greaterThan(bar));
+      });
+
+      test('starts over when the fact count changed', () async {
+        final downloader = buildPausing();
+
+        expect(await downloader.download('d1'), isFalse);
+        ids = [...ids, 'f401'];
+        foreground.value = true;
+        await settle();
+
+        expect(offsets, [0, 200, 0, 200, 400]);
+        expect(deckFetches, 1);
+        expect(store.facts.length, 402);
+      });
+
+      test('starts over when the fact count is unknown', () async {
+        final downloader = buildPausing();
+
+        expect(await downloader.download('d1'), isFalse);
+        countUnknown = true;
+        foreground.value = true;
+        await settle();
+
+        expect(offsets, [0, 200, 0, 200, 400]);
+        expect(store.decks['d1']?.isReady, isTrue);
+      });
+    });
   });
 
   test('seeds cards after the media so online reviews are not lost', () async {
@@ -1369,14 +1463,35 @@ void main() {
   test('keeps a fact the paging skipped but the id list has', () async {
     store.facts['skipped'] = _fact('skipped');
 
-    await build(
-      pages: [
-        [_fact('a')],
-      ],
+    final ok = await build(
+      fetchFactsPage: (_, _, offset) async {
+        factOffsets.add(offset);
+        return OfflineFactsPage(facts: [_fact('a')], hasMore: false);
+      },
       factIds: ['a', 'skipped'],
     ).download('d1');
 
+    expect(ok, isTrue);
+    expect(factOffsets, [0, 0]);
     expect(store.facts.keys, unorderedEquals(['skipped', 'a']));
+  });
+
+  test('fetches the pages again when a fact id was not received', () async {
+    var listings = 0;
+    final ok = await build(
+      fetchFactsPage: (_, _, offset) async {
+        listings++;
+        return OfflineFactsPage(
+          facts: [_fact('a'), if (listings > 1) _fact('b')],
+          hasMore: false,
+        );
+      },
+      factIds: ['a', 'b'],
+    ).download('d1');
+
+    expect(ok, isTrue);
+    expect(listings, 2);
+    expect(store.facts.keys, unorderedEquals(['a', 'b']));
   });
 
   test('keeps stored facts when the fact id list cannot be read', () async {

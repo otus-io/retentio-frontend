@@ -26,15 +26,21 @@ class _DownloadInterrupted implements Exception {
   const _DownloadInterrupted();
 }
 
-/// The deck and facts a download fetched before its media. Kept while the
-/// download is paused for the app, so the resumed one starts at the media.
-typedef _FactsCheckpoint = ({
-  Deck remote,
-  OfflineDeck? before,
-  int fetchedAt,
-  List<OfflineFact> facts,
-  List<Tag> tags,
-});
+/// The deck and the fact pages a download fetched so far. Kept while the
+/// download is paused for the app, so the resumed one continues from there.
+class _Checkpoint {
+  _Checkpoint(this.remote, this.before, this.fetchedAt);
+
+  final Deck remote;
+  final OfflineDeck? before;
+  final int fetchedAt;
+  final List<OfflineFact> facts = [];
+  final Map<String, Tag> tags = {};
+
+  /// Fact count the pages were fetched against; null when unknown.
+  int? factTotal;
+  bool factsDone = false;
+}
 
 /// Assembles a deck's offline study package (deck, facts, cards, media) into
 /// [OfflineLearningStore]. Server card schedules replace local ones unless the
@@ -99,7 +105,7 @@ class OfflinePackageDownloader {
   final Set<String> _resumed = {};
   final Set<String> _leftForeground = {};
   final Set<String> _resumeWhenForeground = {};
-  final Map<String, _FactsCheckpoint> _checkpoints = {};
+  final Map<String, _Checkpoint> _checkpoints = {};
   var _haltsAll = 0;
 
   /// Download progress of [deckId] from 0 to 1, or null when none is running.
@@ -253,9 +259,11 @@ class OfflinePackageDownloader {
     }
   }
 
-  /// [resume]: start at the media when a paused run left a recent checkpoint.
+  /// [resume]: continue where a paused run left a recent checkpoint.
   Future<bool> _download(String deckId, {required bool resume}) async {
-    final progress = _notifier(deckId)..value = 0;
+    final progress = _notifier(deckId);
+    // A resumed run keeps the bar of the paused one instead of dropping to 0.
+    if (!resume || progress.value == null) progress.value = 0;
     _failedNotifier(deckId).value = false;
     // This run replaces a paused one, which must not start again after it.
     _resumeWhenForeground.remove(deckId);
@@ -301,10 +309,13 @@ class OfflinePackageDownloader {
             saved != null &&
             _nowSec() - saved.fetchedAt < checkpointMaxAgeSec
         ? saved
-        : await _fetchDeckAndFacts(deckId);
+        : await _fetchDeckCheckpoint(deckId);
     _checkpoints[deckId] = checkpoint;
+    if (!checkpoint.factsDone) await _syncFacts(deckId, checkpoint);
     _report(deckId, _deckShare + _factsShare);
-    final (:remote, :before, :fetchedAt, :facts, :tags) = checkpoint;
+    final _Checkpoint(:remote, :before, :fetchedAt, :facts) = checkpoint;
+    final tags = checkpoint.tags.values.toList()
+      ..sort((a, b) => a.id.compareTo(b.id));
     final mediaComplete = await _downloadFactMedia(deckId, facts);
     // Last, so reviews made online while the deck was downloading (the
     // study screen serves it remotely until it is ready) are not lost.
@@ -335,23 +346,12 @@ class OfflinePackageDownloader {
     return true;
   }
 
-  Future<_FactsCheckpoint> _fetchDeckAndFacts(String deckId) async {
+  Future<_Checkpoint> _fetchDeckCheckpoint(String deckId) async {
     final fetchedAt = _nowSec();
     final remote = await _fetchDeck(deckId);
     _checkHalted(deckId);
     _report(deckId, _deckShare);
-    final before = await _store.getDeck(deckId);
-    final (facts, tags) = await _syncFacts(
-      deckId,
-      _buildDeck(deckId, remote, before, const []),
-    );
-    return (
-      remote: remote,
-      before: before,
-      fetchedAt: fetchedAt,
-      facts: facts,
-      tags: tags,
-    );
+    return _Checkpoint(remote, await _store.getDeck(deckId), fetchedAt);
   }
 
   /// [countsAt]: when the server review counters of [remote] were fetched, to
@@ -391,38 +391,65 @@ class OfflinePackageDownloader {
     );
   }
 
-  /// Returns the facts and their distinct tags ordered by id, the order of
-  /// `GET /api/tags` used by the online tag filter.
-  Future<(List<OfflineFact>, List<Tag>)> _syncFacts(
-    String deckId,
-    OfflineDeck deck,
-  ) async {
+  /// Fetches the fact pages into [cp], continuing after the pages it already
+  /// holds. Tags are later ordered by id, the order of `GET /api/tags` used by
+  /// the online tag filter.
+  Future<void> _syncFacts(String deckId, _Checkpoint cp) async {
+    final deck = _buildDeck(deckId, cp.remote, cp.before, const []);
     final imported = deck.sourceDeckId.isNotEmpty;
     final stored = imported
         ? await _factsAtSnapshot(deck)
         : <String, OfflineFact>{};
-    final all = <OfflineFact>[];
-    final tags = <String, Tag>{};
     final total = await _factCount(deckId);
+    // Facts added or deleted meanwhile shift the offsets, so start over.
+    if (total == null || total != cp.factTotal) _restartFacts(cp, total);
+    await _fetchFactPages(deckId, cp, stored, imported: imported);
+    final ids = await _liveFactIds(deckId);
+    if (ids != null && _missesAny(cp, ids)) {
+      // A fact added or deleted while paging shifted the offsets past some.
+      logger.w('Offline facts of deck=$deckId incomplete, fetching again');
+      _restartFacts(cp, ids.length);
+      await _fetchFactPages(deckId, cp, stored, imported: imported);
+    }
+    _report(deckId, _deckShare + _factsShare);
+    if (ids != null) await _dropDeletedFacts(deckId, ids);
+    cp.factsDone = true;
+  }
+
+  void _restartFacts(_Checkpoint cp, int? total) {
+    cp.facts.clear();
+    cp.tags.clear();
+    cp.factTotal = total;
+  }
+
+  bool _missesAny(_Checkpoint cp, List<String> ids) {
+    final got = {for (final f in cp.facts) f.id};
+    return ids.any((id) => !got.contains(id));
+  }
+
+  Future<void> _fetchFactPages(
+    String deckId,
+    _Checkpoint cp,
+    Map<String, OfflineFact> stored, {
+    required bool imported,
+  }) async {
+    final total = cp.factTotal;
     OfflineFactsPage page;
     do {
-      page = await _fetchFactsPage(deckId, factsPageSize, all.length);
+      page = await _fetchFactsPage(deckId, factsPageSize, cp.facts.length);
       final facts = imported
           ? await _pinMediaVersions(deckId, page.facts, stored)
           : page.facts;
       _checkHalted(deckId);
       await _store.putFacts(facts);
-      all.addAll(facts);
+      cp.facts.addAll(facts);
       for (final t in page.tags) {
-        tags[t.id] = t;
+        cp.tags[t.id] = t;
       }
       if (total != null && total > 0) {
-        _report(deckId, _deckShare + _factsShare * all.length / total);
+        _report(deckId, _deckShare + _factsShare * cp.facts.length / total);
       }
     } while (page.hasMore && page.facts.isNotEmpty);
-    _report(deckId, _deckShare + _factsShare);
-    await _dropDeletedFacts(deckId);
-    return (all, tags.values.toList()..sort((a, b) => a.id.compareTo(b.id)));
   }
 
   /// Fact count for the progress only; null when it cannot be read.
@@ -434,17 +461,20 @@ class OfflinePackageDownloader {
     }
   }
 
-  /// Offset paging skips facts when the deck changes meanwhile, so only the
-  /// unpaged id list proves a fact was deleted. Kept when it cannot be read.
-  Future<void> _dropDeletedFacts(String deckId) async {
-    final List<String>? ids;
+  /// The unpaged fact ids, which prove which facts exist; null when they
+  /// cannot be read.
+  Future<List<String>?> _liveFactIds(String deckId) async {
     try {
-      ids = await _fetchFactIds(deckId);
+      return await _fetchFactIds(deckId);
     } catch (e) {
       logger.w('Offline fact ids of deck=$deckId failed: $e');
-      return;
+      return null;
     }
-    if (ids == null) return;
+  }
+
+  /// Offset paging skips facts when the deck changes meanwhile, so only the
+  /// unpaged id list [ids] proves a fact was deleted.
+  Future<void> _dropDeletedFacts(String deckId, List<String> ids) async {
     final live = ids.toSet();
     final gone = [
       for (final f in await _store.getFacts(deckId))
