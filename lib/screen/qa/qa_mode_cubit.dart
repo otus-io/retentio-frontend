@@ -237,6 +237,12 @@ class QaModeCubit extends Cubit<QaModeState> {
     }
     final stats = await FactQualityService.of.getDeckQualityStats(deckId);
     if (_isStale(generation)) return;
+    if (ids.isEmpty && stats == null) {
+      // Without stats an empty list could mean "all verified" or "nothing to
+      // verify"; say it failed rather than guess.
+      emit(state.copyWith(loading: false, factIdsLoadFailed: true));
+      return;
+    }
     emit(
       state.copyWith(
         loading: ids.isNotEmpty,
@@ -244,7 +250,7 @@ class QaModeCubit extends Cubit<QaModeState> {
         index: 0,
         stats: stats,
         editedCount: stats?.editedCount ?? state.editedCount,
-        walkComplete: ids.isEmpty && (stats?.totalAspects ?? 1) > 0,
+        walkComplete: ids.isEmpty && (stats?.totalAspects ?? 0) > 0,
       ),
     );
     if (ids.isEmpty) return;

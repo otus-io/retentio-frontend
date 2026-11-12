@@ -289,6 +289,22 @@ void main() {
       },
     );
 
+    test('an empty list without stats is a load failure, not done', () async {
+      buildAdapter(factIds: const []);
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+      );
+
+      await startWalk(cubit);
+
+      expect(cubit.state.factIdsLoadFailed, isTrue);
+      expect(cubit.state.walkComplete, isFalse);
+      expect(cubit.state.loading, isFalse);
+      await cubit.close();
+    });
+
     test('a fact without quality does not inherit the previous one', () async {
       buildAdapter(
         qualityByFactId: {
