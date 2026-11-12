@@ -52,7 +52,8 @@ class FakeQaApiAdapter implements HttpClientAdapter {
   /// How many times `POST …/contributions/qa-review` was hit.
   int qaReviewPosts = 0;
 
-  /// Facts left out of `GET …/facts/ids?unverified_columns=…`. A successful
+  /// Facts left out of `GET …/facts/ids?unverified_columns=…`, per column
+  /// when the fact has a quality record (see [_verifiedIn]). A successful
   /// quality PUT adds its fact, like a server sign-off.
   final Set<String> verifiedFactIds;
 
@@ -174,7 +175,7 @@ class FakeQaApiAdapter implements HttpClientAdapter {
       return _ok({
         'fact_ids': [
           for (final id in factIds)
-            if (columns == null || !verifiedFactIds.contains(id)) id,
+            if (columns == null || !_verifiedIn(id, columns)) id,
         ],
       });
     }
@@ -200,6 +201,20 @@ class FakeQaApiAdapter implements HttpClientAdapter {
   }
 
   /// Human sign-offs stored on verified facts (what a qa_review would carry).
+  /// Whether [id] needs no sign-off in the comma-separated [columns]. A fact
+  /// seeded as verified without a quality record counts for every column;
+  /// one with a record (e.g. after a PUT) is judged column by column.
+  bool _verifiedIn(String id, String columns) {
+    if (!verifiedFactIds.contains(id)) return false;
+    final record = qualityByFactId[id];
+    if (record == null) return true;
+    return columns.split(',').every((column) {
+      final entry = record[column.trim()];
+      return entry is Map &&
+          entry.values.any((a) => a is Map && a['model'] == 'human');
+    });
+  }
+
   int _humanAspectCount() {
     var n = 0;
     for (final id in verifiedFactIds) {

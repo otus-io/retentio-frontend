@@ -67,6 +67,24 @@ void main() {
   }) => cubit.startWalk(columns);
 
   group('startWalk', () {
+    test('a fact signed off in one column stays queued for another', () async {
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+      );
+      await startWalk(cubit, columns: {0});
+      final first = cubit.state.factId;
+      cubit.toggleColumn(0);
+      expect(await cubit.verify(), isNull);
+
+      await startWalk(cubit, columns: {0});
+      expect(cubit.state.factIds, isNot(contains(first)));
+      await startWalk(cubit, columns: {1});
+      expect(cubit.state.factIds, contains(first));
+      await cubit.close();
+    });
+
     test('loads the first fact and deck counters', () async {
       buildAdapter(stats: {'verified_aspects': 2, 'total_aspects': 6});
       final cubit = QaModeCubit(
