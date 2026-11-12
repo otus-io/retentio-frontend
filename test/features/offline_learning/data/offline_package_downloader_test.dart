@@ -671,6 +671,41 @@ void main() {
       expect(downloader.failedOf('d1').value, isTrue);
       expect(downloader.progressOf('d1').value, isNull);
     });
+
+    test('screen off during a media file retries that file', () async {
+      final foreground = ValueNotifier(true);
+      var calls = 0;
+      final downloader = build(
+        foreground: foreground,
+        fetchFactsPage: (_, _, _) async => OfflineFactsPage(
+          facts: [
+            _fact('f1', entries: const [FactEntry(audio: 'aud')]),
+          ],
+          hasMore: false,
+        ),
+        downloadMedia: (url, path) async {
+          calls++;
+          if (calls == 1) {
+            foreground.value = false;
+            throw StateError('reset');
+          }
+          return writeMedia(url, path);
+        },
+      );
+
+      expect(await downloader.download('d1'), isFalse);
+      expect(downloader.failedOf('d1').value, isFalse);
+      expect(store.decks.containsKey('d1'), isFalse);
+
+      foreground.value = true;
+      for (var i = 0; i < 50 && store.decks['d1'] == null; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      expect(calls, 2);
+      expect(store.decks['d1']?.isReady, isTrue);
+      expect(downloader.failedOf('d1').value, isFalse);
+    });
   });
 
   test('seeds cards after the media so online reviews are not lost', () async {
