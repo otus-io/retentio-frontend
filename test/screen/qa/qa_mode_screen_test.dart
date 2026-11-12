@@ -176,7 +176,7 @@ void main() {
       expect(find.text('headword'), findsOneWidget);
       expect(find.text('日文 50%'), findsOneWidget);
       expect(find.text('中文 0%'), findsOneWidget);
-      expect(find.textContaining('Fact 1 / 2'), findsOneWidget);
+      expect(find.textContaining('1 / 2 to verify'), findsOneWidget);
 
       final checkboxes = tester
           .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
@@ -250,7 +250,7 @@ void main() {
         containsAll(<String>['0', '1']),
       );
       expect(find.text('second'), findsOneWidget);
-      expect(find.textContaining('Fact 2 / 2'), findsOneWidget);
+      expect(find.textContaining('2 / 2 to verify'), findsOneWidget);
       expect(
         find.text("You're done with these columns. Thank you."),
         findsNothing,
@@ -263,7 +263,7 @@ void main() {
       useAdapter(factIds: const ['fact-1']);
       await pumpQaMode(tester);
 
-      expect(find.textContaining('Fact 1 / 1'), findsOneWidget);
+      expect(find.textContaining('1 / 1 to verify'), findsOneWidget);
 
       await tester.tap(find.text('日文'));
       await tester.pumpAndSettle();
@@ -278,7 +278,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(adapter.qualityPuts, hasLength(1));
-      expect(find.textContaining('Fact 1 / 1'), findsNothing);
+      expect(find.textContaining('1 / 1 to verify'), findsNothing);
       expect(find.text('headword'), findsNothing);
       expect(
         find.text("You're done with these columns. Thank you."),
@@ -380,7 +380,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Fact is not in the pinned snapshot'), findsOneWidget);
-      expect(find.textContaining('Fact 1 / 2'), findsOneWidget);
+      expect(find.textContaining('1 / 2 to verify'), findsOneWidget);
       await tester.pump(const Duration(seconds: 2));
     });
 
@@ -398,7 +398,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('second'), findsOneWidget);
-      expect(find.textContaining('Fact 2 / 2'), findsOneWidget);
+      expect(find.textContaining('2 / 2 to verify'), findsOneWidget);
       expect(find.text('Nothing to verify in this column'), findsOneWidget);
       final checkboxes = tester
           .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
@@ -499,6 +499,7 @@ void main() {
 
         final hold = Completer<void>();
         final statsRequests = adapter.statsRequestCount;
+        final idsRequests = adapter.factIdsRequestCount;
         adapter.statsHold = hold.future;
         try {
           final start = startButton().onPressed!;
@@ -513,21 +514,10 @@ void main() {
           }
 
           expect(adapter.statsRequestCount, statsRequests + 1);
-          final tiles = tester
-              .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
-              .toList();
-          expect(tiles.map((tile) => tile.value), [true, false]);
-          expect(tiles.every((tile) => tile.onChanged == null), isTrue);
-          expect(startButton().onPressed, isNull);
-
-          await tester.tap(find.text('中文'));
-          await tester.pump();
-          expect(
-            tester
-                .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
-                .map((tile) => tile.value),
-            [true, false],
-          );
+          expect(adapter.factIdsRequestCount, idsRequests + 1);
+          // The picker closes at once; the walk shows a spinner while loading.
+          expect(find.byType(CheckboxListTile), findsNothing);
+          expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
           hold.complete();
           await tester.pumpAndSettle();
@@ -584,12 +574,32 @@ void main() {
     testWidgets('shows an empty message when the deck has no facts', (
       tester,
     ) async {
-      useAdapter(factIds: const []);
+      useAdapter(
+        factIds: const [],
+        stats: {'verified_aspects': 0, 'total_aspects': 0},
+      );
       await pumpQaMode(tester);
 
       expect(
         find.text('This imported deck has no facts to review.'),
         findsOneWidget,
+      );
+    });
+
+    testWidgets('shows a load error when the fact list cannot load', (
+      tester,
+    ) async {
+      useAdapter();
+      adapter.factIdsFails = true;
+      await pumpQaMode(tester);
+
+      expect(
+        find.text('Could not load facts. Check your connection and try again.'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('This imported deck has no facts to review.'),
+        findsNothing,
       );
     });
 

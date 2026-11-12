@@ -61,6 +61,21 @@ void main() {
       const aspect = FactQualityAspect(score: 10, model: 'human');
       expect(aspect.toJson(), {'score': 10, 'model': 'human'});
     });
+
+    test('reads and echoes the signer of a human aspect', () {
+      final quality = FactQuality.fromJson({
+        'entries': {
+          '0': {
+            'text': {'score': 10, 'model': 'human', 'by': 'alice'},
+            'audio': {'score': 10, 'model': 'human', 'by': ''},
+          },
+        },
+      });
+      final text = quality.aspectsAt(0)['text']!;
+      expect(text.by, 'alice');
+      expect(text.toJson(), {'score': 10, 'model': 'human', 'by': 'alice'});
+      expect(quality.aspectsAt(0)['audio']!.by, isNull);
+    });
   });
 
   group('FactQualityStats.fromJson', () {
@@ -80,18 +95,6 @@ void main() {
       expect(empty.editedCount, 0);
     });
 
-    test('reads the resume cursor when present', () {
-      final stats = FactQualityStats.fromJson({'last_fact_id': 'fact-9'});
-      expect(stats.lastFactId, 'fact-9');
-    });
-
-    test('reads per-column cursors', () {
-      final stats = FactQualityStats.fromJson({
-        'cursors': {'0': 'fact-a', '1': '', 'x': 'fact-b', '2': 'fact-c'},
-      });
-      expect(stats.cursors, {0: 'fact-a', 2: 'fact-c'});
-    });
-
     test('reads per-column counters', () {
       final stats = FactQualityStats.fromJson({
         'columns': {
@@ -107,6 +110,23 @@ void main() {
   });
 
   group('FactQualityColumnStats', () {
+    test('is complete only when every aspect is verified', () {
+      const done = FactQualityColumnStats(verifiedAspects: 4, totalAspects: 4);
+      expect(done.isComplete, isTrue);
+      expect(done.completionPercent, 100);
+      const empty = FactQualityColumnStats(verifiedAspects: 0, totalAspects: 0);
+      expect(empty.isComplete, isFalse);
+    });
+
+    test('never rounds up to 100 before complete', () {
+      const almost = FactQualityColumnStats(
+        verifiedAspects: 199,
+        totalAspects: 200,
+      );
+      expect(almost.isComplete, isFalse);
+      expect(almost.completionPercent, 99);
+    });
+
     test('rounds completion percent', () {
       const stats = FactQualityColumnStats(verifiedAspects: 1, totalAspects: 3);
       expect(stats.completionPercent, 33);
@@ -120,16 +140,6 @@ void main() {
     });
   });
 
-  group('FactQualityStats.fromJson resume cursor', () {
-    test('leaves the cursor null when missing or empty', () {
-      expect(FactQualityStats.fromJson({}).lastFactId, isNull);
-      expect(
-        FactQualityStats.fromJson({'last_fact_id': ''}).lastFactId,
-        isNull,
-      );
-    });
-  });
-
   group('qaScoreableAspects', () {
     test('lists only aspects the entry actually has', () {
       expect(qaScoreableAspects(const FactEntry(text: 'hi')), ['text']);
@@ -139,83 +149,6 @@ void main() {
         'audio',
       ]);
       expect(qaScoreableAspects(const FactEntry(image: 'img1')), isEmpty);
-    });
-  });
-
-  group('qaResumeFactId', () {
-    const ids = ['fact-1', 'fact-2', 'fact-3'];
-
-    test('returns the earliest selected cursor', () {
-      expect(
-        qaResumeFactId(
-          columns: {0, 1},
-          cursors: {0: 'fact-2', 1: 'fact-1'},
-          factIds: ids,
-        ),
-        'fact-1',
-      );
-    });
-
-    test('returns null when any selected column is missing', () {
-      expect(
-        qaResumeFactId(columns: {0, 2}, cursors: {0: 'fact-2'}, factIds: ids),
-        isNull,
-      );
-    });
-
-    test('returns null when a cursor id is unknown', () {
-      expect(
-        qaResumeFactId(columns: {0}, cursors: {0: 'ghost'}, factIds: ids),
-        isNull,
-      );
-    });
-  });
-
-  group('qaColumnsWalkComplete', () {
-    const ids = ['fact-1', 'fact-2', 'fact-3'];
-
-    test('is true when every selected cursor is on the last fact', () {
-      expect(
-        qaColumnsWalkComplete(
-          columns: {0, 1},
-          cursors: {0: 'fact-3', 1: 'fact-3'},
-          factIds: ids,
-        ),
-        isTrue,
-      );
-    });
-
-    test('is false when the earliest cursor is before the last fact', () {
-      expect(
-        qaColumnsWalkComplete(
-          columns: {0, 1},
-          cursors: {0: 'fact-3', 1: 'fact-2'},
-          factIds: ids,
-        ),
-        isFalse,
-      );
-    });
-
-    test('is false when any selected column has no cursor', () {
-      expect(
-        qaColumnsWalkComplete(
-          columns: {0, 1},
-          cursors: {0: 'fact-3'},
-          factIds: ids,
-        ),
-        isFalse,
-      );
-    });
-
-    test('is false when the deck has no facts', () {
-      expect(
-        qaColumnsWalkComplete(
-          columns: {0},
-          cursors: {0: 'fact-1'},
-          factIds: const [],
-        ),
-        isFalse,
-      );
     });
   });
 
@@ -339,6 +272,31 @@ void main() {
         '1': {
           'text': {'score': 2, 'model': 'claude'},
         },
+      });
+    });
+
+    test('echoes the signer of preserved sign-offs; new ones omit it', () {
+      final quality = FactQuality.fromJson({
+        'entries': {
+          '1': {
+            'text': {'score': 10, 'model': 'human', 'by': 'author'},
+          },
+        },
+      });
+
+      final merged = qaMergedQualityEntries(
+        quality: quality,
+        entries: entries,
+        checkedIndexes: const {0},
+        activeColumnIndexes: {0},
+      );
+
+      expect(merged['0'], {
+        'text': {'score': 10, 'model': 'human'},
+        'audio': {'score': 10, 'model': 'human'},
+      });
+      expect(merged['1'], {
+        'text': {'score': 10, 'model': 'human', 'by': 'author'},
       });
     });
   });

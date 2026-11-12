@@ -63,6 +63,7 @@ Deck _$DeckFromJson(Map<String, dynamic> json) => Deck(
   sourceVersion: (json['source_version'] as num?)?.toInt() ?? 0,
   publishedVersion: (json['published_version'] as num?)?.toInt() ?? 0,
   visibility: json['visibility'] as String? ?? '',
+  qaVerified: json['qa_verified'] as bool? ?? false,
   createdAt: json['created_at'] == null
       ? null
       : DateTime.parse(json['created_at'] as String),
@@ -86,6 +87,7 @@ Map<String, dynamic> _$DeckToJson(Deck instance) => <String, dynamic>{
   'source_version': instance.sourceVersion,
   'published_version': instance.publishedVersion,
   'visibility': instance.visibility,
+  'qa_verified': instance.qaVerified,
   'created_at': instance.createdAt?.toIso8601String(),
   'updated_at': instance.updatedAt?.toIso8601String(),
 };

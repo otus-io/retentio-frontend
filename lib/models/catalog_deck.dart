@@ -14,6 +14,7 @@ class CatalogDeck {
     required this.factCount,
     required this.deckTagNames,
     this.publishedAt,
+    this.qaVerified = false,
   });
 
   final String id;
@@ -28,8 +29,16 @@ class CatalogDeck {
   final List<String> deckTagNames;
   final DateTime? publishedAt;
 
+  /// The author human-verified every text/audio field of the source deck's
+  /// current facts.
+  @JsonKey(fromJson: _isTrue)
+  final bool qaVerified;
+
   factory CatalogDeck.fromJson(Map<String, dynamic> json) =>
       _$CatalogDeckFromJson(json);
 
   Map<String, dynamic> toJson() => _$CatalogDeckToJson(this);
 }
+
+/// Only a JSON `true` counts; strings, numbers and `null` read as false.
+bool _isTrue(Object? value) => value == true;

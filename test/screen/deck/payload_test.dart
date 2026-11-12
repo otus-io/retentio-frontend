@@ -75,6 +75,7 @@ void main() {
       expect(first['entries'], [
         {'text': 'a'},
       ]);
+      expect(b['verified'], isTrue, reason: 'in-app adds are signed off');
     });
 
     test('buildFactBody includes tags when tagNames is non-empty', () {

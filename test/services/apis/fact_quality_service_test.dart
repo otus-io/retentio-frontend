@@ -133,21 +133,6 @@ void main() {
       expect(adapter.qualityPuts.first.containsKey('columns'), isFalse);
     });
 
-    test('includes sorted columns when advancing cursors', () async {
-      await FactQualityService.of.putFactQuality(
-        deckId: 'imp-1',
-        factId: 'fact-1',
-        entries: {
-          '0': {
-            'text': {'score': 10, 'model': 'human'},
-          },
-        },
-        columns: const [1, 0],
-      );
-
-      expect(adapter.qualityPuts.single['columns'], [0, 1]);
-    });
-
     test('throws the API message on failure', () async {
       useAdapter(FakeQaApiAdapter(qualityPutFails: true));
 

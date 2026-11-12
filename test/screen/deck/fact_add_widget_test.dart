@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retentio/features/contributions/pending_contributions_store.dart';
 import 'package:retentio/screen/deck/bloc/fact_submit_guard_cubit.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_add.dart';
 import 'package:retentio/screen/decks/providers/deck_list.dart';
@@ -62,6 +63,74 @@ void main() {
         await tester.pumpAndSettle();
       },
     );
+
+    group('imported deck staging', () {
+      Future<List<String?>> addOnImport(
+        WidgetTester tester,
+        List<List<String>?> factIdsResponses,
+      ) async {
+        await setupTestEnvironment();
+        final interceptor = attachFakeFactApiInterceptor();
+        interceptor.factIdsResponses.addAll(factIdsResponses);
+        addTearDown(() {
+          detachFakeFactApiInterceptor(interceptor);
+          tearDownTestEnvironment();
+        });
+        final deck = sampleDeck(sourceDeckId: 'src-1');
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            Scaffold(body: FactAdd(deck: deck)),
+            overrides: [
+              deckListProvider.overrideWith(() => FakeDeckListNotifier([deck])),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+        final textFields = find.byType(TextField);
+        await tester.enterText(textFields.at(0), 'Hello');
+        await tester.enterText(textFields.at(1), 'World');
+        await tester.tap(find.text('Save fact'));
+        await tester.pumpAndSettle();
+        expect(interceptor.addFactsCount, 1);
+        final pending = await tester.runAsync(
+          () => PendingContributionsStore.of.listPending(deck.id),
+        );
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+        return [for (final item in pending!) item.factId];
+      }
+
+      testWidgets('stages only the fact the add created', (tester) async {
+        final staged = await addOnImport(tester, [
+          ['old'],
+          ['old', 'new'],
+        ]);
+
+        expect(staged, ['new']);
+      });
+
+      testWidgets('stages nothing when the baseline list fails', (
+        tester,
+      ) async {
+        final staged = await addOnImport(tester, [
+          null,
+          ['old', 'new'],
+        ]);
+
+        expect(staged, isEmpty);
+      });
+
+      testWidgets('stages nothing when the follow-up list fails', (
+        tester,
+      ) async {
+        final staged = await addOnImport(tester, [
+          ['old'],
+          null,
+        ]);
+
+        expect(staged, isEmpty);
+      });
+    });
 
     testWidgets('offline shows a network message and skips the API', (
       tester,

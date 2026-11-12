@@ -1807,9 +1807,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qaModeFactLoadFailed => 'Could not load this fact.';
 
   @override
+  String get qaModeFactsLoadFailed =>
+      'Could not load facts. Check your connection and try again.';
+
+  @override
   String qaModeProgress(int current, int total) {
-    return 'Fact $current / $total';
+    return '$current / $total to verify';
   }
+
+  @override
+  String get qaVerifiedBadge => 'Fully QA-verified';
 
   @override
   String qaModeVerifiedAspects(int verified, int total) {

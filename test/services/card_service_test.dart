@@ -448,9 +448,29 @@ void main() {
 
       expect(ids, hasLength(450));
       expect(adapter.factIdsRequestCount, 1);
+      expect(adapter.unverifiedColumnsQueries, [null]);
     });
 
-    test('skips null ids and answers empty on a bad payload', () async {
+    test('asks for unverified facts in sorted columns', () async {
+      adapter.verifiedFactIds.add('fact-0');
+
+      final ids = await CardService.listFactIds(
+        'deck-1',
+        unverifiedColumns: {2, 0},
+      );
+
+      expect(adapter.unverifiedColumnsQueries, ['0,2']);
+      expect(ids, hasLength(449));
+      expect(ids, isNot(contains('fact-0')));
+    });
+
+    test('an empty column set sends no filter', () async {
+      await CardService.listFactIds('deck-1', unverifiedColumns: const {});
+
+      expect(adapter.unverifiedColumnsQueries, [null]);
+    });
+
+    test('skips null ids and answers null on a bad payload', () async {
       networkDioClient.dio.httpClientAdapter = _FactIdsPayloadAdapter({
         'fact_ids': ['a', null, 'b'],
       });
@@ -459,13 +479,27 @@ void main() {
       networkDioClient.dio.httpClientAdapter = _FactIdsPayloadAdapter({
         'facts': [],
       });
-      expect(await CardService.listFactIds('deck-1'), isEmpty);
+      expect(await CardService.listFactIds('deck-1'), isNull);
     });
 
-    test('answers empty when the list cannot be read', () async {
+    test('answers null when the list cannot be read', () async {
       networkDioClient.dio.httpClientAdapter = _FakeDeckDetailHttpClientAdapter(
         const {},
       );
+
+      expect(await CardService.listFactIds('deck-1'), isNull);
+    });
+
+    test('answers null on a server error', () async {
+      adapter.factIdsFails = true;
+
+      expect(await CardService.listFactIds('deck-1'), isNull);
+    });
+
+    test('answers an empty list when nothing matches', () async {
+      networkDioClient.dio.httpClientAdapter = _FactIdsPayloadAdapter({
+        'fact_ids': [],
+      });
 
       expect(await CardService.listFactIds('deck-1'), isEmpty);
     });

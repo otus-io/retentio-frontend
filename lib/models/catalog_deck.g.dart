@@ -24,6 +24,9 @@ CatalogDeck _$CatalogDeckFromJson(Map<String, dynamic> json) => CatalogDeck(
   publishedAt: json['published_at'] == null
       ? null
       : DateTime.parse(json['published_at'] as String),
+  qaVerified: json['qa_verified'] == null
+      ? false
+      : _isTrue(json['qa_verified']),
 );
 
 Map<String, dynamic> _$CatalogDeckToJson(CatalogDeck instance) =>
@@ -37,4 +40,5 @@ Map<String, dynamic> _$CatalogDeckToJson(CatalogDeck instance) =>
       'fact_count': instance.factCount,
       'deck_tag_names': instance.deckTagNames,
       'published_at': instance.publishedAt?.toIso8601String(),
+      'qa_verified': instance.qaVerified,
     };

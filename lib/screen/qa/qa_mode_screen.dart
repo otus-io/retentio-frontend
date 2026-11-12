@@ -161,6 +161,9 @@ class _QaModeView extends StatelessWidget {
             if (state.loading) {
               return const Center(child: CircularProgressIndicator());
             }
+            if (state.factIdsLoadFailed) {
+              return _QaMessage(text: loc.qaModeFactsLoadFailed);
+            }
             if (state.factIds.isEmpty) {
               return _QaMessage(text: loc.qaModeEmpty);
             }

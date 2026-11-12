@@ -3310,11 +3310,23 @@ abstract class AppLocalizations {
   /// **'Could not load this fact.'**
   String get qaModeFactLoadFailed;
 
+  /// No description provided for @qaModeFactsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load facts. Check your connection and try again.'**
+  String get qaModeFactsLoadFailed;
+
   /// No description provided for @qaModeProgress.
   ///
   /// In en, this message translates to:
-  /// **'Fact {current} / {total}'**
+  /// **'{current} / {total} to verify'**
   String qaModeProgress(int current, int total);
+
+  /// Tooltip on the badge of a deck whose every text/audio field is human-verified
+  ///
+  /// In en, this message translates to:
+  /// **'Fully QA-verified'**
+  String get qaVerifiedBadge;
 
   /// No description provided for @qaModeVerifiedAspects.
   ///

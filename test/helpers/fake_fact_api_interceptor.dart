@@ -37,6 +37,9 @@ class FakeFactApiInterceptor extends Interceptor {
   /// Completes a test wait when the fact PATCH is handled.
   void Function()? onPatch;
 
+  /// Answers for successive `GET …/facts/ids` calls; `null` answers 500.
+  final List<List<String>?> factIdsResponses = [];
+
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     final uri = options.uri.toString();
@@ -132,6 +135,37 @@ class FakeFactApiInterceptor extends Interceptor {
           data: {
             'code': 0,
             'data': {'tags': factTags},
+          },
+        ),
+      );
+      return;
+    }
+
+    if (options.method == 'GET' &&
+        options.uri.path.endsWith('/facts/ids') &&
+        factIdsResponses.isNotEmpty) {
+      final ids = factIdsResponses.removeAt(0);
+      if (ids == null) {
+        handler.reject(
+          DioException(
+            requestOptions: options,
+            type: DioExceptionType.badResponse,
+            response: Response(
+              requestOptions: options,
+              statusCode: 500,
+              data: {'msg': 'Error listing facts'},
+            ),
+          ),
+        );
+        return;
+      }
+      handler.resolve(
+        Response(
+          requestOptions: options,
+          statusCode: 200,
+          data: {
+            'code': 0,
+            'data': {'fact_ids': ids},
           },
         ),
       );
