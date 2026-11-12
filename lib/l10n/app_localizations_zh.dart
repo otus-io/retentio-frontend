@@ -1617,6 +1617,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String contributionsAcceptAllProgress(int done, int total) {
+    return '正在接受 $done/$total…';
+  }
+
+  @override
   String get contributionsDismiss => '忽略';
 
   @override

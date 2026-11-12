@@ -38,6 +38,8 @@ class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
   bool _loading = true;
   bool _loadingMore = false;
   bool _hasMore = false;
+  int _acceptAllDone = 0;
+  int _acceptAllTotal = 0;
   bool _acceptingAll = false;
   String? _busyId;
 
@@ -147,7 +149,11 @@ class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
     );
     if (confirmed != true || !mounted) return;
 
-    setState(() => _acceptingAll = true);
+    setState(() {
+      _acceptingAll = true;
+      _acceptAllDone = 0;
+      _acceptAllTotal = toAccept.length;
+    });
     var sent = 0;
     var failed = 0;
     String? lastError;
@@ -163,6 +169,7 @@ class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
           failed += 1;
           lastError = rawApiErrorMessage(e);
         }
+        if (mounted) setState(() => _acceptAllDone += 1);
       }
       if (!mounted) return;
       if (failed == 0) {
@@ -282,6 +289,17 @@ class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
             isLoading: _acceptingAll,
             onPressed: rowBusy ? null : _acceptAll,
           ),
+          if (_acceptingAll) ...[
+            const SizedBox(height: 6),
+            Text(
+              loc.contributionsAcceptAllProgress(
+                _acceptAllDone,
+                _acceptAllTotal,
+              ),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
           const SizedBox(height: 12),
         ],
         ListView.separated(

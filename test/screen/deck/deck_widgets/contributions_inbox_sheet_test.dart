@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -31,6 +32,9 @@ class _InboxAdapter implements HttpClientAdapter {
   Map<String, dynamic>? preview;
   final List<String> acceptedIds = [];
 
+  /// Awaited before each accept is answered, to observe progress.
+  Future<void>? acceptHold;
+
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
@@ -57,6 +61,7 @@ class _InboxAdapter implements HttpClientAdapter {
 
     if (method == 'POST' && path.contains('/accept')) {
       final id = path.split('/contributions/').last.split('/').first;
+      if (acceptHold != null) await acceptHold;
       if (failIds.contains(id)) {
         return _error('accept failed for $id');
       }
@@ -262,6 +267,37 @@ void main() {
       expect(find.text('Accepted 2 contributions'), findsOneWidget);
       expect(find.text('Accept all'), findsNothing);
       expect(find.text('report'), findsOneWidget);
+      AppToast.dismiss();
+    });
+
+    testWidgets('Accept all shows progress while it runs', (tester) async {
+      final hold = Completer<void>();
+      adapter = _InboxAdapter(
+        contributions: [
+          _row(id: 'c1', type: 'fact_edit'),
+          _row(id: 'c2', type: 'fact_add'),
+        ],
+      )..acceptHold = hold.future;
+      networkDioClient.dio.httpClientAdapter = adapter;
+
+      await pumpInbox(tester);
+      expect(find.textContaining('Accepting'), findsNothing);
+      await tester.tap(find.text('Accept all (2)'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Accept'),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Accepting 0 of 2…'), findsOneWidget);
+
+      hold.complete();
+      await tester.pumpAndSettle();
+      expect(adapter.acceptedIds, ['c1', 'c2']);
+      expect(find.textContaining('Accepting'), findsNothing);
       AppToast.dismiss();
     });
 

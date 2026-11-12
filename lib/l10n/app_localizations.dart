@@ -3160,6 +3160,12 @@ abstract class AppLocalizations {
   /// **'Accepted {sent}; {failed} failed'**
   String contributionsAcceptAllPartial(int sent, int failed);
 
+  /// No description provided for @contributionsAcceptAllProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepting {done} of {total}…'**
+  String contributionsAcceptAllProgress(int done, int total);
+
   /// No description provided for @contributionsDismiss.
   ///
   /// In en, this message translates to:

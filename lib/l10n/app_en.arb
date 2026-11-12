@@ -2114,6 +2114,13 @@
       "failed": { "type": "int" }
     }
   },
+  "contributionsAcceptAllProgress": "Accepting {done} of {total}…",
+  "@contributionsAcceptAllProgress": {
+    "placeholders": {
+      "done": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
   "contributionsDismiss": "Dismiss",
   "contributionsResolve": "Resolve",
   "contributionsAccepted": "Contribution accepted",

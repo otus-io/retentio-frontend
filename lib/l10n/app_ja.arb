@@ -510,6 +510,7 @@
   "contributionsAcceptAllConfirmMessage": "{count}件の貢献を作業コピーに反映しますか？報告はスキップされます。",
   "contributionsAcceptAllSuccess": "{count, plural, =1{1件の貢献を承認しました} other{{count}件の貢献を承認しました}}",
   "contributionsAcceptAllPartial": "{sent}件を承認、{failed}件が失敗",
+  "contributionsAcceptAllProgress": "承認中 {done}/{total}…",
   "contributionsDismiss": "却下",
   "contributionsResolve": "解決済みにする",
   "contributionsAccepted": "貢献を承認しました",

@@ -1620,6 +1620,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String contributionsAcceptAllProgress(int done, int total) {
+    return '承認中 $done/$total…';
+  }
+
+  @override
   String get contributionsDismiss => '却下';
 
   @override

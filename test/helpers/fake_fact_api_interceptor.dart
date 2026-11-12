@@ -31,6 +31,9 @@ class FakeFactApiInterceptor extends Interceptor {
   int contributionAddCount = 0;
   int contributionDeckTagsCount = 0;
 
+  /// Body of each `POST …/contributions/deck-tags`, in order.
+  final List<dynamic> contributionDeckTagsBodies = [];
+
   /// When true, `POST …/contributions/deck-tags` answers 429.
   bool contributionDeckTagsFails = false;
 
@@ -70,6 +73,7 @@ class FakeFactApiInterceptor extends Interceptor {
 
     if (options.method == 'POST' && uri.endsWith('/contributions/deck-tags')) {
       contributionDeckTagsCount++;
+      contributionDeckTagsBodies.add(options.data);
       handler.resolve(
         Response(
           requestOptions: options,

@@ -1719,6 +1719,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String contributionsAcceptAllProgress(int done, int total) {
+    return 'Accepting $done of $total…';
+  }
+
+  @override
   String get contributionsDismiss => 'Dismiss';
 
   @override
