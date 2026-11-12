@@ -93,8 +93,39 @@ void main() {
       await tester.pumpWidget(_wrapCard(deck));
 
       expect(find.text('6/2387 (0.25%)'), findsOneWidget);
-      expect(find.byTooltip('Publish Deck'), findsOneWidget);
-      expect(find.byTooltip('Contributions'), findsOneWidget);
+    });
+
+    testWidgets('never-published deck shows no publish or inbox icon', (
+      tester,
+    ) async {
+      final deck = Deck.fromJson({
+        'id': 'deck-private-1',
+        'name': 'Private Deck',
+        'stats': {
+          'cards_count': 1,
+          'unseen_cards': 1,
+          'due_cards': 0,
+          'facts_count': 1,
+          'reviewed_cards': 0,
+          'hidden_cards': 0,
+          'new_cards_today': 0,
+          'last_reviewed_at': 0,
+        },
+        'rate': 10,
+        'min_interval': 60,
+        'def_interval': 300,
+        'max_interval': 86400,
+        'owner': {'username': 'u', 'email': 'u@t.com'},
+        'fields': ['Front', 'Back'],
+      });
+
+      // Even when flagged, a first publish stays in the deck menu.
+      // _wrapCard's BlocProvider owns and closes the cubit.
+      final cubit = DeckSharingStatusCubit()..markDirty(deck.id);
+      await tester.pumpWidget(_wrapCard(deck, cubit: cubit));
+
+      expect(find.byIcon(LucideIcons.share2), findsNothing);
+      expect(find.byIcon(LucideIcons.inbox), findsNothing);
     });
 
     testWidgets('shows the QA badge only on fully verified decks', (
@@ -200,7 +231,7 @@ void main() {
       expect(find.byTooltip('Downloading for offline study…'), findsNothing);
     });
 
-    testWidgets('shows update publish tooltip for published source', (
+    testWidgets('shows the publish icon only for unpublished changes', (
       tester,
     ) async {
       final deck = Deck.fromJson({
@@ -226,7 +257,7 @@ void main() {
         'fields': ['Front', 'Back'],
       });
 
-      final cubit = DeckSharingStatusCubit()..markDirty(deck.id);
+      final cubit = DeckSharingStatusCubit();
       await tester.pumpWidget(
         buildTestableWidgetWithoutProvider(
           BlocProvider.value(
@@ -236,8 +267,15 @@ void main() {
         ),
       );
 
+      // Up to date, no contributions: nothing to act on.
+      expect(find.byTooltip('Update Published Version'), findsNothing);
+      expect(find.byTooltip('Contributions'), findsNothing);
+
+      cubit.markDirty(deck.id);
+      await tester.pump();
+
       expect(find.byTooltip('Update Published Version'), findsOneWidget);
-      expect(find.byTooltip('Contributions'), findsOneWidget);
+      expect(find.byTooltip('Contributions'), findsNothing);
       expect(find.byTooltip('Check updates'), findsNothing);
       await cubit.close();
     });
@@ -346,6 +384,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(cubit.state.hasOpenContributions(deck.id), isFalse);
+      expect(find.byTooltip('Contributions'), findsNothing);
     });
   });
 }
