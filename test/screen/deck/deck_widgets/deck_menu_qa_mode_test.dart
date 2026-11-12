@@ -129,5 +129,30 @@ void main() {
       expect(inbox.sourceDeckId, 'deck-1');
       expect(inbox.fields, ['Front']);
     });
+
+    testWidgets('closing the inbox refreshes the deck list', (tester) async {
+      final deckList = _CountingDeckListCubit();
+      addTearDown(deckList.close);
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          BlocProvider<DeckListCubit>.value(
+            value: deckList,
+            child: Scaffold(body: DeckMenu(deck: _deck(imported: false))),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final before = deckList.refreshes;
+
+      await tester.tap(find.byType(DeckMenu));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Contributions'));
+      await tester.pumpAndSettle();
+      Navigator.of(tester.element(find.byType(ContributionsInboxSheet))).pop();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ContributionsInboxSheet), findsNothing);
+      expect(deckList.refreshes, before + 1, reason: 'accepts may change it');
+    });
   });
 }

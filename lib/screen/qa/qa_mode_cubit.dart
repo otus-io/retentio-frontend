@@ -95,13 +95,17 @@ class QaModeState {
   bool get factLoadFailed =>
       !loading && !pickingColumns && factIds.isNotEmpty && fact == null;
 
+  /// `null` [fact] / [quality] keep the current value; pass [clearFact] /
+  /// [clearQuality] to reset them.
   QaModeState copyWith({
     bool? loading,
     bool? pickingColumns,
     List<String>? factIds,
     int? index,
     Fact? fact,
+    bool clearFact = false,
     FactQuality? quality,
+    bool clearQuality = false,
     Map<String, int>? mediaVersions,
     Set<int>? activeColumnIndexes,
     Set<int>? checkedIndexes,
@@ -115,8 +119,8 @@ class QaModeState {
     pickingColumns: pickingColumns ?? this.pickingColumns,
     factIds: factIds ?? this.factIds,
     index: index ?? this.index,
-    fact: fact ?? this.fact,
-    quality: quality ?? this.quality,
+    fact: clearFact ? null : (fact ?? this.fact),
+    quality: clearQuality ? null : (quality ?? this.quality),
     mediaVersions: mediaVersions ?? this.mediaVersions,
     activeColumnIndexes: activeColumnIndexes ?? this.activeColumnIndexes,
     checkedIndexes: checkedIndexes ?? this.checkedIndexes,
@@ -144,6 +148,12 @@ class QaModeCubit extends Cubit<QaModeState> {
   final int deckFieldCount;
   final Future<bool> Function() _isOnline;
 
+  /// Bumped when a walk starts or the picker reopens, so a slower load for an
+  /// earlier column pick cannot overwrite the current walk.
+  int _walkGeneration = 0;
+
+  bool _isStale(int generation) => isClosed || generation != _walkGeneration;
+
   /// When true, the next [_refreshHeader] throws (cleared after throw).
   @visibleForTesting
   bool debugFailNextRefreshHeader = false;
@@ -167,9 +177,10 @@ class QaModeCubit extends Cubit<QaModeState> {
   /// fact verified here. An empty list opens [QaModeState.walkComplete].
   Future<void> startWalk(Set<int> activeColumnIndexes) async {
     if (activeColumnIndexes.isEmpty || state.busy) return;
+    final generation = ++_walkGeneration;
     final columns = Set<int>.of(activeColumnIndexes);
     await QaColumnPrefs.save(deckId, columns);
-    if (isClosed) return;
+    if (_isStale(generation)) return;
     emit(
       QaModeState(
         pickingColumns: false,
@@ -179,12 +190,13 @@ class QaModeCubit extends Cubit<QaModeState> {
         editedCount: state.editedCount,
       ),
     );
-    await _loadFacts();
+    await _loadFacts(generation);
   }
 
   /// Re-opens the column picker without losing walk progress counters.
   void reopenColumnPicker() {
     if (state.busy) return;
+    _walkGeneration++;
     emit(
       QaModeState(
         pickingColumns: true,
@@ -209,18 +221,18 @@ class QaModeCubit extends Cubit<QaModeState> {
     );
   }
 
-  Future<void> _loadFacts() async {
+  Future<void> _loadFacts(int generation) async {
     final ids = await CardService.listFactIds(
       deckId,
       unverifiedColumns: state.activeColumnIndexes,
     );
-    if (isClosed) return;
+    if (_isStale(generation)) return;
     if (ids == null) {
       emit(state.copyWith(loading: false, factIdsLoadFailed: true));
       return;
     }
     final stats = await FactQualityService.of.getDeckQualityStats(deckId);
-    if (isClosed) return;
+    if (_isStale(generation)) return;
     emit(
       state.copyWith(
         loading: ids.isNotEmpty,
@@ -233,6 +245,7 @@ class QaModeCubit extends Cubit<QaModeState> {
     );
     if (ids.isEmpty) return;
     await _loadCurrentFact();
+    if (_isStale(generation)) return;
     await _refreshHeader();
   }
 
@@ -241,8 +254,8 @@ class QaModeCubit extends Cubit<QaModeState> {
     emit(
       state.copyWith(
         index: index,
-        fact: null,
-        quality: null,
+        clearFact: true,
+        clearQuality: true,
         mediaVersions: const {},
         checkedIndexes: const {},
         loading: true,
@@ -376,8 +389,12 @@ class QaModeCubit extends Cubit<QaModeState> {
     emit(
       state.copyWith(
         loading: false,
+        // A missing fact or quality record must not inherit the previous
+        // fact's: a stale quality would be merged into this fact's PUT.
         fact: fact,
+        clearFact: fact == null,
         quality: quality,
+        clearQuality: quality == null,
         mediaVersions: mediaVersions,
         checkedIndexes: const {},
       ),

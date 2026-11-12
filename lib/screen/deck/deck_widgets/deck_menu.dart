@@ -209,7 +209,12 @@ class DeckMenu extends StatelessWidget {
                         sourceDeckId: deck.id,
                         fields: deck.fields,
                       ),
-                    );
+                    ).whenComplete(() {
+                      // Accepts change the deck (facts, QA badge).
+                      if (context.mounted) {
+                        context.read<DeckListCubit>().onRefresh();
+                      }
+                    });
                   },
                 );
               },

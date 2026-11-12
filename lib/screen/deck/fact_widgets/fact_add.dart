@@ -290,6 +290,7 @@ class _FactAddState extends ConsumerState<FactAdd>
             final preview = PendingContributionsStore.previewFromEntryTexts(
               entries.map((e) => e['text']?.toString() ?? ''),
             );
+            var staged = 0;
             for (final id in idsAfter) {
               if (idsBefore.contains(id)) continue;
               await PendingContributionsStore.of.upsert(
@@ -298,8 +299,9 @@ class _FactAddState extends ConsumerState<FactAdd>
                 factId: id,
                 preview: preview,
               );
+              staged++;
             }
-            if (mounted) showPendingStagedToast(context);
+            if (staged > 0 && mounted) showPendingStagedToast(context);
           } catch (_) {
             /* staging is best-effort */
           }

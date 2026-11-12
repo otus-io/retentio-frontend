@@ -11,7 +11,7 @@ class FakeQaApiAdapter implements HttpClientAdapter {
   FakeQaApiAdapter({
     this.factIds = const ['fact-1', 'fact-2'],
     this.entriesByFactId = const {},
-    this.qualityByFactId = const {},
+    Map<String, Map<String, dynamic>> qualityByFactId = const {},
     this.mediaVersionsByFactId = const {},
     Map<String, dynamic>? stats,
     this.qualityPutFails = false,
@@ -19,6 +19,7 @@ class FakeQaApiAdapter implements HttpClientAdapter {
     this.factIdsFails = false,
     Set<String> verifiedFactIds = const {},
   }) : stats = stats == null ? null : Map<String, dynamic>.from(stats),
+       qualityByFactId = Map<String, Map<String, dynamic>>.of(qualityByFactId),
        verifiedFactIds = Set<String>.of(verifiedFactIds);
 
   final List<String> factIds;
@@ -27,7 +28,11 @@ class FakeQaApiAdapter implements HttpClientAdapter {
   final Map<String, List<Map<String, dynamic>>> entriesByFactId;
 
   /// Fact id → quality `entries` payload; missing ids answer 404 (no record).
+  /// A successful quality PUT stores its entries here, like the server.
   final Map<String, Map<String, dynamic>> qualityByFactId;
+
+  /// When true, `GET …/facts/{id}/quality` answers 500.
+  bool qualityGetFails = false;
 
   /// Fact id → snapshot `media_versions` for that fact's GET response.
   final Map<String, Map<String, int>> mediaVersionsByFactId;
@@ -113,6 +118,9 @@ class FakeQaApiAdapter implements HttpClientAdapter {
         qualityPuts.add(body);
         verifiedFactIds.add(factId);
         final entries = body['entries'];
+        qualityByFactId[factId] = entries is Map
+            ? Map<String, dynamic>.from(entries)
+            : <String, dynamic>{};
         return _ok({
           'quality': {
             'fact_id': factId,
@@ -123,6 +131,7 @@ class FakeQaApiAdapter implements HttpClientAdapter {
         });
       }
       if (method == 'GET') {
+        if (qualityGetFails) return _error('Error retrieving quality', 500);
         final entries = qualityByFactId[factId];
         if (entries == null) return _error('Quality not found', 404);
         return _ok({
@@ -135,11 +144,13 @@ class FakeQaApiAdapter implements HttpClientAdapter {
       qaReviewPosts++;
       final error = qaReviewError;
       if (error != null) return _error(error, 400);
+      final aspects = _humanAspectCount();
+      if (aspects == 0) return _error('nothing to review', 400);
       return _ok({
         'contribution_id': 'qa-1',
         'type': 'qa_review',
         'status': 'open',
-        'qa_review': {'facts': verifiedFactIds.length, 'aspects': 4},
+        'qa_review': {'facts': verifiedFactIds.length, 'aspects': aspects},
       }, statusCode: 201);
     }
 
@@ -186,6 +197,20 @@ class FakeQaApiAdapter implements HttpClientAdapter {
     }
 
     return _error('not found', 404);
+  }
+
+  /// Human sign-offs stored on verified facts (what a qa_review would carry).
+  int _humanAspectCount() {
+    var n = 0;
+    for (final id in verifiedFactIds) {
+      for (final entry in (qualityByFactId[id] ?? const {}).values) {
+        if (entry is! Map) continue;
+        for (final aspect in entry.values) {
+          if (aspect is Map && aspect['model'] == 'human') n++;
+        }
+      }
+    }
+    return n;
   }
 
   String _factIdFrom(String path, {required String suffix}) {

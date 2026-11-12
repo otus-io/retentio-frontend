@@ -163,4 +163,37 @@ void main() {
       );
     });
   });
+
+  group('listContributions', () {
+    Map<String, dynamic> rows(int n) => {
+      'code': 0,
+      'data': {
+        'contributions': [
+          for (var i = 0; i < n; i++)
+            {'contribution_id': 'c$i', 'type': 'fact_edit', 'status': 'open'},
+        ],
+      },
+    };
+
+    test('asks for one extra row to know another page exists', () async {
+      final adapter = use(200, rows(3));
+      final page = await DeckCatalogService.of.listContributions(
+        'src-1',
+        limit: 2,
+      );
+      expect(adapter.requests.single.queryParameters['limit'], 3);
+      expect(page.contributions.map((c) => c.id), ['c0', 'c1']);
+      expect(page.hasMore, isTrue);
+    });
+
+    test('an exactly full last page has no more', () async {
+      use(200, rows(2));
+      final page = await DeckCatalogService.of.listContributions(
+        'src-1',
+        limit: 2,
+      );
+      expect(page.contributions, hasLength(2));
+      expect(page.hasMore, isFalse);
+    });
+  });
 }

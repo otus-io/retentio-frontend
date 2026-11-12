@@ -109,6 +109,15 @@ void main() {
         expect(staged, ['new']);
       });
 
+      testWidgets('stages nothing when no new fact appears', (tester) async {
+        final staged = await addOnImport(tester, [
+          ['old'],
+          ['old'],
+        ]);
+
+        expect(staged, isEmpty);
+      });
+
       testWidgets('stages nothing when the baseline list fails', (
         tester,
       ) async {

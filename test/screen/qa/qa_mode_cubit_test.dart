@@ -266,6 +266,76 @@ void main() {
       await cubit.close();
     });
 
+    test(
+      'a load for an abandoned walk does not overwrite the picker',
+      () async {
+        final cubit = QaModeCubit(
+          deckId: 'imp-1',
+          deckFieldCount: 2,
+          isOnline: () async => true,
+        );
+        final hold = Completer<void>();
+        adapter.statsHold = hold.future;
+        final walk = startWalk(cubit);
+        await adapter.waitUntilStatsHold;
+
+        cubit.reopenColumnPicker();
+        hold.complete();
+        await walk;
+
+        expect(cubit.state.pickingColumns, isTrue);
+        expect(cubit.state.fact, isNull, reason: 'stale walk loaded no fact');
+        await cubit.close();
+      },
+    );
+
+    test('a fact without quality does not inherit the previous one', () async {
+      buildAdapter(
+        qualityByFactId: {
+          'fact-1': {
+            '0': {
+              'text': {'score': 10, 'model': 'human', 'by': 'bob'},
+            },
+          },
+        },
+      );
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+      );
+      await startWalk(cubit, columns: const {1});
+      expect(cubit.state.quality, isNotNull);
+
+      await cubit.goTo(1);
+
+      expect(cubit.state.factId, 'fact-2');
+      expect(cubit.state.quality, isNull);
+      expect(
+        cubit.pendingPutEntries(),
+        isEmpty,
+        reason: "fact-1's sign-off must not be merged into fact-2",
+      );
+      await cubit.close();
+    });
+
+    test('a failed load after moving on shows the error', () async {
+      buildAdapter(factIds: const ['fact-1', 'missing']);
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+      );
+      await startWalk(cubit);
+      expect(cubit.state.fact, isNotNull);
+
+      await cubit.goTo(1);
+
+      expect(cubit.state.fact, isNull, reason: 'no stale fact-1 under missing');
+      expect(cubit.state.factLoadFailed, isTrue);
+      await cubit.close();
+    });
+
     test('flags a fact that cannot be loaded', () async {
       buildAdapter(factIds: const ['missing']);
       final cubit = QaModeCubit(
@@ -603,6 +673,7 @@ void main() {
       );
       await startWalk(cubit);
       cubit.toggleColumn(1);
+      adapter.qualityGetFails = true;
 
       expect(await cubit.verify(), isNull);
 

@@ -287,8 +287,10 @@ class DeckCatalogService {
     int limit = 50,
     int offset = 0,
   }) async {
+    // One extra row tells whether another page exists (`meta.has_more` is not
+    // kept on ApiResponse).
     final query = <String, dynamic>{
-      'limit': limit,
+      'limit': limit + 1,
       'offset': offset,
       if (status != null && status.isNotEmpty) 'status': status,
       if (type != null && type.isNotEmpty) 'type': type,
@@ -312,11 +314,12 @@ class DeckCatalogService {
         }
       }
     }
-    // Top-level `meta` is not retained on ApiResponse; approximate from page.
+    final hasMore = list.length > limit;
+    final page = hasMore ? list.sublist(0, limit) : list;
     return DeckContributionsPage(
-      contributions: list,
-      total: list.length,
-      hasMore: list.length >= limit,
+      contributions: page,
+      total: page.length,
+      hasMore: hasMore,
     );
   }
 

@@ -622,6 +622,12 @@ void main() {
           factIds: const [],
           stats: {'verified_aspects': 4, 'total_aspects': 4},
         );
+        final human = {'score': 10, 'model': 'human'};
+        adapter.verifiedFactIds.add('fact-1');
+        adapter.qualityByFactId['fact-1'] = {
+          '0': {'text': human, 'audio': human},
+          '1': {'text': human, 'audio': human},
+        };
         await pumpQaMode(tester);
         expect(find.text('Send verifications to author'), findsOneWidget);
       }
