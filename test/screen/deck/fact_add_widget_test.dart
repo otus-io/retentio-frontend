@@ -65,13 +65,16 @@ void main() {
     );
 
     group('imported deck staging', () {
-      Future<List<String?>> addOnImport(
+      Future<({List<String?> unsent, List<String?> sent, String toast})>
+      addOnImport(
         WidgetTester tester,
-        List<List<String>?> factIdsResponses,
-      ) async {
+        List<List<String>?> factIdsResponses, {
+        bool sendFails = false,
+      }) async {
         await setupTestEnvironment();
         final interceptor = attachFakeFactApiInterceptor();
         interceptor.factIdsResponses.addAll(factIdsResponses);
+        interceptor.contributionAddFails = sendFails;
         addTearDown(() {
           detachFakeFactApiInterceptor(interceptor);
           tearDownTestEnvironment();
@@ -92,52 +95,77 @@ void main() {
         await tester.tap(find.text('Save fact'));
         await tester.pumpAndSettle();
         expect(interceptor.addFactsCount, 1);
-        final pending = await tester.runAsync(
-          () => PendingContributionsStore.of.listPending(deck.id),
-        );
+        final toasts = [
+          'Fact added',
+          'Fact added and sent to the author',
+          "Fact added. Couldn't send it to the author yet; "
+              'retry from Unsent contributions.',
+        ].where((t) => find.text(t).evaluate().isNotEmpty).toList();
+        final store = PendingContributionsStore.of;
+        final unsent = await tester.runAsync(() => store.listPending(deck.id));
+        final sent = await tester.runAsync(() => store.listSent(deck.id));
         AppToast.dismiss();
         await tester.pumpAndSettle();
-        return [for (final item in pending!) item.factId];
+        return (
+          unsent: [for (final item in unsent!) item.factId],
+          sent: [for (final item in sent!) item.factId],
+          toast: toasts.single,
+        );
       }
 
-      testWidgets('stages only the fact the add created', (tester) async {
-        final staged = await addOnImport(tester, [
+      testWidgets('sends the new fact to the author', (tester) async {
+        final r = await addOnImport(tester, [
           ['old'],
           ['old', 'new'],
         ]);
 
-        expect(staged, ['new']);
+        expect(r.sent, ['new']);
+        expect(r.unsent, isEmpty);
+        expect(r.toast, 'Fact added and sent to the author');
       });
 
-      testWidgets('stages nothing when no new fact appears', (tester) async {
-        final staged = await addOnImport(tester, [
+      testWidgets('keeps it unsent when sending fails', (tester) async {
+        final r = await addOnImport(tester, [
+          ['old'],
+          ['old', 'new'],
+        ], sendFails: true);
+
+        expect(r.unsent, ['new']);
+        expect(r.sent, isEmpty);
+        expect(r.toast, startsWith("Fact added. Couldn't send it"));
+      });
+
+      testWidgets('sends nothing when no new fact appears', (tester) async {
+        final r = await addOnImport(tester, [
           ['old'],
           ['old'],
         ]);
 
-        expect(staged, isEmpty);
+        expect(r.unsent, isEmpty);
+        expect(r.sent, isEmpty);
+        expect(r.toast, 'Fact added');
       });
 
-      testWidgets('stages nothing when the baseline list fails', (
-        tester,
-      ) async {
-        final staged = await addOnImport(tester, [
+      testWidgets('sends nothing when the baseline list fails', (tester) async {
+        final r = await addOnImport(tester, [
           null,
           ['old', 'new'],
         ]);
 
-        expect(staged, isEmpty);
+        expect(r.unsent, isEmpty);
+        expect(r.sent, isEmpty);
       });
 
-      testWidgets('stages nothing when the follow-up list fails', (
+      testWidgets('sends nothing when the follow-up list fails', (
         tester,
       ) async {
-        final staged = await addOnImport(tester, [
+        final r = await addOnImport(tester, [
           ['old'],
           null,
         ]);
 
-        expect(staged, isEmpty);
+        expect(r.unsent, isEmpty);
+        expect(r.sent, isEmpty);
       });
     });
 

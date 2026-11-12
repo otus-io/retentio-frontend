@@ -6,13 +6,13 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/features/contributions/pending_contributions_store.dart';
+import 'package:retentio/features/contributions/submit_imported_fact_edit.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/features/tags/widgets/tag_chip.dart';
 import 'package:retentio/features/tags/widgets/tag_picker_sheet.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/models/tag.dart';
-import 'package:retentio/screen/deck/deck_widgets/pending_contributions_outbox_sheet.dart';
 import 'package:retentio/screen/deck/fact_add_composer/entry_row.dart';
 import 'package:retentio/screen/deck/fact_add_composer/media_handling_coordinator.dart';
 import 'package:retentio/screen/deck/fact_add_composer/payload.dart';
@@ -283,6 +283,8 @@ class _FactAddState extends ConsumerState<FactAdd>
       final res = await CardService.addFacts(widget.deck.id, 'append', body);
       if (!mounted) return;
       if (res?.isSuccess == true) {
+        var sent = 0;
+        var unsent = 0;
         if (widget.deck.isImported && idsBefore != null) {
           try {
             final idsAfter =
@@ -290,20 +292,18 @@ class _FactAddState extends ConsumerState<FactAdd>
             final preview = PendingContributionsStore.previewFromEntryTexts(
               entries.map((e) => e['text']?.toString() ?? ''),
             );
-            var staged = 0;
+            // New local facts go to the author right away, like edits.
             for (final id in idsAfter) {
               if (idsBefore.contains(id)) continue;
-              await PendingContributionsStore.of.upsert(
-                deckId: widget.deck.id,
-                kind: PendingContributionKind.add,
+              final ok = await submitImportedFactAddContribution(
+                importDeckId: widget.deck.id,
                 factId: id,
                 preview: preview,
               );
-              staged++;
+              ok ? sent++ : unsent++;
             }
-            if (staged > 0 && mounted) showPendingStagedToast(context);
           } catch (_) {
-            /* staging is best-effort */
+            /* sending is best-effort; the fact itself is saved */
           }
         }
         await ref.read(deckListProvider.notifier).onRefresh();
@@ -313,7 +313,13 @@ class _FactAddState extends ConsumerState<FactAdd>
         }
         if (!mounted) return;
         _resetForm();
-        _snack(loc.addFactSuccess);
+        _snack(
+          unsent > 0
+              ? loc.addFactSavedUnsent
+              : sent > 0
+              ? loc.addFactSentToAuthor
+              : loc.addFactSuccess,
+        );
       } else {
         _snack(ApiErrorMessages.resolve(res?.msg ?? loc.addFactFailed, loc));
       }

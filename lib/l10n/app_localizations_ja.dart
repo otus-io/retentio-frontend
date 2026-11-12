@@ -457,6 +457,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get addFactSuccess => '項目を追加しました';
 
   @override
+  String get addFactSentToAuthor => '項目を追加し、作成者に送りました';
+
+  @override
+  String get addFactSavedUnsent => '項目を追加しましたが、作成者に送れませんでした。未送信の貢献から再送できます。';
+
+  @override
+  String get deckTagsSentToAuthor => 'デッキのタグを作成者に送りました';
+
+  @override
+  String get deckTagsSavedUnsent =>
+      'デッキのタグを保存しましたが、作成者に送れませんでした。未送信の貢献から再送できます。';
+
+  @override
   String addFactFieldFallback(int number) {
     return 'フィールド $number';
   }
@@ -1828,9 +1841,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get qaEditSubmitted => '編集を作者に送信しました';
-
-  @override
-  String get pendingStaged => '未送信の貢献に保存しました';
 
   @override
   String pendingSendSuccess(int count) {

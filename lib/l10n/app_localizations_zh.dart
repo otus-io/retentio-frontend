@@ -457,6 +457,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get addFactSuccess => '已添加词条';
 
   @override
+  String get addFactSentToAuthor => '词条已添加并发送给作者';
+
+  @override
+  String get addFactSavedUnsent => '词条已添加，但暂未发送给作者，可在未发送贡献中重试。';
+
+  @override
+  String get deckTagsSentToAuthor => '卡组标签已发送给作者';
+
+  @override
+  String get deckTagsSavedUnsent => '卡组标签已保存，但暂未发送给作者，可在未发送贡献中重试。';
+
+  @override
   String addFactFieldFallback(int number) {
     return '字段 $number';
   }
@@ -1824,9 +1836,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get qaEditSubmitted => '编辑已发送给作者';
-
-  @override
-  String get pendingStaged => '已加入未发送贡献';
 
   @override
   String pendingSendSuccess(int count) {

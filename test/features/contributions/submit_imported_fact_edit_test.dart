@@ -142,4 +142,65 @@ void main() {
       );
     });
   });
+
+  group('submitImportedFactAddContribution', () {
+    test('sends fact_add and moves the row to sent', () async {
+      final ok = await submitImportedFactAddContribution(
+        importDeckId: 'imp-1',
+        factId: 'local-1',
+        preview: 'Orange',
+      );
+
+      expect(ok, isTrue);
+      expect(interceptor.contributionAddCount, 1);
+      expect(await PendingContributionsStore.of.listPending('imp-1'), isEmpty);
+      final sent = await PendingContributionsStore.of.listSent('imp-1');
+      expect(sent.single.contributionId, 'cont-add-1');
+    });
+
+    test('keeps the row unsent when sending fails', () async {
+      interceptor.contributionAddFails = true;
+
+      final ok = await submitImportedFactAddContribution(
+        importDeckId: 'imp-1',
+        factId: 'local-1',
+      );
+
+      expect(ok, isFalse);
+      final pending = await PendingContributionsStore.of.listPending('imp-1');
+      expect(pending.single.kind, PendingContributionKind.add);
+      expect(pending.single.factId, 'local-1');
+    });
+  });
+
+  group('submitImportedDeckTagsContribution', () {
+    test('sends deck_tag_update and moves the row to sent', () async {
+      final ok = await submitImportedDeckTagsContribution(
+        importDeckId: 'imp-1',
+        addTags: const ['N5'],
+        removeTags: const ['old'],
+      );
+
+      expect(ok, isTrue);
+      expect(interceptor.contributionDeckTagsCount, 1);
+      expect(await PendingContributionsStore.of.listPending('imp-1'), isEmpty);
+      final sent = await PendingContributionsStore.of.listSent('imp-1');
+      expect(sent.single.kind, PendingContributionKind.deckTags);
+    });
+
+    test('keeps the row unsent when sending fails', () async {
+      interceptor.contributionDeckTagsFails = true;
+
+      final ok = await submitImportedDeckTagsContribution(
+        importDeckId: 'imp-1',
+        addTags: const ['N5'],
+        removeTags: const [],
+      );
+
+      expect(ok, isFalse);
+      final pending = await PendingContributionsStore.of.listPending('imp-1');
+      expect(pending.single.kind, PendingContributionKind.deckTags);
+      expect(pending.single.addTags, ['N5']);
+    });
+  });
 }

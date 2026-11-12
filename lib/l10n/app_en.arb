@@ -624,6 +624,10 @@
     "description": "When add-facts API fails"
   },
   "addFactSuccess": "Fact added",
+  "addFactSentToAuthor": "Fact added and sent to the author",
+  "addFactSavedUnsent": "Fact added. Couldn't send it to the author yet; retry from Unsent contributions.",
+  "deckTagsSentToAuthor": "Deck tags sent to the author",
+  "deckTagsSavedUnsent": "Deck tags saved. Couldn't send them to the author yet; retry from Unsent contributions.",
   "@addFactSuccess": {
     "description": "Snackbar after a fact was saved to the deck"
   },
@@ -2247,7 +2251,6 @@
   },
   "qaVerifySuccess": "Quality saved",
   "qaEditSubmitted": "Edit sent to the author",
-  "pendingStaged": "Saved to unsent contributions",
   "pendingSendSuccess": "{count, plural, =1{Sent 1 contribution} other{Sent {count} contributions}}",
   "@pendingSendSuccess": {
     "placeholders": { "count": { "type": "int" } }

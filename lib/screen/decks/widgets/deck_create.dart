@@ -5,7 +5,8 @@ import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/constants.dart';
 import 'package:retentio/extensions/context_extension.dart';
-import 'package:retentio/features/contributions/pending_contributions_store.dart';
+import 'package:retentio/features/contributions/submit_imported_fact_edit.dart';
+import 'package:retentio/widgets/app_toast.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/features/tags/widgets/tag_chip.dart';
 import 'package:retentio/features/tags/widgets/tag_picker_sheet.dart';
@@ -13,7 +14,6 @@ import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/mixins/delayed_init_mixin.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/models/tag.dart';
-import 'package:retentio/screen/deck/deck_widgets/pending_contributions_outbox_sheet.dart';
 import 'package:retentio/screen/decks/bloc/deck_create_cubit.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/decks/deck_text_styles.dart';
@@ -224,13 +224,17 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
     String nameFor(String id) =>
         Tag.nameForId(id, selected: _selectedTags, managerTags: allTags);
 
-    await PendingContributionsStore.of.upsert(
-      deckId: deckId,
-      kind: PendingContributionKind.deckTags,
+    // Tag changes on an import go to the author right away, like fact edits.
+    final sent = await submitImportedDeckTagsContribution(
+      importDeckId: deckId,
       addTags: toAdd.map(nameFor).toList(),
       removeTags: toRemove.map(nameFor).toList(),
     );
-    if (mounted) showPendingStagedToast(context);
+    if (!mounted) return;
+    final loc = AppLocalizations.of(context)!;
+    sent
+        ? AppToast.success(context, loc.deckTagsSentToAuthor)
+        : AppToast.warning(context, loc.deckTagsSavedUnsent);
   }
 
   @override

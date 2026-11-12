@@ -99,3 +99,72 @@ submitImportedFactEditContributions({
     failures: failures,
   );
 }
+
+/// Stages then immediately submits a `fact_add` for an importer's new local
+/// fact. Returns whether it reached the author; on failure the pending row
+/// stays in the unsent list for retry.
+Future<bool> submitImportedFactAddContribution({
+  required String importDeckId,
+  required String factId,
+  String? preview,
+  PendingContributionsStore? store,
+  DeckCatalogService? catalog,
+}) async {
+  final s = store ?? PendingContributionsStore.of;
+  final c = catalog ?? DeckCatalogService.of;
+  await s.upsert(
+    deckId: importDeckId,
+    kind: PendingContributionKind.add,
+    factId: factId,
+    preview: preview,
+  );
+  try {
+    final contributionId = await c.submitFactAddContribution(
+      importDeckId: importDeckId,
+      factId: factId,
+    );
+    await s.markAsSent(
+      importDeckId,
+      s.itemId(PendingContributionKind.add, factId: factId),
+      contributionId: contributionId,
+    );
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+/// Stages then immediately submits a `deck_tag_update` for an import deck.
+/// Returns whether it reached the author; on failure the pending row stays in
+/// the unsent list for retry.
+Future<bool> submitImportedDeckTagsContribution({
+  required String importDeckId,
+  required List<String> addTags,
+  required List<String> removeTags,
+  PendingContributionsStore? store,
+  DeckCatalogService? catalog,
+}) async {
+  final s = store ?? PendingContributionsStore.of;
+  final c = catalog ?? DeckCatalogService.of;
+  await s.upsert(
+    deckId: importDeckId,
+    kind: PendingContributionKind.deckTags,
+    addTags: addTags,
+    removeTags: removeTags,
+  );
+  try {
+    final contributionId = await c.submitDeckTagsContribution(
+      importDeckId: importDeckId,
+      addTags: addTags,
+      removeTags: removeTags,
+    );
+    await s.markAsSent(
+      importDeckId,
+      s.itemId(PendingContributionKind.deckTags),
+      contributionId: contributionId,
+    );
+    return true;
+  } catch (_) {
+    return false;
+  }
+}

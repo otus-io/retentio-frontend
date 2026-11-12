@@ -473,6 +473,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addFactSuccess => 'Fact added';
 
   @override
+  String get addFactSentToAuthor => 'Fact added and sent to the author';
+
+  @override
+  String get addFactSavedUnsent =>
+      'Fact added. Couldn\'t send it to the author yet; retry from Unsent contributions.';
+
+  @override
+  String get deckTagsSentToAuthor => 'Deck tags sent to the author';
+
+  @override
+  String get deckTagsSavedUnsent =>
+      'Deck tags saved. Couldn\'t send them to the author yet; retry from Unsent contributions.';
+
+  @override
   String addFactFieldFallback(int number) {
     return 'Field $number';
   }
@@ -1957,9 +1971,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get qaEditSubmitted => 'Edit sent to the author';
-
-  @override
-  String get pendingStaged => 'Saved to unsent contributions';
 
   @override
   String pendingSendSuccess(int count) {

@@ -28,6 +28,14 @@ class FakeFactApiInterceptor extends Interceptor {
   int patchFactCount = 0;
   int addFactsCount = 0;
   int contributionEditCount = 0;
+  int contributionAddCount = 0;
+  int contributionDeckTagsCount = 0;
+
+  /// When true, `POST …/contributions/deck-tags` answers 429.
+  bool contributionDeckTagsFails = false;
+
+  /// When true, `POST …/contributions/facts/{id}/add` answers 429.
+  bool contributionAddFails = false;
   int contributionTagsCount = 0;
   dynamic lastPatchData;
   dynamic lastContributionEditBody;
@@ -55,6 +63,52 @@ class FakeFactApiInterceptor extends Interceptor {
             'msg': 'ok',
             'data': {'facts_added': 1},
           },
+        ),
+      );
+      return;
+    }
+
+    if (options.method == 'POST' && uri.endsWith('/contributions/deck-tags')) {
+      contributionDeckTagsCount++;
+      handler.resolve(
+        Response(
+          requestOptions: options,
+          statusCode: contributionDeckTagsFails ? 429 : 201,
+          data: contributionDeckTagsFails
+              ? {'code': 429, 'msg': 'daily contribution limit exceeded'}
+              : {
+                  'code': 0,
+                  'msg': 'contribution submitted',
+                  'data': {
+                    'contribution_id': 'cont-tags-1',
+                    'type': 'deck_tag_update',
+                    'status': 'open',
+                  },
+                },
+        ),
+      );
+      return;
+    }
+
+    if (options.method == 'POST' &&
+        uri.contains('/contributions/facts/') &&
+        uri.endsWith('/add')) {
+      contributionAddCount++;
+      handler.resolve(
+        Response(
+          requestOptions: options,
+          statusCode: contributionAddFails ? 429 : 201,
+          data: contributionAddFails
+              ? {'code': 429, 'msg': 'daily contribution limit exceeded'}
+              : {
+                  'code': 0,
+                  'msg': 'contribution submitted',
+                  'data': {
+                    'contribution_id': 'cont-add-1',
+                    'type': 'fact_add',
+                    'status': 'open',
+                  },
+                },
         ),
       );
       return;

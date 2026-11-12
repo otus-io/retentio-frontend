@@ -964,6 +964,30 @@ abstract class AppLocalizations {
   /// **'Fact added'**
   String get addFactSuccess;
 
+  /// No description provided for @addFactSentToAuthor.
+  ///
+  /// In en, this message translates to:
+  /// **'Fact added and sent to the author'**
+  String get addFactSentToAuthor;
+
+  /// No description provided for @addFactSavedUnsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Fact added. Couldn\'t send it to the author yet; retry from Unsent contributions.'**
+  String get addFactSavedUnsent;
+
+  /// No description provided for @deckTagsSentToAuthor.
+  ///
+  /// In en, this message translates to:
+  /// **'Deck tags sent to the author'**
+  String get deckTagsSentToAuthor;
+
+  /// No description provided for @deckTagsSavedUnsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Deck tags saved. Couldn\'t send them to the author yet; retry from Unsent contributions.'**
+  String get deckTagsSavedUnsent;
+
   /// Default column label when deck has fewer names than rows
   ///
   /// In en, this message translates to:
@@ -3513,12 +3537,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit sent to the author'**
   String get qaEditSubmitted;
-
-  /// No description provided for @pendingStaged.
-  ///
-  /// In en, this message translates to:
-  /// **'Saved to unsent contributions'**
-  String get pendingStaged;
 
   /// No description provided for @pendingSendSuccess.
   ///

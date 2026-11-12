@@ -162,6 +162,10 @@
   "addFactFileWrongSlot": "请选择与附件类型匹配的文件。",
   "addFactFailed": "无法添加词条",
   "addFactSuccess": "已添加词条",
+  "addFactSentToAuthor": "词条已添加并发送给作者",
+  "addFactSavedUnsent": "词条已添加，但暂未发送给作者，可在未发送贡献中重试。",
+  "deckTagsSentToAuthor": "卡组标签已发送给作者",
+  "deckTagsSavedUnsent": "卡组标签已保存，但暂未发送给作者，可在未发送贡献中重试。",
   "addFactFieldFallback": "字段 {number}",
   "addFactFieldShortLabel": "字段",
   "addFactPasteFromClipboard": "从剪贴板粘贴",
@@ -1367,7 +1371,6 @@
   },
   "qaVerifySuccess": "质量已保存",
   "qaEditSubmitted": "编辑已发送给作者",
-  "pendingStaged": "已加入未发送贡献",
   "pendingSendSuccess": "{count, plural, =1{已发送 1 条贡献} other{已发送 {count} 条贡献}}",
   "@pendingSendSuccess": {
     "placeholders": { "count": { "type": "int" } }

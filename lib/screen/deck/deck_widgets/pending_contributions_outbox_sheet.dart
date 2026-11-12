@@ -7,7 +7,6 @@ import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/services/apis/deck_catalog_service.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_input.dart';
-import 'package:retentio/widgets/app_toast.dart';
 
 /// Importer outbox: stage local overlay changes, then send selected to author.
 class PendingContributionsOutboxSheet extends StatefulWidget {
@@ -501,10 +500,4 @@ class _PendingContributionsOutboxSheetState
       },
     );
   }
-}
-
-/// Convenience toast after staging a pending item.
-void showPendingStagedToast(BuildContext context) {
-  final loc = AppLocalizations.of(context)!;
-  AppToast.success(context, loc.pendingStaged);
 }
