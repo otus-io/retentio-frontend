@@ -26,6 +26,16 @@ class _DownloadInterrupted implements Exception {
   const _DownloadInterrupted();
 }
 
+/// The deck and facts a download fetched before its media. Kept while the
+/// download is paused for the app, so the resumed one starts at the media.
+typedef _FactsCheckpoint = ({
+  Deck remote,
+  OfflineDeck? before,
+  int fetchedAt,
+  List<OfflineFact> facts,
+  List<Tag> tags,
+});
+
 /// Assembles a deck's offline study package (deck, facts, cards, media) into
 /// [OfflineLearningStore]. Server card schedules replace local ones unless the
 /// card has unsynced local changes.
@@ -62,6 +72,10 @@ class OfflinePackageDownloader {
   static const int refreshIntervalSec = 3600;
   static const int resumeConcurrency = 2;
 
+  /// A download paused longer than this fetches the deck and facts again
+  /// instead of resuming at the media with a stale fact list.
+  static const int checkpointMaxAgeSec = 1800;
+
   // Share of the progress each stage fills; media takes the rest.
   static const double _deckShare = 0.05;
   static const double _factsShare = 0.30;
@@ -85,6 +99,7 @@ class OfflinePackageDownloader {
   final Set<String> _resumed = {};
   final Set<String> _leftForeground = {};
   final Set<String> _resumeWhenForeground = {};
+  final Map<String, _FactsCheckpoint> _checkpoints = {};
   var _haltsAll = 0;
 
   /// Download progress of [deckId] from 0 to 1, or null when none is running.
@@ -193,8 +208,8 @@ class OfflinePackageDownloader {
     final running = _inFlight[deckId];
     if (running != null && !fresh) return running;
     final started = running == null
-        ? _download(deckId)
-        : running.then((_) => _download(deckId));
+        ? _download(deckId, resume: !fresh)
+        : running.then((_) => _download(deckId, resume: !fresh));
     return _trackInFlight(deckId, started);
   }
 
@@ -224,6 +239,7 @@ class OfflinePackageDownloader {
     final ids = deckId == null ? _resumeWhenForeground.toList() : [deckId];
     for (final id in ids) {
       if (!_resumeWhenForeground.remove(id)) continue;
+      _checkpoints.remove(id);
       _notifier(id).value = null;
     }
   }
@@ -237,9 +253,12 @@ class OfflinePackageDownloader {
     }
   }
 
-  Future<bool> _download(String deckId) async {
+  /// [resume]: start at the media when a paused run left a recent checkpoint.
+  Future<bool> _download(String deckId, {required bool resume}) async {
     final progress = _notifier(deckId)..value = 0;
     _failedNotifier(deckId).value = false;
+    // This run replaces a paused one, which must not start again after it.
+    _resumeWhenForeground.remove(deckId);
     void noteLeft() {
       if (_foreground?.value == false) _leftForeground.add(deckId);
     }
@@ -247,7 +266,7 @@ class OfflinePackageDownloader {
     noteLeft();
     _foreground?.addListener(noteLeft);
     try {
-      return await _writePackage(deckId);
+      return await _writePackage(deckId, resume: resume);
     } on _DownloadHalted {
       logger.i('Offline download of deck=$deckId stopped for removal');
       return false;
@@ -261,7 +280,10 @@ class OfflinePackageDownloader {
     } finally {
       _foreground?.removeListener(noteLeft);
       _leftForeground.remove(deckId);
-      if (!_resumeWhenForeground.contains(deckId)) progress.value = null;
+      if (!_resumeWhenForeground.contains(deckId)) {
+        progress.value = null;
+        _checkpoints.remove(deckId);
+      }
     }
   }
 
@@ -271,17 +293,18 @@ class OfflinePackageDownloader {
     return false;
   }
 
-  Future<bool> _writePackage(String deckId) async {
+  Future<bool> _writePackage(String deckId, {required bool resume}) async {
     _checkHalted(deckId);
-    final fetchedAt = _nowSec();
-    final remote = await _fetchDeck(deckId);
-    _checkHalted(deckId);
-    _report(deckId, _deckShare);
-    final before = await _store.getDeck(deckId);
-    final (facts, tags) = await _syncFacts(
-      deckId,
-      _buildDeck(deckId, remote, before, const []),
-    );
+    final saved = _checkpoints.remove(deckId);
+    final checkpoint =
+        resume &&
+            saved != null &&
+            _nowSec() - saved.fetchedAt < checkpointMaxAgeSec
+        ? saved
+        : await _fetchDeckAndFacts(deckId);
+    _checkpoints[deckId] = checkpoint;
+    _report(deckId, _deckShare + _factsShare);
+    final (:remote, :before, :fetchedAt, :facts, :tags) = checkpoint;
     final mediaComplete = await _downloadFactMedia(deckId, facts);
     // Last, so reviews made online while the deck was downloading (the
     // study screen serves it remotely until it is ready) are not lost.
@@ -310,6 +333,25 @@ class OfflinePackageDownloader {
     }
     _report(deckId, 1);
     return true;
+  }
+
+  Future<_FactsCheckpoint> _fetchDeckAndFacts(String deckId) async {
+    final fetchedAt = _nowSec();
+    final remote = await _fetchDeck(deckId);
+    _checkHalted(deckId);
+    _report(deckId, _deckShare);
+    final before = await _store.getDeck(deckId);
+    final (facts, tags) = await _syncFacts(
+      deckId,
+      _buildDeck(deckId, remote, before, const []),
+    );
+    return (
+      remote: remote,
+      before: before,
+      fetchedAt: fetchedAt,
+      facts: facts,
+      tags: tags,
+    );
   }
 
   /// [countsAt]: when the server review counters of [remote] were fetched, to
