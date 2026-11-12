@@ -73,3 +73,6 @@ app.*.map.json
 # Go compiled binaries (dev scripts; if present)
 backend-api/retentio
 backend-api/backend-api
+
+# Claude Code local settings
+.claude/settings.local.json

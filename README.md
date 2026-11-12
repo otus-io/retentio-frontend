@@ -67,7 +67,7 @@ Extended reference: [docs/flutter_commands.md](docs/flutter_commands.md) ([中�
 | [docs/frontend_tests.md](docs/frontend_tests.md) | Test commands and layout ([中文](docs/frontend_tests_zh.md)) |
 | [docs/contributing.md](docs/contributing.md) | Code conduct and PR guidelines ([中文](docs/contributing_zh.md)) |
 | [docs/pre_commit_hook.md](docs/pre_commit_hook.md) | Pre-commit hook setup ([中文](docs/pre_commit_hook_zh.md)) |
-| [docs/cursor_rules.md](docs/cursor_rules.md) | Cursor AI project rules ([中文](docs/cursor_rules_zh.md)) |
+| [docs/cursor_rules.md](docs/cursor_rules.md) | AI agent instructions and skills ([中文](docs/cursor_rules_zh.md)) |
 | [docs/ui_component_standardization.md](docs/ui_component_standardization.md) | Shared UI component standards ([中文](docs/ui_component_standardization_zh.md)) |
 | [docs/card-text-markup.md](docs/card-text-markup.md) | Wiki-style ruby markup on cards |
 | [docs/deck-font-ruby-typography.md](docs/deck-font-ruby-typography.md) | Deck font sheet and ruby typography |

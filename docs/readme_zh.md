@@ -67,7 +67,7 @@ flutter build ipa --release --dart-define=API_ENV=release
 | [frontend_tests_zh.md](frontend_tests_zh.md) | 测试命令与结构（[English](frontend_tests.md)） |
 | [contributing_zh.md](contributing_zh.md) | 代码规范与 PR 流程（[English](contributing.md)） |
 | [pre_commit_hook_zh.md](pre_commit_hook_zh.md) | Pre-commit 钩子（[English](pre_commit_hook.md)） |
-| [cursor_rules_zh.md](cursor_rules_zh.md) | Cursor AI 项目规则（[English](cursor_rules.md)） |
+| [cursor_rules_zh.md](cursor_rules_zh.md) | AI 代理指令与技能（[English](cursor_rules.md)） |
 | [ui_component_standardization_zh.md](ui_component_standardization_zh.md) | 共享 UI 组件规范（[English](ui_component_standardization.md)） |
 | [card-text-markup.md](card-text-markup.md) | 卡片 wiki 式 ruby 标记 |
 | [deck-font-ruby-typography.md](deck-font-ruby-typography.md) | 卡组字体面板与 ruby 排版 |

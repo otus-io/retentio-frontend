@@ -270,7 +270,7 @@ jobs:
             - Test coverage for behavior changes
 
             Skip lockfiles, generated l10n, and build artifacts.
-            Follow docs/contributing.md and .cursor/rules when applicable.
+            Follow docs/contributing.md, AGENTS.md and .agents/skills when applicable.
 
             The PR branch is already checked out in the working directory.
 

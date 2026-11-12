@@ -6,7 +6,7 @@
 # ===== Git internals (commits, author names, emails, remotes, repo name) =====
 .git/
 
-# ===== GitHub workflows — NOT ignored: Cursor needs access for ci-workflows.mdc =====
+# ===== GitHub workflows — NOT ignored: Cursor needs access for the ci-workflows skill =====
 # .github/ removed
 
 # ===== Environment variables & secrets (every possible convention) =====
