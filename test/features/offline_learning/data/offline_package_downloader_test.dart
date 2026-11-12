@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/models/tag.dart';
 import 'package:retentio/core/network/network.dart';
@@ -158,6 +158,7 @@ void main() {
 
   OfflinePackageDownloader build({
     FetchDeckFn? fetchDeck,
+    FetchFactsPageFn? fetchFactsPage,
     List<List<OfflineFact>> pages = const [[]],
     Object? factsError,
     List<String>? factIds,
@@ -169,20 +170,23 @@ void main() {
     FetchMediaVersionsFn? fetchMediaVersions,
     bool online = true,
     int now = 1000,
+    ValueListenable<bool>? foreground,
   }) => OfflinePackageDownloader(
     store: store,
     mediaRootDir: tmp.path,
     fetchDeck: fetchDeck ?? (_) async => _deck,
-    fetchFactsPage: (deckId, limit, offset) async {
-      if (factsError != null) throw factsError;
-      final index = factOffsets.length;
-      factOffsets.add(offset);
-      expect(limit, OfflinePackageDownloader.factsPageSize);
-      return OfflineFactsPage(
-        facts: pages[index],
-        hasMore: index < pages.length - 1,
-      );
-    },
+    fetchFactsPage:
+        fetchFactsPage ??
+        (deckId, limit, offset) async {
+          if (factsError != null) throw factsError;
+          final index = factOffsets.length;
+          factOffsets.add(offset);
+          expect(limit, OfflinePackageDownloader.factsPageSize);
+          return OfflineFactsPage(
+            facts: pages[index],
+            hasMore: index < pages.length - 1,
+          );
+        },
     fetchFactIds: (_) async {
       if (factIdsError != null) throw factIdsError;
       return factIds;
@@ -202,6 +206,7 @@ void main() {
         },
     nowSec: () => now,
     isOnline: () async => online,
+    foreground: foreground,
   );
 
   test('fetches all fact pages and marks the deck ready', () async {
@@ -592,6 +597,79 @@ void main() {
       await running;
 
       expect(downloader.failedOf('d1').value, isFalse);
+    });
+
+    test('screen off pauses a download and resumes it in front', () async {
+      final foreground = ValueNotifier(true);
+      final gate = Completer<void>();
+      var calls = 0;
+      final downloader = build(
+        foreground: foreground,
+        fetchDeck: (_) async {
+          calls++;
+          if (calls == 1) {
+            foreground.value = false;
+            await gate.future;
+            throw StateError('connection lost');
+          }
+          return _deck;
+        },
+      );
+
+      final first = downloader.download('d1');
+      await Future<void>.delayed(Duration.zero);
+      gate.complete();
+
+      expect(await first, isFalse);
+      expect(calls, 1);
+      expect(downloader.failedOf('d1').value, isFalse);
+      expect(downloader.progressOf('d1').value, isNotNull);
+
+      foreground.value = true;
+      for (var i = 0; i < 20 && !store.decks.containsKey('d1'); i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      expect(calls, 2);
+      expect(store.decks.containsKey('d1'), isTrue);
+      expect(downloader.failedOf('d1').value, isFalse);
+      expect(downloader.progressOf('d1').value, isNull);
+    });
+
+    test('a failure just after returning to the front still resumes', () async {
+      final foreground = ValueNotifier(true);
+      var calls = 0;
+      final downloader = build(
+        foreground: foreground,
+        fetchDeck: (_) async {
+          calls++;
+          if (calls == 1) {
+            foreground.value = false;
+            foreground.value = true;
+            throw StateError('connection lost');
+          }
+          return _deck;
+        },
+      );
+
+      expect(await downloader.download('d1'), isFalse);
+      for (var i = 0; i < 20 && !store.decks.containsKey('d1'); i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      expect(calls, 2);
+      expect(downloader.failedOf('d1').value, isFalse);
+    });
+
+    test('a failure while staying in front is still a failure', () async {
+      final downloader = build(
+        foreground: ValueNotifier(true),
+        fetchDeck: (_) async => throw StateError('x'),
+      );
+
+      expect(await downloader.download('d1'), isFalse);
+      expect(downloader.failedOf('d1').value, isTrue);
+      expect(downloader.progressOf('d1').value, isNull);
     });
   });
 
