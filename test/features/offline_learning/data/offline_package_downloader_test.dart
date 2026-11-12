@@ -706,6 +706,76 @@ void main() {
       expect(store.decks['d1']?.isReady, isTrue);
       expect(downloader.failedOf('d1').value, isFalse);
     });
+
+    test('removing a deck drops a download paused by screen off', () async {
+      final foreground = ValueNotifier(false);
+      var calls = 0;
+      final downloader = build(
+        foreground: foreground,
+        fetchDeck: (_) async {
+          calls++;
+          throw StateError('connection lost');
+        },
+      );
+
+      expect(await downloader.download('d1'), isFalse);
+      expect(downloader.progressOf('d1').value, isNotNull);
+
+      await downloader.whileHalted('d1', () async {});
+      expect(downloader.progressOf('d1').value, isNull);
+
+      foreground.value = true;
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, 1);
+      expect(store.decks.containsKey('d1'), isFalse);
+    });
+
+    test('clearing the account drops every paused download', () async {
+      final foreground = ValueNotifier(false);
+      var calls = 0;
+      final downloader = build(
+        foreground: foreground,
+        fetchDeck: (_) async {
+          calls++;
+          throw StateError('connection lost');
+        },
+      );
+
+      expect(await downloader.download('d1'), isFalse);
+      await downloader.whileHalted(null, () async {});
+      foreground.value = true;
+      await Future<void>.delayed(Duration.zero);
+
+      expect(calls, 1);
+      expect(downloader.progressOf('d1').value, isNull);
+    });
+
+    test('a download stopped for removal is not resumed', () async {
+      final foreground = ValueNotifier(true);
+      final gate = Completer<void>();
+      var calls = 0;
+      final downloader = build(
+        foreground: foreground,
+        fetchDeck: (_) async {
+          calls++;
+          foreground.value = false;
+          await gate.future;
+          throw StateError('connection lost');
+        },
+      );
+
+      final running = downloader.download('d1');
+      await Future<void>.delayed(Duration.zero);
+      final halted = downloader.whileHalted('d1', () async {});
+      gate.complete();
+      await halted;
+      expect(await running, isFalse);
+
+      foreground.value = true;
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, 1);
+      expect(downloader.failedOf('d1').value, isFalse);
+    });
   });
 
   test('seeds cards after the media so online reviews are not lost', () async {
