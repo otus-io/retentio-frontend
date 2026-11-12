@@ -3301,7 +3301,7 @@ abstract class AppLocalizations {
   /// No description provided for @qaModeEmpty.
   ///
   /// In en, this message translates to:
-  /// **'This imported deck has no facts to review.'**
+  /// **'This deck has no facts to review.'**
   String get qaModeEmpty;
 
   /// No description provided for @qaModeFactLoadFailed.

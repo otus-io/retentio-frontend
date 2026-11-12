@@ -1,11 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/core/network/network.dart';
 import 'package:retentio/models/deck.dart';
 import 'package:retentio/screen/deck/deck_widgets/contributions_inbox_sheet.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_menu.dart';
+import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/qa/qa_mode_screen.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,6 +26,14 @@ Deck _deck({required bool imported}) => Deck.fromJson({
   if (imported) 'source_deck_id': 'src-1',
   if (imported) 'source_version': 3,
 });
+
+/// Counts deck list refreshes without hitting the network.
+class _CountingDeckListCubit extends DeckListCubit {
+  int refreshes = 0;
+
+  @override
+  Future<void> onRefresh() async => refreshes++;
+}
 
 void main() {
   setUp(() async {
@@ -68,18 +78,34 @@ void main() {
       expect(find.byType(QaModeScreen), findsOneWidget);
     });
 
-    testWidgets('is hidden for a source deck', (tester) async {
+    testWidgets('lets the author walk a source deck and refreshes the list', (
+      tester,
+    ) async {
+      final deckList = _CountingDeckListCubit();
+      addTearDown(deckList.close);
       await tester.pumpWidget(
         buildTestableWidgetWithOverrides(
-          Scaffold(body: DeckMenu(deck: _deck(imported: false))),
+          BlocProvider<DeckListCubit>.value(
+            value: deckList,
+            child: Scaffold(body: DeckMenu(deck: _deck(imported: false))),
+          ),
         ),
       );
       await tester.pumpAndSettle();
+      final before = deckList.refreshes;
 
       await tester.tap(find.byType(DeckMenu));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('QA mode'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Start QA'));
+      await tester.pumpAndSettle();
+      expect(find.byType(QaModeScreen), findsOneWidget);
 
-      expect(find.text('QA mode'), findsNothing);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.byType(QaModeScreen), findsNothing);
+      expect(deckList.refreshes, before + 1, reason: 'badge may have changed');
     });
 
     testWidgets('source deck inbox gets the deck columns for QA reviews', (

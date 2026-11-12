@@ -2176,7 +2176,7 @@
   "pendingDismissSelected": "Dismiss selected",
   "pendingClearAll": "Clear all",
   "qaMode": "QA mode",
-  "qaModeEmpty": "This imported deck has no facts to review.",
+  "qaModeEmpty": "This deck has no facts to review.",
   "qaModeFactLoadFailed": "Could not load this fact.",
   "qaModeFactsLoadFailed": "Could not load facts. Check your connection and try again.",
   "qaModeProgress": "{current} / {total} to verify",

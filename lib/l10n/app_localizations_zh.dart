@@ -1698,7 +1698,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get qaMode => 'QA 模式';
 
   @override
-  String get qaModeEmpty => '该导入卡组没有可校验的词条。';
+  String get qaModeEmpty => '该卡组没有可校验的词条。';
 
   @override
   String get qaModeFactLoadFailed => '无法加载该词条。';

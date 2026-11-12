@@ -533,7 +533,7 @@
   "pendingDismissSelected": "選択したものを却下",
   "pendingClearAll": "すべてクリア",
   "qaMode": "QAモード",
-  "qaModeEmpty": "このインポート済みデッキに確認できる項目はありません。",
+  "qaModeEmpty": "このデッキに確認できる項目はありません。",
   "qaModeFactLoadFailed": "この項目を読み込めませんでした。",
   "qaModeFactsLoadFailed": "項目を読み込めませんでした。接続を確認して、もう一度お試しください。",
   "qaModeProgress": "要確認 {current} / {total}",

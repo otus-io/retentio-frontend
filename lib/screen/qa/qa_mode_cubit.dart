@@ -128,9 +128,10 @@ class QaModeState {
   );
 }
 
-/// Linear QA walk over an imported deck: per-column sign-off plus immediate
-/// `fact_edit` submission. Kept out of the study bloc so a broken quality API
-/// only affects this screen.
+/// Linear QA walk over a deck (source or imported): per-column sign-off; edits
+/// save in place on source decks and become `fact_edit` contributions on
+/// imports. Kept out of the study bloc so a broken quality API only affects
+/// this screen.
 class QaModeCubit extends Cubit<QaModeState> {
   QaModeCubit({
     required this.deckId,

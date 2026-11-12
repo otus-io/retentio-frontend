@@ -1310,7 +1310,7 @@
   "pendingDismissSelected": "忽略所选",
   "pendingClearAll": "清空全部",
   "qaMode": "QA 模式",
-  "qaModeEmpty": "该导入卡组没有可校验的词条。",
+  "qaModeEmpty": "该卡组没有可校验的词条。",
   "qaModeFactLoadFailed": "无法加载该词条。",
   "qaModeFactsLoadFailed": "无法加载词条，请检查网络后重试。",
   "qaModeProgress": "待校验 {current} / {total}",

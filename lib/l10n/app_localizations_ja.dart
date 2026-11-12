@@ -1700,7 +1700,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get qaMode => 'QAモード';
 
   @override
-  String get qaModeEmpty => 'このインポート済みデッキに確認できる項目はありません。';
+  String get qaModeEmpty => 'このデッキに確認できる項目はありません。';
 
   @override
   String get qaModeFactLoadFailed => 'この項目を読み込めませんでした。';

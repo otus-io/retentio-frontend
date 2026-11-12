@@ -44,7 +44,9 @@ String? qaAudioUrl({
   return '/api/media/$id';
 }
 
-/// Human QA walk over an imported deck: sign off columns, edit the bad ones.
+/// Human QA walk over a deck: sign off columns, edit the bad ones. Authors
+/// walk their own deck; importers walk their copy and can send the sign-offs to
+/// the author.
 class QaModeScreen extends StatelessWidget {
   const QaModeScreen({super.key, required this.deck});
 
@@ -157,6 +159,7 @@ class _QaModeView extends StatelessWidget {
             if (state.walkComplete) {
               return _QaWalkComplete(
                 deckId: deck.id,
+                isImported: deck.isImported,
                 onBack: () => Navigator.of(context).maybePop(),
               );
             }
@@ -218,9 +221,14 @@ class _QaModeView extends StatelessWidget {
 
 /// Shown after the last fact in the selected columns is signed off.
 class _QaWalkComplete extends StatelessWidget {
-  const _QaWalkComplete({required this.deckId, required this.onBack});
+  const _QaWalkComplete({
+    required this.deckId,
+    required this.isImported,
+    required this.onBack,
+  });
 
   final String deckId;
+  final bool isImported;
   final VoidCallback onBack;
 
   @override
@@ -245,8 +253,10 @@ class _QaWalkComplete extends StatelessWidget {
               style: theme.textTheme.headlineSmall,
             ),
             const SizedBox(height: 32),
-            QaSendToAuthorButton(importDeckId: deckId),
-            const SizedBox(height: 16),
+            if (isImported) ...[
+              QaSendToAuthorButton(importDeckId: deckId),
+              const SizedBox(height: 16),
+            ],
             AppButton(
               label: loc.backToDeck,
               fullWidth: true,
@@ -373,7 +383,8 @@ class _QaColumnPickerState extends State<_QaColumnPicker> {
           BlocBuilder<QaModeCubit, QaModeState>(
             buildWhen: (prev, next) => prev.stats != next.stats,
             builder: (context, state) {
-              if ((state.stats?.verifiedAspects ?? 0) == 0) {
+              if (!widget.deck.isImported ||
+                  (state.stats?.verifiedAspects ?? 0) == 0) {
                 return const SizedBox.shrink();
               }
               return Padding(
@@ -444,12 +455,14 @@ class _QaHeader extends StatelessWidget {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-            Text(
-              loc.qaModeEdited(state.editedCount),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            // Edits on imports become contributions; authors edit in place.
+            if (deck.isImported)
+              Text(
+                loc.qaModeEdited(state.editedCount),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
           ],
         ),
       ),

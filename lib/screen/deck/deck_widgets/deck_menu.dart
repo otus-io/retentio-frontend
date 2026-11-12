@@ -273,24 +273,28 @@ class DeckMenu extends StatelessWidget {
                 onPressedBackgroundColor: scheme.surfaceContainerHighest,
               ),
             ),
-            PullDownMenuItem(
-              title: loc.qaMode,
-              onTap: () async {
-                await Future<void>.delayed(const Duration(milliseconds: 10));
-                if (!context.mounted) return;
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => QaModeScreen(deck: deck),
-                  ),
-                );
-              },
-              icon: LucideIcons.badgeCheck,
-              itemTheme: PullDownMenuItemTheme(
-                textStyle: menuItemStyle(scheme.onSurface),
-                onPressedBackgroundColor: scheme.surfaceContainerHighest,
-              ),
-            ),
           ],
+          PullDownMenuItem(
+            title: loc.qaMode,
+            onTap: () async {
+              await Future<void>.delayed(const Duration(milliseconds: 10));
+              if (!context.mounted) return;
+              await Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => QaModeScreen(deck: deck),
+                ),
+              );
+              // Sign-offs can turn the QA badge on; show it on the deck list.
+              if (context.mounted) {
+                await context.read<DeckListCubit>().onRefresh();
+              }
+            },
+            icon: LucideIcons.badgeCheck,
+            itemTheme: PullDownMenuItemTheme(
+              textStyle: menuItemStyle(scheme.onSurface),
+              onPressedBackgroundColor: scheme.surfaceContainerHighest,
+            ),
+          ),
           const PullDownMenuDivider.large(),
           PullDownMenuItem(
             title: loc.deleteDeck,

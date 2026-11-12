@@ -1801,7 +1801,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qaMode => 'QA mode';
 
   @override
-  String get qaModeEmpty => 'This imported deck has no facts to review.';
+  String get qaModeEmpty => 'This deck has no facts to review.';
 
   @override
   String get qaModeFactLoadFailed => 'Could not load this fact.';

@@ -1,13 +1,20 @@
-# QA mode (imported decks)
+# QA mode
 
 **Status:** shipped (`lib/screen/qa/`).  
 **Related:** [api.md](api.md) [Fact quality](api.md) — reuse **`PUT /api/decks/{id}/facts/{factId}/quality`**. No `…/verify` contribution.
 
-Human QA logs in, **imports** the catalog, **QA mode** (linear walk, not SRS). Each **column (entry)** has a checkbox. Header: **verified entries / total entries** (`model=human`) and **edited** (`fact_edit`).
+**QA mode** is a linear walk (not SRS) over a deck's facts. Each **column (entry)** has a checkbox. Header: **verified entries / total entries** (`model=human`) and, on imports, **edited** (`fact_edit`).
+
+- **Authors** walk their own **source** deck. Their sign-offs are what the catalog QA badge counts; edits save in place
+  (the server clears sign-offs on changed text/audio). No edited count and no "send to author".
+- **Importers** walk their copy. Edits become `fact_edit` contributions, and they can send their sign-offs to the
+  author (see [Send to author](#send-to-author)).
+
+Closing QA mode refreshes the deck list so a newly earned badge shows right away.
 
 ## Workflow
 
-1. Import → deck menu **QA mode** (`isImported` only).
+1. Deck menu **QA mode** (any deck you own: source or import).
 2. Walk facts (Prev/Next; optional 課). Show every column (label from `deck.fields`) with text/audio and a **checkbox**.
 3. Check the columns that are OK (headword, example, …). Unchecked = not signed off. Pre-check columns that already have `model: human` on GET quality.
 4. **Next** is enabled only when every scoreable column is checked; it then sends quality and advances. **Verified** is a status indicator only (filled when every scoreable column is checked).

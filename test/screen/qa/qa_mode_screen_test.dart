@@ -31,6 +31,16 @@ Deck _importedDeck() => Deck.fromJson({
   'source_version': 15,
 });
 
+Deck _sourceDeck() => Deck.fromJson({
+  'id': 'src-1',
+  'name': 'My deck',
+  'rate': 30,
+  'fields': ['日文', '中文'],
+  'min_interval': 60,
+  'def_interval': 300,
+  'max_interval': 86400,
+});
+
 void main() {
   late FakeQaApiAdapter adapter;
 
@@ -580,10 +590,7 @@ void main() {
       );
       await pumpQaMode(tester);
 
-      expect(
-        find.text('This imported deck has no facts to review.'),
-        findsOneWidget,
-      );
+      expect(find.text('This deck has no facts to review.'), findsOneWidget);
     });
 
     testWidgets('shows a load error when the fact list cannot load', (
@@ -597,10 +604,7 @@ void main() {
         find.text('Could not load facts. Check your connection and try again.'),
         findsOneWidget,
       );
-      expect(
-        find.text('This imported deck has no facts to review.'),
-        findsNothing,
-      );
+      expect(find.text('This deck has no facts to review.'), findsNothing);
     });
 
     testWidgets('shows a failure message when the fact cannot load', (
@@ -663,6 +667,54 @@ void main() {
       testWidgets('column picker hides it before any sign-off', (tester) async {
         useAdapter(stats: {'verified_aspects': 0, 'total_aspects': 4});
         await pumpQaMode(tester, startWalk: false);
+        expect(find.text('Send verifications to author'), findsNothing);
+      });
+    });
+
+    group('author on a source deck', () {
+      testWidgets('walks facts without the edited count', (tester) async {
+        useAdapter(stats: {'verified_aspects': 1, 'total_aspects': 4});
+        await pumpQaMode(tester, deck: _sourceDeck());
+
+        expect(find.text('headword'), findsWidgets);
+        expect(find.text('Edited 0'), findsNothing);
+      });
+
+      testWidgets('importers still see the edited count', (tester) async {
+        useAdapter(stats: {'verified_aspects': 1, 'total_aspects': 4});
+        await pumpQaMode(tester);
+        expect(find.text('Edited 0'), findsOneWidget);
+      });
+
+      testWidgets('signs off and advances like an importer', (tester) async {
+        useAdapter();
+        await pumpQaMode(tester, deck: _sourceDeck());
+        for (final box in find.byType(Checkbox).evaluate().toList()) {
+          await tester.tap(find.byWidget(box.widget));
+          await tester.pump();
+        }
+        await tester.tap(find.text('Next'));
+        await tester.pumpAndSettle();
+
+        expect(adapter.qualityPuts, hasLength(1));
+      });
+
+      testWidgets('picker never offers sending to an author', (tester) async {
+        useAdapter(stats: {'verified_aspects': 3, 'total_aspects': 4});
+        await pumpQaMode(tester, deck: _sourceDeck(), startWalk: false);
+        expect(find.text('Send verifications to author'), findsNothing);
+      });
+
+      testWidgets('walk complete offers only going back', (tester) async {
+        useAdapter(
+          factIds: const [],
+          stats: {'verified_aspects': 4, 'total_aspects': 4},
+        );
+        await pumpQaMode(tester, deck: _sourceDeck());
+        expect(
+          find.text("You're done with these columns. Thank you."),
+          findsOneWidget,
+        );
         expect(find.text('Send verifications to author'), findsNothing);
       });
     });
