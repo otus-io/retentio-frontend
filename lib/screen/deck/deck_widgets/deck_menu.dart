@@ -295,9 +295,15 @@ class DeckMenu extends StatelessWidget {
                 ),
               );
               if (!context.mounted) return;
-              // Importers' sign-offs go to the author automatically.
-              if (signed && deck.isImported) {
-                await shareQaSignOffsWithAuthor(context, deck.id);
+              // Importers' sign-offs go to the author automatically. Sent on
+              // every close so a failed send is retried; the toast only
+              // follows this session's sign-offs.
+              if (deck.isImported) {
+                await shareQaSignOffsWithAuthor(
+                  context,
+                  deck.id,
+                  announce: signed,
+                );
               }
               // Sign-offs can turn the QA badge on; show it on the deck list.
               if (context.mounted) {

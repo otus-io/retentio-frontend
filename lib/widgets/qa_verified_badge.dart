@@ -3,6 +3,10 @@ import 'package:retentio/l10n/app_localizations.dart';
 
 /// Badge for a deck whose every text/audio field is human-verified: a ring
 /// with a bold check mark that breaks out past its top-right edge.
+///
+/// Painted rather than a `LucideIcons` glyph on purpose: Lucide has no icon
+/// with this shape (the check breaking out of a translucent ring), and the
+/// design asks for it. Other icons in `lib/` stay on `LucideIcons`.
 class QaVerifiedBadge extends StatelessWidget {
   const QaVerifiedBadge({super.key, this.size = 16});
 

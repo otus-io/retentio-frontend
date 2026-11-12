@@ -701,6 +701,24 @@ void main() {
       await cubit.close();
     });
 
+    test('a fact whose record cannot be read is not signed off', () async {
+      adapter.qualityGetFails = true;
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+      );
+      await startWalk(cubit);
+
+      expect(cubit.state.factLoadFailed, isTrue);
+      expect(cubit.state.quality, isNull);
+      cubit.toggleColumn(1);
+      expect(cubit.state.canVerify, isFalse);
+      expect(await cubit.next(), isNull);
+      expect(adapter.qualityPuts, isEmpty, reason: 'would replace the record');
+      await cubit.close();
+    });
+
     test('clears checkboxes when the record cannot be re-read', () async {
       final cubit = QaModeCubit(
         deckId: 'imp-1',

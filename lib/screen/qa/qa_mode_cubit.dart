@@ -388,15 +388,18 @@ class QaModeCubit extends Cubit<QaModeState> {
       return;
     }
     final detail = await CardService.getFactDetail(deckId, factId);
-    final fact = detail?.fact;
     final mediaVersions = detail?.mediaVersions ?? const <String, int>{};
-    final quality = fact == null
+    final read = detail?.fact == null
         ? null
-        : await FactQualityService.of.getFactQuality(
+        : await FactQualityService.of.readFactQuality(
             deckId: deckId,
             factId: factId,
           );
     if (isClosed) return;
+    // A quality PUT replaces the whole record, so a fact whose record could
+    // not be read is shown as failed rather than signed off blind.
+    final fact = read?.known == true ? detail?.fact : null;
+    final quality = read?.quality;
     emit(
       state.copyWith(
         loading: false,

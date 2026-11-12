@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter/material.dart';
@@ -208,9 +210,82 @@ void main() {
         await tester.pumpAndSettle();
       });
 
-      testWidgets('nothing is sent without a sign-off', (tester) async {
+      testWidgets('a close without sign-offs still tries, quietly', (
+        tester,
+      ) async {
         await walk(tester, imported: true, signOff: false);
+        expect(adapter.qaReviewPosts, 1, reason: 'server says nothing to do');
+        expect(find.textContaining('author'), findsNothing);
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('an earlier failed send is retried without a toast', (
+        tester,
+      ) async {
+        // Signed off in an earlier session whose send failed.
+        adapter.verifiedFactIds.add('fact-1');
+        adapter.qualityByFactId['fact-1'] = {
+          '0': {
+            'text': {'model': 'human'},
+          },
+        };
+        await walk(tester, imported: true, signOff: false);
+
+        expect(adapter.qaReviewPosts, 1);
+        expect(find.textContaining('author'), findsNothing);
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('back waits for a sign-off to finish saving', (tester) async {
+        final deckList = _CountingDeckListCubit();
+        addTearDown(deckList.close);
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            BlocProvider<DeckListCubit>.value(
+              value: deckList,
+              child: Scaffold(body: DeckMenu(deck: _deck(imported: true))),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(DeckMenu));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('QA mode'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, 'Start QA'));
+        await tester.pumpAndSettle();
+
+        final saving = Completer<void>();
+        adapter.statsHold = saving.future;
+        await tester.tap(find.byType(Checkbox).first);
+        await tester.pump();
+        final statsBefore = adapter.statsRequestCount;
+        await tester.tap(find.text('Next'));
+        for (var i = 0; i < 50; i++) {
+          if (adapter.statsRequestCount > statsBefore) break;
+          await tester.pump(const Duration(milliseconds: 10));
+        }
+        expect(adapter.statsRequestCount, greaterThan(statsBefore));
+
+        await tester.pageBack();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        expect(find.byType(QaModeScreen), findsOneWidget);
         expect(adapter.qaReviewPosts, 0);
+
+        saving.complete();
+        for (var i = 0; i < 10; i++) {
+          await tester.pump(const Duration(milliseconds: 10));
+        }
+        await tester.pageBack();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(adapter.qaReviewPosts, 1);
+        expect(
+          find.text('Sent 1 verified field to the author'),
+          findsOneWidget,
+        );
+        AppToast.dismiss();
         await tester.pumpAndSettle();
       });
 

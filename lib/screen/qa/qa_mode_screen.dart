@@ -126,6 +126,15 @@ class _QaModeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Stay open while a sign-off saves, so the close-time share sees it.
+    return BlocBuilder<QaModeCubit, QaModeState>(
+      buildWhen: (prev, next) => prev.busy != next.busy,
+      builder: (context, state) =>
+          PopScope(canPop: !state.busy, child: _scaffold(context)),
+    );
+  }
+
+  Widget _scaffold(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(

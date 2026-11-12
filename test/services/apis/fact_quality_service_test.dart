@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/core/network/network.dart';
 import 'package:retentio/services/apis/api_service.dart';
+import 'package:retentio/models/fact_quality.dart';
 import 'package:retentio/services/apis/fact_quality_service.dart';
 import 'package:retentio/services/index.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -92,6 +93,35 @@ void main() {
       );
 
       expect(quality, isNull);
+    });
+  });
+
+  group('FactQualityService.readFactQuality', () {
+    Future<({FactQuality? quality, bool known})> read(String factId) =>
+        FactQualityService.of.readFactQuality(deckId: 'imp-1', factId: factId);
+
+    test('a stored record is known', () async {
+      final result = await read('fact-1');
+      expect(result.known, isTrue);
+      expect(result.quality, isNotNull);
+    });
+
+    test('a 404 is a known missing record', () async {
+      final result = await read('fact-2');
+      expect(result.known, isTrue);
+      expect(result.quality, isNull);
+    });
+
+    test('a failed or malformed read is unknown', () async {
+      networkDioClient.dio.httpClientAdapter = _ThrowingAdapter();
+      expect((await read('fact-1')).known, isFalse);
+
+      networkDioClient.dio.httpClientAdapter = _StaticAdapter(
+        data: {'unexpected': true},
+      );
+      final malformed = await read('fact-1');
+      expect(malformed.known, isFalse);
+      expect(malformed.quality, isNull);
     });
   });
 

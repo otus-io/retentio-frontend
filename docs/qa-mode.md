@@ -156,15 +156,17 @@ Fail POST after a good PATCH: overlay is saved locally; toast; retry POST. Do no
 
 ## Queue / UI
 
-Fact ids come from one `GET …/facts/ids` (`CardService.listFactIds` → `data.fact_ids`). Before the walk, the reviewer picks which deck columns to include (saved per import deck in `SharedPreferences`); the picker lists every deck column with its deck-wide completion % from `GET …/quality/stats`. Only selected columns appear during the walk and count toward verify. Re-open the picker from the app bar to change columns mid-walk. If every selected column cursor is already on the last fact, QA opens the walk-complete screen instead of the last fact. Header shows fact progress, each active column’s completion %, and **edited** from `edited_count` on quality stats (server). One row per active entry (`FactContent` inline + checkbox, `deck.fields[i]`). Audio uses snapshot `media_versions` from `GET .../facts/{factId}` (`/api/media/{id}?v={pinned}`), not deck `source_version` (copy-on-write media often pins an older `v`). Cubit: `factIds`, `index`, `activeColumnIndexes`, `checkedEntryIndexes`, outside `DeckStudyBloc`.
+Fact ids come from one `GET …/facts/ids` (`CardService.listFactIds` → `data.fact_ids`). Before the walk, the reviewer picks which deck columns to include (saved per import deck in `SharedPreferences`); the picker lists every deck column with its deck-wide completion % from `GET …/quality/stats`. Only selected columns appear during the walk and count toward verify. Re-open the picker from the app bar to change columns mid-walk. The queue is the facts still missing a sign-off in the selected columns (`unverified_columns=` on that request), fetched once per start and kept for the walk so Prev can revisit a fact signed off in this session. An empty queue opens the walk-complete screen; so does **Next** on the queue's last fact. If the list fails to load, or it is empty and the stats are unavailable, QA shows the load error instead of guessing. A fact whose quality record cannot be read (anything but a 404 "no record") shows the fact load error and cannot be signed off, because the PUT would replace a record the client never saw. Back is blocked while a sign-off is saving. Header shows fact progress, each active column’s completion %, and **edited** from `edited_count` on quality stats (server). One row per active entry (`FactContent` inline + checkbox, `deck.fields[i]`). Audio uses snapshot `media_versions` from `GET .../facts/{factId}` (`/api/media/{id}?v={pinned}`), not deck `source_version` (copy-on-write media often pins an older `v`). Cubit: `factIds`, `index`, `activeColumnIndexes`, `checkedEntryIndexes`, outside `DeckStudyBloc`.
 
 ## Send to author
 
-Importers' sign-offs are shared automatically: when QA mode closes after at least one successful sign-off, the deck
-menu calls `shareQaSignOffsWithAuthor` (`POST /api/decks/{importId}/contributions/qa-review`) and toasts the sent
-count. The column picker says so up front. Failures (nothing transferable, offline, older server) stay silent and the
-next session retries; the server rebuilds the request from its sign-offs and keeps one open request per reviewer, so
-repeated sends never pile up. Authors' own sessions send nothing.
+Importers' sign-offs are shared automatically: every time QA mode closes on an imported deck, the deck menu calls
+`shareQaSignOffsWithAuthor` (`POST /api/decks/{importId}/contributions/qa-review`). The request goes out even when
+this session signed nothing, so a send that failed earlier is retried; the server answers 400 `nothing to review`
+when there is nothing to transfer. The sent-count toast shows only after a session with at least one sign-off. The
+column picker says so up front. Failures (nothing transferable, offline, older server) stay silent. The server
+rebuilds the request from its sign-offs and keeps one open request per reviewer, so repeated sends never pile up.
+Authors' own sessions send nothing.
 
 The author sees a **QA review** row in the contributions inbox with the fact/field counts. **Review fields** opens
 `QaReviewPreviewSheet` (`GET …/contributions/{id}/qa-review`): per field `Ready`, `Changed since`, `Already verified`,
