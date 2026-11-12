@@ -60,8 +60,13 @@ class _FakeSession implements OfflineLearningSession {
   @override
   final _FakeSync sync;
 
+  int downloadStops = 0;
+
   @override
   Future<void> clear() => store.clear();
+
+  @override
+  Future<void> stopDownloads() async => downloadStops++;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -95,7 +100,7 @@ class _FakeSync implements OfflineSyncService {
 void main() {
   late _FakeStore store;
   late _FakeSync sync;
-  late OfflineLearningSession session;
+  late _FakeSession session;
 
   setUp(() {
     store = _FakeStore();
@@ -180,6 +185,7 @@ void main() {
 
     expect(results, [true]);
     expect(store.ops, hasLength(1));
+    expect(session.downloadStops, 1);
   });
 
   testWidgets('discard deletes the queue', (tester) async {
@@ -190,6 +196,7 @@ void main() {
 
     expect(results, [true]);
     expect(store.clears, 1);
+    expect(session.downloadStops, 0);
   });
 
   testWidgets('sync uploads, then clears', (tester) async {
@@ -317,6 +324,7 @@ void main() {
     expect(results, [true]);
     expect(store.clears, 0);
     expect(store.ops, hasLength(1));
+    expect(session.downloadStops, 1);
   });
 
   testWidgets('a storage error does not block logout', (tester) async {

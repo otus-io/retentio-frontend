@@ -46,6 +46,11 @@ class OfflineLearningSession {
     await pruneUnusedMedia(store);
   }
 
+  /// Stops running downloads and drops the ones paused for the app, keeping
+  /// the data. Used when logging out with the data kept, so no download of
+  /// this account resumes under the next account's login.
+  Future<void> stopDownloads() => downloader.whileHalted(null, () async {});
+
   /// Deletes the account's offline data, unsynced reviews and media files,
   /// after stopping running downloads and uploads.
   Future<void> clear() => downloader.whileHalted(

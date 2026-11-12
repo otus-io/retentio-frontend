@@ -456,6 +456,18 @@ void main() {
       expect(remote.patched, ['op1']);
     });
 
+    test('stopDownloads stops the download but keeps the data', () async {
+      final download = session.downloader.download('d1');
+      final stopped = session.stopDownloads();
+      deckGate.complete();
+      patchGate.complete();
+      await stopped;
+
+      expect(await download, isFalse);
+      expect(await store.getDeck('d1'), isNotNull);
+      expect(await store.getOperations(), hasLength(2));
+    });
+
     test('background work runs again once removal is done', () async {
       deckGate.complete();
       patchGate.complete();
