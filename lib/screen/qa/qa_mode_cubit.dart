@@ -271,7 +271,7 @@ class QaModeCubit extends Cubit<QaModeState> {
       ),
     );
     if (ids.isEmpty) return;
-    await _loadCurrentFact();
+    await _loadCurrentFact(generation);
     if (_isStale(generation)) return;
     await _refreshHeader();
   }
@@ -289,7 +289,7 @@ class QaModeCubit extends Cubit<QaModeState> {
         walkComplete: false,
       ),
     );
-    await _loadCurrentFact();
+    await _loadCurrentFact(_walkGeneration);
   }
 
   Future<String?> next() async {
@@ -398,7 +398,7 @@ class QaModeCubit extends Cubit<QaModeState> {
     if (isClosed) return null;
     emit(state.copyWith(busy: true, loading: true));
     try {
-      await _loadCurrentFact();
+      await _loadCurrentFact(_walkGeneration);
       _dropClearedSignOff(factId);
       await _refreshHeader();
     } catch (_) {
@@ -430,7 +430,7 @@ class QaModeCubit extends Cubit<QaModeState> {
     );
   }
 
-  Future<void> _loadCurrentFact() async {
+  Future<void> _loadCurrentFact(int generation) async {
     final factId = state.factId;
     if (factId == null) {
       emit(state.copyWith(loading: false));
@@ -444,7 +444,7 @@ class QaModeCubit extends Cubit<QaModeState> {
             deckId: deckId,
             factId: factId,
           );
-    if (isClosed) return;
+    if (_isStale(generation)) return;
     // A quality PUT replaces the whole record, so a fact whose record could
     // not be read is shown as failed rather than signed off blind.
     final fact = read?.known == true ? detail?.fact : null;

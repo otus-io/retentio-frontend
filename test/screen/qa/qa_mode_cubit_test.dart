@@ -307,6 +307,26 @@ void main() {
       },
     );
 
+    test('a fact load for an abandoned walk is not emitted', () async {
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+      );
+      final hold = Completer<void>();
+      adapter.qualityGetHold = hold.future;
+      final walk = startWalk(cubit);
+      await adapter.waitUntilQualityGetHold;
+
+      cubit.reopenColumnPicker();
+      hold.complete();
+      await walk;
+
+      expect(cubit.state.pickingColumns, isTrue);
+      expect(cubit.state.fact, isNull, reason: 'stale fact load dropped');
+      await cubit.close();
+    });
+
     test('an empty list without stats is a load failure, not done', () async {
       buildAdapter(factIds: const []);
       final cubit = QaModeCubit(

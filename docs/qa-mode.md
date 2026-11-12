@@ -18,7 +18,7 @@ Closing QA mode refreshes the deck list so a newly earned badge shows right away
 2. Walk facts (Previous/Skip; optional 課). Show every column (label from `deck.fields`) with text/audio and a **checkbox**.
 3. Check the columns that are OK (headword, example, …). Unchecked = not signed off. Pre-check columns that already have `model: human` on GET quality.
 4. **Verified** is enabled only when every scoreable column is checked; it then sends quality and advances. **Skip** moves to the next fact without signing off, so the fact comes back in a later walk (disabled on the last fact).
-5. **Bad column → Edit** that text/audio. `PATCH` overlay, then **immediately** `POST …/edit`. Do not PUT `human`/10 on a column until it is checked and you advance with **Verified** (or after author **accept**, then QA checks it).
+5. **Bad column → Edit** that text/audio. On a source deck the edit saves in place. On an imported deck, `PATCH` overlay, then **immediately** `POST …/edit`. Do not PUT `human`/10 on a column until it is checked and you advance with **Verified** (or after author **accept**, then QA checks it).
 6. Report issue stays `POST …/report` (bugs only).
 
 ```mermaid

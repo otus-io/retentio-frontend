@@ -336,21 +336,6 @@ void main() {
         'id': 'deck-published-3',
         'name': 'Changed Deck',
         'published_version': 2,
-        'stats': {
-          'cards_count': 1,
-          'unseen_cards': 1,
-          'due_cards': 0,
-          'facts_count': 1,
-          'reviewed_cards': 0,
-          'hidden_cards': 0,
-          'new_cards_today': 0,
-          'last_reviewed_at': 0,
-        },
-        'rate': 10,
-        'min_interval': 60,
-        'def_interval': 300,
-        'max_interval': 86400,
-        'owner': {'username': 'u', 'email': 'u@t.com'},
         'fields': ['Front', 'Back'],
       });
 

@@ -69,7 +69,7 @@ Retentio Frontend is a Flutter app (Riverpod, go_router, Dio) for vocabulary lea
 ### Hooks
 
 - **pre-commit**: Runs formatting, linting, and tests for changed files
-- Install hooks: `./utils/scripts/setup-hooks.sh`
+- Install hooks: `./utils/setup-hooks.sh`
 
 ## Validate and keep changes minimal
 

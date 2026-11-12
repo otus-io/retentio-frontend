@@ -85,6 +85,14 @@ class FakeQaApiAdapter implements HttpClientAdapter {
     return next.future;
   }
 
+  /// Optional gate awaited before answering `GET …/facts/{id}/quality`.
+  Future<void>? qualityGetHold;
+
+  final Completer<void> _qualityGetHoldStarted = Completer<void>();
+
+  /// Completes the first time [qualityGetHold] is awaited (if set).
+  Future<void> get waitUntilQualityGetHold => _qualityGetHoldStarted.future;
+
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
@@ -132,6 +140,13 @@ class FakeQaApiAdapter implements HttpClientAdapter {
         });
       }
       if (method == 'GET') {
+        final hold = qualityGetHold;
+        if (hold != null) {
+          if (!_qualityGetHoldStarted.isCompleted) {
+            _qualityGetHoldStarted.complete();
+          }
+          await hold;
+        }
         if (qualityGetFails) return _error('Error retrieving quality', 500);
         final entries = qualityByFactId[factId];
         if (entries == null) return _error('Quality not found', 404);

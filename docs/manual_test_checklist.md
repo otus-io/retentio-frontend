@@ -374,7 +374,7 @@ Report sends immediately from the card menu. It does not appear in the outbox.
 
 ## 16. QA mode (imported decks, `docs/qa-mode.md`)
 
-- [ ] Deck menu shows **QA mode** on imported decks only
+- [ ] Deck menu shows **QA mode** on both source and imported decks
 - [ ] Columns already verified by a human start checked; columns without text/audio are disabled
 - [ ] **Verified** confirm sheet lists the checked field names + PUT JSON; sending saves quality
 - [ ] **Verified** signs off the checked columns and moves to the next fact; **Skip** moves on without signing off
