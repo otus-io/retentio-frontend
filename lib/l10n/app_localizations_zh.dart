@@ -1756,6 +1756,65 @@ class AppLocalizationsZh extends AppLocalizations {
   String get qaModeWalkComplete => '这些栏目已核验完成，谢谢。';
 
   @override
+  String get qaReviewType => 'QA 校验审核';
+
+  @override
+  String qaReviewSummary(int facts, int aspects) {
+    return '已校验 $facts 个词条（$aspects 个字段）';
+  }
+
+  @override
+  String get qaReviewSendToAuthor => '发送校验给作者';
+
+  @override
+  String get qaReviewSendHint => '请作者采纳你的校验，卡组即可在发现页获得 QA 徽章。';
+
+  @override
+  String qaReviewSent(int aspects) {
+    return '已向作者发送 $aspects 个已校验字段';
+  }
+
+  @override
+  String get qaReviewNothingToSend => '暂无可发送的内容。只有与作者当前版本一致的已校验字段才能发送。';
+
+  @override
+  String get qaReviewOwnDeck => '这是你自己的卡组，你的校验已经生效。';
+
+  @override
+  String qaReviewAccepted(int signed) {
+    return '已签署 $signed 个字段';
+  }
+
+  @override
+  String get qaReviewViewFields => '查看字段';
+
+  @override
+  String qaReviewPreviewSummary(int ready, int total) {
+    return '$total 个字段中有 $ready 个可签署';
+  }
+
+  @override
+  String get qaReviewStatusReady => '可签署';
+
+  @override
+  String get qaReviewStatusChanged => '内容已变更';
+
+  @override
+  String get qaReviewStatusVerified => '已校验';
+
+  @override
+  String get qaReviewStatusRemoved => '词条已删除';
+
+  @override
+  String get qaReviewAspectText => '文本';
+
+  @override
+  String get qaReviewAspectAudio => '音频';
+
+  @override
+  String get qaReviewNoFields => '此请求中没有字段。';
+
+  @override
   String get qaVerifyConfirmTitle => '发送核验';
 
   @override

@@ -12,6 +12,7 @@ import 'package:retentio/screen/deck/fact_add_composer/fact_edit_logic.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_content.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_edit.dart';
 import 'package:retentio/screen/qa/qa_mode_cubit.dart';
+import 'package:retentio/screen/qa/qa_send_to_author_button.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_icon_button.dart';
 import 'package:retentio/widgets/app_toast.dart';
@@ -155,6 +156,7 @@ class _QaModeView extends StatelessWidget {
             }
             if (state.walkComplete) {
               return _QaWalkComplete(
+                deckId: deck.id,
                 onBack: () => Navigator.of(context).maybePop(),
               );
             }
@@ -216,8 +218,9 @@ class _QaModeView extends StatelessWidget {
 
 /// Shown after the last fact in the selected columns is signed off.
 class _QaWalkComplete extends StatelessWidget {
-  const _QaWalkComplete({required this.onBack});
+  const _QaWalkComplete({required this.deckId, required this.onBack});
 
+  final String deckId;
   final VoidCallback onBack;
 
   @override
@@ -242,6 +245,8 @@ class _QaWalkComplete extends StatelessWidget {
               style: theme.textTheme.headlineSmall,
             ),
             const SizedBox(height: 32),
+            QaSendToAuthorButton(importDeckId: deckId),
+            const SizedBox(height: 16),
             AppButton(
               label: loc.backToDeck,
               fullWidth: true,
@@ -364,6 +369,18 @@ class _QaColumnPickerState extends State<_QaColumnPicker> {
             fullWidth: true,
             leading: const Icon(LucideIcons.play),
             onPressed: _selected.isEmpty || _starting ? null : _start,
+          ),
+          BlocBuilder<QaModeCubit, QaModeState>(
+            buildWhen: (prev, next) => prev.stats != next.stats,
+            builder: (context, state) {
+              if ((state.stats?.verifiedAspects ?? 0) == 0) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: QaSendToAuthorButton(importDeckId: widget.deck.id),
+              );
+            },
           ),
         ],
       ),

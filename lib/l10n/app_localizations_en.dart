@@ -1862,6 +1862,92 @@ class AppLocalizationsEn extends AppLocalizations {
       'You\'re done with these columns. Thank you.';
 
   @override
+  String get qaReviewType => 'QA review';
+
+  @override
+  String qaReviewSummary(int facts, int aspects) {
+    String _temp0 = intl.Intl.pluralLogic(
+      facts,
+      locale: localeName,
+      other: 'Verified $facts facts',
+      one: 'Verified 1 fact',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      aspects,
+      locale: localeName,
+      other: '$aspects fields',
+      one: '1 field',
+    );
+    return '$_temp0 ($_temp1)';
+  }
+
+  @override
+  String get qaReviewSendToAuthor => 'Send verifications to author';
+
+  @override
+  String get qaReviewSendHint =>
+      'Ask the author to adopt your sign-offs so the deck can earn the QA badge in Discovery.';
+
+  @override
+  String qaReviewSent(int aspects) {
+    String _temp0 = intl.Intl.pluralLogic(
+      aspects,
+      locale: localeName,
+      other: 'Sent $aspects verified fields to the author',
+      one: 'Sent 1 verified field to the author',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get qaReviewNothingToSend =>
+      'Nothing to send yet. Only fields you verified that still match the author\'s version can be sent.';
+
+  @override
+  String get qaReviewOwnDeck =>
+      'This is your own deck, so your sign-offs already count.';
+
+  @override
+  String qaReviewAccepted(int signed) {
+    String _temp0 = intl.Intl.pluralLogic(
+      signed,
+      locale: localeName,
+      other: 'Signed off $signed fields',
+      one: 'Signed off 1 field',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get qaReviewViewFields => 'Review fields';
+
+  @override
+  String qaReviewPreviewSummary(int ready, int total) {
+    return '$ready of $total fields ready to sign off';
+  }
+
+  @override
+  String get qaReviewStatusReady => 'Ready';
+
+  @override
+  String get qaReviewStatusChanged => 'Changed since';
+
+  @override
+  String get qaReviewStatusVerified => 'Already verified';
+
+  @override
+  String get qaReviewStatusRemoved => 'Fact removed';
+
+  @override
+  String get qaReviewAspectText => 'text';
+
+  @override
+  String get qaReviewAspectAudio => 'audio';
+
+  @override
+  String get qaReviewNoFields => 'No fields in this request.';
+
+  @override
   String get qaVerifyConfirmTitle => 'Send verification';
 
   @override

@@ -60,6 +60,39 @@ class ContributionMediaAttachment {
   }
 }
 
+int? _contributionInt(dynamic v) {
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v);
+  return null;
+}
+
+/// Counts on a `qa_review` contribution: importer sign-offs it carries, plus
+/// what the author's accept signed and skipped (accept responses only).
+class QAReviewSummary {
+  const QAReviewSummary({
+    required this.facts,
+    required this.aspects,
+    this.signedAspects,
+    this.skippedAspects,
+  });
+
+  final int facts;
+  final int aspects;
+  final int? signedAspects;
+  final int? skippedAspects;
+
+  static QAReviewSummary? tryParse(dynamic raw) {
+    if (raw is! Map) return null;
+    return QAReviewSummary(
+      facts: _contributionInt(raw['facts']) ?? 0,
+      aspects: _contributionInt(raw['aspects']) ?? 0,
+      signedAspects: _contributionInt(raw['signed_aspects']),
+      skippedAspects: _contributionInt(raw['skipped_aspects']),
+    );
+  }
+}
+
 /// Author-inbox / submit contribution row from the sharing API.
 class DeckContribution {
   const DeckContribution({
@@ -80,7 +113,11 @@ class DeckContribution {
     this.proposedEntries = const [],
     this.mediaAttachments = const [],
     this.workingCopyUpdated = false,
+    this.qaReview,
   });
+
+  /// Contribution type asking the author to adopt an importer's QA sign-offs.
+  static const qaReviewType = 'qa_review';
 
   final String id;
   final String type;
@@ -105,6 +142,11 @@ class DeckContribution {
   final List<ContributionMediaAttachment> mediaAttachments;
 
   final bool workingCopyUpdated;
+
+  /// Present on `qa_review` rows.
+  final QAReviewSummary? qaReview;
+
+  bool get isQAReview => type == qaReviewType;
 
   bool get hasEntryDiff => reportedFact != null || proposedEntries.isNotEmpty;
 
@@ -210,13 +252,6 @@ class DeckContribution {
           .toList();
     }
 
-    int? toInt(dynamic v) {
-      if (v is int) return v;
-      if (v is num) return v.toInt();
-      if (v is String) return int.tryParse(v);
-      return null;
-    }
-
     return DeckContribution(
       id: (json['contribution_id'] ?? json['id'])?.toString() ?? '',
       type: json['type']?.toString() ?? '',
@@ -225,7 +260,7 @@ class DeckContribution {
       message: json['message']?.toString() ?? '',
       reporter: json['reporter']?.toString() ?? '',
       sourceDeckId: json['source_deck_id']?.toString() ?? '',
-      sourceVersion: toInt(json['source_version']) ?? 0,
+      sourceVersion: _contributionInt(json['source_version']) ?? 0,
       addTags: stringList(json['add_tags']),
       removeTags: stringList(json['remove_tags']),
       reportedTags: stringList(json['reported_tags']),
@@ -235,6 +270,7 @@ class DeckContribution {
       proposedEntries: parseEntries(json['proposed_entries']),
       mediaAttachments: parseAttachments(json['media_attachments']),
       workingCopyUpdated: json['working_copy_updated'] == true,
+      qaReview: QAReviewSummary.tryParse(json['qa_review']),
     );
   }
 }

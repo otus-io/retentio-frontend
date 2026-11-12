@@ -1,5 +1,6 @@
 import 'package:retentio/models/catalog_deck.dart';
 import 'package:retentio/models/deck_contribution.dart';
+import 'package:retentio/models/qa_review_preview.dart';
 import 'package:retentio/models/deck_updates.dart';
 import 'package:retentio/models/import_deck_result.dart';
 import 'package:retentio/services/apis/api_service.dart';
@@ -237,6 +238,46 @@ class DeckCatalogService {
         message: message,
       ),
     );
+  }
+
+  /// Asks the author to adopt this importer's QA sign-offs (`qa_review`).
+  /// Refreshes the importer's open request when one exists. Throws with the
+  /// API `msg` (e.g. `nothing to review`) on failure.
+  Future<QAReviewSummary> submitQAReview({
+    required String importDeckId,
+    String? message,
+  }) async {
+    final body = <String, dynamic>{
+      if (message != null && message.trim().isNotEmpty)
+        'message': message.trim(),
+    };
+    final res = await ApiService.post(
+      Api.deckQAReviewContribution,
+      pathParams: {'id': importDeckId},
+      body: body,
+    );
+    final summary = res?.data is Map
+        ? QAReviewSummary.tryParse((res!.data as Map)['qa_review'])
+        : null;
+    if (res == null || !res.isSuccess || summary == null) {
+      throw Exception(res?.msg ?? 'submit_contribution_failed');
+    }
+    return summary;
+  }
+
+  /// Author: live status of each sign-off in a `qa_review` request.
+  Future<QAReviewPreview> getQAReviewPreview({
+    required String sourceDeckId,
+    required String contributionId,
+  }) async {
+    final res = await ApiService.get(
+      Api.deckQAReviewPreview,
+      pathParams: {'id': sourceDeckId, 'contributionId': contributionId},
+    );
+    if (res == null || !res.isSuccess || res.data is! Map) {
+      throw Exception(res?.msg ?? 'qa_review_preview_failed');
+    }
+    return QAReviewPreview.fromJson(Map<String, dynamic>.from(res.data as Map));
   }
 
   Future<DeckContributionsPage> listContributions(

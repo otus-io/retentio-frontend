@@ -1759,6 +1759,66 @@ class AppLocalizationsJa extends AppLocalizations {
   String get qaModeWalkComplete => 'この列の確認は完了です。ありがとうございます。';
 
   @override
+  String get qaReviewType => 'QAレビュー';
+
+  @override
+  String qaReviewSummary(int facts, int aspects) {
+    return '$facts件の項目を確認（$aspectsフィールド）';
+  }
+
+  @override
+  String get qaReviewSendToAuthor => '確認結果を作成者に送る';
+
+  @override
+  String get qaReviewSendHint => '作成者があなたの確認を採用すると、デッキが発見ページでQAバッジを獲得できます。';
+
+  @override
+  String qaReviewSent(int aspects) {
+    return '確認済みの$aspectsフィールドを作成者に送りました';
+  }
+
+  @override
+  String get qaReviewNothingToSend =>
+      'まだ送れる内容がありません。作成者の現在の内容と一致する確認済みフィールドだけを送れます。';
+
+  @override
+  String get qaReviewOwnDeck => '自分のデッキなので、あなたの確認はすでに有効です。';
+
+  @override
+  String qaReviewAccepted(int signed) {
+    return '$signedフィールドを承認しました';
+  }
+
+  @override
+  String get qaReviewViewFields => 'フィールドを確認';
+
+  @override
+  String qaReviewPreviewSummary(int ready, int total) {
+    return '$totalフィールド中$ready件が承認可能';
+  }
+
+  @override
+  String get qaReviewStatusReady => '承認可能';
+
+  @override
+  String get qaReviewStatusChanged => '内容が変更済み';
+
+  @override
+  String get qaReviewStatusVerified => '確認済み';
+
+  @override
+  String get qaReviewStatusRemoved => '項目が削除済み';
+
+  @override
+  String get qaReviewAspectText => 'テキスト';
+
+  @override
+  String get qaReviewAspectAudio => '音声';
+
+  @override
+  String get qaReviewNoFields => 'このリクエストにフィールドはありません。';
+
+  @override
   String get qaVerifyConfirmTitle => '確認を送信';
 
   @override

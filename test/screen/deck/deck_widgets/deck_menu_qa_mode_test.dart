@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/core/network/network.dart';
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/screen/deck/deck_widgets/contributions_inbox_sheet.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_menu.dart';
 import 'package:retentio/screen/qa/qa_mode_screen.dart';
 import 'package:retentio/services/apis/api_service.dart';
@@ -79,6 +80,28 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('QA mode'), findsNothing);
+    });
+
+    testWidgets('source deck inbox gets the deck columns for QA reviews', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildTestableWidgetWithOverrides(
+          Scaffold(body: DeckMenu(deck: _deck(imported: false))),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(DeckMenu));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Contributions'));
+      await tester.pumpAndSettle();
+
+      final inbox = tester.widget<ContributionsInboxSheet>(
+        find.byType(ContributionsInboxSheet),
+      );
+      expect(inbox.sourceDeckId, 'deck-1');
+      expect(inbox.fields, ['Front']);
     });
   });
 }

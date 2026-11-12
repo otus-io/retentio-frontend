@@ -611,5 +611,60 @@ void main() {
 
       expect(find.text('Could not load this fact.'), findsOneWidget);
     });
+
+    group('send to author', () {
+      Future<void> pumpComplete(WidgetTester tester) async {
+        useAdapter(
+          factIds: const [],
+          stats: {'verified_aspects': 4, 'total_aspects': 4},
+        );
+        await pumpQaMode(tester);
+        expect(find.text('Send verifications to author'), findsOneWidget);
+      }
+
+      testWidgets('walk complete sends the sign-offs', (tester) async {
+        await pumpComplete(tester);
+        await tester.tap(find.text('Send verifications to author'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(adapter.qaReviewPosts, 1);
+        expect(
+          find.text('Sent 4 verified fields to the author'),
+          findsOneWidget,
+        );
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('nothing transferable shows why', (tester) async {
+        await pumpComplete(tester);
+        adapter.qaReviewError = 'nothing to review';
+        await tester.tap(find.text('Send verifications to author'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(
+          find.textContaining('Only fields you verified that still match'),
+          findsOneWidget,
+        );
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('column picker offers it once something is verified', (
+        tester,
+      ) async {
+        useAdapter(stats: {'verified_aspects': 1, 'total_aspects': 4});
+        await pumpQaMode(tester, startWalk: false);
+        expect(find.text('Send verifications to author'), findsOneWidget);
+      });
+
+      testWidgets('column picker hides it before any sign-off', (tester) async {
+        useAdapter(stats: {'verified_aspects': 0, 'total_aspects': 4});
+        await pumpQaMode(tester, startWalk: false);
+        expect(find.text('Send verifications to author'), findsNothing);
+      });
+    });
   });
 }

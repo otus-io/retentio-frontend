@@ -14,10 +14,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../helpers/test_wrapper.dart';
 
 class _InboxAdapter implements HttpClientAdapter {
-  _InboxAdapter({required this.contributions, this.failIds = const {}});
+  _InboxAdapter({
+    required this.contributions,
+    this.failIds = const {},
+    this.acceptExtras = const {},
+    this.preview,
+  });
 
   final List<Map<String, dynamic>> contributions;
   final Set<String> failIds;
+
+  /// Extra accept-response fields per contribution id (e.g. `qa_review`).
+  final Map<String, Map<String, dynamic>> acceptExtras;
+
+  /// `data` for `GET …/qa-review`; null answers 500.
+  Map<String, dynamic>? preview;
   final List<String> acceptedIds = [];
 
   @override
@@ -28,6 +39,13 @@ class _InboxAdapter implements HttpClientAdapter {
   ) async {
     final path = options.path;
     final method = options.method;
+
+    if (method == 'GET' && path.endsWith('/qa-review')) {
+      final data = preview;
+      return data == null
+          ? _error('Error processing contribution', 500)
+          : _ok(data);
+    }
 
     if (method == 'GET' && path.contains('/contributions')) {
       // After accepts, return only remaining open rows.
@@ -48,6 +66,7 @@ class _InboxAdapter implements HttpClientAdapter {
         'type': 'fact_edit',
         'status': 'accepted',
         'working_copy_updated': true,
+        ...?acceptExtras[id],
       });
     }
 
@@ -118,7 +137,14 @@ void main() {
   Future<void> pumpInbox(WidgetTester tester) async {
     await tester.pumpWidget(
       buildTestableWidgetWithoutProvider(
-        const Scaffold(body: ContributionsInboxSheet(sourceDeckId: 'src-1')),
+        const Scaffold(
+          body: SingleChildScrollView(
+            child: ContributionsInboxSheet(
+              sourceDeckId: 'src-1',
+              fields: ['Front'],
+            ),
+          ),
+        ),
       ),
     );
     await tester.pump();
@@ -308,6 +334,121 @@ void main() {
       expect(find.text('Contribution accepted'), findsOneWidget);
       expect(find.text('Accept all (1)'), findsOneWidget);
       AppToast.dismiss();
+    });
+
+    group('qa_review', () {
+      Map<String, dynamic> qaRow() => {
+        'contribution_id': 'qa1',
+        'type': 'qa_review',
+        'status': 'open',
+        'reporter': 'bob',
+        'qa_review': {'facts': 2, 'aspects': 4},
+      };
+
+      final previewData = {
+        'summary': {'ready': 1, 'changed': 1, 'verified': 0, 'removed': 1},
+        'facts': [
+          {
+            'fact_id': 'fa',
+            'preview': 'Apple',
+            'aspects': [
+              {'entry': 0, 'aspect': 'text', 'status': 'ready'},
+              {'entry': 1, 'aspect': 'audio', 'status': 'changed'},
+            ],
+          },
+          {
+            'fact_id': 'fb',
+            'preview': '',
+            'aspects': [
+              {'entry': 0, 'aspect': 'text', 'status': 'removed'},
+            ],
+          },
+        ],
+      };
+
+      testWidgets('shows the summary and signs off on accept', (tester) async {
+        adapter = _InboxAdapter(
+          contributions: [qaRow()],
+          acceptExtras: {
+            'qa1': {
+              'type': 'qa_review',
+              'qa_review': {
+                'facts': 2,
+                'aspects': 4,
+                'signed_aspects': 3,
+                'skipped_aspects': 1,
+              },
+            },
+          },
+        );
+        networkDioClient.dio.httpClientAdapter = adapter;
+
+        await pumpInbox(tester);
+        expect(find.text('QA review'), findsOneWidget);
+        expect(find.text('Verified 2 facts (4 fields)'), findsOneWidget);
+
+        await tester.tap(find.text('Accept'));
+        await tester.pumpAndSettle();
+        expect(adapter.acceptedIds, ['qa1']);
+        expect(find.text('Signed off 3 fields'), findsOneWidget);
+        AppToast.dismiss();
+      });
+
+      testWidgets('Review fields lists each field status', (tester) async {
+        adapter = _InboxAdapter(contributions: [qaRow()], preview: previewData);
+        networkDioClient.dio.httpClientAdapter = adapter;
+
+        await pumpInbox(tester);
+        await tester.tap(find.text('Review fields'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('1 of 3 fields ready to sign off'), findsOneWidget);
+        expect(find.text('Apple'), findsOneWidget);
+        expect(find.text('Front · text — Ready'), findsOneWidget);
+        expect(find.text('#2 · audio — Changed since'), findsOneWidget);
+        expect(find.text('fb'), findsOneWidget, reason: 'removed fact by id');
+        expect(find.text('Front · text — Fact removed'), findsOneWidget);
+      });
+
+      testWidgets('preview failure offers retry', (tester) async {
+        adapter = _InboxAdapter(contributions: [qaRow()]);
+        networkDioClient.dio.httpClientAdapter = adapter;
+
+        await pumpInbox(tester);
+        await tester.tap(find.text('Review fields'));
+        await tester.pumpAndSettle();
+        expect(find.text('Retry'), findsOneWidget);
+
+        adapter.preview = {
+          'summary': {'verified': 2},
+          'facts': [
+            {
+              'fact_id': 'fa',
+              'preview': 'Apple',
+              'aspects': [
+                {'entry': 0, 'aspect': 'text', 'status': 'verified'},
+              ],
+            },
+          ],
+        };
+        await tester.tap(find.text('Retry'));
+        await tester.pumpAndSettle();
+        expect(find.text('0 of 2 fields ready to sign off'), findsOneWidget);
+        expect(find.text('Front · text — Already verified'), findsOneWidget);
+      });
+
+      testWidgets('an empty request says so', (tester) async {
+        adapter = _InboxAdapter(
+          contributions: [qaRow()],
+          preview: {'summary': <String, dynamic>{}, 'facts': <dynamic>[]},
+        );
+        networkDioClient.dio.httpClientAdapter = adapter;
+
+        await pumpInbox(tester);
+        await tester.tap(find.text('Review fields'));
+        await tester.pumpAndSettle();
+        expect(find.text('No fields in this request.'), findsOneWidget);
+      });
     });
   });
 }

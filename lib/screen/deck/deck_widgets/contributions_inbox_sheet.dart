@@ -6,15 +6,24 @@ import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck_contribution.dart';
 import 'package:retentio/models/fact.dart';
 import 'package:retentio/screen/deck/card_widgets/card_audio.dart';
+import 'package:retentio/screen/deck/deck_widgets/qa_review_preview_sheet.dart';
 import 'package:retentio/services/apis/deck_catalog_service.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_toast.dart';
+import 'package:retentio/widgets/common_bottom_sheet.dart';
 
 /// Author inbox for open contributions on a **source** deck.
 class ContributionsInboxSheet extends StatefulWidget {
-  const ContributionsInboxSheet({super.key, required this.sourceDeckId});
+  const ContributionsInboxSheet({
+    super.key,
+    required this.sourceDeckId,
+    this.fields = const [],
+  });
 
   final String sourceDeckId;
+
+  /// Source deck column names, used to label `qa_review` fields.
+  final List<String> fields;
 
   @override
   State<ContributionsInboxSheet> createState() =>
@@ -87,12 +96,18 @@ class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
     final loc = AppLocalizations.of(context)!;
     setState(() => _busyId = c.id);
     try {
-      await DeckCatalogService.of.acceptContribution(
+      final accepted = await DeckCatalogService.of.acceptContribution(
         sourceDeckId: widget.sourceDeckId,
         contributionId: c.id,
       );
       if (!mounted) return;
-      AppToast.success(context, loc.contributionsAccepted);
+      final signed = accepted.qaReview?.signedAspects;
+      AppToast.success(
+        context,
+        signed == null
+            ? loc.contributionsAccepted
+            : loc.qaReviewAccepted(signed),
+      );
       await _load();
     } catch (e) {
       if (!mounted) return;
@@ -195,6 +210,23 @@ class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
     }
   }
 
+  String _fieldLabel(int entry) =>
+      entry < widget.fields.length ? widget.fields[entry] : '#${entry + 1}';
+
+  void _openQAReview(DeckContribution c) {
+    showCommonBottomSheet<void>(
+      context: context,
+      title: AppLocalizations.of(context)!.qaReviewViewFields,
+      initialChildSize: 0.7,
+      maxChildSize: 0.95,
+      child: QaReviewPreviewSheet(
+        sourceDeckId: widget.sourceDeckId,
+        contributionId: c.id,
+        fieldLabel: _fieldLabel,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -284,7 +316,9 @@ class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    c.type.replaceAll('_', ' '),
+                    c.isQAReview
+                        ? loc.qaReviewType
+                        : c.type.replaceAll('_', ' '),
                     style: theme.textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -302,6 +336,22 @@ class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
                   if (c.message.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text(c.message, style: theme.textTheme.bodyMedium),
+                  ],
+                  if (c.qaReview case final review?) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      loc.qaReviewSummary(review.facts, review.aspects),
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: AppButton(
+                        label: loc.qaReviewViewFields,
+                        size: AppButtonSize.sm,
+                        variant: AppButtonVariant.ghost,
+                        onPressed: () => _openQAReview(c),
+                      ),
+                    ),
                   ],
                   if (c.hasEntryDiff || c.hasTagDiff || c.hasFieldRename) ...[
                     const SizedBox(height: 10),

@@ -2211,6 +2211,36 @@
   "qaModePrevious": "Previous",
   "qaModeVerify": "Verified",
   "qaModeWalkComplete": "You're done with these columns. Thank you.",
+  "qaReviewType": "QA review",
+  "@qaReviewType": { "description": "Inbox label for a contribution asking the author to adopt an importer's QA sign-offs" },
+  "qaReviewSummary": "{facts, plural, =1{Verified 1 fact} other{Verified {facts} facts}} ({aspects, plural, =1{1 field} other{{aspects} fields}})",
+  "@qaReviewSummary": {
+    "placeholders": { "facts": { "type": "int" }, "aspects": { "type": "int" } }
+  },
+  "qaReviewSendToAuthor": "Send verifications to author",
+  "qaReviewSendHint": "Ask the author to adopt your sign-offs so the deck can earn the QA badge in Discovery.",
+  "qaReviewSent": "{aspects, plural, =1{Sent 1 verified field to the author} other{Sent {aspects} verified fields to the author}}",
+  "@qaReviewSent": {
+    "placeholders": { "aspects": { "type": "int" } }
+  },
+  "qaReviewNothingToSend": "Nothing to send yet. Only fields you verified that still match the author's version can be sent.",
+  "qaReviewOwnDeck": "This is your own deck, so your sign-offs already count.",
+  "qaReviewAccepted": "{signed, plural, =1{Signed off 1 field} other{Signed off {signed} fields}}",
+  "@qaReviewAccepted": {
+    "placeholders": { "signed": { "type": "int" } }
+  },
+  "qaReviewViewFields": "Review fields",
+  "qaReviewPreviewSummary": "{ready} of {total} fields ready to sign off",
+  "@qaReviewPreviewSummary": {
+    "placeholders": { "ready": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "qaReviewStatusReady": "Ready",
+  "qaReviewStatusChanged": "Changed since",
+  "qaReviewStatusVerified": "Already verified",
+  "qaReviewStatusRemoved": "Fact removed",
+  "qaReviewAspectText": "text",
+  "qaReviewAspectAudio": "audio",
+  "qaReviewNoFields": "No fields in this request.",
   "qaVerifyConfirmTitle": "Send verification",
   "qaVerifyConfirmFields": "Signing off: {fields}",
   "@qaVerifyConfirmFields": {

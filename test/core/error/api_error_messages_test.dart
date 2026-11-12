@@ -18,6 +18,17 @@ void main() {
       expect(ApiErrorMessages.resolve('  ', zh), zh.errorUnknown);
     });
 
+    test('maps QA review request errors', () {
+      expect(
+        ApiErrorMessages.resolve('nothing to review', en),
+        en.qaReviewNothingToSend,
+      );
+      expect(
+        ApiErrorMessages.resolve('cannot request review of your own deck', zh),
+        zh.qaReviewOwnDeck,
+      );
+    });
+
     test('maps known auth errors', () {
       expect(
         ApiErrorMessages.resolve('Invalid credentials', en),

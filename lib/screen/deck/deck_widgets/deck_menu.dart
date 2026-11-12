@@ -205,7 +205,10 @@ class DeckMenu extends StatelessWidget {
                       initialChildSize: 0.7,
                       minChildSize: 0.4,
                       maxChildSize: 0.95,
-                      child: ContributionsInboxSheet(sourceDeckId: deck.id),
+                      child: ContributionsInboxSheet(
+                        sourceDeckId: deck.id,
+                        fields: deck.fields,
+                      ),
                     );
                   },
                 );

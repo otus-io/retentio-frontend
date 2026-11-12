@@ -3394,6 +3394,108 @@ abstract class AppLocalizations {
   /// **'You\'re done with these columns. Thank you.'**
   String get qaModeWalkComplete;
 
+  /// Inbox label for a contribution asking the author to adopt an importer's QA sign-offs
+  ///
+  /// In en, this message translates to:
+  /// **'QA review'**
+  String get qaReviewType;
+
+  /// No description provided for @qaReviewSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{facts, plural, =1{Verified 1 fact} other{Verified {facts} facts}} ({aspects, plural, =1{1 field} other{{aspects} fields}})'**
+  String qaReviewSummary(int facts, int aspects);
+
+  /// No description provided for @qaReviewSendToAuthor.
+  ///
+  /// In en, this message translates to:
+  /// **'Send verifications to author'**
+  String get qaReviewSendToAuthor;
+
+  /// No description provided for @qaReviewSendHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the author to adopt your sign-offs so the deck can earn the QA badge in Discovery.'**
+  String get qaReviewSendHint;
+
+  /// No description provided for @qaReviewSent.
+  ///
+  /// In en, this message translates to:
+  /// **'{aspects, plural, =1{Sent 1 verified field to the author} other{Sent {aspects} verified fields to the author}}'**
+  String qaReviewSent(int aspects);
+
+  /// No description provided for @qaReviewNothingToSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to send yet. Only fields you verified that still match the author\'s version can be sent.'**
+  String get qaReviewNothingToSend;
+
+  /// No description provided for @qaReviewOwnDeck.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your own deck, so your sign-offs already count.'**
+  String get qaReviewOwnDeck;
+
+  /// No description provided for @qaReviewAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'{signed, plural, =1{Signed off 1 field} other{Signed off {signed} fields}}'**
+  String qaReviewAccepted(int signed);
+
+  /// No description provided for @qaReviewViewFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Review fields'**
+  String get qaReviewViewFields;
+
+  /// No description provided for @qaReviewPreviewSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{ready} of {total} fields ready to sign off'**
+  String qaReviewPreviewSummary(int ready, int total);
+
+  /// No description provided for @qaReviewStatusReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get qaReviewStatusReady;
+
+  /// No description provided for @qaReviewStatusChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed since'**
+  String get qaReviewStatusChanged;
+
+  /// No description provided for @qaReviewStatusVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Already verified'**
+  String get qaReviewStatusVerified;
+
+  /// No description provided for @qaReviewStatusRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Fact removed'**
+  String get qaReviewStatusRemoved;
+
+  /// No description provided for @qaReviewAspectText.
+  ///
+  /// In en, this message translates to:
+  /// **'text'**
+  String get qaReviewAspectText;
+
+  /// No description provided for @qaReviewAspectAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'audio'**
+  String get qaReviewAspectAudio;
+
+  /// No description provided for @qaReviewNoFields.
+  ///
+  /// In en, this message translates to:
+  /// **'No fields in this request.'**
+  String get qaReviewNoFields;
+
   /// No description provided for @qaVerifyConfirmTitle.
   ///
   /// In en, this message translates to:

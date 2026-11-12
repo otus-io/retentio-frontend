@@ -41,6 +41,12 @@ class FakeQaApiAdapter implements HttpClientAdapter {
   /// When true, `GET …/facts/ids` answers 500.
   bool factIdsFails;
 
+  /// When set, `POST …/contributions/qa-review` answers 400 with this `msg`.
+  String? qaReviewError;
+
+  /// How many times `POST …/contributions/qa-review` was hit.
+  int qaReviewPosts = 0;
+
   /// Facts left out of `GET …/facts/ids?unverified_columns=…`. A successful
   /// quality PUT adds its fact, like a server sign-off.
   final Set<String> verifiedFactIds;
@@ -123,6 +129,18 @@ class FakeQaApiAdapter implements HttpClientAdapter {
           'quality': {'fact_id': factId, 'entries': entries},
         });
       }
+    }
+
+    if (method == 'POST' && path.endsWith('/contributions/qa-review')) {
+      qaReviewPosts++;
+      final error = qaReviewError;
+      if (error != null) return _error(error, 400);
+      return _ok({
+        'contribution_id': 'qa-1',
+        'type': 'qa_review',
+        'status': 'open',
+        'qa_review': {'facts': verifiedFactIds.length, 'aspects': 4},
+      }, statusCode: 201);
     }
 
     if (method == 'POST' && path.endsWith('/edit')) {
