@@ -3352,6 +3352,18 @@ abstract class AppLocalizations {
   /// **'Fully QA-verified'**
   String get qaVerifiedBadge;
 
+  /// Discovery detail: importers whose contributions the author accepted
+  ///
+  /// In en, this message translates to:
+  /// **'Contributors: {names}'**
+  String discoveryContributors(String names);
+
+  /// No description provided for @discoveryContributorsMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Contributors: {names} +{more} more'**
+  String discoveryContributorsMore(String names, int more);
+
   /// No description provided for @qaModeVerifiedAspects.
   ///
   /// In en, this message translates to:

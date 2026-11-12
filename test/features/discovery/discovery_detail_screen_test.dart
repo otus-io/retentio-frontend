@@ -14,6 +14,8 @@ import '../../helpers/test_wrapper.dart';
 class _CatalogApi extends Interceptor {
   final paths = <String>[];
   bool qaVerified = false;
+  List<String> contributors = const [];
+  int contributorCount = 0;
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -36,6 +38,8 @@ class _CatalogApi extends Interceptor {
             'published_version': 1,
             'fact_count': 1,
             'qa_verified': qaVerified,
+            if (contributors.isNotEmpty) 'contributors': contributors,
+            if (contributorCount > 0) 'contributor_count': contributorCount,
           },
         },
       ),
@@ -111,6 +115,23 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await pumpRouter(tester);
     expect(find.byType(QaVerifiedBadge), findsOneWidget);
+  });
+
+  testWidgets('credits contributors under the author', (tester) async {
+    await pumpRouter(tester);
+    expect(find.textContaining('Contributors'), findsNothing);
+
+    api
+      ..contributors = ['bob', 'carol']
+      ..contributorCount = 2;
+    await tester.pumpWidget(const SizedBox());
+    await pumpRouter(tester);
+    expect(find.text('Contributors: @bob, @carol'), findsOneWidget);
+
+    api.contributorCount = 5;
+    await tester.pumpWidget(const SizedBox());
+    await pumpRouter(tester);
+    expect(find.text('Contributors: @bob, @carol +3 more'), findsOneWidget);
   });
 
   testWidgets('guest import shows a not-logged-in dialog', (tester) async {

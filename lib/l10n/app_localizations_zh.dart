@@ -1727,6 +1727,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get qaVerifiedBadge => '已完成人工校验';
 
   @override
+  String discoveryContributors(String names) {
+    return '贡献者：$names';
+  }
+
+  @override
+  String discoveryContributorsMore(String names, int more) {
+    return '贡献者：$names 等另外 $more 人';
+  }
+
+  @override
   String qaModeVerifiedAspects(int verified, int total) {
     return '已核验 $verified/$total';
   }

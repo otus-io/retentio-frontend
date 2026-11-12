@@ -12,6 +12,21 @@ void main() {
     'qa_verified': ?qaVerified,
   };
 
+  test('reads contributors and defaults them to none', () {
+    final credited = CatalogDeck.fromJson({
+      ...row(),
+      'contributors': ['bob', 'carol'],
+      'contributor_count': 12,
+    });
+    expect(credited.contributors, ['bob', 'carol']);
+    expect(credited.contributorCount, 12);
+    expect(credited.toJson()['contributor_count'], 12);
+
+    final none = CatalogDeck.fromJson(row());
+    expect(none.contributors, isEmpty);
+    expect(none.contributorCount, 0);
+  });
+
   test('reads qa_verified and defaults it to false', () {
     expect(CatalogDeck.fromJson(row(qaVerified: true)).qaVerified, isTrue);
     expect(CatalogDeck.fromJson(row()).qaVerified, isFalse);

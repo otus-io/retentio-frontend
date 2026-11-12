@@ -1833,6 +1833,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qaVerifiedBadge => 'Fully QA-verified';
 
   @override
+  String discoveryContributors(String names) {
+    return 'Contributors: $names';
+  }
+
+  @override
+  String discoveryContributorsMore(String names, int more) {
+    return 'Contributors: $names +$more more';
+  }
+
+  @override
   String qaModeVerifiedAspects(int verified, int total) {
     return 'Verified $verified/$total';
   }

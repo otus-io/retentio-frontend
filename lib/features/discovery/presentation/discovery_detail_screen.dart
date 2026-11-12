@@ -264,6 +264,10 @@ class _DetailBody extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (deck.contributors.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  _ContributorsLine(deck: deck),
+                ],
                 const SizedBox(height: 16),
                 // 统计行
                 Wrap(
@@ -597,6 +601,43 @@ class _ErrorView extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Credits importers whose contributions the author accepted.
+class _ContributorsLine extends StatelessWidget {
+  const _ContributorsLine({required this.deck});
+
+  final CatalogDeck deck;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final names = deck.contributors.map((n) => '@$n').join(', ');
+    final more = deck.contributorCount - deck.contributors.length;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          LucideIcons.users,
+          size: 14,
+          color: scheme.onSurface.withValues(alpha: 0.5),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            more > 0
+                ? loc.discoveryContributorsMore(names, more)
+                : loc.discoveryContributors(names),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: scheme.onSurface.withValues(alpha: 0.65),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

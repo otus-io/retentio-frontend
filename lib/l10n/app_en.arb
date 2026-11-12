@@ -2185,6 +2185,15 @@
   "qaModeFactsLoadFailed": "Could not load facts. Check your connection and try again.",
   "qaModeProgress": "{current} / {total} to verify",
   "qaVerifiedBadge": "Fully QA-verified",
+  "discoveryContributors": "Contributors: {names}",
+  "@discoveryContributors": {
+    "description": "Discovery detail: importers whose contributions the author accepted",
+    "placeholders": { "names": { "type": "String" } }
+  },
+  "discoveryContributorsMore": "Contributors: {names} +{more} more",
+  "@discoveryContributorsMore": {
+    "placeholders": { "names": { "type": "String" }, "more": { "type": "int" } }
+  },
   "@qaVerifiedBadge": { "description": "Tooltip on the badge of a deck whose every text/audio field is human-verified" },
   "@qaModeProgress": {
     "placeholders": { "current": { "type": "int" }, "total": { "type": "int" } }

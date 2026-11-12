@@ -542,6 +542,8 @@
   "qaModeFactsLoadFailed": "項目を読み込めませんでした。接続を確認して、もう一度お試しください。",
   "qaModeProgress": "要確認 {current} / {total}",
   "qaVerifiedBadge": "QA確認済み",
+  "discoveryContributors": "貢献者：{names}",
+  "discoveryContributorsMore": "貢献者：{names} ほか{more}人",
   "qaModeVerifiedAspects": "確認済み {verified}/{total}",
   "qaModeEdited": "編集 {count}",
   "qaModeColumnEmpty": "この列に確認する内容はありません",
