@@ -7,6 +7,9 @@ class AppForeground extends ValueNotifier<bool> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
   }
 
+  // Null: no lifecycle state reported yet, as at startup, where the app is
+  // launching into the foreground. Counted as resumed so the first download
+  // is not taken for paused.
   static bool _isResumed(AppLifecycleState? state) =>
       state == null || state == AppLifecycleState.resumed;
 

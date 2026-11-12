@@ -572,6 +572,7 @@ class OfflinePackageDownloader {
           if (_leftForeground.contains(deckId)) {
             interrupted = true;
             logger.w('Offline media $key paused with the app: $e');
+            continue; // Not saved, so not counted in the progress.
           } else {
             complete = false;
             logger.e('Offline media $key failed: $e', stackTrace: s);

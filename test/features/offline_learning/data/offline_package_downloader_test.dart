@@ -783,6 +783,7 @@ void main() {
       late int deckFetches;
       late int factFetches;
       late int mediaCalls;
+      late int cardFetches;
       late bool failCards;
 
       /// The first media file fails with the screen off; the cards fail while
@@ -792,6 +793,7 @@ void main() {
         deckFetches = 0;
         factFetches = 0;
         mediaCalls = 0;
+        cardFetches = 0;
         failCards = false;
         return build(
           foreground: foreground,
@@ -818,6 +820,7 @@ void main() {
             return writeMedia(url, path);
           },
           fetchCards: (_) async {
+            cardFetches++;
             if (failCards) throw StateError('broken');
             return const [];
           },
@@ -902,6 +905,43 @@ void main() {
         expect(deckFetches, 2);
         expect(factFetches, 2);
       });
+
+      test('the file cut off by the pause is not counted', () async {
+        final downloader = buildPausing();
+
+        expect(await downloader.download('d1'), isFalse);
+
+        expect(downloader.progressOf('d1').value, closeTo(0.35, 1e-9));
+      });
+
+      test('a list refresh while paused leaves one resume', () async {
+        final downloader = buildPausing();
+
+        await downloader.resumeMissing(['d1']);
+        await downloader.resumeMissing(['d1']);
+        expect(mediaCalls, 1);
+        foreground.value = true;
+        await settle();
+
+        expect(cardFetches, 1);
+        expect(store.decks['d1']?.isReady, isTrue);
+      });
+
+      test(
+        'a list refresh may finish a paused deck in the background',
+        () async {
+          final downloader = buildPausing();
+
+          expect(await downloader.download('d1'), isFalse);
+          await downloader.resumeMissing(['d1']);
+          expect(store.decks['d1']?.isReady, isTrue);
+          foreground.value = true;
+          await settle();
+
+          expect(deckFetches, 1);
+          expect(cardFetches, 1);
+        },
+      );
     });
   });
 
