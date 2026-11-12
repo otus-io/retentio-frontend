@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
@@ -27,6 +29,7 @@ class QaModeState {
     this.busy = false,
     this.walkComplete = false,
     this.factIdsLoadFailed = false,
+    this.signedOffFactIds = const {},
   });
 
   final bool loading;
@@ -57,6 +60,17 @@ class QaModeState {
 
   /// The walk's fact list could not be fetched (offline or server error).
   final bool factIdsLoadFailed;
+
+  /// Facts of this walk whose active columns were all signed off here.
+  final Set<String> signedOffFactIds;
+
+  /// Facts with anything to verify; the walk's own list when stats lack it.
+  int get totalFactCount => max(stats?.totalFacts ?? 0, factIds.length);
+
+  /// Facts with nothing left to verify in the active columns. [factIds] is
+  /// what was unverified when the walk started.
+  int get verifiedFactCount =>
+      totalFactCount - factIds.length + signedOffFactIds.length;
 
   String? get factId =>
       index >= 0 && index < factIds.length ? factIds[index] : null;
@@ -114,6 +128,7 @@ class QaModeState {
     bool? busy,
     bool? walkComplete,
     bool? factIdsLoadFailed,
+    Set<String>? signedOffFactIds,
   }) => QaModeState(
     loading: loading ?? this.loading,
     pickingColumns: pickingColumns ?? this.pickingColumns,
@@ -129,6 +144,7 @@ class QaModeState {
     busy: busy ?? this.busy,
     walkComplete: walkComplete ?? this.walkComplete,
     factIdsLoadFailed: factIdsLoadFailed ?? this.factIdsLoadFailed,
+    signedOffFactIds: signedOffFactIds ?? this.signedOffFactIds,
   );
 }
 
@@ -209,6 +225,7 @@ class QaModeCubit extends Cubit<QaModeState> {
         index: state.index,
         stats: state.stats,
         editedCount: state.editedCount,
+        signedOffFactIds: state.signedOffFactIds,
       ),
     );
   }
@@ -312,6 +329,9 @@ class QaModeCubit extends Cubit<QaModeState> {
     if (factId == null || state.checkedIndexes.isEmpty || state.busy) {
       return null;
     }
+    final signsOffFact = state.checkedIndexes.containsAll(
+      state.scoreableIndexes,
+    );
     emit(state.copyWith(busy: true));
     final online = await _isOnline().catchError((Object _) => true);
     if (isClosed) return null;
@@ -330,6 +350,11 @@ class QaModeCubit extends Cubit<QaModeState> {
       return rawApiErrorMessage(e);
     }
     onSignedOff?.call();
+    if (signsOffFact) {
+      emit(
+        state.copyWith(signedOffFactIds: {...state.signedOffFactIds, factId}),
+      );
+    }
     FactQuality? quality;
     try {
       quality = await FactQualityService.of.getFactQuality(
@@ -370,6 +395,7 @@ class QaModeCubit extends Cubit<QaModeState> {
     emit(state.copyWith(busy: true, loading: true));
     try {
       await _loadCurrentFact();
+      _dropClearedSignOff(factId);
       await _refreshHeader();
     } catch (_) {
       // Reload failed; busy/loading cleared in finally so QA isn't stuck.
@@ -379,6 +405,25 @@ class QaModeCubit extends Cubit<QaModeState> {
       }
     }
     return null;
+  }
+
+  /// Editing a source deck's fact clears the sign-off on what changed, so a
+  /// fact signed off earlier in this walk may need verifying again.
+  void _dropClearedSignOff(String factId) {
+    if (state.fact == null || !state.signedOffFactIds.contains(factId)) return;
+    final entries = state.entries;
+    final intact = state.scoreableIndexes.every((i) {
+      final aspects = state.quality?.aspectsAt(i) ?? const {};
+      return qaScoreableAspects(
+        entries[i],
+      ).every((aspect) => aspects[aspect]?.isHuman ?? false);
+    });
+    if (intact) return;
+    emit(
+      state.copyWith(
+        signedOffFactIds: {...state.signedOffFactIds}..remove(factId),
+      ),
+    );
   }
 
   Future<void> _loadCurrentFact() async {

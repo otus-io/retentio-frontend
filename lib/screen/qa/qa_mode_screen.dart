@@ -438,7 +438,7 @@ class _QaHeader extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text(
-              loc.qaModeProgress(state.index + 1, state.factIds.length),
+              loc.qaModeProgress(state.verifiedFactCount, state.totalFactCount),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

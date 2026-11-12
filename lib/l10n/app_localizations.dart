@@ -3352,11 +3352,11 @@ abstract class AppLocalizations {
   /// **'Could not load facts. Check your connection and try again.'**
   String get qaModeFactsLoadFailed;
 
-  /// No description provided for @qaModeProgress.
+  /// QA walk header: facts verified in the picked columns out of all facts to verify
   ///
   /// In en, this message translates to:
-  /// **'{current} / {total} to verify'**
-  String qaModeProgress(int current, int total);
+  /// **'{verified} / {total} verified'**
+  String qaModeProgress(int verified, int total);
 
   /// Tooltip on the badge of a deck whose every text/audio field is human-verified
   ///

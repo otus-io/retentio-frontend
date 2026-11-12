@@ -1727,8 +1727,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get qaModeFactsLoadFailed => '无法加载词条，请检查网络后重试。';
 
   @override
-  String qaModeProgress(int current, int total) {
-    return '待校验 $current / $total';
+  String qaModeProgress(int verified, int total) {
+    return '已校验 $verified / $total';
   }
 
   @override

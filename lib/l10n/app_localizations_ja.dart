@@ -1730,8 +1730,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get qaModeFactsLoadFailed => '項目を読み込めませんでした。接続を確認して、もう一度お試しください。';
 
   @override
-  String qaModeProgress(int current, int total) {
-    return '要確認 $current / $total';
+  String qaModeProgress(int verified, int total) {
+    return '確認済み $verified / $total';
   }
 
   @override

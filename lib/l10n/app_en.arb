@@ -2194,7 +2194,7 @@
   "qaModeEmpty": "This deck has no facts to review.",
   "qaModeFactLoadFailed": "Could not load this fact.",
   "qaModeFactsLoadFailed": "Could not load facts. Check your connection and try again.",
-  "qaModeProgress": "{current} / {total} to verify",
+  "qaModeProgress": "{verified} / {total} verified",
   "qaVerifiedBadge": "Fully QA-verified",
   "discoveryContributors": "Contributors: {names}",
   "@discoveryContributors": {
@@ -2207,7 +2207,8 @@
   },
   "@qaVerifiedBadge": { "description": "Tooltip on the badge of a deck whose every text/audio field is human-verified" },
   "@qaModeProgress": {
-    "placeholders": { "current": { "type": "int" }, "total": { "type": "int" } }
+    "description": "QA walk header: facts verified in the picked columns out of all facts to verify",
+    "placeholders": { "verified": { "type": "int" }, "total": { "type": "int" } }
   },
   "qaModeVerifiedAspects": "Verified {verified}/{total}",
   "@qaModeVerifiedAspects": {

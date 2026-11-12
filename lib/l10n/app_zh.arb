@@ -1319,12 +1319,12 @@
   "qaModeEmpty": "该卡组没有可校验的词条。",
   "qaModeFactLoadFailed": "无法加载该词条。",
   "qaModeFactsLoadFailed": "无法加载词条，请检查网络后重试。",
-  "qaModeProgress": "待校验 {current} / {total}",
+  "qaModeProgress": "已校验 {verified} / {total}",
   "qaVerifiedBadge": "已完成人工校验",
   "discoveryContributors": "贡献者：{names}",
   "discoveryContributorsMore": "贡献者：{names} 等另外 {more} 人",
   "@qaModeProgress": {
-    "placeholders": { "current": { "type": "int" }, "total": { "type": "int" } }
+    "placeholders": { "verified": { "type": "int" }, "total": { "type": "int" } }
   },
   "qaModeVerifiedAspects": "已核验 {verified}/{total}",
   "@qaModeVerifiedAspects": {

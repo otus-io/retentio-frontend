@@ -931,6 +931,131 @@ void main() {
     });
   });
 
+  group('fact progress', () {
+    QaModeCubit newCubit() => QaModeCubit(
+      deckId: 'imp-1',
+      deckFieldCount: 2,
+      isOnline: () async => true,
+    );
+
+    Future<void> signOffCurrent(QaModeCubit cubit) async {
+      for (final i in cubit.state.scoreableIndexes) {
+        cubit.toggleColumn(i);
+      }
+      expect(await cubit.next(), isNull);
+    }
+
+    test('counts verified facts against the deck total', () async {
+      buildAdapter(
+        stats: {'verified_aspects': 0, 'total_aspects': 20, 'total_facts': 10},
+      );
+      final cubit = newCubit();
+      await startWalk(cubit);
+
+      // Two of ten facts are still unverified in these columns.
+      expect(cubit.state.totalFactCount, 10);
+      expect(cubit.state.verifiedFactCount, 8);
+
+      await signOffCurrent(cubit);
+
+      expect(cubit.state.signedOffFactIds, {'fact-1'});
+      expect(cubit.state.verifiedFactCount, 9);
+      await cubit.close();
+    });
+
+    test('paging without signing off does not count', () async {
+      final cubit = newCubit();
+      await startWalk(cubit);
+
+      await cubit.goTo(1);
+      await cubit.prev();
+
+      expect(cubit.state.verifiedFactCount, 0);
+      await cubit.close();
+    });
+
+    test('uses the walk list when stats carry no fact total', () async {
+      final cubit = newCubit();
+      await startWalk(cubit);
+
+      expect(cubit.state.totalFactCount, 2);
+      expect(cubit.state.verifiedFactCount, 0);
+
+      await signOffCurrent(cubit);
+
+      expect(cubit.state.verifiedFactCount, 1);
+      await cubit.close();
+    });
+
+    test('a sign-off of only some columns does not count the fact', () async {
+      final cubit = newCubit();
+      await startWalk(cubit);
+
+      cubit.toggleColumn(0);
+      expect(await cubit.verify(), isNull);
+
+      expect(adapter.qualityPuts, hasLength(1));
+      expect(cubit.state.signedOffFactIds, isEmpty);
+      await cubit.close();
+    });
+
+    test('a failed sign-off does not count', () async {
+      buildAdapter(qualityPutFails: true);
+      final cubit = newCubit();
+      await startWalk(cubit);
+
+      for (final i in cubit.state.scoreableIndexes) {
+        cubit.toggleColumn(i);
+      }
+      expect(await cubit.next(), isNotNull);
+
+      expect(cubit.state.verifiedFactCount, 0);
+      await cubit.close();
+    });
+
+    test('survives the column picker and resets on a new walk', () async {
+      buildAdapter(
+        stats: {'verified_aspects': 0, 'total_aspects': 20, 'total_facts': 10},
+      );
+      final cubit = newCubit();
+      await startWalk(cubit);
+      await signOffCurrent(cubit);
+
+      cubit.reopenColumnPicker();
+      expect(cubit.state.verifiedFactCount, 9);
+
+      // The fresh list no longer holds the fact signed off above.
+      await startWalk(cubit);
+      expect(cubit.state.factIds, ['fact-2']);
+      expect(cubit.state.signedOffFactIds, isEmpty);
+      expect(cubit.state.verifiedFactCount, 9);
+      await cubit.close();
+    });
+
+    test('an edit that clears the sign-off uncounts the fact', () async {
+      final cubit = newCubit();
+      await startWalk(cubit);
+      await signOffCurrent(cubit);
+      await cubit.prev();
+
+      // An untouched record keeps the sign-off.
+      expect(await cubit.submitEdit(), isNull);
+      expect(cubit.state.verifiedFactCount, 1);
+
+      // A source-deck edit cleared the changed text's sign-off.
+      adapter.qualityByFactId['fact-1'] = {
+        '1': {
+          'text': {'score': 10, 'model': 'human'},
+        },
+      };
+      expect(await cubit.submitEdit(), isNull);
+
+      expect(cubit.state.signedOffFactIds, isEmpty);
+      expect(cubit.state.verifiedFactCount, 0);
+      await cubit.close();
+    });
+  });
+
   group('submitEdit', () {
     test('reloads overlay text and counters after FactEdit', () async {
       final entries = <String, List<Map<String, dynamic>>>{

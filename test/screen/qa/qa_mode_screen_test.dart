@@ -186,7 +186,7 @@ void main() {
       expect(find.text('headword'), findsOneWidget);
       expect(find.text('日文 50%'), findsOneWidget);
       expect(find.text('中文 0%'), findsOneWidget);
-      expect(find.textContaining('1 / 2 to verify'), findsOneWidget);
+      expect(find.text('0 / 2 verified'), findsOneWidget);
 
       final checkboxes = tester
           .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
@@ -260,7 +260,7 @@ void main() {
         containsAll(<String>['0', '1']),
       );
       expect(find.text('second'), findsOneWidget);
-      expect(find.textContaining('2 / 2 to verify'), findsOneWidget);
+      expect(find.text('1 / 2 verified'), findsOneWidget);
       expect(
         find.text("You're done with these columns. Thank you."),
         findsNothing,
@@ -273,7 +273,7 @@ void main() {
       useAdapter(factIds: const ['fact-1']);
       await pumpQaMode(tester);
 
-      expect(find.textContaining('1 / 1 to verify'), findsOneWidget);
+      expect(find.text('0 / 1 verified'), findsOneWidget);
 
       await tester.tap(find.text('日文'));
       await tester.pumpAndSettle();
@@ -288,7 +288,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(adapter.qualityPuts, hasLength(1));
-      expect(find.textContaining('1 / 1 to verify'), findsNothing);
+      expect(find.textContaining('/ 1 verified'), findsNothing);
       expect(find.text('headword'), findsNothing);
       expect(
         find.text("You're done with these columns. Thank you."),
@@ -390,7 +390,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Fact is not in the pinned snapshot'), findsOneWidget);
-      expect(find.textContaining('1 / 2 to verify'), findsOneWidget);
+      expect(find.text('0 / 2 verified'), findsOneWidget);
       await tester.pump(const Duration(seconds: 2));
     });
 
@@ -408,7 +408,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('second'), findsOneWidget);
-      expect(find.textContaining('2 / 2 to verify'), findsOneWidget);
+      expect(find.text('1 / 2 verified'), findsOneWidget);
       expect(find.text('Nothing to verify in this column'), findsOneWidget);
       final checkboxes = tester
           .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))

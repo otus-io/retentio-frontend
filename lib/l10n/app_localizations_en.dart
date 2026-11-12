@@ -1834,8 +1834,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not load facts. Check your connection and try again.';
 
   @override
-  String qaModeProgress(int current, int total) {
-    return '$current / $total to verify';
+  String qaModeProgress(int verified, int total) {
+    return '$verified / $total verified';
   }
 
   @override
