@@ -448,6 +448,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addFactSubmit => 'Save fact';
 
   @override
+  String get addFactMarkVerified =>
+      'I\'ve checked this fact (mark as verified)';
+
+  @override
   String get addFactUploadFailed => 'Upload failed. Try again.';
 
   @override

@@ -434,6 +434,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get addFactSubmit => '項目を保存';
 
   @override
+  String get addFactMarkVerified => 'この項目を確認しました（確認済みにする）';
+
+  @override
   String get addFactUploadFailed => 'アップロードに失敗しました。もう一度お試しください。';
 
   @override

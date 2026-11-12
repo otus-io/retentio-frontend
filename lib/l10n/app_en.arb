@@ -593,6 +593,10 @@
   "@addFactSubmit": {
     "description": "Submit add-fact form"
   },
+  "addFactMarkVerified": "I've checked this fact (mark as verified)",
+  "@addFactMarkVerified": {
+    "description": "Checkbox in the add-fact form: the author signs off the new fact's text and audio"
+  },
   "addFactUploadFailed": "Upload failed. Try again.",
   "@addFactUploadFailed": {
     "description": "Snackbar when media upload fails"

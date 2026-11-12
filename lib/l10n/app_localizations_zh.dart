@@ -434,6 +434,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get addFactSubmit => '保存词条';
 
   @override
+  String get addFactMarkVerified => '我已检查此词条（标记为已核验）';
+
+  @override
   String get addFactUploadFailed => '上传失败，请重试。';
 
   @override

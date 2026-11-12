@@ -75,7 +75,21 @@ void main() {
       expect(first['entries'], [
         {'text': 'a'},
       ]);
-      expect(b['verified'], isTrue, reason: 'in-app adds are signed off');
+      expect(
+        b.containsKey('verified'),
+        isFalse,
+        reason: 'no sign-off unless the author asks for one',
+      );
+    });
+
+    test('buildFactBody sends verified when the author signs off', () {
+      final b = AddFactPayload.buildFactBody(
+        entries: [
+          {'text': 'a'},
+        ],
+        verified: true,
+      );
+      expect(b['verified'], isTrue);
     });
 
     test('buildFactBody includes tags when tagNames is non-empty', () {

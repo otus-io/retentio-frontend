@@ -17,12 +17,14 @@ class AddFactPayload {
 
   /// `POST …/facts/append` body for one fact typed in the app.
   ///
-  /// `verified: true` records the owner's human sign-off on every text/audio
-  /// field (server ignores it on imported decks); bulk uploads omit it.
+  /// [verified] sends `verified: true`, the owner's human sign-off on every
+  /// text/audio field (server ignores it on imported decks). Off by default,
+  /// so a fact is only signed off when the author says they checked it.
   static Map<String, dynamic> buildFactBody({
     required List<Map<String, dynamic>> entries,
     List<String>? tagNames,
     List<String>? tagIds,
+    bool verified = false,
   }) {
     final fact = <String, dynamic>{'entries': entries};
     // Prefer existing tag IDs (TagPicker). Names auto-create; do not send both.
@@ -33,7 +35,7 @@ class AddFactPayload {
     }
     return {
       'facts': [fact],
-      'verified': true,
+      if (verified) 'verified': true,
     };
   }
 

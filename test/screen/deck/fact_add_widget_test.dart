@@ -64,6 +64,83 @@ void main() {
       },
     );
 
+    group('verified checkbox', () {
+      Future<FakeFactApiInterceptor> pumpComposer(
+        WidgetTester tester, {
+        String sourceDeckId = '',
+      }) async {
+        await setupTestEnvironment();
+        final interceptor = attachFakeFactApiInterceptor();
+        addTearDown(() {
+          detachFakeFactApiInterceptor(interceptor);
+          tearDownTestEnvironment();
+        });
+        final deck = sampleDeck(sourceDeckId: sourceDeckId);
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            Scaffold(body: FactAdd(deck: deck)),
+            overrides: [
+              deckListProvider.overrideWith(() => FakeDeckListNotifier([deck])),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+        return interceptor;
+      }
+
+      Future<void> saveFact(WidgetTester tester) async {
+        final textFields = find.byType(TextField);
+        await tester.enterText(textFields.at(0), 'Hello');
+        await tester.enterText(textFields.at(1), 'World');
+        await tester.tap(find.text('Save fact'));
+        await tester.pumpAndSettle();
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      }
+
+      bool isChecked(WidgetTester tester) =>
+          tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value!;
+
+      testWidgets('is off by default and sends no sign-off', (tester) async {
+        final interceptor = await pumpComposer(tester);
+
+        expect(isChecked(tester), isFalse);
+        await saveFact(tester);
+
+        expect(interceptor.addFactsCount, 1);
+        expect(
+          (interceptor.lastAddFactsBody as Map).containsKey('verified'),
+          isFalse,
+        );
+      });
+
+      testWidgets('ticked sends the sign-off, then clears for the next fact', (
+        tester,
+      ) async {
+        final interceptor = await pumpComposer(tester);
+
+        await tester.tap(find.byType(CheckboxListTile));
+        await tester.pump();
+        expect(isChecked(tester), isTrue);
+        await saveFact(tester);
+
+        expect((interceptor.lastAddFactsBody as Map)['verified'], isTrue);
+        expect(isChecked(tester), isFalse);
+      });
+
+      testWidgets('is hidden on an imported deck', (tester) async {
+        final interceptor = await pumpComposer(tester, sourceDeckId: 'src-1');
+
+        expect(find.byType(CheckboxListTile), findsNothing);
+        await saveFact(tester);
+
+        expect(
+          (interceptor.lastAddFactsBody as Map).containsKey('verified'),
+          isFalse,
+        );
+      });
+    });
+
     group('imported deck staging', () {
       Future<({List<String?> unsent, List<String?> sent, String toast})>
       addOnImport(

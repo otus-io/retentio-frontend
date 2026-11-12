@@ -27,6 +27,9 @@ class FakeFactApiInterceptor extends Interceptor {
   int getFactCount = 0;
   int patchFactCount = 0;
   int addFactsCount = 0;
+
+  /// Body of the last `POST …/facts/append`.
+  dynamic lastAddFactsBody;
   int contributionEditCount = 0;
   int contributionAddCount = 0;
   int contributionDeckTagsCount = 0;
@@ -57,6 +60,7 @@ class FakeFactApiInterceptor extends Interceptor {
 
     if (options.method == 'POST' && uri.contains('/facts/append')) {
       addFactsCount++;
+      lastAddFactsBody = options.data;
       handler.resolve(
         Response(
           requestOptions: options,

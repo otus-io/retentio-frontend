@@ -922,6 +922,12 @@ abstract class AppLocalizations {
   /// **'Save fact'**
   String get addFactSubmit;
 
+  /// Checkbox in the add-fact form: the author signs off the new fact's text and audio
+  ///
+  /// In en, this message translates to:
+  /// **'I\'ve checked this fact (mark as verified)'**
+  String get addFactMarkVerified;
+
   /// Snackbar when media upload fails
   ///
   /// In en, this message translates to:

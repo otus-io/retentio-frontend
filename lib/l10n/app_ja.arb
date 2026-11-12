@@ -142,6 +142,7 @@
   "addFactEntryNeedsContent": "各行にはテキストまたは少なくとも1つの添付が必要です。",
   "addFactFileTypeNotSupported": "このファイル形式はサポートされていません。",
   "addFactFileWrongSlot": "この添付タイプに合うファイルを選択してください。",
+  "addFactMarkVerified": "この項目を確認しました（確認済みにする）",
   "addFactFailed": "項目を追加できませんでした",
   "addFactSuccess": "項目を追加しました",
   "addFactSentToAuthor": "項目を追加し、作成者に送りました",

@@ -160,6 +160,7 @@
   "addFactEntryNeedsContent": "每一行至少需要填写文本或添加一种附件。",
   "addFactFileTypeNotSupported": "不支持此文件类型。",
   "addFactFileWrongSlot": "请选择与附件类型匹配的文件。",
+  "addFactMarkVerified": "我已检查此词条（标记为已核验）",
   "addFactFailed": "无法添加词条",
   "addFactSuccess": "已添加词条",
   "addFactSentToAuthor": "词条已添加并发送给作者",

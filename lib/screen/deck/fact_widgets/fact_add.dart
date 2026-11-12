@@ -72,6 +72,10 @@ class _FactAddState extends ConsumerState<FactAdd>
   Set<String> _selectedTagIds = {};
   List<Tag> _selectedTags = [];
 
+  /// Author's sign-off for the fact being typed; cleared after every save so
+  /// each fact is signed off on purpose.
+  bool _verified = false;
+
   List<GlobalKey> get _hostKeys => [for (final r in _rows) r.hostKey];
 
   @override
@@ -178,6 +182,7 @@ class _FactAddState extends ConsumerState<FactAdd>
         ..addAll(AddFactRowModel.listForDeckFields(widget.deck.fields));
       _selectedTagIds = {};
       _selectedTags = [];
+      _verified = false;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       for (final r in oldRows) {
@@ -268,6 +273,7 @@ class _FactAddState extends ConsumerState<FactAdd>
       final body = AddFactPayload.buildFactBody(
         entries: entries,
         tagIds: tagIds.isNotEmpty ? tagIds : null,
+        verified: _verified && !widget.deck.isImported,
       );
 
       Set<String>? idsBefore;
@@ -425,6 +431,14 @@ class _FactAddState extends ConsumerState<FactAdd>
                 },
                 onPickTags: _openTagPicker,
               ),
+              // The server only records sign-offs on the author's own deck.
+              if (!widget.deck.isImported)
+                _FactVerifiedRow(
+                  value: _verified,
+                  onChanged: _submitting
+                      ? null
+                      : (v) => setState(() => _verified = v),
+                ),
               const SizedBox(height: _kSubmitTopSpacing),
               AppButton(
                 label: loc.addFactSubmit,
@@ -436,6 +450,35 @@ class _FactAddState extends ConsumerState<FactAdd>
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Verified checkbox ─────────────────────────────────────────────────────────
+
+class _FactVerifiedRow extends StatelessWidget {
+  const _FactVerifiedRow({required this.value, required this.onChanged});
+
+  final bool value;
+
+  /// Null while the form is submitting.
+  final ValueChanged<bool>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final onChanged = this.onChanged;
+    // Own Material: the composer card's decoration would hide the tile's ink.
+    return Material(
+      type: MaterialType.transparency,
+      child: CheckboxListTile(
+        value: value,
+        onChanged: onChanged == null ? null : (v) => onChanged(v ?? false),
+        controlAffinity: ListTileControlAffinity.leading,
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+        visualDensity: VisualDensity.compact,
+        title: Text(AppLocalizations.of(context)!.addFactMarkVerified),
       ),
     );
   }
