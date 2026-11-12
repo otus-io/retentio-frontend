@@ -242,7 +242,7 @@ class _DetailBody extends StatelessWidget {
                     ),
                     if (deck.qaVerified) ...[
                       const SizedBox(width: 6),
-                      const QaVerifiedBadge(size: 20),
+                      const QaVerifiedBadge(size: 28),
                     ],
                   ],
                 ),

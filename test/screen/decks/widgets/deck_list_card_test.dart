@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retentio/widgets/qa_verified_badge.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/network/network.dart';
 import 'package:retentio/features/offline_learning/data/offline_package_downloader.dart';
@@ -109,11 +110,11 @@ void main() {
       });
 
       await tester.pumpWidget(_wrapCard(deck(verified: true)));
-      expect(find.byIcon(LucideIcons.badgeCheck), findsOneWidget);
+      expect(find.byType(QaVerifiedBadge), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox());
       await tester.pumpWidget(_wrapCard(deck(verified: false)));
-      expect(find.byIcon(LucideIcons.badgeCheck), findsNothing);
+      expect(find.byType(QaVerifiedBadge), findsNothing);
     });
 
     testWidgets(

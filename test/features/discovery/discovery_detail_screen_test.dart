@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retentio/widgets/qa_verified_badge.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/network/network.dart';
 import 'package:retentio/features/discovery/presentation/discovery_detail_screen.dart';
 import 'package:retentio/l10n/app_localizations.dart';
@@ -105,12 +105,12 @@ void main() {
 
   testWidgets('shows the QA badge only for verified decks', (tester) async {
     await pumpRouter(tester);
-    expect(find.byIcon(LucideIcons.badgeCheck), findsNothing);
+    expect(find.byType(QaVerifiedBadge), findsNothing);
 
     api.qaVerified = true;
     await tester.pumpWidget(const SizedBox());
     await pumpRouter(tester);
-    expect(find.byIcon(LucideIcons.badgeCheck), findsOneWidget);
+    expect(find.byType(QaVerifiedBadge), findsOneWidget);
   });
 
   testWidgets('guest import shows a not-logged-in dialog', (tester) async {
