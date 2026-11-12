@@ -71,6 +71,8 @@ class Api {
       '/api/decks/{id}/contributions/fields/rename';
   static const String deckFactTemplateContribution =
       '/api/decks/{id}/contributions/facts/{factId}/templates';
+  static const String deckQAReviewContribution =
+      '/api/decks/{id}/contributions/qa-review';
 
   // Author contribution inbox (source deck id)
   static const String deckContributions = '/api/decks/{id}/contributions';
@@ -78,6 +80,8 @@ class Api {
       '/api/decks/{id}/contributions/{contributionId}';
   static const String deckContributionAccept =
       '/api/decks/{id}/contributions/{contributionId}/accept';
+  static const String deckQAReviewPreview =
+      '/api/decks/{id}/contributions/{contributionId}/qa-review';
   static const String deckContributionMedia =
       '/api/decks/{id}/contributions/{contributionId}/media/{attachmentId}';
 }

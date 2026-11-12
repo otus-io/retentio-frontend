@@ -593,6 +593,10 @@
   "@addFactSubmit": {
     "description": "Submit add-fact form"
   },
+  "addFactMarkVerified": "I've checked this fact (mark as verified)",
+  "@addFactMarkVerified": {
+    "description": "Checkbox in the add-fact form: the author signs off the new fact's text and audio"
+  },
   "addFactUploadFailed": "Upload failed. Try again.",
   "@addFactUploadFailed": {
     "description": "Snackbar when media upload fails"
@@ -624,6 +628,10 @@
     "description": "When add-facts API fails"
   },
   "addFactSuccess": "Fact added",
+  "addFactSentToAuthor": "Fact added and sent to the author",
+  "addFactSavedUnsent": "Fact added. Couldn't send it to the author yet; retry from Unsent contributions.",
+  "deckTagsSentToAuthor": "Deck tags sent to the author",
+  "deckTagsSavedUnsent": "Deck tags saved. Couldn't send them to the author yet; retry from Unsent contributions.",
   "@addFactSuccess": {
     "description": "Snackbar after a fact was saved to the deck"
   },
@@ -2110,6 +2118,13 @@
       "failed": { "type": "int" }
     }
   },
+  "contributionsAcceptAllProgress": "Accepting {done} of {total}…",
+  "@contributionsAcceptAllProgress": {
+    "placeholders": {
+      "done": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
   "contributionsDismiss": "Dismiss",
   "contributionsResolve": "Resolve",
   "contributionsAccepted": "Contribution accepted",
@@ -2176,14 +2191,24 @@
   "pendingDismissSelected": "Dismiss selected",
   "pendingClearAll": "Clear all",
   "qaMode": "QA mode",
-  "qaModeEmpty": "This imported deck has no facts to review.",
+  "qaModeEmpty": "This deck has no facts to review.",
   "qaModeFactLoadFailed": "Could not load this fact.",
   "qaModeFactsLoadFailed": "Could not load facts. Check your connection and try again.",
-  "qaModeProgress": "{current} / {total} to verify",
+  "qaModeProgress": "{verified} / {total} verified",
   "qaVerifiedBadge": "Fully QA-verified",
+  "discoveryContributors": "Contributors: {names}",
+  "@discoveryContributors": {
+    "description": "Discovery detail: importers whose contributions the author accepted",
+    "placeholders": { "names": { "type": "String" } }
+  },
+  "discoveryContributorsMore": "Contributors: {names} +{more} more",
+  "@discoveryContributorsMore": {
+    "placeholders": { "names": { "type": "String" }, "more": { "type": "int" } }
+  },
   "@qaVerifiedBadge": { "description": "Tooltip on the badge of a deck whose every text/audio field is human-verified" },
   "@qaModeProgress": {
-    "placeholders": { "current": { "type": "int" }, "total": { "type": "int" } }
+    "description": "QA walk header: facts verified in the picked columns out of all facts to verify",
+    "placeholders": { "verified": { "type": "int" }, "total": { "type": "int" } }
   },
   "qaModeVerifiedAspects": "Verified {verified}/{total}",
   "@qaModeVerifiedAspects": {
@@ -2209,8 +2234,39 @@
     "placeholders": { "percent": { "type": "int" } }
   },
   "qaModePrevious": "Previous",
+  "qaModeSkip": "Skip",
+  "@qaModeSkip": { "description": "QA walk: move to the next fact without signing this one off" },
   "qaModeVerify": "Verified",
   "qaModeWalkComplete": "You're done with these columns. Thank you.",
+  "qaReviewType": "QA review",
+  "@qaReviewType": { "description": "Inbox label for a contribution asking the author to adopt an importer's QA sign-offs" },
+  "qaReviewSummary": "{facts, plural, =1{Verified 1 fact} other{Verified {facts} facts}} ({aspects, plural, =1{1 field} other{{aspects} fields}})",
+  "@qaReviewSummary": {
+    "placeholders": { "facts": { "type": "int" }, "aspects": { "type": "int" } }
+  },
+  "qaReviewSharedNotice": "Your sign-offs are shared with the deck author when you leave QA mode.",
+  "qaReviewSent": "{aspects, plural, =1{Sent 1 verified field to the author} other{Sent {aspects} verified fields to the author}}",
+  "@qaReviewSent": {
+    "placeholders": { "aspects": { "type": "int" } }
+  },
+  "qaReviewNothingToSend": "Nothing to send yet. Only fields you verified that still match the author's version can be sent.",
+  "qaReviewOwnDeck": "This is your own deck, so your sign-offs already count.",
+  "qaReviewAccepted": "{signed, plural, =1{Signed off 1 field} other{Signed off {signed} fields}}",
+  "@qaReviewAccepted": {
+    "placeholders": { "signed": { "type": "int" } }
+  },
+  "qaReviewViewFields": "Review fields",
+  "qaReviewPreviewSummary": "{ready} of {total} fields ready to sign off",
+  "@qaReviewPreviewSummary": {
+    "placeholders": { "ready": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "qaReviewStatusReady": "Ready",
+  "qaReviewStatusChanged": "Changed since",
+  "qaReviewStatusVerified": "Already verified",
+  "qaReviewStatusRemoved": "Fact removed",
+  "qaReviewAspectText": "text",
+  "qaReviewAspectAudio": "audio",
+  "qaReviewNoFields": "No fields in this request.",
   "qaVerifyConfirmTitle": "Send verification",
   "qaVerifyConfirmFields": "Signing off: {fields}",
   "@qaVerifyConfirmFields": {
@@ -2218,7 +2274,6 @@
   },
   "qaVerifySuccess": "Quality saved",
   "qaEditSubmitted": "Edit sent to the author",
-  "pendingStaged": "Saved to unsent contributions",
   "pendingSendSuccess": "{count, plural, =1{Sent 1 contribution} other{Sent {count} contributions}}",
   "@pendingSendSuccess": {
     "placeholders": { "count": { "type": "int" } }

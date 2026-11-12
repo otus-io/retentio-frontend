@@ -5,10 +5,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retentio/widgets/qa_verified_badge.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/network/network.dart';
 import 'package:retentio/features/offline_learning/data/offline_package_downloader.dart';
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/decks/bloc/deck_sharing_status_cubit.dart';
 import 'package:retentio/screen/decks/widgets/badged_app_icon_button.dart';
 import 'package:retentio/screen/decks/widgets/deck_list_card.dart';
@@ -39,6 +41,45 @@ class _EmptyContributionsAdapter implements HttpClientAdapter {
 
   @override
   void close({bool force = false}) {}
+}
+
+/// Answers the publish preview and the publish itself.
+class _PublishAdapter implements HttpClientAdapter {
+  int publishes = 0;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    final publishing = options.method == 'POST';
+    if (publishing) publishes++;
+    return ResponseBody.fromString(
+      jsonEncode({
+        'code': 0,
+        'msg': 'ok',
+        'data': publishing
+            ? {'published_version': 3}
+            : {'has_unpublished_changes': true},
+      }),
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+/// Counts deck list refreshes without hitting the network.
+class _CountingDeckListCubit extends DeckListCubit {
+  int refreshes = 0;
+
+  @override
+  Future<void> onRefresh() async => refreshes++;
 }
 
 class _ProgressDownloader implements OfflinePackageDownloader {
@@ -92,8 +133,39 @@ void main() {
       await tester.pumpWidget(_wrapCard(deck));
 
       expect(find.text('6/2387 (0.25%)'), findsOneWidget);
-      expect(find.byTooltip('Publish Deck'), findsOneWidget);
-      expect(find.byTooltip('Contributions'), findsOneWidget);
+    });
+
+    testWidgets('never-published deck shows no publish or inbox icon', (
+      tester,
+    ) async {
+      final deck = Deck.fromJson({
+        'id': 'deck-private-1',
+        'name': 'Private Deck',
+        'stats': {
+          'cards_count': 1,
+          'unseen_cards': 1,
+          'due_cards': 0,
+          'facts_count': 1,
+          'reviewed_cards': 0,
+          'hidden_cards': 0,
+          'new_cards_today': 0,
+          'last_reviewed_at': 0,
+        },
+        'rate': 10,
+        'min_interval': 60,
+        'def_interval': 300,
+        'max_interval': 86400,
+        'owner': {'username': 'u', 'email': 'u@t.com'},
+        'fields': ['Front', 'Back'],
+      });
+
+      // Even when flagged, a first publish stays in the deck menu.
+      // _wrapCard's BlocProvider owns and closes the cubit.
+      final cubit = DeckSharingStatusCubit()..markDirty(deck.id);
+      await tester.pumpWidget(_wrapCard(deck, cubit: cubit));
+
+      expect(find.byIcon(LucideIcons.share2), findsNothing);
+      expect(find.byIcon(LucideIcons.inbox), findsNothing);
     });
 
     testWidgets('shows the QA badge only on fully verified decks', (
@@ -109,11 +181,11 @@ void main() {
       });
 
       await tester.pumpWidget(_wrapCard(deck(verified: true)));
-      expect(find.byIcon(LucideIcons.badgeCheck), findsOneWidget);
+      expect(find.byType(QaVerifiedBadge), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox());
       await tester.pumpWidget(_wrapCard(deck(verified: false)));
-      expect(find.byIcon(LucideIcons.badgeCheck), findsNothing);
+      expect(find.byType(QaVerifiedBadge), findsNothing);
     });
 
     testWidgets(
@@ -199,7 +271,7 @@ void main() {
       expect(find.byTooltip('Downloading for offline study…'), findsNothing);
     });
 
-    testWidgets('shows update publish tooltip for published source', (
+    testWidgets('shows the publish icon only for unpublished changes', (
       tester,
     ) async {
       final deck = Deck.fromJson({
@@ -225,7 +297,7 @@ void main() {
         'fields': ['Front', 'Back'],
       });
 
-      final cubit = DeckSharingStatusCubit()..markDirty(deck.id);
+      final cubit = DeckSharingStatusCubit();
       await tester.pumpWidget(
         buildTestableWidgetWithoutProvider(
           BlocProvider.value(
@@ -235,10 +307,67 @@ void main() {
         ),
       );
 
+      // Up to date, no contributions: nothing to act on.
+      expect(find.byTooltip('Update Published Version'), findsNothing);
+      expect(find.byTooltip('Contributions'), findsNothing);
+
+      cubit.markDirty(deck.id);
+      await tester.pump();
+
       expect(find.byTooltip('Update Published Version'), findsOneWidget);
-      expect(find.byTooltip('Contributions'), findsOneWidget);
+      expect(find.byTooltip('Contributions'), findsNothing);
       expect(find.byTooltip('Check updates'), findsNothing);
       await cubit.close();
+    });
+
+    testWidgets('publishing from the card clears the icon and reloads decks', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({});
+      await ApiService.clearToken();
+      networkDioClient.configure(
+        baseUrl: 'http://localhost',
+        options: BaseOptions(),
+      );
+      final adapter = _PublishAdapter();
+      networkDioClient.dio.httpClientAdapter = adapter;
+
+      final deck = Deck.fromJson({
+        'id': 'deck-published-3',
+        'name': 'Changed Deck',
+        'published_version': 2,
+        'fields': ['Front', 'Back'],
+      });
+
+      final status = DeckSharingStatusCubit()..markDirty(deck.id);
+      final decks = _CountingDeckListCubit();
+      addTearDown(status.close);
+      addTearDown(decks.close);
+      await tester.pumpWidget(
+        buildTestableWidgetWithoutProvider(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<DeckSharingStatusCubit>.value(value: status),
+              BlocProvider<DeckListCubit>.value(value: decks),
+            ],
+            child: Scaffold(body: DeckListCard(deck: deck)),
+          ),
+        ),
+      );
+      final refreshesBefore = decks.refreshes;
+
+      await tester.tap(find.byTooltip('Update Published Version'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(FilledButton, 'Update Published Version'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(adapter.publishes, 1);
+      expect(status.state.shouldFlash(deck.id), isFalse);
+      expect(decks.refreshes, refreshesBefore + 1);
+      // Nothing left to publish, so the card icon is gone.
+      expect(find.byTooltip('Update Published Version'), findsNothing);
     });
 
     testWidgets('badges contribution inbox when open contributions exist', (
@@ -345,6 +474,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(cubit.state.hasOpenContributions(deck.id), isFalse);
+      expect(find.byTooltip('Contributions'), findsNothing);
     });
   });
 }

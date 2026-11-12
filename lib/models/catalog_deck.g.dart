@@ -27,6 +27,12 @@ CatalogDeck _$CatalogDeckFromJson(Map<String, dynamic> json) => CatalogDeck(
   qaVerified: json['qa_verified'] == null
       ? false
       : _isTrue(json['qa_verified']),
+  contributors:
+      (json['contributors'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      [],
+  contributorCount: (json['contributor_count'] as num?)?.toInt() ?? 0,
 );
 
 Map<String, dynamic> _$CatalogDeckToJson(CatalogDeck instance) =>
@@ -41,4 +47,6 @@ Map<String, dynamic> _$CatalogDeckToJson(CatalogDeck instance) =>
       'deck_tag_names': instance.deckTagNames,
       'published_at': instance.publishedAt?.toIso8601String(),
       'qa_verified': instance.qaVerified,
+      'contributors': instance.contributors,
+      'contributor_count': instance.contributorCount,
     };

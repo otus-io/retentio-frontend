@@ -64,14 +64,94 @@ void main() {
       },
     );
 
-    group('imported deck staging', () {
-      Future<List<String?>> addOnImport(
-        WidgetTester tester,
-        List<List<String>?> factIdsResponses,
+    group('verified checkbox', () {
+      Future<FakeFactApiInterceptor> pumpComposer(
+        WidgetTester tester, {
+        String sourceDeckId = '',
+      }) async {
+        await setupTestEnvironment();
+        final interceptor = attachFakeFactApiInterceptor();
+        addTearDown(() {
+          detachFakeFactApiInterceptor(interceptor);
+          tearDownTestEnvironment();
+        });
+        final deck = sampleDeck(sourceDeckId: sourceDeckId);
+        await tester.pumpWidget(
+          buildTestableWidgetWithOverrides(
+            Scaffold(body: FactAdd(deck: deck)),
+            overrides: [
+              deckListProvider.overrideWith(() => FakeDeckListNotifier([deck])),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+        return interceptor;
+      }
+
+      Future<void> saveFact(WidgetTester tester) async {
+        final textFields = find.byType(TextField);
+        await tester.enterText(textFields.at(0), 'Hello');
+        await tester.enterText(textFields.at(1), 'World');
+        await tester.tap(find.text('Save fact'));
+        await tester.pumpAndSettle();
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      }
+
+      bool isChecked(WidgetTester tester) =>
+          tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value!;
+
+      testWidgets('is off by default and sends no sign-off', (tester) async {
+        final interceptor = await pumpComposer(tester);
+
+        expect(isChecked(tester), isFalse);
+        await saveFact(tester);
+
+        expect(interceptor.addFactsCount, 1);
+        expect(
+          (interceptor.lastAddFactsBody as Map).containsKey('verified'),
+          isFalse,
+        );
+      });
+
+      testWidgets('ticked sends the sign-off, then clears for the next fact', (
+        tester,
       ) async {
+        final interceptor = await pumpComposer(tester);
+
+        await tester.tap(find.byType(CheckboxListTile));
+        await tester.pump();
+        expect(isChecked(tester), isTrue);
+        await saveFact(tester);
+
+        expect((interceptor.lastAddFactsBody as Map)['verified'], isTrue);
+        expect(isChecked(tester), isFalse);
+      });
+
+      testWidgets('is hidden on an imported deck', (tester) async {
+        final interceptor = await pumpComposer(tester, sourceDeckId: 'src-1');
+
+        expect(find.byType(CheckboxListTile), findsNothing);
+        await saveFact(tester);
+
+        expect(
+          (interceptor.lastAddFactsBody as Map).containsKey('verified'),
+          isFalse,
+        );
+      });
+    });
+
+    group('imported deck staging', () {
+      Future<({List<String?> unsent, List<String?> sent, String toast})>
+      addOnImport(
+        WidgetTester tester,
+        List<List<String>?> factIdsResponses, {
+        bool sendFails = false,
+      }) async {
         await setupTestEnvironment();
         final interceptor = attachFakeFactApiInterceptor();
         interceptor.factIdsResponses.addAll(factIdsResponses);
+        interceptor.contributionAddFails = sendFails;
         addTearDown(() {
           detachFakeFactApiInterceptor(interceptor);
           tearDownTestEnvironment();
@@ -92,43 +172,77 @@ void main() {
         await tester.tap(find.text('Save fact'));
         await tester.pumpAndSettle();
         expect(interceptor.addFactsCount, 1);
-        final pending = await tester.runAsync(
-          () => PendingContributionsStore.of.listPending(deck.id),
-        );
+        final toasts = [
+          'Fact added',
+          'Fact added and sent to the author',
+          "Fact added. Couldn't send it to the author yet; "
+              'retry from Unsent contributions.',
+        ].where((t) => find.text(t).evaluate().isNotEmpty).toList();
+        final store = PendingContributionsStore.of;
+        final unsent = await tester.runAsync(() => store.listPending(deck.id));
+        final sent = await tester.runAsync(() => store.listSent(deck.id));
         AppToast.dismiss();
         await tester.pumpAndSettle();
-        return [for (final item in pending!) item.factId];
+        return (
+          unsent: [for (final item in unsent!) item.factId],
+          sent: [for (final item in sent!) item.factId],
+          toast: toasts.single,
+        );
       }
 
-      testWidgets('stages only the fact the add created', (tester) async {
-        final staged = await addOnImport(tester, [
+      testWidgets('sends the new fact to the author', (tester) async {
+        final r = await addOnImport(tester, [
           ['old'],
           ['old', 'new'],
         ]);
 
-        expect(staged, ['new']);
+        expect(r.sent, ['new']);
+        expect(r.unsent, isEmpty);
+        expect(r.toast, 'Fact added and sent to the author');
       });
 
-      testWidgets('stages nothing when the baseline list fails', (
-        tester,
-      ) async {
-        final staged = await addOnImport(tester, [
+      testWidgets('keeps it unsent when sending fails', (tester) async {
+        final r = await addOnImport(tester, [
+          ['old'],
+          ['old', 'new'],
+        ], sendFails: true);
+
+        expect(r.unsent, ['new']);
+        expect(r.sent, isEmpty);
+        expect(r.toast, startsWith("Fact added. Couldn't send it"));
+      });
+
+      testWidgets('sends nothing when no new fact appears', (tester) async {
+        final r = await addOnImport(tester, [
+          ['old'],
+          ['old'],
+        ]);
+
+        expect(r.unsent, isEmpty);
+        expect(r.sent, isEmpty);
+        expect(r.toast, 'Fact added');
+      });
+
+      testWidgets('sends nothing when the baseline list fails', (tester) async {
+        final r = await addOnImport(tester, [
           null,
           ['old', 'new'],
         ]);
 
-        expect(staged, isEmpty);
+        expect(r.unsent, isEmpty);
+        expect(r.sent, isEmpty);
       });
 
-      testWidgets('stages nothing when the follow-up list fails', (
+      testWidgets('sends nothing when the follow-up list fails', (
         tester,
       ) async {
-        final staged = await addOnImport(tester, [
+        final r = await addOnImport(tester, [
           ['old'],
           null,
         ]);
 
-        expect(staged, isEmpty);
+        expect(r.unsent, isEmpty);
+        expect(r.sent, isEmpty);
       });
     });
 

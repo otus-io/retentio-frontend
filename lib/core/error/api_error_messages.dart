@@ -279,6 +279,8 @@ class ApiErrorMessages {
     'deck not found': (loc) => loc.apiFeedbackDeckNotFound,
     'fact not found': (loc) => loc.apiFeedbackFactNotFound,
     'daily contribution limit exceeded': (loc) => loc.apiFeedbackDailyLimit,
+    'nothing to review': (loc) => loc.qaReviewNothingToSend,
+    'cannot request review of your own deck': (loc) => loc.qaReviewOwnDeck,
     'contribution inbox is only available on source decks': (loc) =>
         loc.apiFeedbackInboxSourceOnly,
     'invalid status': (loc) => loc.apiInvalidFeedbackStatus,

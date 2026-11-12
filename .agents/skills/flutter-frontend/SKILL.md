@@ -1,7 +1,6 @@
 ---
-description: Flutter/Dart frontend conventions for the Retentio mobile app
-globs: lib/**/*.dart,lib/l10n/app_*.arb
-alwaysApply: false
+name: flutter-frontend
+description: "Flutter/Dart conventions for the Retentio app: architecture, shared AppButton/AppInput widgets, Riverpod, models, API services, i18n. Use when writing or editing lib/**/*.dart or lib/l10n/app_*.arb."
 ---
 
 # Flutter Frontend Conventions

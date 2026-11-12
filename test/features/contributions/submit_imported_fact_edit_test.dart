@@ -142,4 +142,144 @@ void main() {
       );
     });
   });
+
+  group('submitImportedFactAddContribution', () {
+    test('sends fact_add and moves the row to sent', () async {
+      final ok = await submitImportedFactAddContribution(
+        importDeckId: 'imp-1',
+        factId: 'local-1',
+        preview: 'Orange',
+      );
+
+      expect(ok, isTrue);
+      expect(interceptor.contributionAddCount, 1);
+      expect(await PendingContributionsStore.of.listPending('imp-1'), isEmpty);
+      final sent = await PendingContributionsStore.of.listSent('imp-1');
+      expect(sent.single.contributionId, 'cont-add-1');
+    });
+
+    test('keeps the row unsent when sending fails', () async {
+      interceptor.contributionAddFails = true;
+
+      final ok = await submitImportedFactAddContribution(
+        importDeckId: 'imp-1',
+        factId: 'local-1',
+      );
+
+      expect(ok, isFalse);
+      final pending = await PendingContributionsStore.of.listPending('imp-1');
+      expect(pending.single.kind, PendingContributionKind.add);
+      expect(pending.single.factId, 'local-1');
+    });
+  });
+
+  group('submitImportedDeckTagsContribution', () {
+    test('sends deck_tag_update and moves the row to sent', () async {
+      final ok = await submitImportedDeckTagsContribution(
+        importDeckId: 'imp-1',
+        addTags: const ['N5'],
+        removeTags: const ['old'],
+      );
+
+      expect(ok, isTrue);
+      expect(interceptor.contributionDeckTagsCount, 1);
+      expect(await PendingContributionsStore.of.listPending('imp-1'), isEmpty);
+      final sent = await PendingContributionsStore.of.listSent('imp-1');
+      expect(sent.single.kind, PendingContributionKind.deckTags);
+    });
+
+    test('keeps the row unsent when sending fails', () async {
+      interceptor.contributionDeckTagsFails = true;
+
+      final ok = await submitImportedDeckTagsContribution(
+        importDeckId: 'imp-1',
+        addTags: const ['N5'],
+        removeTags: const [],
+      );
+
+      expect(ok, isFalse);
+      final pending = await PendingContributionsStore.of.listPending('imp-1');
+      expect(pending.single.kind, PendingContributionKind.deckTags);
+      expect(pending.single.addTags, ['N5']);
+    });
+
+    test('folds an earlier unsent change into the next send', () async {
+      interceptor.contributionDeckTagsFails = true;
+      await submitImportedDeckTagsContribution(
+        importDeckId: 'imp-1',
+        addTags: const ['N5'],
+        removeTags: const ['old'],
+      );
+      interceptor.contributionDeckTagsFails = false;
+
+      final ok = await submitImportedDeckTagsContribution(
+        importDeckId: 'imp-1',
+        addTags: const ['N4'],
+        removeTags: const [],
+      );
+
+      expect(ok, isTrue);
+      final body = interceptor.contributionDeckTagsBodies.last as Map;
+      expect(body['add_tags'], unorderedEquals(['N5', 'N4']));
+      expect(body['remove_tags'], ['old']);
+      expect(await PendingContributionsStore.of.listPending('imp-1'), isEmpty);
+    });
+
+    test('undoing an unsent change clears it without a request', () async {
+      interceptor.contributionDeckTagsFails = true;
+      await submitImportedDeckTagsContribution(
+        importDeckId: 'imp-1',
+        addTags: const ['N5'],
+        removeTags: const [],
+      );
+      interceptor.contributionDeckTagsFails = false;
+
+      final ok = await submitImportedDeckTagsContribution(
+        importDeckId: 'imp-1',
+        addTags: const [],
+        removeTags: const ['N5'],
+      );
+
+      expect(ok, isTrue);
+      expect(interceptor.contributionDeckTagsCount, 1);
+      expect(await PendingContributionsStore.of.listPending('imp-1'), isEmpty);
+    });
+
+    test('overlapping sends for a deck run one at a time', () async {
+      final results = await Future.wait([
+        submitImportedDeckTagsContribution(
+          importDeckId: 'imp-1',
+          addTags: const ['N5'],
+          removeTags: const [],
+        ),
+        submitImportedDeckTagsContribution(
+          importDeckId: 'imp-1',
+          addTags: const ['N4'],
+          removeTags: const [],
+        ),
+      ]);
+
+      expect(results, [isTrue, isTrue]);
+      final bodies = interceptor.contributionDeckTagsBodies;
+      expect((bodies[0] as Map)['add_tags'], ['N5']);
+      expect((bodies[1] as Map)['add_tags'], ['N4']);
+      expect(await PendingContributionsStore.of.listPending('imp-1'), isEmpty);
+      final sent = await PendingContributionsStore.of.listSent('imp-1');
+      expect(sent, hasLength(2));
+    });
+  });
+
+  group('mergeTagDeltas', () {
+    test('keeps both changes and cancels opposites', () {
+      final merged = mergeTagDeltas(
+        priorAdd: const ['a', 'b'],
+        priorRemove: const ['x', 'y'],
+        add: const ['c', 'x'],
+        remove: const ['b', 'z'],
+      );
+
+      expect(merged.add, unorderedEquals(['a', 'c']));
+      expect(merged.remove, unorderedEquals(['y', 'z']));
+    });
+  });
 }

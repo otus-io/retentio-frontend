@@ -1,12 +1,12 @@
 ---
-description: Blackbox testing principles and Flutter test conventions
-globs: test/**/*.dart
-alwaysApply: false
+name: testing
+description: Blackbox testing principles and Flutter test conventions. Use when writing, editing or running anything under test/**/*.dart.
 ---
 
 # Testing Conventions
 
 ## Blackbox Testing Principle
+
 - Tests are written to **expose bugs**, not to pass
 - NEVER modify test data to work around production code bugs
 - NEVER modify production code to make tests pass
@@ -14,6 +14,7 @@ alwaysApply: false
 - Only modify tests to fix compile errors from API/type changes (e.g., after a model refactor)
 
 ## Test File Organization
+
 ```
 test/
 ├── models/        # Unit tests for data models (fromJson, toJson, edge cases)
@@ -27,6 +28,7 @@ test/
 ```
 
 ## Widget Test Pattern
+
 ```dart
 testWidgets('description', (WidgetTester tester) async {
   await tester.pumpWidget(
@@ -42,6 +44,7 @@ testWidgets('description', (WidgetTester tester) async {
 ```
 
 ## Model Test Pattern
+
 ```dart
 test('fromJson handles null values gracefully', () {
   final json = {'name': 'Test'};  // Deliberately missing fields
@@ -52,11 +55,13 @@ test('fromJson handles null values gracefully', () {
 ```
 
 ## Test Reports
+
 - Failed tests are documented as dated markdown summaries under `docs/` (e.g. `docs/2026-02-11-test-summary.md`)
 - Format: `YYYY-MM-DD-test-summary.md` with root cause analysis and fix suggestions
 - Reports include both English and Chinese content
 
 ## Running Tests
+
 ```bash
 flutter test                    # All tests
 flutter test test/models/       # Model tests only

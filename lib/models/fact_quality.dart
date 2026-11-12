@@ -70,12 +70,16 @@ class FactQualityStats {
   const FactQualityStats({
     required this.verifiedAspects,
     required this.totalAspects,
+    this.totalFacts = 0,
     this.editedCount = 0,
     this.columns = const {},
   });
 
   final int verifiedAspects;
   final int totalAspects;
+
+  /// Facts with at least one text/audio aspect to verify (0 when not sent).
+  final int totalFacts;
 
   /// Distinct facts with a new `fact_edit` contribution on this deck.
   final int editedCount;
@@ -100,6 +104,7 @@ class FactQualityStats {
     return FactQualityStats(
       verifiedAspects: _toInt(json['verified_aspects']) ?? 0,
       totalAspects: _toInt(json['total_aspects']) ?? 0,
+      totalFacts: _toInt(json['total_facts']) ?? 0,
       editedCount: _toInt(json['edited_count']) ?? 0,
       columns: columns,
     );

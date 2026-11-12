@@ -67,6 +67,24 @@ void main() {
   }) => cubit.startWalk(columns);
 
   group('startWalk', () {
+    test('a fact signed off in one column stays queued for another', () async {
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+      );
+      await startWalk(cubit, columns: {0});
+      final first = cubit.state.factId;
+      cubit.toggleColumn(0);
+      expect(await cubit.verify(), isNull);
+
+      await startWalk(cubit, columns: {0});
+      expect(cubit.state.factIds, isNot(contains(first)));
+      await startWalk(cubit, columns: {1});
+      expect(cubit.state.factIds, contains(first));
+      await cubit.close();
+    });
+
     test('loads the first fact and deck counters', () async {
       buildAdapter(stats: {'verified_aspects': 2, 'total_aspects': 6});
       final cubit = QaModeCubit(
@@ -266,6 +284,132 @@ void main() {
       await cubit.close();
     });
 
+    test(
+      'a load for an abandoned walk does not overwrite the picker',
+      () async {
+        final cubit = QaModeCubit(
+          deckId: 'imp-1',
+          deckFieldCount: 2,
+          isOnline: () async => true,
+        );
+        final hold = Completer<void>();
+        adapter.statsHold = hold.future;
+        final walk = startWalk(cubit);
+        await adapter.waitUntilStatsHold;
+
+        cubit.reopenColumnPicker();
+        hold.complete();
+        await walk;
+
+        expect(cubit.state.pickingColumns, isTrue);
+        expect(cubit.state.fact, isNull, reason: 'stale walk loaded no fact');
+        await cubit.close();
+      },
+    );
+
+    test('a fact load for an abandoned walk is not emitted', () async {
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+      );
+      final hold = Completer<void>();
+      adapter.qualityGetHold = hold.future;
+      final walk = startWalk(cubit);
+      await adapter.waitUntilQualityGetHold;
+
+      cubit.reopenColumnPicker();
+      hold.complete();
+      await walk;
+
+      expect(cubit.state.pickingColumns, isTrue);
+      expect(cubit.state.fact, isNull, reason: 'stale fact load dropped');
+      await cubit.close();
+    });
+
+    test('an empty list without stats is a load failure, not done', () async {
+      buildAdapter(factIds: const []);
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+      );
+
+      await startWalk(cubit);
+
+      expect(cubit.state.factIdsLoadFailed, isTrue);
+      expect(cubit.state.walkComplete, isFalse);
+      expect(cubit.state.loading, isFalse);
+      await cubit.close();
+    });
+
+    test('a fact without quality does not inherit the previous one', () async {
+      buildAdapter(
+        qualityByFactId: {
+          'fact-1': {
+            '0': {
+              'text': {'score': 10, 'model': 'human', 'by': 'bob'},
+            },
+          },
+        },
+      );
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+      );
+      await startWalk(cubit, columns: const {1});
+      expect(cubit.state.quality, isNotNull);
+
+      await cubit.goTo(1);
+
+      expect(cubit.state.factId, 'fact-2');
+      expect(cubit.state.quality, isNull);
+      expect(
+        cubit.pendingPutEntries(),
+        isEmpty,
+        reason: "fact-1's sign-off must not be merged into fact-2",
+      );
+      await cubit.close();
+    });
+
+    test('a failed load after moving on shows the error', () async {
+      buildAdapter(factIds: const ['fact-1', 'missing']);
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+      );
+      await startWalk(cubit);
+      expect(cubit.state.fact, isNotNull);
+
+      await cubit.goTo(1);
+
+      expect(cubit.state.fact, isNull, reason: 'no stale fact-1 under missing');
+      expect(cubit.state.factLoadFailed, isTrue);
+      await cubit.close();
+    });
+
+    test('reports each successful sign-off, not failed ones', () async {
+      var signOffs = 0;
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+        onSignedOff: () => signOffs++,
+      );
+      await startWalk(cubit);
+      cubit.toggleColumn(0);
+      adapter.qualityPutFails = true;
+      expect(await cubit.verify(), isNotNull);
+      expect(signOffs, 0);
+
+      adapter.qualityPutFails = false;
+      expect(await cubit.verify(), isNull, reason: 'column stays checked');
+      expect(signOffs, 1);
+      await cubit.close();
+    });
+
     test('flags a fact that cannot be loaded', () async {
       buildAdapter(factIds: const ['missing']);
       final cubit = QaModeCubit(
@@ -283,6 +427,28 @@ void main() {
   });
 
   group('navigation', () {
+    test('skip moves on without signing off', () async {
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+      );
+      await startWalk(cubit);
+
+      await cubit.skip();
+
+      expect(cubit.state.index, 1);
+      expect(cubit.state.entries.first.text, 'second');
+      expect(adapter.qualityPuts, isEmpty);
+      expect(cubit.state.signedOffFactIds, isEmpty);
+
+      // Last fact: nowhere to skip to, and the walk is not complete.
+      await cubit.skip();
+      expect(cubit.state.index, 1);
+      expect(cubit.state.walkComplete, isFalse);
+      await cubit.close();
+    });
+
     test('next and prev walk the fact list', () async {
       final cubit = QaModeCubit(
         deckId: 'imp-1',
@@ -595,6 +761,24 @@ void main() {
       await cubit.close();
     });
 
+    test('a fact whose record cannot be read is not signed off', () async {
+      adapter.qualityGetFails = true;
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+      );
+      await startWalk(cubit);
+
+      expect(cubit.state.factLoadFailed, isTrue);
+      expect(cubit.state.quality, isNull);
+      cubit.toggleColumn(1);
+      expect(cubit.state.canVerify, isFalse);
+      expect(await cubit.next(), isNull);
+      expect(adapter.qualityPuts, isEmpty, reason: 'would replace the record');
+      await cubit.close();
+    });
+
     test('clears checkboxes when the record cannot be re-read', () async {
       final cubit = QaModeCubit(
         deckId: 'imp-1',
@@ -603,6 +787,7 @@ void main() {
       );
       await startWalk(cubit);
       cubit.toggleColumn(1);
+      adapter.qualityGetFails = true;
 
       expect(await cubit.verify(), isNull);
 
@@ -784,6 +969,131 @@ void main() {
       expect(await cubit.verify(), isNull);
       expect(await cubit.submitEdit(), isNull);
       expect(adapter.qualityPuts, isEmpty);
+      await cubit.close();
+    });
+  });
+
+  group('fact progress', () {
+    QaModeCubit newCubit() => QaModeCubit(
+      deckId: 'imp-1',
+      deckFieldCount: 2,
+      isOnline: () async => true,
+    );
+
+    Future<void> signOffCurrent(QaModeCubit cubit) async {
+      for (final i in cubit.state.scoreableIndexes) {
+        cubit.toggleColumn(i);
+      }
+      expect(await cubit.next(), isNull);
+    }
+
+    test('counts verified facts against the deck total', () async {
+      buildAdapter(
+        stats: {'verified_aspects': 0, 'total_aspects': 20, 'total_facts': 10},
+      );
+      final cubit = newCubit();
+      await startWalk(cubit);
+
+      // Two of ten facts are still unverified in these columns.
+      expect(cubit.state.totalFactCount, 10);
+      expect(cubit.state.verifiedFactCount, 8);
+
+      await signOffCurrent(cubit);
+
+      expect(cubit.state.signedOffFactIds, {'fact-1'});
+      expect(cubit.state.verifiedFactCount, 9);
+      await cubit.close();
+    });
+
+    test('paging without signing off does not count', () async {
+      final cubit = newCubit();
+      await startWalk(cubit);
+
+      await cubit.goTo(1);
+      await cubit.prev();
+
+      expect(cubit.state.verifiedFactCount, 0);
+      await cubit.close();
+    });
+
+    test('uses the walk list when stats carry no fact total', () async {
+      final cubit = newCubit();
+      await startWalk(cubit);
+
+      expect(cubit.state.totalFactCount, 2);
+      expect(cubit.state.verifiedFactCount, 0);
+
+      await signOffCurrent(cubit);
+
+      expect(cubit.state.verifiedFactCount, 1);
+      await cubit.close();
+    });
+
+    test('a sign-off of only some columns does not count the fact', () async {
+      final cubit = newCubit();
+      await startWalk(cubit);
+
+      cubit.toggleColumn(0);
+      expect(await cubit.verify(), isNull);
+
+      expect(adapter.qualityPuts, hasLength(1));
+      expect(cubit.state.signedOffFactIds, isEmpty);
+      await cubit.close();
+    });
+
+    test('a failed sign-off does not count', () async {
+      buildAdapter(qualityPutFails: true);
+      final cubit = newCubit();
+      await startWalk(cubit);
+
+      for (final i in cubit.state.scoreableIndexes) {
+        cubit.toggleColumn(i);
+      }
+      expect(await cubit.next(), isNotNull);
+
+      expect(cubit.state.verifiedFactCount, 0);
+      await cubit.close();
+    });
+
+    test('survives the column picker and resets on a new walk', () async {
+      buildAdapter(
+        stats: {'verified_aspects': 0, 'total_aspects': 20, 'total_facts': 10},
+      );
+      final cubit = newCubit();
+      await startWalk(cubit);
+      await signOffCurrent(cubit);
+
+      cubit.reopenColumnPicker();
+      expect(cubit.state.verifiedFactCount, 9);
+
+      // The fresh list no longer holds the fact signed off above.
+      await startWalk(cubit);
+      expect(cubit.state.factIds, ['fact-2']);
+      expect(cubit.state.signedOffFactIds, isEmpty);
+      expect(cubit.state.verifiedFactCount, 9);
+      await cubit.close();
+    });
+
+    test('an edit that clears the sign-off uncounts the fact', () async {
+      final cubit = newCubit();
+      await startWalk(cubit);
+      await signOffCurrent(cubit);
+      await cubit.prev();
+
+      // An untouched record keeps the sign-off.
+      expect(await cubit.submitEdit(), isNull);
+      expect(cubit.state.verifiedFactCount, 1);
+
+      // A source-deck edit cleared the changed text's sign-off.
+      adapter.qualityByFactId['fact-1'] = {
+        '1': {
+          'text': {'score': 10, 'model': 'human'},
+        },
+      };
+      expect(await cubit.submitEdit(), isNull);
+
+      expect(cubit.state.signedOffFactIds, isEmpty);
+      expect(cubit.state.verifiedFactCount, 0);
       await cubit.close();
     });
   });

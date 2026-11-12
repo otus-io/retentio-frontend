@@ -10,7 +10,17 @@ class FactQualityService {
   static final FactQualityService of = FactQualityService._();
   FactQualityService._();
 
+  /// The fact's quality record, or `null` when it has none or the read failed.
+  /// Use [readFactQuality] when those two must not be confused.
   Future<FactQuality?> getFactQuality({
+    required String deckId,
+    required String factId,
+  }) async => (await readFactQuality(deckId: deckId, factId: factId)).quality;
+
+  /// Reads the quality record. `known` is false when the read failed, so a
+  /// `null` quality then does not mean "no record": a PUT replaces the whole
+  /// record and would wipe one that merely could not be read.
+  Future<({FactQuality? quality, bool known})> readFactQuality({
     required String deckId,
     required String factId,
   }) async {
@@ -18,11 +28,18 @@ class FactQualityService {
       Api.factQuality,
       pathParams: {'id': deckId, 'factId': factId},
     );
+    if (res?.exception?.response?.statusCode == 404) {
+      return (quality: null, known: true);
+    }
     final data = res?.data;
-    if (res?.isSuccess != true || data is! Map) return null;
-    final quality = data['quality'];
-    if (quality is! Map) return null;
-    return FactQuality.fromJson(Map<String, dynamic>.from(quality));
+    final quality = data is Map ? data['quality'] : null;
+    if (res?.isSuccess != true || quality is! Map) {
+      return (quality: null, known: false);
+    }
+    return (
+      quality: FactQuality.fromJson(Map<String, dynamic>.from(quality)),
+      known: true,
+    );
   }
 
   Future<FactQualityStats?> getDeckQualityStats(String deckId) async {

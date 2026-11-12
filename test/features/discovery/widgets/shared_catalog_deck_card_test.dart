@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:retentio/widgets/qa_verified_badge.dart';
 import 'package:retentio/features/discovery/presentation/widgets/shared_catalog_deck_card.dart';
 import 'package:retentio/models/catalog_deck.dart';
 
@@ -29,9 +29,9 @@ void main() {
 
   testWidgets('shows the QA badge only for verified decks', (tester) async {
     await tester.pumpWidget(card(verified: true));
-    expect(find.byIcon(LucideIcons.badgeCheck), findsOneWidget);
+    expect(find.byType(QaVerifiedBadge), findsOneWidget);
 
     await tester.pumpWidget(card(verified: false));
-    expect(find.byIcon(LucideIcons.badgeCheck), findsNothing);
+    expect(find.byType(QaVerifiedBadge), findsNothing);
   });
 }

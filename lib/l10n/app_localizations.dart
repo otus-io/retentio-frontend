@@ -922,6 +922,12 @@ abstract class AppLocalizations {
   /// **'Save fact'**
   String get addFactSubmit;
 
+  /// Checkbox in the add-fact form: the author signs off the new fact's text and audio
+  ///
+  /// In en, this message translates to:
+  /// **'I\'ve checked this fact (mark as verified)'**
+  String get addFactMarkVerified;
+
   /// Snackbar when media upload fails
   ///
   /// In en, this message translates to:
@@ -963,6 +969,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fact added'**
   String get addFactSuccess;
+
+  /// No description provided for @addFactSentToAuthor.
+  ///
+  /// In en, this message translates to:
+  /// **'Fact added and sent to the author'**
+  String get addFactSentToAuthor;
+
+  /// No description provided for @addFactSavedUnsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Fact added. Couldn\'t send it to the author yet; retry from Unsent contributions.'**
+  String get addFactSavedUnsent;
+
+  /// No description provided for @deckTagsSentToAuthor.
+  ///
+  /// In en, this message translates to:
+  /// **'Deck tags sent to the author'**
+  String get deckTagsSentToAuthor;
+
+  /// No description provided for @deckTagsSavedUnsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Deck tags saved. Couldn\'t send them to the author yet; retry from Unsent contributions.'**
+  String get deckTagsSavedUnsent;
 
   /// Default column label when deck has fewer names than rows
   ///
@@ -3136,6 +3166,12 @@ abstract class AppLocalizations {
   /// **'Accepted {sent}; {failed} failed'**
   String contributionsAcceptAllPartial(int sent, int failed);
 
+  /// No description provided for @contributionsAcceptAllProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepting {done} of {total}…'**
+  String contributionsAcceptAllProgress(int done, int total);
+
   /// No description provided for @contributionsDismiss.
   ///
   /// In en, this message translates to:
@@ -3301,7 +3337,7 @@ abstract class AppLocalizations {
   /// No description provided for @qaModeEmpty.
   ///
   /// In en, this message translates to:
-  /// **'This imported deck has no facts to review.'**
+  /// **'This deck has no facts to review.'**
   String get qaModeEmpty;
 
   /// No description provided for @qaModeFactLoadFailed.
@@ -3316,17 +3352,29 @@ abstract class AppLocalizations {
   /// **'Could not load facts. Check your connection and try again.'**
   String get qaModeFactsLoadFailed;
 
-  /// No description provided for @qaModeProgress.
+  /// QA walk header: facts verified in the picked columns out of all facts to verify
   ///
   /// In en, this message translates to:
-  /// **'{current} / {total} to verify'**
-  String qaModeProgress(int current, int total);
+  /// **'{verified} / {total} verified'**
+  String qaModeProgress(int verified, int total);
 
   /// Tooltip on the badge of a deck whose every text/audio field is human-verified
   ///
   /// In en, this message translates to:
   /// **'Fully QA-verified'**
   String get qaVerifiedBadge;
+
+  /// Discovery detail: importers whose contributions the author accepted
+  ///
+  /// In en, this message translates to:
+  /// **'Contributors: {names}'**
+  String discoveryContributors(String names);
+
+  /// No description provided for @discoveryContributorsMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Contributors: {names} +{more} more'**
+  String discoveryContributorsMore(String names, int more);
 
   /// No description provided for @qaModeVerifiedAspects.
   ///
@@ -3382,6 +3430,12 @@ abstract class AppLocalizations {
   /// **'Previous'**
   String get qaModePrevious;
 
+  /// QA walk: move to the next fact without signing this one off
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get qaModeSkip;
+
   /// No description provided for @qaModeVerify.
   ///
   /// In en, this message translates to:
@@ -3393,6 +3447,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You\'re done with these columns. Thank you.'**
   String get qaModeWalkComplete;
+
+  /// Inbox label for a contribution asking the author to adopt an importer's QA sign-offs
+  ///
+  /// In en, this message translates to:
+  /// **'QA review'**
+  String get qaReviewType;
+
+  /// No description provided for @qaReviewSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{facts, plural, =1{Verified 1 fact} other{Verified {facts} facts}} ({aspects, plural, =1{1 field} other{{aspects} fields}})'**
+  String qaReviewSummary(int facts, int aspects);
+
+  /// No description provided for @qaReviewSharedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Your sign-offs are shared with the deck author when you leave QA mode.'**
+  String get qaReviewSharedNotice;
+
+  /// No description provided for @qaReviewSent.
+  ///
+  /// In en, this message translates to:
+  /// **'{aspects, plural, =1{Sent 1 verified field to the author} other{Sent {aspects} verified fields to the author}}'**
+  String qaReviewSent(int aspects);
+
+  /// No description provided for @qaReviewNothingToSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to send yet. Only fields you verified that still match the author\'s version can be sent.'**
+  String get qaReviewNothingToSend;
+
+  /// No description provided for @qaReviewOwnDeck.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your own deck, so your sign-offs already count.'**
+  String get qaReviewOwnDeck;
+
+  /// No description provided for @qaReviewAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'{signed, plural, =1{Signed off 1 field} other{Signed off {signed} fields}}'**
+  String qaReviewAccepted(int signed);
+
+  /// No description provided for @qaReviewViewFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Review fields'**
+  String get qaReviewViewFields;
+
+  /// No description provided for @qaReviewPreviewSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{ready} of {total} fields ready to sign off'**
+  String qaReviewPreviewSummary(int ready, int total);
+
+  /// No description provided for @qaReviewStatusReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get qaReviewStatusReady;
+
+  /// No description provided for @qaReviewStatusChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed since'**
+  String get qaReviewStatusChanged;
+
+  /// No description provided for @qaReviewStatusVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Already verified'**
+  String get qaReviewStatusVerified;
+
+  /// No description provided for @qaReviewStatusRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Fact removed'**
+  String get qaReviewStatusRemoved;
+
+  /// No description provided for @qaReviewAspectText.
+  ///
+  /// In en, this message translates to:
+  /// **'text'**
+  String get qaReviewAspectText;
+
+  /// No description provided for @qaReviewAspectAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'audio'**
+  String get qaReviewAspectAudio;
+
+  /// No description provided for @qaReviewNoFields.
+  ///
+  /// In en, this message translates to:
+  /// **'No fields in this request.'**
+  String get qaReviewNoFields;
 
   /// No description provided for @qaVerifyConfirmTitle.
   ///
@@ -3417,12 +3567,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit sent to the author'**
   String get qaEditSubmitted;
-
-  /// No description provided for @pendingStaged.
-  ///
-  /// In en, this message translates to:
-  /// **'Saved to unsent contributions'**
-  String get pendingStaged;
 
   /// No description provided for @pendingSendSuccess.
   ///

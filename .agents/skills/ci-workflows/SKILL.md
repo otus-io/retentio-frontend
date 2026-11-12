@@ -1,7 +1,6 @@
 ---
-description: CI/CD workflow conventions for GitHub Actions
-globs: .github/workflows/**
-alwaysApply: false
+name: ci-workflows
+description: CI/CD workflow conventions for GitHub Actions in retentio-frontend. Use when reading or editing .github/workflows files or reasoning about CI checks.
 ---
 
 # CI/CD Workflow Conventions

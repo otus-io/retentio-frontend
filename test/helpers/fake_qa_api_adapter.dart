@@ -11,7 +11,7 @@ class FakeQaApiAdapter implements HttpClientAdapter {
   FakeQaApiAdapter({
     this.factIds = const ['fact-1', 'fact-2'],
     this.entriesByFactId = const {},
-    this.qualityByFactId = const {},
+    Map<String, Map<String, dynamic>> qualityByFactId = const {},
     this.mediaVersionsByFactId = const {},
     Map<String, dynamic>? stats,
     this.qualityPutFails = false,
@@ -19,6 +19,7 @@ class FakeQaApiAdapter implements HttpClientAdapter {
     this.factIdsFails = false,
     Set<String> verifiedFactIds = const {},
   }) : stats = stats == null ? null : Map<String, dynamic>.from(stats),
+       qualityByFactId = Map<String, Map<String, dynamic>>.of(qualityByFactId),
        verifiedFactIds = Set<String>.of(verifiedFactIds);
 
   final List<String> factIds;
@@ -27,7 +28,11 @@ class FakeQaApiAdapter implements HttpClientAdapter {
   final Map<String, List<Map<String, dynamic>>> entriesByFactId;
 
   /// Fact id → quality `entries` payload; missing ids answer 404 (no record).
+  /// A successful quality PUT stores its entries here, like the server.
   final Map<String, Map<String, dynamic>> qualityByFactId;
+
+  /// When true, `GET …/facts/{id}/quality` answers 500.
+  bool qualityGetFails = false;
 
   /// Fact id → snapshot `media_versions` for that fact's GET response.
   final Map<String, Map<String, int>> mediaVersionsByFactId;
@@ -41,7 +46,14 @@ class FakeQaApiAdapter implements HttpClientAdapter {
   /// When true, `GET …/facts/ids` answers 500.
   bool factIdsFails;
 
-  /// Facts left out of `GET …/facts/ids?unverified_columns=…`. A successful
+  /// When set, `POST …/contributions/qa-review` answers 400 with this `msg`.
+  String? qaReviewError;
+
+  /// How many times `POST …/contributions/qa-review` was hit.
+  int qaReviewPosts = 0;
+
+  /// Facts left out of `GET …/facts/ids?unverified_columns=…`, per column
+  /// when the fact has a quality record (see [_verifiedIn]). A successful
   /// quality PUT adds its fact, like a server sign-off.
   final Set<String> verifiedFactIds;
 
@@ -72,6 +84,14 @@ class FakeQaApiAdapter implements HttpClientAdapter {
     _statsHoldStarted = next;
     return next.future;
   }
+
+  /// Optional gate awaited before answering `GET …/facts/{id}/quality`.
+  Future<void>? qualityGetHold;
+
+  final Completer<void> _qualityGetHoldStarted = Completer<void>();
+
+  /// Completes the first time [qualityGetHold] is awaited (if set).
+  Future<void> get waitUntilQualityGetHold => _qualityGetHoldStarted.future;
 
   @override
   Future<ResponseBody> fetch(
@@ -107,6 +127,9 @@ class FakeQaApiAdapter implements HttpClientAdapter {
         qualityPuts.add(body);
         verifiedFactIds.add(factId);
         final entries = body['entries'];
+        qualityByFactId[factId] = entries is Map
+            ? Map<String, dynamic>.from(entries)
+            : <String, dynamic>{};
         return _ok({
           'quality': {
             'fact_id': factId,
@@ -117,12 +140,34 @@ class FakeQaApiAdapter implements HttpClientAdapter {
         });
       }
       if (method == 'GET') {
+        final hold = qualityGetHold;
+        if (hold != null) {
+          if (!_qualityGetHoldStarted.isCompleted) {
+            _qualityGetHoldStarted.complete();
+          }
+          await hold;
+        }
+        if (qualityGetFails) return _error('Error retrieving quality', 500);
         final entries = qualityByFactId[factId];
         if (entries == null) return _error('Quality not found', 404);
         return _ok({
           'quality': {'fact_id': factId, 'entries': entries},
         });
       }
+    }
+
+    if (method == 'POST' && path.endsWith('/contributions/qa-review')) {
+      qaReviewPosts++;
+      final error = qaReviewError;
+      if (error != null) return _error(error, 400);
+      final aspects = _humanAspectCount();
+      if (aspects == 0) return _error('nothing to review', 400);
+      return _ok({
+        'contribution_id': 'qa-1',
+        'type': 'qa_review',
+        'status': 'open',
+        'qa_review': {'facts': verifiedFactIds.length, 'aspects': aspects},
+      }, statusCode: 201);
     }
 
     if (method == 'POST' && path.endsWith('/edit')) {
@@ -145,7 +190,7 @@ class FakeQaApiAdapter implements HttpClientAdapter {
       return _ok({
         'fact_ids': [
           for (final id in factIds)
-            if (columns == null || !verifiedFactIds.contains(id)) id,
+            if (columns == null || !_verifiedIn(id, columns)) id,
         ],
       });
     }
@@ -168,6 +213,43 @@ class FakeQaApiAdapter implements HttpClientAdapter {
     }
 
     return _error('not found', 404);
+  }
+
+  /// Human sign-offs stored on verified facts (what a qa_review would carry).
+  /// Whether [id] needs no sign-off in the comma-separated [columns]. A fact
+  /// seeded as verified without a quality record counts for every column;
+  /// one with a record (e.g. after a PUT) is judged column by column.
+  bool _verifiedIn(String id, String columns) {
+    if (!verifiedFactIds.contains(id)) return false;
+    final record = qualityByFactId[id];
+    if (record == null) return true;
+    // Like the server: every text/audio the fact has in the column must be
+    // human-signed; a column without any needs no sign-off.
+    final entries = entriesByFactId[id] ?? const [];
+    return columns.split(',').every((column) {
+      final index = int.tryParse(column.trim());
+      if (index == null || index < 0 || index >= entries.length) return true;
+      final signed = record['$index'];
+      return const ['text', 'audio'].every((aspect) {
+        final content = entries[index][aspect];
+        if (content is! String || content.trim().isEmpty) return true;
+        final score = signed is Map ? signed[aspect] : null;
+        return score is Map && score['model'] == 'human';
+      });
+    });
+  }
+
+  int _humanAspectCount() {
+    var n = 0;
+    for (final id in verifiedFactIds) {
+      for (final entry in (qualityByFactId[id] ?? const {}).values) {
+        if (entry is! Map) continue;
+        for (final aspect in entry.values) {
+          if (aspect is Map && aspect['model'] == 'human') n++;
+        }
+      }
+    }
+    return n;
   }
 
   String _factIdFrom(String path, {required String suffix}) {

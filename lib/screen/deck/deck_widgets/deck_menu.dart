@@ -14,6 +14,7 @@ import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/deck/deck_widgets/deck_view_interval_slider_controls.dart';
 import 'package:retentio/screen/deck/fact_widgets/fact_add.dart';
 import 'package:retentio/screen/qa/qa_mode_screen.dart';
+import 'package:retentio/screen/qa/qa_share_with_author.dart';
 import 'package:retentio/screen/decks/widgets/deck_create.dart';
 import 'package:retentio/theme/theme_tokens.dart';
 import 'package:retentio/widgets/app_button.dart';
@@ -205,8 +206,16 @@ class DeckMenu extends StatelessWidget {
                       initialChildSize: 0.7,
                       minChildSize: 0.4,
                       maxChildSize: 0.95,
-                      child: ContributionsInboxSheet(sourceDeckId: deck.id),
-                    );
+                      child: ContributionsInboxSheet(
+                        sourceDeckId: deck.id,
+                        fields: deck.fields,
+                      ),
+                    ).whenComplete(() {
+                      // Accepts change the deck (facts, QA badge).
+                      if (context.mounted) {
+                        context.read<DeckListCubit>().onRefresh();
+                      }
+                    });
                   },
                 );
               },
@@ -270,24 +279,43 @@ class DeckMenu extends StatelessWidget {
                 onPressedBackgroundColor: scheme.surfaceContainerHighest,
               ),
             ),
-            PullDownMenuItem(
-              title: loc.qaMode,
-              onTap: () async {
-                await Future<void>.delayed(const Duration(milliseconds: 10));
-                if (!context.mounted) return;
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => QaModeScreen(deck: deck),
-                  ),
-                );
-              },
-              icon: LucideIcons.badgeCheck,
-              itemTheme: PullDownMenuItemTheme(
-                textStyle: menuItemStyle(scheme.onSurface),
-                onPressedBackgroundColor: scheme.surfaceContainerHighest,
-              ),
-            ),
           ],
+          PullDownMenuItem(
+            title: loc.qaMode,
+            onTap: () async {
+              await Future<void>.delayed(const Duration(milliseconds: 10));
+              if (!context.mounted) return;
+              var signed = false;
+              await Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => QaModeScreen(
+                    deck: deck,
+                    onSignedOff: () => signed = true,
+                  ),
+                ),
+              );
+              if (!context.mounted) return;
+              // Importers' sign-offs go to the author automatically. Sent on
+              // every close so a failed send is retried; the toast only
+              // follows this session's sign-offs.
+              if (deck.isImported) {
+                await shareQaSignOffsWithAuthor(
+                  context,
+                  deck.id,
+                  announce: signed,
+                );
+              }
+              // Sign-offs can turn the QA badge on; show it on the deck list.
+              if (context.mounted) {
+                await context.read<DeckListCubit>().onRefresh();
+              }
+            },
+            icon: LucideIcons.badgeCheck,
+            itemTheme: PullDownMenuItemTheme(
+              textStyle: menuItemStyle(scheme.onSurface),
+              onPressedBackgroundColor: scheme.surfaceContainerHighest,
+            ),
+          ),
           const PullDownMenuDivider.large(),
           PullDownMenuItem(
             title: loc.deleteDeck,

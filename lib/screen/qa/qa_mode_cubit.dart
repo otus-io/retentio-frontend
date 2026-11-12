@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
@@ -27,6 +29,7 @@ class QaModeState {
     this.busy = false,
     this.walkComplete = false,
     this.factIdsLoadFailed = false,
+    this.signedOffFactIds = const {},
   });
 
   final bool loading;
@@ -52,11 +55,22 @@ class QaModeState {
   final int editedCount;
   final bool busy;
 
-  /// Set after Next signs off the last fact of this column set.
+  /// Set after Verified signs off the last fact of this column set.
   final bool walkComplete;
 
   /// The walk's fact list could not be fetched (offline or server error).
   final bool factIdsLoadFailed;
+
+  /// Facts of this walk whose active columns were all signed off here.
+  final Set<String> signedOffFactIds;
+
+  /// Facts with anything to verify; the walk's own list when stats lack it.
+  int get totalFactCount => max(stats?.totalFacts ?? 0, factIds.length);
+
+  /// Facts with nothing left to verify in the active columns. [factIds] is
+  /// what was unverified when the walk started.
+  int get verifiedFactCount =>
+      totalFactCount - factIds.length + signedOffFactIds.length;
 
   String? get factId =>
       index >= 0 && index < factIds.length ? factIds[index] : null;
@@ -95,13 +109,17 @@ class QaModeState {
   bool get factLoadFailed =>
       !loading && !pickingColumns && factIds.isNotEmpty && fact == null;
 
+  /// `null` [fact] / [quality] keep the current value; pass [clearFact] /
+  /// [clearQuality] to reset them.
   QaModeState copyWith({
     bool? loading,
     bool? pickingColumns,
     List<String>? factIds,
     int? index,
     Fact? fact,
+    bool clearFact = false,
     FactQuality? quality,
+    bool clearQuality = false,
     Map<String, int>? mediaVersions,
     Set<int>? activeColumnIndexes,
     Set<int>? checkedIndexes,
@@ -110,13 +128,14 @@ class QaModeState {
     bool? busy,
     bool? walkComplete,
     bool? factIdsLoadFailed,
+    Set<String>? signedOffFactIds,
   }) => QaModeState(
     loading: loading ?? this.loading,
     pickingColumns: pickingColumns ?? this.pickingColumns,
     factIds: factIds ?? this.factIds,
     index: index ?? this.index,
-    fact: fact ?? this.fact,
-    quality: quality ?? this.quality,
+    fact: clearFact ? null : (fact ?? this.fact),
+    quality: clearQuality ? null : (quality ?? this.quality),
     mediaVersions: mediaVersions ?? this.mediaVersions,
     activeColumnIndexes: activeColumnIndexes ?? this.activeColumnIndexes,
     checkedIndexes: checkedIndexes ?? this.checkedIndexes,
@@ -125,23 +144,35 @@ class QaModeState {
     busy: busy ?? this.busy,
     walkComplete: walkComplete ?? this.walkComplete,
     factIdsLoadFailed: factIdsLoadFailed ?? this.factIdsLoadFailed,
+    signedOffFactIds: signedOffFactIds ?? this.signedOffFactIds,
   );
 }
 
-/// Linear QA walk over an imported deck: per-column sign-off plus immediate
-/// `fact_edit` submission. Kept out of the study bloc so a broken quality API
-/// only affects this screen.
+/// Linear QA walk over a deck (source or imported): per-column sign-off; edits
+/// save in place on source decks and become `fact_edit` contributions on
+/// imports. Kept out of the study bloc so a broken quality API only affects
+/// this screen.
 class QaModeCubit extends Cubit<QaModeState> {
   QaModeCubit({
     required this.deckId,
     required this.deckFieldCount,
     Future<bool> Function()? isOnline,
+    this.onSignedOff,
   }) : _isOnline = isOnline ?? hasNetworkConnection,
        super(const QaModeState());
 
   final String deckId;
   final int deckFieldCount;
+
+  /// Called after each successful sign-off (quality PUT).
+  final VoidCallback? onSignedOff;
   final Future<bool> Function() _isOnline;
+
+  /// Bumped when a walk starts or the picker reopens, so a slower load for an
+  /// earlier column pick cannot overwrite the current walk.
+  int _walkGeneration = 0;
+
+  bool _isStale(int generation) => isClosed || generation != _walkGeneration;
 
   /// When true, the next [_refreshHeader] throws (cleared after throw).
   @visibleForTesting
@@ -166,9 +197,10 @@ class QaModeCubit extends Cubit<QaModeState> {
   /// fact verified here. An empty list opens [QaModeState.walkComplete].
   Future<void> startWalk(Set<int> activeColumnIndexes) async {
     if (activeColumnIndexes.isEmpty || state.busy) return;
+    final generation = ++_walkGeneration;
     final columns = Set<int>.of(activeColumnIndexes);
     await QaColumnPrefs.save(deckId, columns);
-    if (isClosed) return;
+    if (_isStale(generation)) return;
     emit(
       QaModeState(
         pickingColumns: false,
@@ -178,12 +210,13 @@ class QaModeCubit extends Cubit<QaModeState> {
         editedCount: state.editedCount,
       ),
     );
-    await _loadFacts();
+    await _loadFacts(generation);
   }
 
   /// Re-opens the column picker without losing walk progress counters.
   void reopenColumnPicker() {
     if (state.busy) return;
+    _walkGeneration++;
     emit(
       QaModeState(
         pickingColumns: true,
@@ -192,6 +225,7 @@ class QaModeCubit extends Cubit<QaModeState> {
         index: state.index,
         stats: state.stats,
         editedCount: state.editedCount,
+        signedOffFactIds: state.signedOffFactIds,
       ),
     );
   }
@@ -208,18 +242,24 @@ class QaModeCubit extends Cubit<QaModeState> {
     );
   }
 
-  Future<void> _loadFacts() async {
+  Future<void> _loadFacts(int generation) async {
     final ids = await CardService.listFactIds(
       deckId,
       unverifiedColumns: state.activeColumnIndexes,
     );
-    if (isClosed) return;
+    if (_isStale(generation)) return;
     if (ids == null) {
       emit(state.copyWith(loading: false, factIdsLoadFailed: true));
       return;
     }
     final stats = await FactQualityService.of.getDeckQualityStats(deckId);
-    if (isClosed) return;
+    if (_isStale(generation)) return;
+    if (ids.isEmpty && stats == null) {
+      // Without stats an empty list could mean "all verified" or "nothing to
+      // verify"; say it failed rather than guess.
+      emit(state.copyWith(loading: false, factIdsLoadFailed: true));
+      return;
+    }
     emit(
       state.copyWith(
         loading: ids.isNotEmpty,
@@ -227,11 +267,12 @@ class QaModeCubit extends Cubit<QaModeState> {
         index: 0,
         stats: stats,
         editedCount: stats?.editedCount ?? state.editedCount,
-        walkComplete: ids.isEmpty && (stats?.totalAspects ?? 1) > 0,
+        walkComplete: ids.isEmpty && (stats?.totalAspects ?? 0) > 0,
       ),
     );
     if (ids.isEmpty) return;
-    await _loadCurrentFact();
+    await _loadCurrentFact(generation);
+    if (_isStale(generation)) return;
     await _refreshHeader();
   }
 
@@ -240,15 +281,15 @@ class QaModeCubit extends Cubit<QaModeState> {
     emit(
       state.copyWith(
         index: index,
-        fact: null,
-        quality: null,
+        clearFact: true,
+        clearQuality: true,
         mediaVersions: const {},
         checkedIndexes: const {},
         loading: true,
         walkComplete: false,
       ),
     );
-    await _loadCurrentFact();
+    await _loadCurrentFact(_walkGeneration);
   }
 
   Future<String?> next() async {
@@ -266,6 +307,10 @@ class QaModeCubit extends Cubit<QaModeState> {
   }
 
   Future<void> prev() => goTo(state.index - 1);
+
+  /// Moves on without signing off: the fact stays unverified and is listed
+  /// again by the next walk. Does nothing on the last fact.
+  Future<void> skip() => goTo(state.index + 1);
 
   void toggleColumn(int entryIndex) {
     if (state.busy || !state.activeColumnIndexes.contains(entryIndex)) return;
@@ -288,6 +333,9 @@ class QaModeCubit extends Cubit<QaModeState> {
     if (factId == null || state.checkedIndexes.isEmpty || state.busy) {
       return null;
     }
+    final signsOffFact = state.checkedIndexes.containsAll(
+      state.scoreableIndexes,
+    );
     emit(state.copyWith(busy: true));
     final online = await _isOnline().catchError((Object _) => true);
     if (isClosed) return null;
@@ -304,6 +352,12 @@ class QaModeCubit extends Cubit<QaModeState> {
     } catch (e) {
       if (!isClosed) emit(state.copyWith(busy: false));
       return rawApiErrorMessage(e);
+    }
+    onSignedOff?.call();
+    if (signsOffFact) {
+      emit(
+        state.copyWith(signedOffFactIds: {...state.signedOffFactIds, factId}),
+      );
     }
     FactQuality? quality;
     try {
@@ -344,7 +398,8 @@ class QaModeCubit extends Cubit<QaModeState> {
     if (isClosed) return null;
     emit(state.copyWith(busy: true, loading: true));
     try {
-      await _loadCurrentFact();
+      await _loadCurrentFact(_walkGeneration);
+      _dropClearedSignOff(factId);
       await _refreshHeader();
     } catch (_) {
       // Reload failed; busy/loading cleared in finally so QA isn't stuck.
@@ -356,27 +411,53 @@ class QaModeCubit extends Cubit<QaModeState> {
     return null;
   }
 
-  Future<void> _loadCurrentFact() async {
+  /// Editing a source deck's fact clears the sign-off on what changed, so a
+  /// fact signed off earlier in this walk may need verifying again.
+  void _dropClearedSignOff(String factId) {
+    if (state.fact == null || !state.signedOffFactIds.contains(factId)) return;
+    final entries = state.entries;
+    final intact = state.scoreableIndexes.every((i) {
+      final aspects = state.quality?.aspectsAt(i) ?? const {};
+      return qaScoreableAspects(
+        entries[i],
+      ).every((aspect) => aspects[aspect]?.isHuman ?? false);
+    });
+    if (intact) return;
+    emit(
+      state.copyWith(
+        signedOffFactIds: {...state.signedOffFactIds}..remove(factId),
+      ),
+    );
+  }
+
+  Future<void> _loadCurrentFact(int generation) async {
     final factId = state.factId;
     if (factId == null) {
       emit(state.copyWith(loading: false));
       return;
     }
     final detail = await CardService.getFactDetail(deckId, factId);
-    final fact = detail?.fact;
     final mediaVersions = detail?.mediaVersions ?? const <String, int>{};
-    final quality = fact == null
+    final read = detail?.fact == null
         ? null
-        : await FactQualityService.of.getFactQuality(
+        : await FactQualityService.of.readFactQuality(
             deckId: deckId,
             factId: factId,
           );
-    if (isClosed) return;
+    if (_isStale(generation)) return;
+    // A quality PUT replaces the whole record, so a fact whose record could
+    // not be read is shown as failed rather than signed off blind.
+    final fact = read?.known == true ? detail?.fact : null;
+    final quality = read?.quality;
     emit(
       state.copyWith(
         loading: false,
+        // A missing fact or quality record must not inherit the previous
+        // fact's: a stale quality would be merged into this fact's PUT.
         fact: fact,
+        clearFact: fact == null,
         quality: quality,
+        clearQuality: quality == null,
         mediaVersions: mediaVersions,
         checkedIndexes: const {},
       ),

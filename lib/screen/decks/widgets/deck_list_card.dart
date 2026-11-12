@@ -98,48 +98,49 @@ class DeckListCard extends StatelessWidget {
                 ],
                 DeckOfflineStatus(deckId: deck.id, downloader: downloader),
                 const SizedBox(width: 4),
+                // Own decks: each icon only appears when it has something to
+                // act on; both actions always stay in the deck menu.
                 if (!deck.isImported) ...[
-                  BadgedAppIconButton(
-                    icon: LucideIcons.inbox,
-                    tooltip: loc.contributionsInbox,
-                    showBadge: showContributionBadge,
-                    onPressed: () async {
-                      await showCommonBottomSheet<void>(
-                        context: context,
-                        title: loc.contributionsInbox,
-                        initialChildSize: 0.7,
-                        minChildSize: 0.4,
-                        maxChildSize: 0.95,
-                        child: ContributionsInboxSheet(sourceDeckId: deck.id),
-                      );
-                      if (!context.mounted) return;
-                      await context.read<DeckSharingStatusCubit>().refresh();
-                    },
-                  ),
-                  BadgedAppIconButton(
-                    icon: LucideIcons.share2,
-                    tooltip: deck.isPublishedSource
-                        ? loc.publishDeckUpdate
-                        : loc.publishDeck,
-                    showBadge: showBadge,
-                    onPressed: () {
-                      showCommonBottomSheet<void>(
-                        context: context,
-                        title: deck.isPublishedSource
-                            ? loc.publishDeckUpdate
-                            : loc.publishDeck,
-                        child: PublishDeckSheet(
-                          deck: deck,
-                          onPublished: () {
-                            context.read<DeckSharingStatusCubit>().clear(
-                              deck.id,
-                            );
-                            context.read<DeckListCubit>().onRefresh();
-                          },
-                        ),
-                      );
-                    },
-                  ),
+                  if (showContributionBadge)
+                    BadgedAppIconButton(
+                      icon: LucideIcons.inbox,
+                      tooltip: loc.contributionsInbox,
+                      showBadge: showContributionBadge,
+                      onPressed: () async {
+                        await showCommonBottomSheet<void>(
+                          context: context,
+                          title: loc.contributionsInbox,
+                          initialChildSize: 0.7,
+                          minChildSize: 0.4,
+                          maxChildSize: 0.95,
+                          child: ContributionsInboxSheet(sourceDeckId: deck.id),
+                        );
+                        if (!context.mounted) return;
+                        await context.read<DeckSharingStatusCubit>().refresh();
+                      },
+                    ),
+                  // A first publish has no update to flag: menu only.
+                  if (deck.isPublishedSource && showBadge)
+                    BadgedAppIconButton(
+                      icon: LucideIcons.share2,
+                      tooltip: loc.publishDeckUpdate,
+                      showBadge: showBadge,
+                      onPressed: () {
+                        showCommonBottomSheet<void>(
+                          context: context,
+                          title: loc.publishDeckUpdate,
+                          child: PublishDeckSheet(
+                            deck: deck,
+                            onPublished: () {
+                              context.read<DeckSharingStatusCubit>().clear(
+                                deck.id,
+                              );
+                              context.read<DeckListCubit>().onRefresh();
+                            },
+                          ),
+                        );
+                      },
+                    ),
                 ] else if (showBadge)
                   BadgedAppIconButton(
                     icon: LucideIcons.refreshCw,

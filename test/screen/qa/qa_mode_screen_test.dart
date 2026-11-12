@@ -31,6 +31,16 @@ Deck _importedDeck() => Deck.fromJson({
   'source_version': 15,
 });
 
+Deck _sourceDeck() => Deck.fromJson({
+  'id': 'src-1',
+  'name': 'My deck',
+  'rate': 30,
+  'fields': ['日文', '中文'],
+  'min_interval': 60,
+  'def_interval': 300,
+  'max_interval': 86400,
+});
+
 void main() {
   late FakeQaApiAdapter adapter;
 
@@ -176,7 +186,7 @@ void main() {
       expect(find.text('headword'), findsOneWidget);
       expect(find.text('日文 50%'), findsOneWidget);
       expect(find.text('中文 0%'), findsOneWidget);
-      expect(find.textContaining('1 / 2 to verify'), findsOneWidget);
+      expect(find.text('0 / 2 verified'), findsOneWidget);
 
       final checkboxes = tester
           .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
@@ -184,23 +194,28 @@ void main() {
       expect(checkboxes.map((c) => c.value), [false, false]);
     });
 
-    testWidgets('Next stays disabled until every scoreable column is checked', (
-      tester,
-    ) async {
-      useAdapter();
-      await pumpQaMode(tester);
+    testWidgets(
+      'Verified stays disabled until every scoreable column is checked',
+      (tester) async {
+        useAdapter();
+        await pumpQaMode(tester);
 
-      expect(find.widgetWithText(OutlinedButton, 'Next'), findsOneWidget);
+        OutlinedButton disabledVerified() => tester.widget<OutlinedButton>(
+          find.widgetWithText(OutlinedButton, 'Verified'),
+        );
+        expect(disabledVerified().onPressed, isNull);
+        expect(find.text('Next'), findsNothing);
 
-      await tester.tap(find.text('日文'));
-      await tester.pumpAndSettle();
-      expect(find.widgetWithText(OutlinedButton, 'Next'), findsOneWidget);
+        await tester.tap(find.text('日文'));
+        await tester.pumpAndSettle();
+        expect(disabledVerified().onPressed, isNull);
 
-      await tester.tap(find.text('中文'));
-      await tester.pumpAndSettle();
-      expect(find.widgetWithText(FilledButton, 'Next'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Previous'), findsNothing);
-    });
+        await tester.tap(find.text('中文'));
+        await tester.pumpAndSettle();
+        expect(find.widgetWithText(FilledButton, 'Verified'), findsOneWidget);
+        expect(find.widgetWithText(FilledButton, 'Previous'), findsNothing);
+      },
+    );
 
     testWidgets('Previous is disabled when every scoreable column is checked', (
       tester,
@@ -212,7 +227,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('中文'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Next'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Verified'));
       await tester.pumpAndSettle();
 
       expect(find.widgetWithText(FilledButton, 'Previous'), findsOneWidget);
@@ -231,7 +246,7 @@ void main() {
       );
     });
 
-    testWidgets('Next sends quality for checked columns and advances', (
+    testWidgets('Verified sends quality for checked columns and advances', (
       tester,
     ) async {
       useAdapter();
@@ -241,7 +256,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('中文'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Next'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Verified'));
       await tester.pumpAndSettle();
 
       expect(adapter.qualityPuts, hasLength(1));
@@ -250,27 +265,27 @@ void main() {
         containsAll(<String>['0', '1']),
       );
       expect(find.text('second'), findsOneWidget);
-      expect(find.textContaining('2 / 2 to verify'), findsOneWidget);
+      expect(find.text('1 / 2 verified'), findsOneWidget);
       expect(
         find.text("You're done with these columns. Thank you."),
         findsNothing,
       );
     });
 
-    testWidgets('Next verifies the last fact and shows the complete screen', (
+    testWidgets('Verified signs the last fact and shows the complete screen', (
       tester,
     ) async {
       useAdapter(factIds: const ['fact-1']);
       await pumpQaMode(tester);
 
-      expect(find.textContaining('1 / 1 to verify'), findsOneWidget);
+      expect(find.text('0 / 1 verified'), findsOneWidget);
 
       await tester.tap(find.text('日文'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('中文'));
       await tester.pumpAndSettle();
 
-      final next = find.widgetWithText(FilledButton, 'Next');
+      final next = find.widgetWithText(FilledButton, 'Verified');
       expect(next, findsOneWidget);
       expect(tester.widget<FilledButton>(next).onPressed, isNotNull);
 
@@ -278,7 +293,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(adapter.qualityPuts, hasLength(1));
-      expect(find.textContaining('1 / 1 to verify'), findsNothing);
+      expect(find.textContaining('/ 1 verified'), findsNothing);
       expect(find.text('headword'), findsNothing);
       expect(
         find.text("You're done with these columns. Thank you."),
@@ -335,7 +350,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('中文'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Next'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Verified'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithText(FilledButton, 'Back to Deck'));
@@ -345,28 +360,26 @@ void main() {
       expect(find.text('QA mode'), findsNothing);
     });
 
-    testWidgets('Verified is not tappable and fills when all columns checked', (
-      tester,
-    ) async {
+    testWidgets('Skip moves on without signing off', (tester) async {
       useAdapter();
       await pumpQaMode(tester);
 
-      expect(find.widgetWithText(OutlinedButton, 'Verified'), findsOneWidget);
-
-      await tester.tap(find.text('日文'));
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Skip'));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(OutlinedButton, 'Verified'), findsOneWidget);
 
-      await tester.tap(find.text('中文'));
-      await tester.pumpAndSettle();
-      expect(find.widgetWithText(FilledButton, 'Verified'), findsOneWidget);
-
-      await tester.tap(find.widgetWithText(FilledButton, 'Verified'));
-      await tester.pumpAndSettle();
+      expect(find.text('second'), findsOneWidget);
       expect(adapter.qualityPuts, isEmpty);
+      expect(find.text('0 / 2 verified'), findsOneWidget);
+      // Nothing to skip to on the last fact.
+      expect(
+        tester
+            .widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Skip'))
+            .onPressed,
+        isNull,
+      );
     });
 
-    testWidgets('shows the API message when the PUT fails on Next', (
+    testWidgets('shows the API message when the PUT fails on Verified', (
       tester,
     ) async {
       useAdapter(qualityPutFails: true);
@@ -376,15 +389,15 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('中文'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Next'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Verified'));
       await tester.pumpAndSettle();
 
       expect(find.text('Fact is not in the pinned snapshot'), findsOneWidget);
-      expect(find.textContaining('1 / 2 to verify'), findsOneWidget);
+      expect(find.text('0 / 2 verified'), findsOneWidget);
       await tester.pump(const Duration(seconds: 2));
     });
 
-    testWidgets('Next walks to the next fact and disables empty columns', (
+    testWidgets('Verified walks to the next fact and disables empty columns', (
       tester,
     ) async {
       useAdapter();
@@ -394,11 +407,11 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('中文'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Next'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Verified'));
       await tester.pumpAndSettle();
 
       expect(find.text('second'), findsOneWidget);
-      expect(find.textContaining('2 / 2 to verify'), findsOneWidget);
+      expect(find.text('1 / 2 verified'), findsOneWidget);
       expect(find.text('Nothing to verify in this column'), findsOneWidget);
       final checkboxes = tester
           .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
@@ -580,10 +593,7 @@ void main() {
       );
       await pumpQaMode(tester);
 
-      expect(
-        find.text('This imported deck has no facts to review.'),
-        findsOneWidget,
-      );
+      expect(find.text('This deck has no facts to review.'), findsOneWidget);
     });
 
     testWidgets('shows a load error when the fact list cannot load', (
@@ -597,10 +607,7 @@ void main() {
         find.text('Could not load facts. Check your connection and try again.'),
         findsOneWidget,
       );
-      expect(
-        find.text('This imported deck has no facts to review.'),
-        findsNothing,
-      );
+      expect(find.text('This deck has no facts to review.'), findsNothing);
     });
 
     testWidgets('shows a failure message when the fact cannot load', (
@@ -610,6 +617,79 @@ void main() {
       await pumpQaMode(tester);
 
       expect(find.text('Could not load this fact.'), findsOneWidget);
+    });
+
+    group('sharing with the author', () {
+      const notice =
+          'Your sign-offs are shared with the deck author when you leave QA mode.';
+
+      testWidgets('importers see that sign-offs are shared', (tester) async {
+        useAdapter(stats: {'verified_aspects': 0, 'total_aspects': 4});
+        await pumpQaMode(tester, startWalk: false);
+        expect(find.text(notice), findsOneWidget);
+      });
+
+      testWidgets('walk complete has no send step', (tester) async {
+        useAdapter(
+          factIds: const [],
+          stats: {'verified_aspects': 4, 'total_aspects': 4},
+        );
+        await pumpQaMode(tester);
+        expect(find.text('Back to Deck'), findsOneWidget);
+        expect(find.textContaining('author'), findsNothing);
+        expect(adapter.qaReviewPosts, 0, reason: 'sent by the opener on close');
+      });
+    });
+
+    group('author on a source deck', () {
+      testWidgets('walks facts without the edited count', (tester) async {
+        useAdapter(stats: {'verified_aspects': 1, 'total_aspects': 4});
+        await pumpQaMode(tester, deck: _sourceDeck());
+
+        expect(find.text('headword'), findsWidgets);
+        expect(find.text('Edited 0'), findsNothing);
+      });
+
+      testWidgets('importers still see the edited count', (tester) async {
+        useAdapter(stats: {'verified_aspects': 1, 'total_aspects': 4});
+        await pumpQaMode(tester);
+        expect(find.text('Edited 0'), findsOneWidget);
+      });
+
+      testWidgets('signs off and advances like an importer', (tester) async {
+        useAdapter();
+        await pumpQaMode(tester, deck: _sourceDeck());
+        for (final box in find.byType(Checkbox).evaluate().toList()) {
+          await tester.tap(find.byWidget(box.widget));
+          await tester.pump();
+        }
+        await tester.tap(find.text('Verified'));
+        await tester.pumpAndSettle();
+
+        expect(adapter.qualityPuts, hasLength(1));
+      });
+
+      testWidgets('picker has no sharing notice', (tester) async {
+        useAdapter(stats: {'verified_aspects': 3, 'total_aspects': 4});
+        await pumpQaMode(tester, deck: _sourceDeck(), startWalk: false);
+        expect(
+          find.textContaining('shared with the deck author'),
+          findsNothing,
+        );
+      });
+
+      testWidgets('walk complete offers only going back', (tester) async {
+        useAdapter(
+          factIds: const [],
+          stats: {'verified_aspects': 4, 'total_aspects': 4},
+        );
+        await pumpQaMode(tester, deck: _sourceDeck());
+        expect(
+          find.text("You're done with these columns. Thank you."),
+          findsOneWidget,
+        );
+        expect(find.textContaining('author'), findsNothing);
+      });
     });
   });
 }

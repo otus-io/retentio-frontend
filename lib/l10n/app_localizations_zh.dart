@@ -434,6 +434,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get addFactSubmit => '保存词条';
 
   @override
+  String get addFactMarkVerified => '我已检查此词条（标记为已核验）';
+
+  @override
   String get addFactUploadFailed => '上传失败，请重试。';
 
   @override
@@ -455,6 +458,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get addFactSuccess => '已添加词条';
+
+  @override
+  String get addFactSentToAuthor => '词条已添加并发送给作者';
+
+  @override
+  String get addFactSavedUnsent => '词条已添加，但暂未发送给作者，可在未发送贡献中重试。';
+
+  @override
+  String get deckTagsSentToAuthor => '卡组标签已发送给作者';
+
+  @override
+  String get deckTagsSavedUnsent => '卡组标签已保存，但暂未发送给作者，可在未发送贡献中重试。';
 
   @override
   String addFactFieldFallback(int number) {
@@ -1605,6 +1620,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String contributionsAcceptAllProgress(int done, int total) {
+    return '正在接受 $done/$total…';
+  }
+
+  @override
   String get contributionsDismiss => '忽略';
 
   @override
@@ -1698,7 +1718,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get qaMode => 'QA 模式';
 
   @override
-  String get qaModeEmpty => '该导入卡组没有可校验的词条。';
+  String get qaModeEmpty => '该卡组没有可校验的词条。';
 
   @override
   String get qaModeFactLoadFailed => '无法加载该词条。';
@@ -1707,12 +1727,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get qaModeFactsLoadFailed => '无法加载词条，请检查网络后重试。';
 
   @override
-  String qaModeProgress(int current, int total) {
-    return '待校验 $current / $total';
+  String qaModeProgress(int verified, int total) {
+    return '已校验 $verified / $total';
   }
 
   @override
   String get qaVerifiedBadge => '已完成人工校验';
+
+  @override
+  String discoveryContributors(String names) {
+    return '贡献者：$names';
+  }
+
+  @override
+  String discoveryContributorsMore(String names, int more) {
+    return '贡献者：$names 等另外 $more 人';
+  }
 
   @override
   String qaModeVerifiedAspects(int verified, int total) {
@@ -1750,10 +1780,69 @@ class AppLocalizationsZh extends AppLocalizations {
   String get qaModePrevious => '上一条';
 
   @override
+  String get qaModeSkip => '跳过';
+
+  @override
   String get qaModeVerify => '已核验';
 
   @override
   String get qaModeWalkComplete => '这些栏目已核验完成，谢谢。';
+
+  @override
+  String get qaReviewType => 'QA 校验审核';
+
+  @override
+  String qaReviewSummary(int facts, int aspects) {
+    return '已校验 $facts 个词条（$aspects 个字段）';
+  }
+
+  @override
+  String get qaReviewSharedNotice => '离开 QA 模式时，你的校验会分享给卡组作者。';
+
+  @override
+  String qaReviewSent(int aspects) {
+    return '已向作者发送 $aspects 个已校验字段';
+  }
+
+  @override
+  String get qaReviewNothingToSend => '暂无可发送的内容。只有与作者当前版本一致的已校验字段才能发送。';
+
+  @override
+  String get qaReviewOwnDeck => '这是你自己的卡组，你的校验已经生效。';
+
+  @override
+  String qaReviewAccepted(int signed) {
+    return '已签署 $signed 个字段';
+  }
+
+  @override
+  String get qaReviewViewFields => '查看字段';
+
+  @override
+  String qaReviewPreviewSummary(int ready, int total) {
+    return '$total 个字段中有 $ready 个可签署';
+  }
+
+  @override
+  String get qaReviewStatusReady => '可签署';
+
+  @override
+  String get qaReviewStatusChanged => '内容已变更';
+
+  @override
+  String get qaReviewStatusVerified => '已校验';
+
+  @override
+  String get qaReviewStatusRemoved => '词条已删除';
+
+  @override
+  String get qaReviewAspectText => '文本';
+
+  @override
+  String get qaReviewAspectAudio => '音频';
+
+  @override
+  String get qaReviewNoFields => '此请求中没有字段。';
 
   @override
   String get qaVerifyConfirmTitle => '发送核验';
@@ -1768,9 +1857,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get qaEditSubmitted => '编辑已发送给作者';
-
-  @override
-  String get pendingStaged => '已加入未发送贡献';
 
   @override
   String pendingSendSuccess(int count) {

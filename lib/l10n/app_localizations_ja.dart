@@ -434,6 +434,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get addFactSubmit => '項目を保存';
 
   @override
+  String get addFactMarkVerified => 'この項目を確認しました（確認済みにする）';
+
+  @override
   String get addFactUploadFailed => 'アップロードに失敗しました。もう一度お試しください。';
 
   @override
@@ -455,6 +458,19 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get addFactSuccess => '項目を追加しました';
+
+  @override
+  String get addFactSentToAuthor => '項目を追加し、作成者に送りました';
+
+  @override
+  String get addFactSavedUnsent => '項目を追加しましたが、作成者に送れませんでした。未送信の貢献から再送できます。';
+
+  @override
+  String get deckTagsSentToAuthor => 'デッキのタグを作成者に送りました';
+
+  @override
+  String get deckTagsSavedUnsent =>
+      'デッキのタグを保存しましたが、作成者に送れませんでした。未送信の貢献から再送できます。';
 
   @override
   String addFactFieldFallback(int number) {
@@ -1607,6 +1623,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String contributionsAcceptAllProgress(int done, int total) {
+    return '承認中 $done/$total…';
+  }
+
+  @override
   String get contributionsDismiss => '却下';
 
   @override
@@ -1700,7 +1721,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get qaMode => 'QAモード';
 
   @override
-  String get qaModeEmpty => 'このインポート済みデッキに確認できる項目はありません。';
+  String get qaModeEmpty => 'このデッキに確認できる項目はありません。';
 
   @override
   String get qaModeFactLoadFailed => 'この項目を読み込めませんでした。';
@@ -1709,12 +1730,22 @@ class AppLocalizationsJa extends AppLocalizations {
   String get qaModeFactsLoadFailed => '項目を読み込めませんでした。接続を確認して、もう一度お試しください。';
 
   @override
-  String qaModeProgress(int current, int total) {
-    return '要確認 $current / $total';
+  String qaModeProgress(int verified, int total) {
+    return '確認済み $verified / $total';
   }
 
   @override
   String get qaVerifiedBadge => 'QA確認済み';
+
+  @override
+  String discoveryContributors(String names) {
+    return '貢献者：$names';
+  }
+
+  @override
+  String discoveryContributorsMore(String names, int more) {
+    return '貢献者：$names ほか$more人';
+  }
 
   @override
   String qaModeVerifiedAspects(int verified, int total) {
@@ -1753,10 +1784,70 @@ class AppLocalizationsJa extends AppLocalizations {
   String get qaModePrevious => '前へ';
 
   @override
+  String get qaModeSkip => 'スキップ';
+
+  @override
   String get qaModeVerify => '確認済みにする';
 
   @override
   String get qaModeWalkComplete => 'この列の確認は完了です。ありがとうございます。';
+
+  @override
+  String get qaReviewType => 'QAレビュー';
+
+  @override
+  String qaReviewSummary(int facts, int aspects) {
+    return '$facts件の項目を確認（$aspectsフィールド）';
+  }
+
+  @override
+  String get qaReviewSharedNotice => 'QAモードを終了すると、あなたの確認結果はデッキの作成者と共有されます。';
+
+  @override
+  String qaReviewSent(int aspects) {
+    return '確認済みの$aspectsフィールドを作成者に送りました';
+  }
+
+  @override
+  String get qaReviewNothingToSend =>
+      'まだ送れる内容がありません。作成者の現在の内容と一致する確認済みフィールドだけを送れます。';
+
+  @override
+  String get qaReviewOwnDeck => '自分のデッキなので、あなたの確認はすでに有効です。';
+
+  @override
+  String qaReviewAccepted(int signed) {
+    return '$signedフィールドを承認しました';
+  }
+
+  @override
+  String get qaReviewViewFields => 'フィールドを確認';
+
+  @override
+  String qaReviewPreviewSummary(int ready, int total) {
+    return '$totalフィールド中$ready件が承認可能';
+  }
+
+  @override
+  String get qaReviewStatusReady => '承認可能';
+
+  @override
+  String get qaReviewStatusChanged => '内容が変更済み';
+
+  @override
+  String get qaReviewStatusVerified => '確認済み';
+
+  @override
+  String get qaReviewStatusRemoved => '項目が削除済み';
+
+  @override
+  String get qaReviewAspectText => 'テキスト';
+
+  @override
+  String get qaReviewAspectAudio => '音声';
+
+  @override
+  String get qaReviewNoFields => 'このリクエストにフィールドはありません。';
 
   @override
   String get qaVerifyConfirmTitle => '確認を送信';
@@ -1771,9 +1862,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get qaEditSubmitted => '編集を作者に送信しました';
-
-  @override
-  String get pendingStaged => '未送信の貢献に保存しました';
 
   @override
   String pendingSendSuccess(int count) {

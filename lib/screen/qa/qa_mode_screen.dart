@@ -43,11 +43,17 @@ String? qaAudioUrl({
   return '/api/media/$id';
 }
 
-/// Human QA walk over an imported deck: sign off columns, edit the bad ones.
+/// Human QA walk over a deck: sign off columns, edit the bad ones. Authors
+/// walk their own deck; importers walk their copy and can send the sign-offs to
+/// the author.
 class QaModeScreen extends StatelessWidget {
-  const QaModeScreen({super.key, required this.deck});
+  const QaModeScreen({super.key, required this.deck, this.onSignedOff});
 
   final Deck deck;
+
+  /// Called after each successful sign-off, so the opener can share the
+  /// reviewer's work with the author once QA mode closes.
+  final VoidCallback? onSignedOff;
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +61,7 @@ class QaModeScreen extends StatelessWidget {
       create: (_) => QaModeCubit(
         deckId: deck.id,
         deckFieldCount: deck.fields.isNotEmpty ? deck.fields.length : 1,
+        onSignedOff: onSignedOff,
       ),
       child: _QaModeView(deck: deck),
     );
@@ -119,6 +126,15 @@ class _QaModeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Stay open while a sign-off saves, so the close-time share sees it.
+    return BlocBuilder<QaModeCubit, QaModeState>(
+      buildWhen: (prev, next) => prev.busy != next.busy,
+      builder: (context, state) =>
+          PopScope(canPop: !state.busy, child: _scaffold(context)),
+    );
+  }
+
+  Widget _scaffold(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
@@ -365,6 +381,16 @@ class _QaColumnPickerState extends State<_QaColumnPicker> {
             leading: const Icon(LucideIcons.play),
             onPressed: _selected.isEmpty || _starting ? null : _start,
           ),
+          if (widget.deck.isImported) ...[
+            const SizedBox(height: 8),
+            Text(
+              loc.qaReviewSharedNotice,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -412,7 +438,7 @@ class _QaHeader extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text(
-              loc.qaModeProgress(state.index + 1, state.factIds.length),
+              loc.qaModeProgress(state.verifiedFactCount, state.totalFactCount),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -427,12 +453,14 @@ class _QaHeader extends StatelessWidget {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-            Text(
-              loc.qaModeEdited(state.editedCount),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            // Edits on imports become contributions; authors edit in place.
+            if (deck.isImported)
+              Text(
+                loc.qaModeEdited(state.editedCount),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -525,32 +553,28 @@ class _QaFooter extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
+              // Moves on without signing; the fact returns in a later walk.
               Expanded(
                 child: AppButton(
-                  label: loc.next,
+                  label: loc.qaModeSkip,
                   size: AppButtonSize.sm,
-                  variant: ready
-                      ? AppButtonVariant.primary
-                      : AppButtonVariant.secondary,
-                  onPressed: (state.hasNext || ready) && !state.busy
-                      ? onNext
-                      : null,
+                  variant: AppButtonVariant.secondary,
+                  onPressed: state.hasNext && !state.busy ? cubit.skip : null,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          AbsorbPointer(
-            child: AppButton(
-              label: loc.qaModeVerify,
-              fullWidth: true,
-              isLoading: state.busy,
-              leading: const Icon(LucideIcons.badgeCheck),
-              onPressed: ready && !state.busy ? () {} : null,
-              variant: ready
-                  ? AppButtonVariant.primary
-                  : AppButtonVariant.secondary,
-            ),
+          // Signs off the ticked columns and moves to the next fact.
+          AppButton(
+            label: loc.qaModeVerify,
+            fullWidth: true,
+            isLoading: state.busy,
+            leading: const Icon(LucideIcons.badgeCheck),
+            onPressed: ready && !state.busy ? onNext : null,
+            variant: ready
+                ? AppButtonVariant.primary
+                : AppButtonVariant.secondary,
           ),
         ],
       ),

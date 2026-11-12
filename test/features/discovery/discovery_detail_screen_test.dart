@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:retentio/widgets/qa_verified_badge.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/network/network.dart';
 import 'package:retentio/features/discovery/presentation/discovery_detail_screen.dart';
 import 'package:retentio/l10n/app_localizations.dart';
@@ -14,6 +14,8 @@ import '../../helpers/test_wrapper.dart';
 class _CatalogApi extends Interceptor {
   final paths = <String>[];
   bool qaVerified = false;
+  List<String> contributors = const [];
+  int contributorCount = 0;
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -36,6 +38,8 @@ class _CatalogApi extends Interceptor {
             'published_version': 1,
             'fact_count': 1,
             'qa_verified': qaVerified,
+            if (contributors.isNotEmpty) 'contributors': contributors,
+            if (contributorCount > 0) 'contributor_count': contributorCount,
           },
         },
       ),
@@ -105,12 +109,29 @@ void main() {
 
   testWidgets('shows the QA badge only for verified decks', (tester) async {
     await pumpRouter(tester);
-    expect(find.byIcon(LucideIcons.badgeCheck), findsNothing);
+    expect(find.byType(QaVerifiedBadge), findsNothing);
 
     api.qaVerified = true;
     await tester.pumpWidget(const SizedBox());
     await pumpRouter(tester);
-    expect(find.byIcon(LucideIcons.badgeCheck), findsOneWidget);
+    expect(find.byType(QaVerifiedBadge), findsOneWidget);
+  });
+
+  testWidgets('credits contributors under the author', (tester) async {
+    await pumpRouter(tester);
+    expect(find.textContaining('Contributors'), findsNothing);
+
+    api
+      ..contributors = ['bob', 'carol']
+      ..contributorCount = 2;
+    await tester.pumpWidget(const SizedBox());
+    await pumpRouter(tester);
+    expect(find.text('Contributors: @bob, @carol'), findsOneWidget);
+
+    api.contributorCount = 5;
+    await tester.pumpWidget(const SizedBox());
+    await pumpRouter(tester);
+    expect(find.text('Contributors: @bob, @carol +3 more'), findsOneWidget);
   });
 
   testWidgets('guest import shows a not-logged-in dialog', (tester) async {

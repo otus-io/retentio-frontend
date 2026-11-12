@@ -83,15 +83,18 @@ void main() {
       final stats = FactQualityStats.fromJson({
         'verified_aspects': 12,
         'total_aspects': '40',
+        'total_facts': 25,
         'edited_count': '3',
       });
       expect(stats.verifiedAspects, 12);
       expect(stats.totalAspects, 40);
+      expect(stats.totalFacts, 25);
       expect(stats.editedCount, 3);
 
       final empty = FactQualityStats.fromJson({'verified_aspects': <int>[]});
       expect(empty.verifiedAspects, 0);
       expect(empty.totalAspects, 0);
+      expect(empty.totalFacts, 0);
       expect(empty.editedCount, 0);
     });
 

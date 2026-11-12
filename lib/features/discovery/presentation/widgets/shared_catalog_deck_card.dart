@@ -127,7 +127,7 @@ class SharedCatalogDeckCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (deck.qaVerified) const QaVerifiedBadge(),
+                  if (deck.qaVerified) const QaVerifiedBadge(size: 22),
                   AppIconButton(
                     variant: AppIconButtonVariant.subtle,
                     icon: LucideIcons.heart,

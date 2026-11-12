@@ -448,6 +448,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addFactSubmit => 'Save fact';
 
   @override
+  String get addFactMarkVerified =>
+      'I\'ve checked this fact (mark as verified)';
+
+  @override
   String get addFactUploadFailed => 'Upload failed. Try again.';
 
   @override
@@ -471,6 +475,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addFactSuccess => 'Fact added';
+
+  @override
+  String get addFactSentToAuthor => 'Fact added and sent to the author';
+
+  @override
+  String get addFactSavedUnsent =>
+      'Fact added. Couldn\'t send it to the author yet; retry from Unsent contributions.';
+
+  @override
+  String get deckTagsSentToAuthor => 'Deck tags sent to the author';
+
+  @override
+  String get deckTagsSavedUnsent =>
+      'Deck tags saved. Couldn\'t send them to the author yet; retry from Unsent contributions.';
 
   @override
   String addFactFieldFallback(int number) {
@@ -1705,6 +1723,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String contributionsAcceptAllProgress(int done, int total) {
+    return 'Accepting $done of $total…';
+  }
+
+  @override
   String get contributionsDismiss => 'Dismiss';
 
   @override
@@ -1801,7 +1824,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qaMode => 'QA mode';
 
   @override
-  String get qaModeEmpty => 'This imported deck has no facts to review.';
+  String get qaModeEmpty => 'This deck has no facts to review.';
 
   @override
   String get qaModeFactLoadFailed => 'Could not load this fact.';
@@ -1811,12 +1834,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not load facts. Check your connection and try again.';
 
   @override
-  String qaModeProgress(int current, int total) {
-    return '$current / $total to verify';
+  String qaModeProgress(int verified, int total) {
+    return '$verified / $total verified';
   }
 
   @override
   String get qaVerifiedBadge => 'Fully QA-verified';
+
+  @override
+  String discoveryContributors(String names) {
+    return 'Contributors: $names';
+  }
+
+  @override
+  String discoveryContributorsMore(String names, int more) {
+    return 'Contributors: $names +$more more';
+  }
 
   @override
   String qaModeVerifiedAspects(int verified, int total) {
@@ -1855,11 +1888,97 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qaModePrevious => 'Previous';
 
   @override
+  String get qaModeSkip => 'Skip';
+
+  @override
   String get qaModeVerify => 'Verified';
 
   @override
   String get qaModeWalkComplete =>
       'You\'re done with these columns. Thank you.';
+
+  @override
+  String get qaReviewType => 'QA review';
+
+  @override
+  String qaReviewSummary(int facts, int aspects) {
+    String _temp0 = intl.Intl.pluralLogic(
+      facts,
+      locale: localeName,
+      other: 'Verified $facts facts',
+      one: 'Verified 1 fact',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      aspects,
+      locale: localeName,
+      other: '$aspects fields',
+      one: '1 field',
+    );
+    return '$_temp0 ($_temp1)';
+  }
+
+  @override
+  String get qaReviewSharedNotice =>
+      'Your sign-offs are shared with the deck author when you leave QA mode.';
+
+  @override
+  String qaReviewSent(int aspects) {
+    String _temp0 = intl.Intl.pluralLogic(
+      aspects,
+      locale: localeName,
+      other: 'Sent $aspects verified fields to the author',
+      one: 'Sent 1 verified field to the author',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get qaReviewNothingToSend =>
+      'Nothing to send yet. Only fields you verified that still match the author\'s version can be sent.';
+
+  @override
+  String get qaReviewOwnDeck =>
+      'This is your own deck, so your sign-offs already count.';
+
+  @override
+  String qaReviewAccepted(int signed) {
+    String _temp0 = intl.Intl.pluralLogic(
+      signed,
+      locale: localeName,
+      other: 'Signed off $signed fields',
+      one: 'Signed off 1 field',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get qaReviewViewFields => 'Review fields';
+
+  @override
+  String qaReviewPreviewSummary(int ready, int total) {
+    return '$ready of $total fields ready to sign off';
+  }
+
+  @override
+  String get qaReviewStatusReady => 'Ready';
+
+  @override
+  String get qaReviewStatusChanged => 'Changed since';
+
+  @override
+  String get qaReviewStatusVerified => 'Already verified';
+
+  @override
+  String get qaReviewStatusRemoved => 'Fact removed';
+
+  @override
+  String get qaReviewAspectText => 'text';
+
+  @override
+  String get qaReviewAspectAudio => 'audio';
+
+  @override
+  String get qaReviewNoFields => 'No fields in this request.';
 
   @override
   String get qaVerifyConfirmTitle => 'Send verification';
@@ -1874,9 +1993,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get qaEditSubmitted => 'Edit sent to the author';
-
-  @override
-  String get pendingStaged => 'Saved to unsent contributions';
 
   @override
   String pendingSendSuccess(int count) {

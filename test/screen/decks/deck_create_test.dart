@@ -2,24 +2,32 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/core/network/network.dart';
 import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/models/tag.dart';
 import 'package:retentio/screen/decks/bloc/deck_create_cubit.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/decks/widgets/deck_create.dart';
+import 'package:retentio/widgets/app_toast.dart';
 import 'package:retentio/widgets/number_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/test_wrapper.dart';
 
 class _FakeTagManagerCubit extends TagManagerCubit {
+  _FakeTagManagerCubit([this.tags = const []]);
+
+  /// The user's own tag list.
+  final List<Tag> tags;
+
   @override
   Future<void> loadTags() async {
-    emit(state.copyWith(status: TagManagerStatus.loaded, tags: const []));
+    emit(state.copyWith(status: TagManagerStatus.loaded, tags: tags));
   }
 }
 
@@ -50,16 +58,58 @@ class _MessagelessFailureAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+/// An imported deck with one tag: answers the tag list, the deck save, the
+/// tag removal and the `deck-tags` contribution.
+class _DeckTagsAdapter implements HttpClientAdapter {
+  _DeckTagsAdapter({required this.sendFails});
+
+  final bool sendFails;
+  final List<dynamic> contributionBodies = [];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    final path = options.uri.path;
+    Map<String, dynamic> body = {'code': 0, 'msg': 'ok', 'data': {}};
+    if (path.endsWith('/contributions/deck-tags')) {
+      contributionBodies.add(options.data);
+      if (sendFails) body = {'code': -1, 'msg': 'Error saving contribution'};
+    } else if (options.method == 'GET' && path.endsWith('/tags')) {
+      body['data'] = {
+        'tags': [
+          {'id': 't1', 'name': 'Verbs', 'description': ''},
+        ],
+      };
+    }
+    return ResponseBody.fromString(
+      jsonEncode(body),
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
 void main() {
   Widget buildDeckCreateHarness(
     Widget child, {
     Locale locale = const Locale('en'),
+    List<Tag> tags = const [],
   }) {
     return buildTestableWidget(
       locale: locale,
       MultiBlocProvider(
         providers: [
-          BlocProvider<TagManagerCubit>(create: (_) => _FakeTagManagerCubit()),
+          BlocProvider<TagManagerCubit>(
+            create: (_) => _FakeTagManagerCubit(tags),
+          ),
           BlocProvider<DeckListCubit>(create: (_) => _FakeDeckListCubit()),
           BlocProvider(
             create: (_) => DeckCreateCubit(
@@ -421,5 +471,78 @@ void main() {
         expect(find.text('Please enter a deck name'), findsNothing);
       },
     );
+
+    group('imported deck tag changes', () {
+      Future<_DeckTagsAdapter> removeTagAndSave(
+        WidgetTester tester, {
+        required bool sendFails,
+      }) async {
+        // An earlier test may have left its own adapter on the shared client.
+        networkDioClient.dio.httpClientAdapter = IOHttpClientAdapter();
+        await setupTestEnvironment();
+        addTearDown(() {
+          networkDioClient.dio.httpClientAdapter = IOHttpClientAdapter();
+          tearDownTestEnvironment();
+        });
+        networkDioClient.configure(
+          baseUrl: 'http://localhost',
+          options: BaseOptions(),
+        );
+        final adapter = _DeckTagsAdapter(sendFails: sendFails);
+        networkDioClient.dio.httpClientAdapter = adapter;
+        final imported = Deck.fromJson({
+          'id': 'imp-tags-${sendFails ? 'unsent' : 'sent'}',
+          'name': 'Imported deck',
+          'description': 'Author summary',
+          'rate': 20,
+          'source_deck_id': 'src-1',
+          'owner': {'username': 'u', 'email': 'u@e.com'},
+          'fields': ['Front', 'Back'],
+        });
+
+        // An import's tags are also in the importer's own tag list.
+        await tester.pumpWidget(
+          buildDeckCreateHarness(
+            DeckCreate(deck: imported),
+            tags: [Tag(id: 't1', name: 'Verbs', description: '')],
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Verbs'), findsOneWidget);
+
+        await tester.tap(find.byIcon(Icons.close_rounded));
+        await tester.pump();
+        await tester.ensureVisible(find.byType(FilledButton));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(FilledButton));
+        await tester.pumpAndSettle();
+        return adapter;
+      }
+
+      testWidgets('a removed tag is sent to the author', (tester) async {
+        final adapter = await removeTagAndSave(tester, sendFails: false);
+
+        expect(adapter.contributionBodies, hasLength(1));
+        expect((adapter.contributionBodies.single as Map)['remove_tags'], [
+          'Verbs',
+        ]);
+        expect(find.text('Deck tags sent to the author'), findsOneWidget);
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('a failed send says the change is saved but unsent', (
+        tester,
+      ) async {
+        await removeTagAndSave(tester, sendFails: true);
+
+        expect(
+          find.textContaining("Couldn't send them to the author yet"),
+          findsOneWidget,
+        );
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+    });
   });
 }

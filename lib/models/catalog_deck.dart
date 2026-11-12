@@ -15,6 +15,8 @@ class CatalogDeck {
     required this.deckTagNames,
     this.publishedAt,
     this.qaVerified = false,
+    this.contributors = const [],
+    this.contributorCount = 0,
   });
 
   final String id;
@@ -33,6 +35,14 @@ class CatalogDeck {
   /// current facts.
   @JsonKey(fromJson: _isTrue)
   final bool qaVerified;
+
+  /// Up to 10 importers whose contributions the author accepted (detail only).
+  @JsonKey(defaultValue: <String>[])
+  final List<String> contributors;
+
+  /// Everyone credited, which can exceed [contributors].
+  @JsonKey(defaultValue: 0)
+  final int contributorCount;
 
   factory CatalogDeck.fromJson(Map<String, dynamic> json) =>
       _$CatalogDeckFromJson(json);
