@@ -1780,6 +1780,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get qaModePrevious => '上一条';
 
   @override
+  String get qaModeSkip => '跳过';
+
+  @override
   String get qaModeVerify => '已核验';
 
   @override

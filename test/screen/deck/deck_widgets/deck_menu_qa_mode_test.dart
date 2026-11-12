@@ -189,7 +189,7 @@ void main() {
         if (signOff) {
           await tester.tap(find.byType(Checkbox).first);
           await tester.pump();
-          await tester.tap(find.text('Next'));
+          await tester.tap(find.text('Verified'));
           await tester.pumpAndSettle();
         }
         await tester.pageBack();
@@ -260,7 +260,7 @@ void main() {
         await tester.tap(find.byType(Checkbox).first);
         await tester.pump();
         final statsBefore = adapter.statsRequestCount;
-        await tester.tap(find.text('Next'));
+        await tester.tap(find.text('Verified'));
         for (var i = 0; i < 50; i++) {
           if (adapter.statsRequestCount > statsBefore) break;
           await tester.pump(const Duration(milliseconds: 10));

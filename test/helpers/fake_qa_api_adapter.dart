@@ -208,10 +208,19 @@ class FakeQaApiAdapter implements HttpClientAdapter {
     if (!verifiedFactIds.contains(id)) return false;
     final record = qualityByFactId[id];
     if (record == null) return true;
+    // Like the server: every text/audio the fact has in the column must be
+    // human-signed; a column without any needs no sign-off.
+    final entries = entriesByFactId[id] ?? const [];
     return columns.split(',').every((column) {
-      final entry = record[column.trim()];
-      return entry is Map &&
-          entry.values.any((a) => a is Map && a['model'] == 'human');
+      final index = int.tryParse(column.trim());
+      if (index == null || index < 0 || index >= entries.length) return true;
+      final signed = record['$index'];
+      return const ['text', 'audio'].every((aspect) {
+        final content = entries[index][aspect];
+        if (content is! String || content.trim().isEmpty) return true;
+        final score = signed is Map ? signed[aspect] : null;
+        return score is Map && score['model'] == 'human';
+      });
     });
   }
 

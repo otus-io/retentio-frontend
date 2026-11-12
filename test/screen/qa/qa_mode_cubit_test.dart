@@ -407,6 +407,28 @@ void main() {
   });
 
   group('navigation', () {
+    test('skip moves on without signing off', () async {
+      final cubit = QaModeCubit(
+        deckId: 'imp-1',
+        deckFieldCount: 2,
+        isOnline: () async => true,
+      );
+      await startWalk(cubit);
+
+      await cubit.skip();
+
+      expect(cubit.state.index, 1);
+      expect(cubit.state.entries.first.text, 'second');
+      expect(adapter.qualityPuts, isEmpty);
+      expect(cubit.state.signedOffFactIds, isEmpty);
+
+      // Last fact: nowhere to skip to, and the walk is not complete.
+      await cubit.skip();
+      expect(cubit.state.index, 1);
+      expect(cubit.state.walkComplete, isFalse);
+      await cubit.close();
+    });
+
     test('next and prev walk the fact list', () async {
       final cubit = QaModeCubit(
         deckId: 'imp-1',

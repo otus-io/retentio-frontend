@@ -3430,6 +3430,12 @@ abstract class AppLocalizations {
   /// **'Previous'**
   String get qaModePrevious;
 
+  /// QA walk: move to the next fact without signing this one off
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get qaModeSkip;
+
   /// No description provided for @qaModeVerify.
   ///
   /// In en, this message translates to:

@@ -1784,6 +1784,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get qaModePrevious => '前へ';
 
   @override
+  String get qaModeSkip => 'スキップ';
+
+  @override
   String get qaModeVerify => '確認済みにする';
 
   @override

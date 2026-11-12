@@ -1888,6 +1888,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qaModePrevious => 'Previous';
 
   @override
+  String get qaModeSkip => 'Skip';
+
+  @override
   String get qaModeVerify => 'Verified';
 
   @override

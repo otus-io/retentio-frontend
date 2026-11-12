@@ -194,23 +194,28 @@ void main() {
       expect(checkboxes.map((c) => c.value), [false, false]);
     });
 
-    testWidgets('Next stays disabled until every scoreable column is checked', (
-      tester,
-    ) async {
-      useAdapter();
-      await pumpQaMode(tester);
+    testWidgets(
+      'Verified stays disabled until every scoreable column is checked',
+      (tester) async {
+        useAdapter();
+        await pumpQaMode(tester);
 
-      expect(find.widgetWithText(OutlinedButton, 'Next'), findsOneWidget);
+        OutlinedButton disabledVerified() => tester.widget<OutlinedButton>(
+          find.widgetWithText(OutlinedButton, 'Verified'),
+        );
+        expect(disabledVerified().onPressed, isNull);
+        expect(find.text('Next'), findsNothing);
 
-      await tester.tap(find.text('日文'));
-      await tester.pumpAndSettle();
-      expect(find.widgetWithText(OutlinedButton, 'Next'), findsOneWidget);
+        await tester.tap(find.text('日文'));
+        await tester.pumpAndSettle();
+        expect(disabledVerified().onPressed, isNull);
 
-      await tester.tap(find.text('中文'));
-      await tester.pumpAndSettle();
-      expect(find.widgetWithText(FilledButton, 'Next'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Previous'), findsNothing);
-    });
+        await tester.tap(find.text('中文'));
+        await tester.pumpAndSettle();
+        expect(find.widgetWithText(FilledButton, 'Verified'), findsOneWidget);
+        expect(find.widgetWithText(FilledButton, 'Previous'), findsNothing);
+      },
+    );
 
     testWidgets('Previous is disabled when every scoreable column is checked', (
       tester,
@@ -222,7 +227,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('中文'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Next'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Verified'));
       await tester.pumpAndSettle();
 
       expect(find.widgetWithText(FilledButton, 'Previous'), findsOneWidget);
@@ -241,7 +246,7 @@ void main() {
       );
     });
 
-    testWidgets('Next sends quality for checked columns and advances', (
+    testWidgets('Verified sends quality for checked columns and advances', (
       tester,
     ) async {
       useAdapter();
@@ -251,7 +256,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('中文'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Next'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Verified'));
       await tester.pumpAndSettle();
 
       expect(adapter.qualityPuts, hasLength(1));
@@ -267,7 +272,7 @@ void main() {
       );
     });
 
-    testWidgets('Next verifies the last fact and shows the complete screen', (
+    testWidgets('Verified signs the last fact and shows the complete screen', (
       tester,
     ) async {
       useAdapter(factIds: const ['fact-1']);
@@ -280,7 +285,7 @@ void main() {
       await tester.tap(find.text('中文'));
       await tester.pumpAndSettle();
 
-      final next = find.widgetWithText(FilledButton, 'Next');
+      final next = find.widgetWithText(FilledButton, 'Verified');
       expect(next, findsOneWidget);
       expect(tester.widget<FilledButton>(next).onPressed, isNotNull);
 
@@ -345,7 +350,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('中文'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Next'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Verified'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithText(FilledButton, 'Back to Deck'));
@@ -355,28 +360,26 @@ void main() {
       expect(find.text('QA mode'), findsNothing);
     });
 
-    testWidgets('Verified is not tappable and fills when all columns checked', (
-      tester,
-    ) async {
+    testWidgets('Skip moves on without signing off', (tester) async {
       useAdapter();
       await pumpQaMode(tester);
 
-      expect(find.widgetWithText(OutlinedButton, 'Verified'), findsOneWidget);
-
-      await tester.tap(find.text('日文'));
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Skip'));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(OutlinedButton, 'Verified'), findsOneWidget);
 
-      await tester.tap(find.text('中文'));
-      await tester.pumpAndSettle();
-      expect(find.widgetWithText(FilledButton, 'Verified'), findsOneWidget);
-
-      await tester.tap(find.widgetWithText(FilledButton, 'Verified'));
-      await tester.pumpAndSettle();
+      expect(find.text('second'), findsOneWidget);
       expect(adapter.qualityPuts, isEmpty);
+      expect(find.text('0 / 2 verified'), findsOneWidget);
+      // Nothing to skip to on the last fact.
+      expect(
+        tester
+            .widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Skip'))
+            .onPressed,
+        isNull,
+      );
     });
 
-    testWidgets('shows the API message when the PUT fails on Next', (
+    testWidgets('shows the API message when the PUT fails on Verified', (
       tester,
     ) async {
       useAdapter(qualityPutFails: true);
@@ -386,7 +389,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('中文'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Next'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Verified'));
       await tester.pumpAndSettle();
 
       expect(find.text('Fact is not in the pinned snapshot'), findsOneWidget);
@@ -394,7 +397,7 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
     });
 
-    testWidgets('Next walks to the next fact and disables empty columns', (
+    testWidgets('Verified walks to the next fact and disables empty columns', (
       tester,
     ) async {
       useAdapter();
@@ -404,7 +407,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('中文'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Next'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Verified'));
       await tester.pumpAndSettle();
 
       expect(find.text('second'), findsOneWidget);
@@ -660,7 +663,7 @@ void main() {
           await tester.tap(find.byWidget(box.widget));
           await tester.pump();
         }
-        await tester.tap(find.text('Next'));
+        await tester.tap(find.text('Verified'));
         await tester.pumpAndSettle();
 
         expect(adapter.qualityPuts, hasLength(1));

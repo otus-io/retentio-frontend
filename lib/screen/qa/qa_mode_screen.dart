@@ -553,32 +553,28 @@ class _QaFooter extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
+              // Moves on without signing; the fact returns in a later walk.
               Expanded(
                 child: AppButton(
-                  label: loc.next,
+                  label: loc.qaModeSkip,
                   size: AppButtonSize.sm,
-                  variant: ready
-                      ? AppButtonVariant.primary
-                      : AppButtonVariant.secondary,
-                  onPressed: (state.hasNext || ready) && !state.busy
-                      ? onNext
-                      : null,
+                  variant: AppButtonVariant.secondary,
+                  onPressed: state.hasNext && !state.busy ? cubit.skip : null,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          AbsorbPointer(
-            child: AppButton(
-              label: loc.qaModeVerify,
-              fullWidth: true,
-              isLoading: state.busy,
-              leading: const Icon(LucideIcons.badgeCheck),
-              onPressed: ready && !state.busy ? () {} : null,
-              variant: ready
-                  ? AppButtonVariant.primary
-                  : AppButtonVariant.secondary,
-            ),
+          // Signs off the ticked columns and moves to the next fact.
+          AppButton(
+            label: loc.qaModeVerify,
+            fullWidth: true,
+            isLoading: state.busy,
+            leading: const Icon(LucideIcons.badgeCheck),
+            onPressed: ready && !state.busy ? onNext : null,
+            variant: ready
+                ? AppButtonVariant.primary
+                : AppButtonVariant.secondary,
           ),
         ],
       ),

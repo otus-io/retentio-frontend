@@ -55,7 +55,7 @@ class QaModeState {
   final int editedCount;
   final bool busy;
 
-  /// Set after Next signs off the last fact of this column set.
+  /// Set after Verified signs off the last fact of this column set.
   final bool walkComplete;
 
   /// The walk's fact list could not be fetched (offline or server error).
@@ -307,6 +307,10 @@ class QaModeCubit extends Cubit<QaModeState> {
   }
 
   Future<void> prev() => goTo(state.index - 1);
+
+  /// Moves on without signing off: the fact stays unverified and is listed
+  /// again by the next walk. Does nothing on the last fact.
+  Future<void> skip() => goTo(state.index + 1);
 
   void toggleColumn(int entryIndex) {
     if (state.busy || !state.activeColumnIndexes.contains(entryIndex)) return;
