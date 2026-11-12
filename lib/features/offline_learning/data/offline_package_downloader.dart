@@ -198,44 +198,7 @@ class OfflinePackageDownloader {
     final progress = _notifier(deckId)..value = 0;
     _failedNotifier(deckId).value = false;
     try {
-      _checkHalted(deckId);
-      final fetchedAt = _nowSec();
-      final remote = await _fetchDeck(deckId);
-      _checkHalted(deckId);
-      _report(deckId, _deckShare);
-      final before = await _store.getDeck(deckId);
-      final (facts, tags) = await _syncFacts(
-        deckId,
-        _buildDeck(deckId, remote, before, const []),
-      );
-      final mediaComplete = await _downloadFactMedia(deckId, facts);
-      // Last, so reviews made online while the deck was downloading (the
-      // study screen serves it remotely until it is ready) are not lost.
-      await _seedCards(deckId);
-      // Re-read: sync flushes and tag loads may have written the row meanwhile.
-      final local = await _store.getDeck(deckId);
-      _checkHalted(deckId);
-      await _store.putDeck(
-        _buildDeck(
-          deckId,
-          remote,
-          local,
-          tags,
-          // A flush that refreshed the counters during the download has
-          // newer ones than the deck fetched before it.
-          countsAt: local?.lastSyncedAt == before?.lastSyncedAt
-              ? fetchedAt
-              : null,
-          mediaComplete: mediaComplete,
-        ),
-      );
-      try {
-        await pruneUnusedMedia(_store);
-      } catch (e) {
-        logger.w('Offline media cleanup of deck=$deckId failed: $e');
-      }
-      _report(deckId, 1);
-      return true;
+      return await _writePackage(deckId);
     } on _DownloadHalted {
       logger.i('Offline download of deck=$deckId stopped for removal');
       return false;
@@ -246,6 +209,47 @@ class OfflinePackageDownloader {
     } finally {
       progress.value = null;
     }
+  }
+
+  Future<bool> _writePackage(String deckId) async {
+    _checkHalted(deckId);
+    final fetchedAt = _nowSec();
+    final remote = await _fetchDeck(deckId);
+    _checkHalted(deckId);
+    _report(deckId, _deckShare);
+    final before = await _store.getDeck(deckId);
+    final (facts, tags) = await _syncFacts(
+      deckId,
+      _buildDeck(deckId, remote, before, const []),
+    );
+    final mediaComplete = await _downloadFactMedia(deckId, facts);
+    // Last, so reviews made online while the deck was downloading (the
+    // study screen serves it remotely until it is ready) are not lost.
+    await _seedCards(deckId);
+    // Re-read: sync flushes and tag loads may have written the row meanwhile.
+    final local = await _store.getDeck(deckId);
+    _checkHalted(deckId);
+    await _store.putDeck(
+      _buildDeck(
+        deckId,
+        remote,
+        local,
+        tags,
+        // A flush that refreshed the counters during the download has
+        // newer ones than the deck fetched before it.
+        countsAt: local?.lastSyncedAt == before?.lastSyncedAt
+            ? fetchedAt
+            : null,
+        mediaComplete: mediaComplete,
+      ),
+    );
+    try {
+      await pruneUnusedMedia(_store);
+    } catch (e) {
+      logger.w('Offline media cleanup of deck=$deckId failed: $e');
+    }
+    _report(deckId, 1);
+    return true;
   }
 
   /// [countsAt]: when the server review counters of [remote] were fetched, to
