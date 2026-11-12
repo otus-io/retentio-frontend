@@ -15,10 +15,10 @@ Closing QA mode refreshes the deck list so a newly earned badge shows right away
 ## Workflow
 
 1. Deck menu **QA mode** (any deck you own: source or import).
-2. Walk facts (Prev/Next; optional 課). Show every column (label from `deck.fields`) with text/audio and a **checkbox**.
+2. Walk facts (Previous/Skip; optional 課). Show every column (label from `deck.fields`) with text/audio and a **checkbox**.
 3. Check the columns that are OK (headword, example, …). Unchecked = not signed off. Pre-check columns that already have `model: human` on GET quality.
-4. **Next** is enabled only when every scoreable column is checked; it then sends quality and advances. **Verified** is a status indicator only (filled when every scoreable column is checked).
-5. **Bad column → Edit** that text/audio. `PATCH` overlay, then **immediately** `POST …/edit`. Do not PUT `human`/10 on a column until it is checked and you advance with **Next** (or after author **accept**, then QA checks it).
+4. **Verified** is enabled only when every scoreable column is checked; it then sends quality and advances. **Skip** moves to the next fact without signing off, so the fact comes back in a later walk (disabled on the last fact).
+5. **Bad column → Edit** that text/audio. `PATCH` overlay, then **immediately** `POST …/edit`. Do not PUT `human`/10 on a column until it is checked and you advance with **Verified** (or after author **accept**, then QA checks it).
 6. Report issue stays `POST …/report` (bugs only).
 
 ```mermaid
@@ -44,7 +44,7 @@ Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
-Quality is **already per entry index** (`"0"`, `"2"`, …). Checked columns → those keys only. For a checked column, include `text` and/or `audio` if that entry has them. Score **10**, `model: "human"`. **Next** PUTs when every scoreable column is checked, then advances; **Verified** turns filled at the same point (not tappable).
+Quality is **already per entry index** (`"0"`, `"2"`, …). Checked columns → those keys only. For a checked column, include `text` and/or `audio` if that entry has them. Score **10**, `model: "human"`. **Verified** PUTs when every scoreable column is checked, then advances.
 
 Example: reviewer checks 日文 (0) and 例句 (2), not 中文 (1) or 例句中文 (3):
 
@@ -156,7 +156,7 @@ Fail POST after a good PATCH: overlay is saved locally; toast; retry POST. Do no
 
 ## Queue / UI
 
-Fact ids come from one `GET …/facts/ids` (`CardService.listFactIds` → `data.fact_ids`). Before the walk, the reviewer picks which deck columns to include (saved per import deck in `SharedPreferences`); the picker lists every deck column with its deck-wide completion % from `GET …/quality/stats`. Only selected columns appear during the walk and count toward verify. Re-open the picker from the app bar to change columns mid-walk. The queue is the facts still missing a sign-off in the selected columns (`unverified_columns=` on that request), fetched once per start and kept for the walk so Prev can revisit a fact signed off in this session. An empty queue opens the walk-complete screen; so does **Next** on the queue's last fact. If the list fails to load, or it is empty and the stats are unavailable, QA shows the load error instead of guessing. A fact whose quality record cannot be read (anything but a 404 "no record") shows the fact load error and cannot be signed off, because the PUT would replace a record the client never saw. Back is blocked while a sign-off is saving. Header shows fact progress, each active column’s completion %, and **edited** from `edited_count` on quality stats (server). One row per active entry (`FactContent` inline + checkbox, `deck.fields[i]`). Audio uses snapshot `media_versions` from `GET .../facts/{factId}` (`/api/media/{id}?v={pinned}`), not deck `source_version` (copy-on-write media often pins an older `v`). Cubit: `factIds`, `index`, `activeColumnIndexes`, `checkedEntryIndexes`, outside `DeckStudyBloc`.
+Fact ids come from one `GET …/facts/ids` (`CardService.listFactIds` → `data.fact_ids`). Before the walk, the reviewer picks which deck columns to include (saved per import deck in `SharedPreferences`); the picker lists every deck column with its deck-wide completion % from `GET …/quality/stats`. Only selected columns appear during the walk and count toward verify. Re-open the picker from the app bar to change columns mid-walk. The queue is the facts still missing a sign-off in the selected columns (`unverified_columns=` on that request), fetched once per start and kept for the walk so Prev can revisit a fact signed off in this session. An empty queue opens the walk-complete screen; so does **Verified** on the queue's last fact. If the list fails to load, or it is empty and the stats are unavailable, QA shows the load error instead of guessing. A fact whose quality record cannot be read (anything but a 404 "no record") shows the fact load error and cannot be signed off, because the PUT would replace a record the client never saw. Back is blocked while a sign-off is saving. Header shows verified / total facts for the selected columns (the server's `total_facts` minus the facts still queued, plus those signed off in this walk; the queue itself is the total when stats are unavailable), each active column’s completion %, and **edited** from `edited_count` on quality stats (server). One row per active entry (`FactContent` inline + checkbox, `deck.fields[i]`). Audio uses snapshot `media_versions` from `GET .../facts/{factId}` (`/api/media/{id}?v={pinned}`), not deck `source_version` (copy-on-write media often pins an older `v`). Cubit: `factIds`, `index`, `activeColumnIndexes`, `checkedEntryIndexes`, outside `DeckStudyBloc`.
 
 ## Send to author
 

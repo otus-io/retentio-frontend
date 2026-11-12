@@ -555,6 +555,7 @@
   "qaModeColumnComplete": "{label} {percent}%",
   "qaModeColumnPercent": "{percent}%",
   "qaModePrevious": "前へ",
+  "qaModeSkip": "スキップ",
   "qaModeVerify": "確認済みにする",
   "qaModeWalkComplete": "この列の確認は完了です。ありがとうございます。",
   "qaReviewType": "QAレビュー",

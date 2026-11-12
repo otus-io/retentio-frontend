@@ -2234,6 +2234,8 @@
     "placeholders": { "percent": { "type": "int" } }
   },
   "qaModePrevious": "Previous",
+  "qaModeSkip": "Skip",
+  "@qaModeSkip": { "description": "QA walk: move to the next fact without signing this one off" },
   "qaModeVerify": "Verified",
   "qaModeWalkComplete": "You're done with these columns. Thank you.",
   "qaReviewType": "QA review",
