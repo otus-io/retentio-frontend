@@ -31,7 +31,7 @@ class CatalogDeck {
 
   /// The author human-verified every text/audio field of the source deck's
   /// current facts.
-  @JsonKey(defaultValue: false)
+  @JsonKey(fromJson: _isTrue)
   final bool qaVerified;
 
   factory CatalogDeck.fromJson(Map<String, dynamic> json) =>
@@ -39,3 +39,6 @@ class CatalogDeck {
 
   Map<String, dynamic> toJson() => _$CatalogDeckToJson(this);
 }
+
+/// Only a JSON `true` counts; strings, numbers and `null` read as false.
+bool _isTrue(Object? value) => value == true;

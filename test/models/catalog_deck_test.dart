@@ -15,6 +15,9 @@ void main() {
   test('reads qa_verified and defaults it to false', () {
     expect(CatalogDeck.fromJson(row(qaVerified: true)).qaVerified, isTrue);
     expect(CatalogDeck.fromJson(row()).qaVerified, isFalse);
+    for (final loose in <Object>['true', 1, 'yes']) {
+      expect(CatalogDeck.fromJson(row(qaVerified: loose)).qaVerified, isFalse);
+    }
     expect(
       CatalogDeck.fromJson(row(qaVerified: true)).toJson()['qa_verified'],
       isTrue,
