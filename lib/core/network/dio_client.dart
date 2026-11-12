@@ -225,17 +225,27 @@ class NetworkDioClient {
     final outputFile = File(downloadPath);
     await outputFile.create(recursive: true);
 
+    // Content-Length; -1 when unknown or compressed.
+    var expected = -1;
     try {
       await _dio.download(
         downloadUrl,
         downloadPath,
         cancelToken: cancelToken,
         onReceiveProgress: (received, total) {
+          expected = total;
           if (total > 0) {
             onProgress(received / total);
           }
         },
       );
+      final written = await outputFile.length();
+      if (expected > 0 && written != expected) {
+        throw DioException(
+          requestOptions: RequestOptions(path: downloadUrl),
+          message: 'Download truncated: $written of $expected bytes',
+        );
+      }
       return downloadPath;
     } on DioException catch (e) {
       _handleError(e);
