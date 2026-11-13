@@ -809,12 +809,15 @@ void main() {
       late bool failCards;
       late OfflinePackageDownloader built;
       late int snapshot;
+      late List<String> listed;
 
       /// The first media file fails with the screen off; the cards fail while
-      /// [failCards] is set. The deck is listed at [snapshot].
+      /// [failCards] is set. The deck is listed at [snapshot] with the facts
+      /// of [listed].
       OfflinePackageDownloader buildPausing() {
         foreground = ValueNotifier(true);
         snapshot = _deck.sourceVersion;
+        listed = ['f1'];
         deckFetches = 0;
         factFetches = 0;
         mediaCalls = 0;
@@ -827,15 +830,17 @@ void main() {
             final json = jsonDecode(jsonEncode(_deck.toJson()));
             return Deck.fromJson({...json, 'source_version': snapshot});
           },
-          fetchFactsPage: (_, _, _) async {
+          fetchFactsPage: (_, _, offset) async {
             factFetches++;
             return OfflineFactsPage(
               facts: [
-                _fact('f1', entries: const [FactEntry(audio: 'aud')]),
+                for (final id in listed.skip(offset))
+                  _fact(id, entries: [FactEntry(audio: 'a-$id')]),
               ],
               hasMore: false,
             );
           },
+          factIds: listed,
           downloadMedia: (url, path) async {
             mediaCalls++;
             if (mediaCalls == 1) {
@@ -885,6 +890,20 @@ void main() {
         expect(await restarted.download('d1'), isTrue);
 
         expect(factFetches, 0);
+        expect(store.decks['d1']?.isReady, isTrue);
+      });
+
+      test('fetches the facts again when their count changed', () async {
+        final downloader = buildPausing();
+
+        expect(await downloader.download('d1'), isFalse);
+        listed.add('f2');
+        foreground.value = true;
+        await settle();
+
+        expect(factFetches, 2);
+        expect(store.facts.keys, unorderedEquals(['f1', 'f2']));
+        expect(downloadedUrls, ['/api/media/a-f1', '/api/media/a-f2']);
         expect(store.decks['d1']?.isReady, isTrue);
       });
 
@@ -994,6 +1013,7 @@ void main() {
       late List<String> ids;
       late bool countUnknown;
       late bool online;
+      late bool probeFails;
       late StreamController<void> restored;
 
       /// Three fact pages; the second fails once with the screen off unless
@@ -1005,6 +1025,7 @@ void main() {
         ids = List.generate(401, (i) => 'f$i');
         countUnknown = false;
         online = true;
+        probeFails = false;
         restored = StreamController<void>.broadcast();
         addTearDown(restored.close);
         var paused = !pause;
@@ -1035,7 +1056,8 @@ void main() {
           fetchFactIds: (_) async => countUnknown ? null : ids,
           fetchCards: (_) async => const [],
           nowSec: () => 1000,
-          isOnline: () async => online,
+          isOnline: () async =>
+              probeFails ? throw StateError('no connectivity') : online,
           foreground: foreground,
           connectivityChanged: () => restored.stream,
         );
@@ -1104,6 +1126,23 @@ void main() {
         foreground.value = false;
         online = true;
         foreground.value = true;
+        await settle();
+
+        expect(offsets, [0, 200, 200, 400]);
+        expect(store.decks['d1']?.isReady, isTrue);
+      });
+
+      test('a failing network check waits for the network', () async {
+        final downloader = buildPausing();
+
+        expect(await downloader.download('d1'), isFalse);
+        probeFails = true;
+        foreground.value = true;
+        await settle();
+        expect(offsets, [0, 200]);
+
+        probeFails = false;
+        restored.add(null);
         await settle();
 
         expect(offsets, [0, 200, 200, 400]);
@@ -1618,6 +1657,32 @@ void main() {
 
     expect(await build().download('d1'), isTrue);
     expect(store.decks['d1']!.isReady, isTrue);
+  });
+
+  test('drops facts by the id list read after the second fetch', () async {
+    var listings = 0;
+    var idReads = 0;
+    final ok = await OfflinePackageDownloader(
+      store: store,
+      mediaRootDir: tmp.path,
+      fetchDeck: (_) async => _deck,
+      // 'c' is added between the first id read and the second fetch.
+      fetchFactsPage: (_, _, _) async => OfflineFactsPage(
+        facts: [
+          _fact('a'),
+          if (++listings > 1) ...[_fact('b'), _fact('c')],
+        ],
+        hasMore: false,
+      ),
+      fetchFactIds: (_) async => ++idReads < 3 ? ['a', 'b'] : ['a', 'b', 'c'],
+      fetchCards: (_) async => [],
+      fetchMediaVersions: (_, _) async => const {},
+      nowSec: () => 1,
+    ).download('d1');
+
+    expect(ok, isTrue);
+    expect(listings, 2);
+    expect(store.facts.keys, unorderedEquals(['a', 'b', 'c']));
   });
 
   test('keeps stored facts when the fact id list cannot be read', () async {

@@ -264,7 +264,7 @@ class OfflinePackageDownloader {
   /// app resumes them.
   Future<void> _kickPaused() async {
     if (_foreground?.value == false || _resumeWhenForeground.isEmpty) return;
-    if (!await _isOnline()) {
+    if (!await _probeOnline()) {
       _waitForNetwork();
       return;
     }
@@ -273,6 +273,16 @@ class OfflinePackageDownloader {
       if (_inFlight.containsKey(id)) continue;
       _resumeWhenForeground.remove(id);
       unawaited(download(id));
+    }
+  }
+
+  /// A failing connectivity check counts as offline.
+  Future<bool> _probeOnline() async {
+    try {
+      return await _isOnline();
+    } catch (e) {
+      logger.w('Offline download connectivity check failed: $e');
+      return false;
     }
   }
 
@@ -329,7 +339,11 @@ class OfflinePackageDownloader {
   Future<bool> _writePackage(String deckId, {required bool resume}) async {
     _checkHalted(deckId);
     final checkpoint = await _startCheckpoint(deckId, resume: resume);
-    if (!checkpoint.factsDone) await _syncFacts(deckId, checkpoint);
+    // Facts finished before a pause are kept only while their count holds.
+    if (!checkpoint.factsDone ||
+        await _factCount(deckId) != checkpoint.factTotal) {
+      await _syncFacts(deckId, checkpoint);
+    }
     _report(deckId, _deckShare + _factsShare);
     final _Checkpoint(:remote, :before, :fetchedAt, :facts) = checkpoint;
     final tags = checkpoint.tags.values.toList()
@@ -472,12 +486,14 @@ class OfflinePackageDownloader {
     // Facts added or deleted meanwhile shift the offsets, so start over.
     if (total == null || total != cp.factTotal) _restartFacts(cp, total);
     await _fetchFactPages(deckId, cp, stored, imported: imported);
-    final ids = await _liveFactIds(deckId);
+    var ids = await _liveFactIds(deckId);
     if (ids != null && _missesAny(cp, ids)) {
       // A fact added or deleted while paging shifted the offsets past some.
       logger.w('Offline facts of deck=$deckId incomplete, fetching again');
       _restartFacts(cp, ids.length);
       await _fetchFactPages(deckId, cp, stored, imported: imported);
+      // Re-read, or a fact added meanwhile would be dropped as deleted.
+      ids = await _liveFactIds(deckId);
     }
     _report(deckId, _deckShare + _factsShare);
     if (ids != null) await _dropDeletedFacts(deckId, ids);
@@ -489,6 +505,7 @@ class OfflinePackageDownloader {
     cp.facts.clear();
     cp.tags.clear();
     cp.factTotal = total;
+    cp.factsDone = false;
   }
 
   bool _missesAny(_Checkpoint cp, List<String> ids) {
