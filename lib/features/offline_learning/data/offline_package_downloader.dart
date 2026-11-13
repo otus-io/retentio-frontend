@@ -86,7 +86,7 @@ class OfflinePackageDownloader {
 
   static const int factsPageSize = 200;
   static const int versionLookupConcurrency = 4;
-  static const int mediaDownloadConcurrency = 16;
+  static const int mediaDownloadConcurrency = 64;
   static const int refreshIntervalSec = 3600;
   static const int resumeConcurrency = 2;
 

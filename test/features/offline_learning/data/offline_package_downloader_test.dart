@@ -2090,13 +2090,13 @@ void main() {
     expect(store.decks['d1']!.isReady, isTrue);
   });
 
-  test('downloads at most sixteen media files at a time', () async {
+  test('downloads at most sixty-four media files at a time', () async {
     var active = 0;
     var peak = 0;
     final ok = await build(
       pages: [
         [
-          for (var i = 0; i < 40; i++)
+          for (var i = 0; i < 100; i++)
             _fact('f$i', entries: [FactEntry(audio: 'a$i')]),
         ],
       ],
@@ -2109,9 +2109,9 @@ void main() {
     ).download('d1');
 
     expect(ok, isTrue);
-    expect(downloadedUrls, hasLength(40));
-    expect(store.media, hasLength(40));
-    expect(OfflinePackageDownloader.mediaDownloadConcurrency, 16);
+    expect(downloadedUrls, hasLength(100));
+    expect(store.media, hasLength(100));
+    expect(OfflinePackageDownloader.mediaDownloadConcurrency, 64);
     expect(peak, OfflinePackageDownloader.mediaDownloadConcurrency);
   });
 

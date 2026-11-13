@@ -5,6 +5,7 @@ import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
 import 'package:retentio/core/network/api_error_mapper.dart';
 import 'package:retentio/core/network/dio_error_log.dart';
+import 'package:retentio/core/network/download_http2_adapter.dart';
 import 'package:retentio/models/api_response.dart';
 import 'package:retentio/services/index.dart';
 
@@ -16,6 +17,7 @@ class NetworkDioClient {
   static final NetworkDioClient instance = NetworkDioClient._();
 
   final Dio _dio = Dio();
+  final IOHttpClientAdapter _ioAdapter = IOHttpClientAdapter();
   bool _didConfig = false;
 
   final Duration _connectTimeout = const Duration(minutes: 1);
@@ -43,15 +45,17 @@ class NetworkDioClient {
         contentType: Headers.jsonContentType,
       );
 
-      (_dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient =
-          _createHttpClient;
+      _ioAdapter.createHttpClient = _createHttpClient;
+      // A debugging proxy sees HTTP/1.1 traffic only.
+      _dio.httpClientAdapter = Env.isProxy
+          ? _ioAdapter
+          : DownloadHttp2Adapter(_ioAdapter);
     }
 
     _dio.options.baseUrl = baseUrl;
 
     if (proxyClientFactory != null) {
-      (_dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient =
-          proxyClientFactory;
+      _ioAdapter.createHttpClient = proxyClientFactory;
     }
 
     if (interceptors != null && interceptors.isNotEmpty) {
@@ -231,6 +235,7 @@ class NetworkDioClient {
         downloadUrl,
         downloadPath,
         cancelToken: cancelToken,
+        options: Options(extra: {DownloadHttp2Adapter.extraKey: true}),
         onReceiveProgress: (received, total) {
           expected = total;
           if (total > 0) {
