@@ -700,10 +700,11 @@ class OfflinePackageDownloader {
     var next = 0;
     var done = 0;
     Future<void> worker() async {
-      // Workers keep taking files while the app is in the background on
-      // purpose, so a download can finish with the screen off; only a failure
-      // there pauses it (see [_leftForeground]).
-      while (next < keys.length && !interrupted) {
+      // Leaving the foreground pauses the download: files in flight finish,
+      // no new one starts, and it resumes when the app is back.
+      while (next < keys.length &&
+          !interrupted &&
+          !_leftForeground.contains(deckId)) {
         final key = keys[next++];
         try {
           await _downloadOne(deckId, key);
@@ -728,7 +729,9 @@ class OfflinePackageDownloader {
     await Future.wait([
       for (var w = 0; w < mediaDownloadConcurrency; w++) worker(),
     ]);
-    if (interrupted) throw const _DownloadInterrupted();
+    if (interrupted || _leftForeground.contains(deckId)) {
+      throw const _DownloadInterrupted();
+    }
     return complete;
   }
 

@@ -737,6 +737,43 @@ void main() {
       expect(downloader.failedOf('d1').value, isFalse);
     });
 
+    test('screen off stops taking media files until the app is back', () async {
+      const extra = 4;
+      final total = OfflinePackageDownloader.mediaDownloadConcurrency + extra;
+      final foreground = ValueNotifier(true);
+      var calls = 0;
+      final downloader = build(
+        foreground: foreground,
+        fetchFactsPage: (_, _, _) async => OfflineFactsPage(
+          facts: [
+            for (var i = 0; i < total; i++)
+              _fact('f$i', entries: [FactEntry(audio: 'a$i')]),
+          ],
+          hasMore: false,
+        ),
+        downloadMedia: (url, path) async {
+          if (++calls == OfflinePackageDownloader.mediaDownloadConcurrency) {
+            foreground.value = false;
+          }
+          await Future<void>.delayed(Duration.zero);
+          return writeMedia(url, path);
+        },
+      );
+
+      expect(await downloader.download('d1'), isFalse);
+      expect(calls, OfflinePackageDownloader.mediaDownloadConcurrency);
+      expect(store.decks.containsKey('d1'), isFalse);
+      expect(downloader.failedOf('d1').value, isFalse);
+
+      foreground.value = true;
+      for (var i = 0; i < 50 && store.decks['d1'] == null; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      expect(calls, total);
+      expect(store.decks['d1']?.isReady, isTrue);
+    });
+
     test('removing a deck drops a download paused by screen off', () async {
       final foreground = ValueNotifier(false);
       var calls = 0;
@@ -950,13 +987,16 @@ void main() {
           final downloader = buildPausing();
 
           expect(await downloader.download('d1'), isFalse);
-          expect(await downloader.download('d1', fresh: true), isTrue);
+          // Still in the background, so it pauses again before the media.
+          expect(await downloader.download('d1', fresh: true), isFalse);
+          expect(mediaCalls, 1);
           foreground.value = true;
           await settle();
 
-          expect(deckFetches, 2);
+          expect(deckFetches, 3);
           expect(factFetches, 2);
           expect(mediaCalls, 2);
+          expect(store.decks['d1']?.isReady, isTrue);
         },
       );
 
@@ -1009,21 +1049,21 @@ void main() {
         expect(store.decks['d1']?.isReady, isTrue);
       });
 
-      test(
-        'a list refresh may finish a paused deck in the background',
-        () async {
-          final downloader = buildPausing();
+      test('a list refresh in the background keeps the deck paused', () async {
+        final downloader = buildPausing();
 
-          expect(await downloader.download('d1'), isFalse);
-          await downloader.resumeMissing(['d1']);
-          expect(store.decks['d1']?.isReady, isTrue);
-          foreground.value = true;
-          await settle();
+        expect(await downloader.download('d1'), isFalse);
+        await downloader.resumeMissing(['d1']);
+        expect(store.decks.containsKey('d1'), isFalse);
+        expect(mediaCalls, 1);
+        foreground.value = true;
+        await settle();
 
-          expect(deckFetches, 2);
-          expect(cardFetches, 1);
-        },
-      );
+        expect(deckFetches, 3);
+        expect(mediaCalls, 2);
+        expect(cardFetches, 1);
+        expect(store.decks['d1']?.isReady, isTrue);
+      });
     });
 
     group('resuming the facts', () {
