@@ -26,6 +26,8 @@ class _FakeStore implements OfflineLearningStore {
   final media = <String, String>{};
   final ops = <StudySyncOperation>[];
   final checkpoints = <String, String>{};
+  bool failGetCheckpoint = false;
+  bool failPutCheckpoint = false;
   bool failDeleteCheckpoint = false;
   bool failGetMediaPath = false;
   bool failGetMediaPaths = false;
@@ -93,17 +95,22 @@ class _FakeStore implements OfflineLearningStore {
 
   // Encoded like the Hive store, so a checkpoint must survive JSON.
   @override
-  Future<Map<String, dynamic>?> getDownloadCheckpoint(String deckId) async =>
-      switch (checkpoints[deckId]) {
-        final json? => jsonDecode(json) as Map<String, dynamic>,
-        null => null,
-      };
+  Future<Map<String, dynamic>?> getDownloadCheckpoint(String deckId) async {
+    if (failGetCheckpoint) throw StateError('store broken');
+    return switch (checkpoints[deckId]) {
+      final json? => jsonDecode(json) as Map<String, dynamic>,
+      null => null,
+    };
+  }
 
   @override
   Future<void> putDownloadCheckpoint(
     String deckId,
     Map<String, dynamic> checkpoint,
-  ) async => checkpoints[deckId] = jsonEncode(checkpoint);
+  ) async {
+    if (failPutCheckpoint) throw StateError('store broken');
+    checkpoints[deckId] = jsonEncode(checkpoint);
+  }
 
   @override
   Future<void> deleteDownloadCheckpoint(String deckId) async {
@@ -907,6 +914,19 @@ void main() {
         expect(store.decks['d1']?.isReady, isTrue);
       });
 
+      test('fetches the facts again when they changed at one count', () async {
+        final downloader = buildPausing();
+
+        expect(await downloader.download('d1'), isFalse);
+        listed[0] = 'f2';
+        foreground.value = true;
+        await settle();
+
+        expect(factFetches, 2);
+        expect(store.facts.keys, ['f2']);
+        expect(store.decks['d1']?.isReady, isTrue);
+      });
+
       test('fetches the facts again when the snapshot changed', () async {
         final downloader = buildPausing();
 
@@ -1014,6 +1034,7 @@ void main() {
       late bool countUnknown;
       late bool online;
       late bool probeFails;
+      late Completer<void>? probeGate;
       late StreamController<void> restored;
 
       /// Three fact pages; the second fails once with the screen off unless
@@ -1026,6 +1047,7 @@ void main() {
         countUnknown = false;
         online = true;
         probeFails = false;
+        probeGate = null;
         restored = StreamController<void>.broadcast();
         addTearDown(restored.close);
         var paused = !pause;
@@ -1056,8 +1078,11 @@ void main() {
           fetchFactIds: (_) async => countUnknown ? null : ids,
           fetchCards: (_) async => const [],
           nowSec: () => 1000,
-          isOnline: () async =>
-              probeFails ? throw StateError('no connectivity') : online,
+          isOnline: () async {
+            await probeGate?.future;
+            if (probeFails) throw StateError('no connectivity');
+            return online;
+          },
           foreground: foreground,
           connectivityChanged: () => restored.stream,
         );
@@ -1164,6 +1189,21 @@ void main() {
         await settle();
 
         expect(offsets, [0, 200]);
+      });
+
+      test('a downloader disposed during a network check stays idle', () async {
+        final downloader = buildPausing();
+
+        expect(await downloader.download('d1'), isFalse);
+        probeGate = Completer<void>();
+        foreground.value = true;
+        await settle();
+        downloader.dispose();
+        probeGate!.complete();
+        await settle();
+
+        expect(offsets, [0, 200]);
+        expect(store.decks['d1'], isNull);
       });
 
       test('resumes when the network comes back in front', () async {
@@ -1668,6 +1708,20 @@ void main() {
     expect(listings, 2);
     expect(store.facts.keys, unorderedEquals(['a', 'b']));
   });
+
+  for (final (step, breakStore) in [
+    ('read', (_FakeStore s) => s.failGetCheckpoint = true),
+    ('saved', (_FakeStore s) => s.failPutCheckpoint = true),
+  ]) {
+    test('a checkpoint that cannot be $step fails the download', () async {
+      breakStore(store);
+      final downloader = build();
+
+      expect(await downloader.download('d1'), isFalse);
+      expect(downloader.failedOf('d1').value, isTrue);
+      expect(store.decks, isEmpty);
+    });
+  }
 
   test('a checkpoint that cannot be deleted does not fail it', () async {
     store.failDeleteCheckpoint = true;

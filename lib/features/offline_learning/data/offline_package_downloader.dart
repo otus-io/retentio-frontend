@@ -108,6 +108,7 @@ class OfflinePackageDownloader {
   final ValueListenable<bool>? _foreground;
   final Stream<void> Function()? _connectivityChanged;
   StreamSubscription<void>? _offlineWait;
+  var _disposed = false;
   final Map<String, Future<bool>> _inFlight = {};
   final Map<String, int> _halts = {};
   final Map<String, ValueNotifier<double?>> _progress = {};
@@ -121,6 +122,7 @@ class OfflinePackageDownloader {
   /// out; the downloader is not used afterwards. The foreground listenable is
   /// not disposed here: OfflineLearningSession owns and disposes it.
   void dispose() {
+    _disposed = true;
     _foreground?.removeListener(_onForeground);
     unawaited(_offlineWait?.cancel());
     _offlineWait = null;
@@ -273,7 +275,9 @@ class OfflinePackageDownloader {
   /// app resumes them.
   Future<void> _kickPaused() async {
     if (_foreground?.value == false || _resumeWhenForeground.isEmpty) return;
-    if (!await _probeOnline()) {
+    final online = await _probeOnline();
+    if (_disposed) return;
+    if (!online) {
       _waitForNetwork();
       return;
     }
@@ -348,11 +352,12 @@ class OfflinePackageDownloader {
   Future<bool> _writePackage(String deckId, {required bool resume}) async {
     _checkHalted(deckId);
     final checkpoint = await _startCheckpoint(deckId, resume: resume);
-    // Facts finished before a pause are kept only while their count holds.
-    if (!checkpoint.factsDone ||
-        await _factCount(deckId) != checkpoint.factTotal) {
-      await _syncFacts(deckId, checkpoint);
+    // Facts finished before a pause are kept only while the deck lists the
+    // very same facts.
+    if (checkpoint.factsDone && !await _listsSameFacts(deckId, checkpoint)) {
+      _restartFacts(checkpoint, null);
     }
+    if (!checkpoint.factsDone) await _syncFacts(deckId, checkpoint);
     _report(deckId, _deckShare + _factsShare);
     final _Checkpoint(:remote, :before, :fetchedAt, :facts) = checkpoint;
     final tags = checkpoint.tags.values.toList()
@@ -508,6 +513,12 @@ class OfflinePackageDownloader {
     if (ids != null) await _dropDeletedFacts(deckId, ids);
     cp.factsDone = true;
     await _store.putDownloadCheckpoint(deckId, cp.toJson());
+  }
+
+  /// False too when the fact ids cannot be read, so the facts are fetched.
+  Future<bool> _listsSameFacts(String deckId, _Checkpoint cp) async {
+    final ids = await _liveFactIds(deckId);
+    return ids != null && ids.length == cp.facts.length && !_missesAny(cp, ids);
   }
 
   void _restartFacts(_Checkpoint cp, int? total) {

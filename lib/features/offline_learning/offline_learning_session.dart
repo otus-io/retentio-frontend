@@ -136,6 +136,7 @@ class OfflineLearningSessions {
   final Future<bool> Function() _isOnline;
   final Stream<void> Function() _connectivityChanged;
   final Map<String, Future<OfflineLearningSession>> _sessions = {};
+  final Map<String, Future<void>> _closing = {};
 
   /// [fetchMissingUsername] false skips the profile request when no username
   /// is stored (the session is then null), for callers that must not wait on
@@ -159,6 +160,8 @@ class OfflineLearningSessions {
       if (identical(_sessions[name], opening)) _sessions.remove(name);
       rethrow;
     }
+    // Another account logged in meanwhile and is closing this session.
+    if (!identical(_sessions[name], opening)) return null;
     _closeOthers(name);
     await _finishPendingWipe(session);
     return session;
@@ -196,7 +199,14 @@ class OfflineLearningSessions {
   /// listeners stays. Their next login opens a new session.
   void _closeOthers(String accountId) {
     for (final id in [..._sessions.keys]) {
-      if (id != accountId) unawaited(_close(id, _sessions.remove(id)!));
+      if (id == accountId) continue;
+      final closing = _close(id, _sessions.remove(id)!);
+      _closing[id] = closing;
+      unawaited(
+        closing.whenComplete(() {
+          if (identical(_closing[id], closing)) _closing.remove(id);
+        }),
+      );
     }
   }
 
@@ -214,6 +224,8 @@ class OfflineLearningSessions {
   }
 
   Future<OfflineLearningSession> _open(String accountId) async {
+    // A fresh login of a closing account waits until its old downloads stop.
+    await _closing[accountId];
     final store = await _openStore(accountId);
     final mediaRoot = p.join(await _documentsDir(), 'offline_media', accountId);
     final foreground = AppForeground();

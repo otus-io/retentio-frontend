@@ -659,6 +659,57 @@ void main() {
     expect(bob!.accountId, 'bob');
   });
 
+  test('a stale open of an earlier account leaves the new one', () async {
+    var name = 'alice';
+    final gate = Completer<void>();
+    final sessions = OfflineLearningSessions(
+      readUsername: () async => name,
+      openStore: (accountId) async {
+        if (accountId == 'alice') await gate.future;
+        return HiveOfflineLearningStore.open(accountId: accountId);
+      },
+    );
+
+    final stale = sessions.current();
+    await pumpEventQueue();
+    name = 'bob';
+    final bob = await sessions.current();
+    gate.complete();
+
+    expect(await stale, isNull);
+    await pumpEventQueue();
+    bob!.foreground!.addListener(() {});
+    expect(identical(await sessions.current(), bob), isTrue);
+  });
+
+  test('a reopened account waits for its earlier session to close', () async {
+    var name = 'alice';
+    final gate = Completer<void>();
+    final opened = <String>[];
+    final sessions = OfflineLearningSessions(
+      readUsername: () async => name,
+      openStore: (accountId) async {
+        opened.add(accountId);
+        if (opened.length == 1) await gate.future;
+        return HiveOfflineLearningStore.open(accountId: accountId);
+      },
+    );
+
+    final stale = sessions.current();
+    await pumpEventQueue();
+    name = 'bob';
+    await sessions.current();
+    name = 'alice';
+    final reopened = sessions.current();
+    await pumpEventQueue();
+    expect(opened, ['alice', 'bob']);
+
+    gate.complete();
+    expect(await stale, isNull);
+    expect((await reopened)!.accountId, 'alice');
+    expect(opened, ['alice', 'bob', 'alice']);
+  });
+
   test('switching accounts opens a separate session', () async {
     var name = 'alice';
     final sessions = OfflineLearningSessions(readUsername: () async => name);
