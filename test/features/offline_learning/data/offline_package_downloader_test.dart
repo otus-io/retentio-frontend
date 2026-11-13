@@ -2013,6 +2013,57 @@ void main() {
       },
     );
 
+    test(
+      'lookups cut off by leaving the app pause and retry the page',
+      () async {
+        final foreground = ValueNotifier(true);
+        var cutOff = false;
+        final pageFetches = <int>[];
+        final downloader = build(
+          foreground: foreground,
+          fetchFactsPage: (_, _, offset) async {
+            pageFetches.add(offset);
+            return OfflineFactsPage(
+              facts: [
+                for (var i = 0; i < 10; i++)
+                  _fact('f$i', entries: [FactEntry(audio: 'a$i')]),
+              ],
+              hasMore: false,
+            );
+          },
+          fetchMediaVersions: (_, factId) async {
+            versionLookups.add(factId);
+            if (factId == 'f2' && !cutOff) {
+              cutOff = true;
+              foreground.value = false;
+              throw StateError('connection lost');
+            }
+            return {'a${factId.substring(1)}': 7};
+          },
+        );
+
+        expect(await downloader.download('d1'), isFalse);
+        expect(downloader.failedOf('d1').value, isFalse);
+        expect(store.facts, isEmpty);
+        expect(downloadedUrls, isEmpty);
+
+        foreground.value = true;
+        // Media files are written to disk, which takes real time.
+        for (var i = 0; i < 200 && store.decks['d1']?.isReady != true; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 5));
+        }
+
+        expect(store.decks['d1']?.isReady, isTrue);
+        expect(pageFetches, [0, 0]);
+        expect(versionLookups.where((id) => id == 'f2'), hasLength(2));
+        for (var i = 0; i < 10; i++) {
+          expect(store.facts['f$i']!.mediaVersions, {'a$i': 7});
+        }
+        expect(downloadedUrls, hasLength(10));
+        expect(downloadedUrls, everyElement(endsWith('?v=7')));
+      },
+    );
+
     test('owned decks never look up versions', () async {
       await build(
         fetchDeck: (_) async =>

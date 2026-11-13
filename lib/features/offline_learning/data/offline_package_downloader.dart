@@ -601,6 +601,8 @@ class OfflinePackageDownloader {
 
   /// Imported decks may only fetch the author's media at a pinned version.
   /// A failed lookup leaves the fact unresolved (retried on the next sync).
+  /// One failing after the app left the foreground pauses the download before
+  /// the page is saved, so it runs again on resume.
   Future<List<OfflineFact>> _pinMediaVersions(
     String deckId,
     List<OfflineFact> facts,
@@ -644,6 +646,7 @@ class OfflinePackageDownloader {
     try {
       return await _fetchMediaVersions(deckId, fact.id);
     } catch (e, s) {
+      if (_leftForeground.contains(deckId)) rethrow;
       logger.e(
         'Offline media versions of ${fact.id} failed: $e',
         stackTrace: s,
