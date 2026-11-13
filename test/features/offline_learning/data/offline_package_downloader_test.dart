@@ -1149,6 +1149,23 @@ void main() {
         expect(store.decks['d1']?.isReady, isTrue);
       });
 
+      test('a disposed downloader no longer resumes', () async {
+        final downloader = buildPausing();
+
+        expect(await downloader.download('d1'), isFalse);
+        online = false;
+        foreground.value = true;
+        await settle();
+        downloader.dispose();
+        online = true;
+        restored.add(null);
+        foreground.value = false;
+        foreground.value = true;
+        await settle();
+
+        expect(offsets, [0, 200]);
+      });
+
       test('resumes when the network comes back in front', () async {
         final downloader = buildPausing();
 

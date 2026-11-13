@@ -117,6 +117,14 @@ class OfflinePackageDownloader {
   final Set<String> _resumeWhenForeground = {};
   var _haltsAll = 0;
 
+  /// Stops listening to the app and the network. Used once the account logs
+  /// out; the downloader is not used afterwards.
+  void dispose() {
+    _foreground?.removeListener(_onForeground);
+    unawaited(_offlineWait?.cancel());
+    _offlineWait = null;
+  }
+
   /// Download progress of [deckId] from 0 to 1, or null when none is running.
   /// Never decreases during a run; concurrent callers share one run.
   ValueListenable<double?> progressOf(String deckId) => _notifier(deckId);

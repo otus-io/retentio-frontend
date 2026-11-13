@@ -620,6 +620,45 @@ void main() {
     expect(prefs.getStringList(OfflineLearningSessions.pendingWipeKey), isNull);
   });
 
+  test('switching accounts closes the earlier session', () async {
+    var name = 'alice';
+    final sessions = OfflineLearningSessions(readUsername: () async => name);
+
+    final alice = await sessions.current();
+    name = 'bob';
+    await sessions.current();
+    await pumpEventQueue();
+
+    expect(() => alice!.foreground!.addListener(() {}), throwsFlutterError);
+    name = 'alice';
+    expect(identical(await sessions.current(), alice), isFalse);
+  });
+
+  test('an earlier account whose open fails is dropped quietly', () async {
+    var name = 'alice';
+    final gate = Completer<void>();
+    final sessions = OfflineLearningSessions(
+      readUsername: () async => name,
+      openStore: (accountId) async {
+        if (accountId == 'alice') {
+          await gate.future;
+          throw StateError('keychain locked');
+        }
+        return HiveOfflineLearningStore.open(accountId: accountId);
+      },
+    );
+
+    final alice = sessions.current();
+    await pumpEventQueue();
+    name = 'bob';
+    final bob = await sessions.current();
+    gate.complete();
+
+    await expectLater(alice, throwsStateError);
+    await pumpEventQueue();
+    expect(bob!.accountId, 'bob');
+  });
+
   test('switching accounts opens a separate session', () async {
     var name = 'alice';
     final sessions = OfflineLearningSessions(readUsername: () async => name);

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
@@ -26,6 +27,7 @@ class OfflineLearningSession {
     required this.downloader,
     required this.sync,
     required this.mediaRootDir,
+    this.foreground,
   });
 
   final String accountId;
@@ -33,6 +35,15 @@ class OfflineLearningSession {
   final OfflinePackageDownloader downloader;
   final OfflineSyncService sync;
   final String mediaRootDir;
+
+  /// App lifecycle the downloader listens to; owned by this session.
+  final AppForeground? foreground;
+
+  /// Stops the session's app and network listeners once it is closed.
+  void dispose() {
+    downloader.dispose();
+    foreground?.dispose();
+  }
 
   /// Deletes a deck's offline data and the media files no other downloaded
   /// deck uses, after stopping the deck's download and any upload.
@@ -148,6 +159,7 @@ class OfflineLearningSessions {
       if (identical(_sessions[name], opening)) _sessions.remove(name);
       rethrow;
     }
+    _closeOthers(name);
     await _finishPendingWipe(session);
     return session;
   }
@@ -179,17 +191,41 @@ class OfflineLearningSessions {
     );
   }
 
+  /// Another account is logged in now: stops the sessions of earlier ones in
+  /// the background and disposes them, so none of their downloads or
+  /// listeners stays. Their next login opens a new session.
+  void _closeOthers(String accountId) {
+    for (final id in [..._sessions.keys]) {
+      if (id != accountId) unawaited(_close(id, _sessions.remove(id)!));
+    }
+  }
+
+  static Future<void> _close(
+    String accountId,
+    Future<OfflineLearningSession> opening,
+  ) async {
+    try {
+      final session = await opening;
+      await session.stopDownloads();
+      session.dispose();
+    } catch (e) {
+      logger.w('Offline session of $accountId not closed: $e');
+    }
+  }
+
   Future<OfflineLearningSession> _open(String accountId) async {
     final store = await _openStore(accountId);
     final mediaRoot = p.join(await _documentsDir(), 'offline_media', accountId);
+    final foreground = AppForeground();
     return OfflineLearningSession(
       accountId: accountId,
       store: store,
+      foreground: foreground,
       downloader: OfflinePackageDownloader(
         store: store,
         mediaRootDir: mediaRoot,
         isOnline: _isOnline,
-        foreground: AppForeground(),
+        foreground: foreground,
         connectivityChanged: _connectivityChanged,
       ),
       sync: OfflineSyncService(
