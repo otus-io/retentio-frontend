@@ -51,6 +51,34 @@ void main() {
     expect(http1.fetched, isEmpty);
   });
 
+  test('sends flagged https requests over http2', () async {
+    await adapter.fetch(
+      RequestOptions(
+        path: 'https://localhost/api/media/m1',
+        extra: {DownloadHttp2Adapter.extraKey: true},
+      ),
+      null,
+      null,
+    );
+
+    expect(http2.fetched, hasLength(1));
+    expect(http1.fetched, isEmpty);
+  });
+
+  test('keeps flagged plain http requests on http1', () async {
+    await adapter.fetch(
+      RequestOptions(
+        path: 'http://localhost:8080/api/media/m1',
+        extra: {DownloadHttp2Adapter.extraKey: true},
+      ),
+      null,
+      null,
+    );
+
+    expect(http1.fetched, hasLength(1));
+    expect(http2.fetched, isEmpty);
+  });
+
   test('keeps unflagged requests on http1', () async {
     await fetch({});
     await fetch({DownloadHttp2Adapter.extraKey: false});
@@ -128,7 +156,7 @@ void main() {
     test('flags file downloads for http2', () async {
       final tmp = Directory.systemTemp.createTempSync('http2_flag_test');
       addTearDown(() => tmp.deleteSync(recursive: true));
-      networkDioClient.configure(baseUrl: 'http://localhost');
+      networkDioClient.configure(baseUrl: 'https://localhost');
       networkDioClient.dio.httpClientAdapter = adapter;
 
       await networkDioClient.downloadFile(

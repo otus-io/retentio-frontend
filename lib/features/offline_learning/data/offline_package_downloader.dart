@@ -230,12 +230,16 @@ class OfflinePackageDownloader {
   /// [fresh] skips a download already running, which may have listed the
   /// deck before a just-made edit, and runs a new one after it.
   Future<bool> download(String deckId, {bool fresh = false}) {
-    if (_isHalted(deckId)) return Future.value(false);
+    if (_disposed || _isHalted(deckId)) return Future.value(false);
     final running = _inFlight[deckId];
     if (running != null && !fresh) return running;
     final started = running == null
         ? _download(deckId, resume: !fresh)
-        : running.then((_) => _download(deckId, resume: !fresh));
+        : running.then(
+            (_) => _disposed
+                ? Future.value(false)
+                : _download(deckId, resume: !fresh),
+          );
     return _trackInFlight(deckId, started);
   }
 
@@ -357,6 +361,7 @@ class OfflinePackageDownloader {
     if (checkpoint.factsDone && !await _listsSameFacts(deckId, checkpoint)) {
       _restartFacts(checkpoint, null);
     }
+    await _pinRestoredFacts(deckId, checkpoint);
     if (!checkpoint.factsDone) await _syncFacts(deckId, checkpoint);
     _report(deckId, _deckShare + _factsShare);
     final _Checkpoint(:remote, :before, :fetchedAt, :facts) = checkpoint;
@@ -515,6 +520,23 @@ class OfflinePackageDownloader {
     await _store.putDownloadCheckpoint(deckId, cp.toJson());
   }
 
+  /// Restored facts of an imported deck whose version lookup failed are looked
+  /// up again, or their media would be fetched unpinned and refused.
+  Future<void> _pinRestoredFacts(String deckId, _Checkpoint cp) async {
+    if (cp.remote.sourceDeckId.isEmpty) return;
+    final pinned = await _pinMediaVersions(deckId, cp.facts, const {});
+    _checkHalted(deckId);
+    final changed = [
+      for (var i = 0; i < pinned.length; i++)
+        if (!identical(pinned[i], cp.facts[i])) pinned[i],
+    ];
+    if (changed.isEmpty) return;
+    await _store.putFacts(changed);
+    cp.facts
+      ..clear()
+      ..addAll(pinned);
+  }
+
   /// False too when the fact ids cannot be read, so the facts are fetched.
   Future<bool> _listsSameFacts(String deckId, _Checkpoint cp) async {
     final ids = await _liveFactIds(deckId);
@@ -626,7 +648,8 @@ class OfflinePackageDownloader {
     }
     var next = 0;
     Future<void> worker() async {
-      while (next < pending.length) {
+      // Leaving the app starts no new lookup; those running settle first.
+      while (next < pending.length && !_leftForeground.contains(deckId)) {
         final i = pending[next++];
         final fact = result[i];
         result[i] = fact.withMediaVersions(await _lookupVersions(deckId, fact));
@@ -636,6 +659,7 @@ class OfflinePackageDownloader {
     await Future.wait([
       for (var w = 0; w < versionLookupConcurrency; w++) worker(),
     ]);
+    if (next < pending.length) throw const _DownloadInterrupted();
     return result;
   }
 
@@ -644,7 +668,13 @@ class OfflinePackageDownloader {
     OfflineFact fact,
   ) async {
     try {
-      return await _fetchMediaVersions(deckId, fact.id);
+      final versions = await _fetchMediaVersions(deckId, fact.id);
+      // The lookup reads any failure as null, which one cut off by leaving
+      // the app must not save as an unpinned fact.
+      if (versions == null && _leftForeground.contains(deckId)) {
+        throw const _DownloadInterrupted();
+      }
+      return versions;
     } catch (e, s) {
       if (_leftForeground.contains(deckId)) rethrow;
       logger.e(

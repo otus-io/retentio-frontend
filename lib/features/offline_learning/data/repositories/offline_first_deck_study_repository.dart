@@ -14,9 +14,9 @@ import 'package:retentio/models/tag.dart';
 import 'package:retentio/utils/media_client_id.dart';
 
 /// Deals and records cards from the local store for downloaded decks and falls
-/// back to [remote] otherwise. Whether a deck is local is decided once per
-/// deck, so a download finishing mid-session does not switch sources while
-/// online; offline, a deck downloaded meanwhile switches to local.
+/// back to [remote] otherwise. A downloaded deck stays local for the session;
+/// a deck served remotely switches to local once its download is ready (cards
+/// are seeded last, so reviews made online meanwhile are in the copy).
 /// [remoteMediaUrl] receives an [OfflineFact.mediaKey] (`id` or `id?v=N`).
 class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
   OfflineFirstDeckStudyRepository({
@@ -49,11 +49,18 @@ class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
 
   static int _unixNow() => DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
-  Future<OfflineDeck?> _localDeck(String deckId) =>
-      _localDecks[deckId] ??= _store.then((store) async {
-        final deck = await store?.getDeck(deckId);
-        return deck != null && deck.isReady ? deck : null;
-      });
+  Future<OfflineDeck?> _localDeck(String deckId) async {
+    final lookup = _localDecks[deckId] ??= _store.then((store) async {
+      final deck = await store?.getDeck(deckId);
+      return deck != null && deck.isReady ? deck : null;
+    });
+    final deck = await lookup;
+    // Not ready yet: look again next time, so a finished download is used.
+    if (deck == null && identical(_localDecks[deckId], lookup)) {
+      _localDecks.remove(deckId);
+    }
+    return deck;
+  }
 
   /// Re-syncs a downloaded deck whose facts just changed online. Re-reads the
   /// deck row afterwards (name and fields may have changed); a deck served
@@ -73,16 +80,12 @@ class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
     required String deckId,
     String? tagId,
   }) async {
-    var deck = await _localDeck(deckId);
+    final deck = await _localDeck(deckId);
     if (deck == null) {
       if (await _isOnline()) {
         return _remote.loadNextDueCard(deckId: deckId, tagId: tagId);
       }
-      _localDecks.remove(deckId);
-      deck = await _localDeck(deckId);
-      if (deck == null) {
-        return const DeckStudyLoadResult(cardDetail: null, needsDownload: true);
-      }
+      return const DeckStudyLoadResult(cardDetail: null, needsDownload: true);
     }
     final store = (await _store)!;
     final now = _nowSec();
@@ -148,13 +151,7 @@ class OfflineFirstDeckStudyRepository implements DeckStudyRepository {
 
   @override
   Future<bool> submitCard(DeckStudySubmitRequest request) async {
-    var deck = await _localDeck(request.deckId);
-    if (deck == null && !await _isOnline()) {
-      // Went offline while the deck was served remotely: a download that
-      // finished meanwhile lets the review be queued instead of lost.
-      _localDecks.remove(request.deckId);
-      deck = await _localDeck(request.deckId);
-    }
+    final deck = await _localDeck(request.deckId);
     if (deck == null) return _remote.submitCard(request);
     final store = (await _store)!;
     final card = await store.getCard(request.deckId, request.cardId);

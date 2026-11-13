@@ -329,6 +329,34 @@ void main() {
     expect(store.facts.keys, unorderedEquals(['f1', 'f2']));
   });
 
+  test('a disposed downloader starts no download', () async {
+    final downloader = build()..dispose();
+
+    expect(await downloader.download('d1'), isFalse);
+    expect(factOffsets, isEmpty);
+  });
+
+  test('disposing while a fresh download waits skips it', () async {
+    final gate = Completer<void>();
+    var deckFetches = 0;
+    final downloader = build(
+      fetchDeck: (_) async {
+        deckFetches++;
+        await gate.future;
+        return _deck;
+      },
+    );
+
+    final running = downloader.download('d1');
+    final fresh = downloader.download('d1', fresh: true);
+    downloader.dispose();
+    gate.complete();
+
+    expect(await running, isTrue);
+    expect(await fresh, isFalse);
+    expect(deckFetches, 1);
+  });
+
   group('whileHalted', () {
     test('stops a download before it writes and blocks new ones', () async {
       final gate = Completer<void>();
@@ -987,14 +1015,15 @@ void main() {
           final downloader = buildPausing();
 
           expect(await downloader.download('d1'), isFalse);
-          // Still in the background, so it pauses again before the media.
+          // Still in the background, so it pauses again before looking up
+          // the versions of its page, which the resumed run fetches anew.
           expect(await downloader.download('d1', fresh: true), isFalse);
           expect(mediaCalls, 1);
           foreground.value = true;
           await settle();
 
           expect(deckFetches, 3);
-          expect(factFetches, 2);
+          expect(factFetches, 3);
           expect(mediaCalls, 2);
           expect(store.decks['d1']?.isReady, isTrue);
         },
@@ -2063,6 +2092,128 @@ void main() {
         expect(downloadedUrls, everyElement(endsWith('?v=7')));
       },
     );
+
+    test('leaving the app starts no new lookup', () async {
+      final foreground = ValueNotifier(true);
+      final gate = Completer<void>();
+      const total = OfflinePackageDownloader.versionLookupConcurrency + 3;
+      final downloader = build(
+        foreground: foreground,
+        pages: [
+          [
+            for (var i = 0; i < total; i++)
+              _fact('f$i', entries: [FactEntry(audio: 'a$i')]),
+          ],
+        ],
+        fetchMediaVersions: (_, factId) async {
+          versionLookups.add(factId);
+          await gate.future;
+          return {'a${factId.substring(1)}': 7};
+        },
+      );
+
+      final run = downloader.download('d1');
+      await Future<void>.delayed(Duration.zero);
+      foreground.value = false;
+      gate.complete();
+
+      expect(await run, isFalse);
+      expect(
+        versionLookups,
+        hasLength(OfflinePackageDownloader.versionLookupConcurrency),
+      );
+      expect(store.facts, isEmpty);
+      expect(downloader.failedOf('d1').value, isFalse);
+    });
+
+    test(
+      'a lookup read as missing after leaving the app retries the page',
+      () async {
+        final foreground = ValueNotifier(true);
+        var cutOff = false;
+        final downloader = build(
+          foreground: foreground,
+          fetchFactsPage: (_, _, offset) async {
+            factOffsets.add(offset);
+            return OfflineFactsPage(
+              facts: [
+                _fact('f1', entries: const [FactEntry(audio: 'a1')]),
+                _fact('f2', entries: const [FactEntry(audio: 'a2')]),
+              ],
+              hasMore: false,
+            );
+          },
+          fetchMediaVersions: (_, factId) async {
+            versionLookups.add(factId);
+            if (factId == 'f2' && !cutOff) {
+              // The real lookup returns null instead of throwing.
+              cutOff = true;
+              foreground.value = false;
+              return null;
+            }
+            return {'a${factId.substring(1)}': 7};
+          },
+        );
+
+        expect(await downloader.download('d1'), isFalse);
+        expect(downloader.failedOf('d1').value, isFalse);
+        expect(store.facts, isEmpty);
+
+        foreground.value = true;
+        for (var i = 0; i < 200 && store.decks['d1']?.isReady != true; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 5));
+        }
+
+        expect(store.decks['d1']?.isReady, isTrue);
+        expect(factOffsets, [0, 0]);
+        expect(store.facts['f2']!.mediaVersions, {'a2': 7});
+        expect(
+          downloadedUrls,
+          unorderedEquals(['/api/media/a1?v=7', '/api/media/a2?v=7']),
+        );
+      },
+    );
+
+    test('resuming looks up the versions a saved fact is missing', () async {
+      final foreground = ValueNotifier(true);
+      var lookups = 0;
+      var mediaCalls = 0;
+      final downloader = build(
+        foreground: foreground,
+        pages: [
+          [
+            _fact('f1', entries: const [FactEntry(audio: 'a1')]),
+          ],
+        ],
+        factIds: ['f1'],
+        fetchMediaVersions: (_, factId) async {
+          versionLookups.add(factId);
+          // The first lookup fails in front, so the fact is saved unpinned.
+          return ++lookups == 1 ? null : {'a1': 7};
+        },
+        downloadMedia: (url, path) async {
+          if (++mediaCalls == 1) {
+            foreground.value = false;
+            throw StateError('reset');
+          }
+          return writeMedia(url, path);
+        },
+      );
+
+      expect(await downloader.download('d1'), isFalse);
+      expect(store.facts['f1']!.mediaVersions, isNull);
+
+      foreground.value = true;
+      for (var i = 0; i < 200 && store.decks['d1']?.isReady != true; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
+
+      expect(store.decks['d1']?.isReady, isTrue);
+      expect(factOffsets, [0]);
+      expect(versionLookups, ['f1', 'f1']);
+      expect(store.facts['f1']!.mediaVersions, {'a1': 7});
+      expect(downloadedUrls, ['/api/media/a1?v=7']);
+    });
 
     test('owned decks never look up versions', () async {
       await build(

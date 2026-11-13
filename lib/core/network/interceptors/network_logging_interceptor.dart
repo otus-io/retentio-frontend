@@ -43,10 +43,4 @@ class NetworkLoggingInterceptor extends Interceptor {
     });
     handler.next(response);
   }
-
-  @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
-    logDioError('NetworkLoggingInterceptor.onError', err);
-    handler.next(err);
-  }
 }

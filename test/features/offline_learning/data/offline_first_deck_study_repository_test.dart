@@ -168,13 +168,38 @@ void main() {
     expect(remote.loads, 0);
   });
 
-  test('keeps the first source decision for the whole session', () async {
+  test('online, switches to a copy that finished downloading', () async {
     final r = repo();
     await r.loadNextDueCard(deckId: 'd1');
+    expect(remote.loads, 1);
+
     await seedReadyDeck();
     await store.putCards([_card('c1', 'f1')]);
+    final result = await r.loadNextDueCard(deckId: 'd1');
+    final ok = await r.submitCard(
+      DeckStudySubmitRequest.hide(deckId: 'd1', cardId: 'c1'),
+    );
+
+    expect(result.cardDetail!.card.id, 'c1');
+    expect(ok, isTrue);
+    expect(remote.loads, 1);
+    expect(remote.submits, 0);
+    expect(await store.getOperations(), hasLength(1));
+  });
+
+  test('a downloaded deck stays local for the session', () async {
+    await seedReadyDeck();
+    await store.putCards([_card('c1', 'f1')]);
+    final r = repo();
     await r.loadNextDueCard(deckId: 'd1');
-    expect(remote.loads, 2);
+
+    await store.putDeck(
+      const OfflineDeck(id: 'd1', name: 'N5', fields: ['Word', 'Meaning']),
+    );
+    final result = await r.loadNextDueCard(deckId: 'd1');
+
+    expect(result.cardDetail!.card.id, 'c1');
+    expect(remote.loads, 0);
   });
 
   test('re-syncs a downloaded deck before dealing after a fact edit', () async {

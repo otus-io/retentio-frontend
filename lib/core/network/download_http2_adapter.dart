@@ -5,14 +5,19 @@ import 'package:dio_http2_adapter/dio_http2_adapter.dart';
 import 'package:retentio/services/index.dart';
 
 /// Sends requests flagged with [extraKey] (file downloads) over HTTP/2, so
-/// many run at once on one connection; all others keep [http1]. A server
-/// without HTTP/2 (or plain `http://`) falls back to [http1].
+/// many run at once on one connection; all others keep [http1], as does plain
+/// `http://`, which has no TLS to negotiate HTTP/2. A server without HTTP/2
+/// falls back to [http1].
 class DownloadHttp2Adapter implements HttpClientAdapter {
   DownloadHttp2Adapter(this.http1, {HttpClientAdapter? http2})
     : http2 =
           http2 ??
           Http2Adapter(
-            ConnectionManager(onClientCreate: applyClientSetting),
+            ConnectionManager(
+              onClientCreate: applyClientSetting,
+              // Servers that strictly enforce ALPN reject an h2-only offer.
+              supportedProtocols: const ['h2', 'http/1.1'],
+            ),
             fallbackAdapter: http1,
           );
 
@@ -30,11 +35,11 @@ class DownloadHttp2Adapter implements HttpClientAdapter {
     RequestOptions options,
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
-  ) => (options.extra[extraKey] == true ? http2 : http1).fetch(
-    options,
-    requestStream,
-    cancelFuture,
-  );
+  ) =>
+      (options.extra[extraKey] == true && options.uri.scheme != 'http'
+              ? http2
+              : http1)
+          .fetch(options, requestStream, cancelFuture);
 
   @override
   void close({bool force = false}) {
