@@ -118,7 +118,8 @@ class OfflinePackageDownloader {
   var _haltsAll = 0;
 
   /// Stops listening to the app and the network. Used once the account logs
-  /// out; the downloader is not used afterwards.
+  /// out; the downloader is not used afterwards. The foreground listenable is
+  /// not disposed here: OfflineLearningSession owns and disposes it.
   void dispose() {
     _foreground?.removeListener(_onForeground);
     unawaited(_offlineWait?.cancel());
@@ -688,6 +689,9 @@ class OfflinePackageDownloader {
     var next = 0;
     var done = 0;
     Future<void> worker() async {
+      // Workers keep taking files while the app is in the background on
+      // purpose, so a download can finish with the screen off; only a failure
+      // there pauses it (see [_leftForeground]).
       while (next < keys.length && !interrupted) {
         final key = keys[next++];
         try {
