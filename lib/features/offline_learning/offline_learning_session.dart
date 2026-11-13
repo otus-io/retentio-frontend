@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
@@ -5,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:retentio/core/network/connectivity_service.dart';
 import 'package:retentio/features/auth/data/datasources/local_auth_data_source.dart';
 import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
+import 'package:retentio/features/offline_learning/data/app_foreground.dart';
 import 'package:retentio/features/offline_learning/data/datasources/hive_offline_learning_store.dart';
 import 'package:retentio/features/offline_learning/data/datasources/offline_store_cipher.dart';
 import 'package:retentio/features/offline_learning/data/datasources/study_sync_remote_data_source.dart';
@@ -25,6 +27,7 @@ class OfflineLearningSession {
     required this.downloader,
     required this.sync,
     required this.mediaRootDir,
+    this.foreground,
   });
 
   final String accountId;
@@ -32,6 +35,15 @@ class OfflineLearningSession {
   final OfflinePackageDownloader downloader;
   final OfflineSyncService sync;
   final String mediaRootDir;
+
+  /// App lifecycle the downloader listens to; owned by this session.
+  final AppForeground? foreground;
+
+  /// Stops the session's app and network listeners once it is closed.
+  void dispose() {
+    downloader.dispose();
+    foreground?.dispose();
+  }
 
   /// Deletes a deck's offline data and the media files no other downloaded
   /// deck uses, after stopping the deck's download and any upload.
@@ -44,6 +56,11 @@ class OfflineLearningSession {
     await store.removeDeck(deckId);
     await pruneUnusedMedia(store);
   }
+
+  /// Stops running downloads and drops the ones paused for the app, keeping
+  /// the data. Used when logging out with the data kept, so no download of
+  /// this account resumes under the next account's login.
+  Future<void> stopDownloads() => downloader.whileHalted(null, () async {});
 
   /// Deletes the account's offline data, unsynced reviews and media files,
   /// after stopping running downloads and uploads.
@@ -100,7 +117,9 @@ class OfflineLearningSessions {
     Future<OfflineLearningStore> Function(String accountId)? openStore,
     Future<String> Function()? documentsDir,
     Future<bool> Function()? isOnline,
+    Stream<void> Function()? connectivityChanged,
   }) : _isOnline = isOnline ?? hasNetworkConnection,
+       _connectivityChanged = connectivityChanged ?? onConnectivityChange,
        _readUsername = readUsername ?? const LocalAuthDataSource().readUsername,
        _saveUsername = saveUsername ?? const LocalAuthDataSource().saveUsername,
        _fetchUsername = fetchUsername ?? _fetchProfileUsername,
@@ -115,7 +134,9 @@ class OfflineLearningSessions {
   final Future<OfflineLearningStore> Function(String accountId) _openStore;
   final Future<String> Function() _documentsDir;
   final Future<bool> Function() _isOnline;
+  final Stream<void> Function() _connectivityChanged;
   final Map<String, Future<OfflineLearningSession>> _sessions = {};
+  final Map<String, Future<void>> _closing = {};
 
   /// [fetchMissingUsername] false skips the profile request when no username
   /// is stored (the session is then null), for callers that must not wait on
@@ -139,6 +160,9 @@ class OfflineLearningSessions {
       if (identical(_sessions[name], opening)) _sessions.remove(name);
       rethrow;
     }
+    // Another account logged in meanwhile and is closing this session.
+    if (!identical(_sessions[name], opening)) return null;
+    _closeOthers(name);
     await _finishPendingWipe(session);
     return session;
   }
@@ -170,16 +194,51 @@ class OfflineLearningSessions {
     );
   }
 
+  /// Another account is logged in now: stops the sessions of earlier ones in
+  /// the background and disposes them, so none of their downloads or
+  /// listeners stays. Their next login opens a new session.
+  void _closeOthers(String accountId) {
+    for (final id in [..._sessions.keys]) {
+      if (id == accountId) continue;
+      final closing = _close(id, _sessions.remove(id)!);
+      _closing[id] = closing;
+      unawaited(
+        closing.whenComplete(() {
+          if (identical(_closing[id], closing)) _closing.remove(id);
+        }),
+      );
+    }
+  }
+
+  static Future<void> _close(
+    String accountId,
+    Future<OfflineLearningSession> opening,
+  ) async {
+    try {
+      final session = await opening;
+      await session.stopDownloads();
+      session.dispose();
+    } catch (e) {
+      logger.w('Offline session of $accountId not closed: $e');
+    }
+  }
+
   Future<OfflineLearningSession> _open(String accountId) async {
+    // A fresh login of a closing account waits until its old downloads stop.
+    await _closing[accountId];
     final store = await _openStore(accountId);
     final mediaRoot = p.join(await _documentsDir(), 'offline_media', accountId);
+    final foreground = AppForeground();
     return OfflineLearningSession(
       accountId: accountId,
       store: store,
+      foreground: foreground,
       downloader: OfflinePackageDownloader(
         store: store,
         mediaRootDir: mediaRoot,
         isOnline: _isOnline,
+        foreground: foreground,
+        connectivityChanged: _connectivityChanged,
       ),
       sync: OfflineSyncService(
         store: store,

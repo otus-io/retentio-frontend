@@ -674,6 +674,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get discoveryEmpty => '公開デッキはまだありません';
 
   @override
+  String get discoveryOffline => 'オフラインです。ダウンロード済みのデッキは引き続き学習できます。';
+
+  @override
   String get discoveryFavoritesEmpty => 'お気に入りのデッキはありません';
 
   @override

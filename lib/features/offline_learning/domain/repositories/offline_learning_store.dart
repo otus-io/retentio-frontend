@@ -32,7 +32,17 @@ abstract class OfflineLearningStore {
   Future<void> putMediaPath(String mediaId, String localPath);
   Future<void> deleteMedia(String mediaId);
 
-  /// Deletes the deck with its facts, cards and queued operations.
+  /// Progress of an unfinished download of [deckId], kept across app restarts;
+  /// null when none is saved.
+  Future<Map<String, dynamic>?> getDownloadCheckpoint(String deckId);
+  Future<void> putDownloadCheckpoint(
+    String deckId,
+    Map<String, dynamic> checkpoint,
+  );
+  Future<void> deleteDownloadCheckpoint(String deckId);
+
+  /// Deletes the deck with its facts, cards, queued operations and download
+  /// checkpoint.
   Future<void> removeDeck(String deckId);
 
   /// Writes the updated card and its queued operation together, so a killed

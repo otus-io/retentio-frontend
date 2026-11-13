@@ -235,7 +235,9 @@ jobs:
               core.setFailed(failReason);
             }
 
-  # Job 2: Claude Code review
+  # Job 2: Claude Code review, kept in ONE sticky PR comment that each push
+  # updates in place (findings table with fixed/open status) instead of
+  # posting a new comment per commit.
   review:
     needs: [summarize]
     if: always() && github.event.pull_request.draft == false && (needs.summarize.result == 'success' || needs.summarize.result == 'skipped')
@@ -243,6 +245,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      issues: write
       id-token: write
 
     steps:
@@ -251,34 +254,131 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Load previous review and mark it in progress
+        id: sticky
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const MARKER = '<!-- claude-review:sticky -->';
+            const STATUS = /^> (🔄|✅|⚠️) .*$/m;
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const sha = context.payload.pull_request.head.sha.slice(0, 7);
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number, per_page: 100
+            });
+            const prev = comments.find(c =>
+              c.user?.login === 'github-actions[bot]' && (c.body || '').includes(MARKER));
+
+            fs.mkdirSync('.claude-review', { recursive: true });
+            fs.writeFileSync('.claude-review/previous.md', prev ? prev.body : '');
+
+            const status = `> 🔄 Reviewing \`${sha}\`…`;
+            let body;
+            if (!prev) {
+              body = `## 🤖 Claude Code Review\n${MARKER}\n${status}\n`;
+            } else if (STATUS.test(prev.body)) {
+              body = prev.body.replace(STATUS, status);
+            } else {
+              body = prev.body.replace(MARKER, `${MARKER}\n${status}`);
+            }
+
+            const { data } = prev
+              ? await github.rest.issues.updateComment({ owner, repo, comment_id: prev.id, body })
+              : await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            core.setOutput('comment_id', String(data.id));
+
       - name: Claude Code Review
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          track_progress: true
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
+            HEAD COMMIT: ${{ github.event.pull_request.head.sha }}
 
             Review this Flutter mobile app pull request. Focus on:
             - Logic errors, async/state bugs, and widget lifecycle issues
             - Security (auth token storage, API input validation)
             - Riverpod usage (ref.watch vs ref.read, provider placement)
             - API calls through services/apis/ — not directly from widgets
-            - i18n: user-visible strings in both app_en.arb and app_zh.arb
+            - i18n: user-visible strings in app_en.arb, app_zh.arb and app_ja.arb
             - Shared UI: AppButton, AppInput, AppIconButton (not raw Material widgets in screen/)
             - Test coverage for behavior changes
 
             Skip lockfiles, generated l10n, and build artifacts.
             Follow docs/contributing.md, AGENTS.md and .agents/skills when applicable.
-
             The PR branch is already checked out in the working directory.
 
-            Start the top-level summary with "## 🤖 Claude Code Review".
-            Use `gh pr comment` for the summary.
-            Use `mcp__github_inline_comment__create_inline_comment` (with `confirmed: true`) only for real bugs — not style or naming nits.
-            Do not submit a formal APPROVE or REQUEST CHANGES review event.
+            ## One review, updated in place
+            The previous review comment (empty on the first run) is in
+            `.claude-review/previous.md`. Do NOT post any PR comment, inline
+            comment or review yourself. Write the complete new comment body to
+            `.claude-review/review.md`; a later step replaces the sticky comment
+            with it.
+
+            Rules for the findings table:
+            - Keep every finding from the previous review, with the same ID (F1, F2, …),
+              and re-check it against the current code:
+              - `✅ Fixed` when the current code resolves it (add the short commit SHA if known)
+              - `⏳ Open` when it still applies
+              - `➖ Dropped` when it no longer applies (code removed, or it was wrong)
+            - Add new findings with the next free IDs. Only real issues; no style nits.
+            - Never delete rows. Sort: ⏳ Open first, then ✅ Fixed, then ➖ Dropped.
+
+            Use exactly this layout:
+
+            ```
+            ## 🤖 Claude Code Review
+            <!-- claude-review:sticky -->
+            > ✅ Reviewed `<7-char head sha>` · ⏳ <open> open · ✅ <fixed> fixed · ➖ <dropped> dropped
+
+            | ID | Status | Severity | Finding | Location |
+            |----|--------|----------|---------|----------|
+            | F1 | ⏳ Open | 🔴 Bug | One sentence: what breaks and when. | `lib/path.dart:42` |
+
+            Severity: 🔴 Bug · 🟠 Risk · 🟡 Test gap / maintainability
+
+            ### Summary
+            2-4 sentences on the current state of the PR.
+
+            <details><summary>Details</summary>
+
+            Per open finding: why it is a problem and a suggested fix.
+            </details>
+            ```
+            With no findings at all, keep the header and status line and write
+            "No issues found." instead of the table.
           claude_args: |
             --model claude-sonnet-4-6
             --max-turns 35
-            --allowedTools "Read,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),mcp__github_inline_comment__create_inline_comment"
+            --allowedTools "Read,Write,Bash(gh pr diff:*),Bash(gh pr view:*)"
+
+      - name: Publish review to the sticky comment
+        if: always() && steps.sticky.outputs.comment_id
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const MARKER = '<!-- claude-review:sticky -->';
+            const STATUS = /^> (🔄|✅|⚠️) .*$/m;
+            const { owner, repo } = context.repo;
+            const comment_id = Number('${{ steps.sticky.outputs.comment_id }}');
+            const sha = context.payload.pull_request.head.sha.slice(0, 7);
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+
+            const read = (f) => (fs.existsSync(f) ? fs.readFileSync(f, 'utf8').trim() : '');
+            let body = read('.claude-review/review.md');
+            if (body) {
+              if (!body.includes(MARKER)) body = `## 🤖 Claude Code Review\n${MARKER}\n${body}`;
+            } else {
+              // Review failed or was skipped: keep the previous findings.
+              const failed = `> ⚠️ Review of \`${sha}\` did not finish — [workflow run](${runUrl})`;
+              const prev = read('.claude-review/previous.md');
+              body = !prev
+                ? `## 🤖 Claude Code Review\n${MARKER}\n${failed}\n`
+                : STATUS.test(prev) ? prev.replace(STATUS, failed) : prev.replace(MARKER, `${MARKER}\n${failed}`);
+            }
+            await github.rest.issues.updateComment({ owner, repo, comment_id, body });

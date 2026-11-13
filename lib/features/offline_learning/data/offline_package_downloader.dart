@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -20,6 +21,37 @@ int _defaultNowSec() => DateTime.now().millisecondsSinceEpoch ~/ 1000;
 /// Thrown inside a download whose deck is being removed.
 class _DownloadHalted implements Exception {}
 
+/// Thrown when a download stopped because the app left the foreground.
+class _DownloadInterrupted implements Exception {
+  const _DownloadInterrupted();
+}
+
+/// The deck and the fact pages a download fetched so far. Saved in the store
+/// after each page, so a run resumed after a pause or an app restart
+/// continues from there.
+class _Checkpoint {
+  _Checkpoint(this.remote, this.before, this.fetchedAt);
+
+  final Deck remote;
+  final OfflineDeck? before;
+  final int fetchedAt;
+  final List<OfflineFact> facts = [];
+  final Map<String, Tag> tags = {};
+
+  /// Fact count the pages were fetched against; null when unknown.
+  int? factTotal;
+  bool factsDone = false;
+
+  /// The facts themselves are in the store; only their ids are saved here.
+  Map<String, dynamic> toJson() => {
+    'sourceVersion': remote.sourceVersion,
+    'factTotal': factTotal,
+    'factIds': [for (final f in facts) f.id],
+    'tags': [for (final t in tags.values) t.toJson()],
+    'factsDone': factsDone,
+  };
+}
+
 /// Assembles a deck's offline study package (deck, facts, cards, media) into
 /// [OfflineLearningStore]. Server card schedules replace local ones unless the
 /// card has unsynced local changes.
@@ -35,6 +67,8 @@ class OfflinePackageDownloader {
     FetchMediaVersionsFn? fetchMediaVersions,
     int Function()? nowSec,
     Future<bool> Function()? isOnline,
+    ValueListenable<bool>? foreground,
+    Stream<void> Function()? connectivityChanged,
   }) : _store = store,
        _mediaRootDir = mediaRootDir,
        _fetchDeck = fetchDeck ?? DeckService.of.getDeckDetail,
@@ -44,11 +78,15 @@ class OfflinePackageDownloader {
        _downloadMedia = downloadMedia ?? ApiService.downloadFile,
        _fetchMediaVersions = fetchMediaVersions ?? fetchOfflineMediaVersions,
        _nowSec = nowSec ?? _defaultNowSec,
-       _isOnline = isOnline ?? hasNetworkConnection;
+       _isOnline = isOnline ?? hasNetworkConnection,
+       _foreground = foreground,
+       _connectivityChanged = connectivityChanged {
+    _foreground?.addListener(_onForeground);
+  }
 
   static const int factsPageSize = 200;
   static const int versionLookupConcurrency = 4;
-  static const int mediaDownloadConcurrency = 16;
+  static const int mediaDownloadConcurrency = 64;
   static const int refreshIntervalSec = 3600;
   static const int resumeConcurrency = 2;
 
@@ -67,12 +105,28 @@ class OfflinePackageDownloader {
   final FetchMediaVersionsFn _fetchMediaVersions;
   final int Function() _nowSec;
   final Future<bool> Function() _isOnline;
+  final ValueListenable<bool>? _foreground;
+  final Stream<void> Function()? _connectivityChanged;
+  StreamSubscription<void>? _offlineWait;
+  var _disposed = false;
   final Map<String, Future<bool>> _inFlight = {};
   final Map<String, int> _halts = {};
   final Map<String, ValueNotifier<double?>> _progress = {};
   final Map<String, ValueNotifier<bool>> _failed = {};
   final Set<String> _resumed = {};
+  final Set<String> _leftForeground = {};
+  final Set<String> _resumeWhenForeground = {};
   var _haltsAll = 0;
+
+  /// Stops listening to the app and the network. Used once the account logs
+  /// out; the downloader is not used afterwards. The foreground listenable is
+  /// not disposed here: OfflineLearningSession owns and disposes it.
+  void dispose() {
+    _disposed = true;
+    _foreground?.removeListener(_onForeground);
+    unawaited(_offlineWait?.cancel());
+    _offlineWait = null;
+  }
 
   /// Download progress of [deckId] from 0 to 1, or null when none is running.
   /// Never decreases during a run; concurrent callers share one run.
@@ -109,6 +163,7 @@ class OfflinePackageDownloader {
     } else {
       _halts.update(deckId, (n) => n + 1, ifAbsent: () => 1);
     }
+    await _dropPaused(deckId);
     try {
       while (true) {
         final running = [
@@ -175,12 +230,16 @@ class OfflinePackageDownloader {
   /// [fresh] skips a download already running, which may have listed the
   /// deck before a just-made edit, and runs a new one after it.
   Future<bool> download(String deckId, {bool fresh = false}) {
-    if (_isHalted(deckId)) return Future.value(false);
+    if (_disposed || _isHalted(deckId)) return Future.value(false);
     final running = _inFlight[deckId];
     if (running != null && !fresh) return running;
     final started = running == null
-        ? _download(deckId)
-        : running.then((_) => _download(deckId));
+        ? _download(deckId, resume: !fresh)
+        : running.then(
+            (_) => _disposed
+                ? Future.value(false)
+                : _download(deckId, resume: !fresh),
+          );
     return _trackInFlight(deckId, started);
   }
 
@@ -190,61 +249,209 @@ class OfflinePackageDownloader {
     late final Future<bool> tracked;
     tracked = started.whenComplete(() {
       if (identical(_inFlight[deckId], tracked)) _inFlight.remove(deckId);
+      unawaited(_kickPaused());
     });
     return _inFlight[deckId] = tracked;
   }
 
-  Future<bool> _download(String deckId) async {
-    final progress = _notifier(deckId)..value = 0;
-    _failedNotifier(deckId).value = false;
+  void _onForeground() {
+    if (_foreground?.value == true) unawaited(_kickPaused());
+  }
+
+  /// A download cut off by leaving the app waits here instead of failing.
+  void _pauseForForeground(String deckId) {
+    if (_isHalted(deckId)) return;
+    _resumeWhenForeground.add(deckId);
+    unawaited(_kickPaused());
+  }
+
+  Future<void> _dropPaused(String? deckId) async {
+    final ids = deckId == null ? _resumeWhenForeground.toList() : [deckId];
+    for (final id in ids) {
+      if (!_resumeWhenForeground.remove(id)) continue;
+      _notifier(id).value = null;
+      await _forgetCheckpoint(id);
+    }
+  }
+
+  /// Offline, the paused downloads stay paused with their checkpoints instead
+  /// of failing at once; the network coming back or the next return to the
+  /// app resumes them.
+  Future<void> _kickPaused() async {
+    if (_foreground?.value == false || _resumeWhenForeground.isEmpty) return;
+    final online = await _probeOnline();
+    if (_disposed) return;
+    if (!online) {
+      _waitForNetwork();
+      return;
+    }
+    if (_foreground?.value == false) return;
+    for (final id in _resumeWhenForeground.toList()) {
+      if (_inFlight.containsKey(id)) continue;
+      _resumeWhenForeground.remove(id);
+      unawaited(download(id));
+    }
+  }
+
+  /// A failing connectivity check counts as offline.
+  Future<bool> _probeOnline() async {
     try {
-      _checkHalted(deckId);
-      final fetchedAt = _nowSec();
-      final remote = await _fetchDeck(deckId);
-      _checkHalted(deckId);
-      _report(deckId, _deckShare);
-      final before = await _store.getDeck(deckId);
-      final (facts, tags) = await _syncFacts(
-        deckId,
-        _buildDeck(deckId, remote, before, const []),
-      );
-      final mediaComplete = await _downloadFactMedia(deckId, facts);
-      // Last, so reviews made online while the deck was downloading (the
-      // study screen serves it remotely until it is ready) are not lost.
-      await _seedCards(deckId);
-      // Re-read: sync flushes and tag loads may have written the row meanwhile.
-      final local = await _store.getDeck(deckId);
-      _checkHalted(deckId);
-      await _store.putDeck(
-        _buildDeck(
-          deckId,
-          remote,
-          local,
-          tags,
-          // A flush that refreshed the counters during the download has
-          // newer ones than the deck fetched before it.
-          countsAt: local?.lastSyncedAt == before?.lastSyncedAt
-              ? fetchedAt
-              : null,
-          mediaComplete: mediaComplete,
-        ),
-      );
-      try {
-        await pruneUnusedMedia(_store);
-      } catch (e) {
-        logger.w('Offline media cleanup of deck=$deckId failed: $e');
-      }
-      _report(deckId, 1);
-      return true;
+      return await _isOnline();
+    } catch (e) {
+      logger.w('Offline download connectivity check failed: $e');
+      return false;
+    }
+  }
+
+  /// Kicks the paused downloads again on the next connectivity change, which
+  /// waits once more if the device is still offline.
+  void _waitForNetwork() {
+    _offlineWait ??= _connectivityChanged?.call().listen((_) {
+      unawaited(_offlineWait?.cancel());
+      _offlineWait = null;
+      unawaited(_kickPaused());
+    });
+  }
+
+  /// [resume]: continue from the checkpoint a paused run saved.
+  Future<bool> _download(String deckId, {required bool resume}) async {
+    final progress = _notifier(deckId)..value ??= 0;
+    _failedNotifier(deckId).value = false;
+    // This run replaces a paused one, which must not start again after it.
+    _resumeWhenForeground.remove(deckId);
+    void noteLeft() {
+      if (_foreground?.value == false) _leftForeground.add(deckId);
+    }
+
+    noteLeft();
+    _foreground?.addListener(noteLeft);
+    try {
+      return await _writePackage(deckId, resume: resume);
     } on _DownloadHalted {
       logger.i('Offline download of deck=$deckId stopped for removal');
       return false;
+    } on _DownloadInterrupted catch (e) {
+      return _pauseDownload(deckId, e);
     } catch (e, s) {
+      if (_leftForeground.contains(deckId)) return _pauseDownload(deckId, e);
       logger.e('Offline download failed for deck=$deckId: $e', stackTrace: s);
       _failedNotifier(deckId).value = true;
       return false;
     } finally {
-      progress.value = null;
+      _foreground?.removeListener(noteLeft);
+      _leftForeground.remove(deckId);
+      if (!_resumeWhenForeground.contains(deckId)) {
+        progress.value = null;
+        await _forgetCheckpoint(deckId);
+      }
+    }
+  }
+
+  bool _pauseDownload(String deckId, Object error) {
+    logger.w('Offline download of deck=$deckId paused with the app: $error');
+    _pauseForForeground(deckId);
+    return false;
+  }
+
+  Future<bool> _writePackage(String deckId, {required bool resume}) async {
+    _checkHalted(deckId);
+    final checkpoint = await _startCheckpoint(deckId, resume: resume);
+    // Facts finished before a pause are kept only while the deck lists the
+    // very same facts.
+    if (checkpoint.factsDone && !await _listsSameFacts(deckId, checkpoint)) {
+      _restartFacts(checkpoint, null);
+    }
+    await _pinRestoredFacts(deckId, checkpoint);
+    if (!checkpoint.factsDone) await _syncFacts(deckId, checkpoint);
+    _report(deckId, _deckShare + _factsShare);
+    final _Checkpoint(:remote, :before, :fetchedAt, :facts) = checkpoint;
+    final tags = checkpoint.tags.values.toList()
+      ..sort((a, b) => a.id.compareTo(b.id));
+    final mediaComplete = await _downloadFactMedia(deckId, facts);
+    // Last, so reviews made online while the deck was downloading (the
+    // study screen serves it remotely until it is ready) are not lost.
+    await _seedCards(deckId);
+    // Re-read: sync flushes and tag loads may have written the row meanwhile.
+    final local = await _store.getDeck(deckId);
+    _checkHalted(deckId);
+    await _store.putDeck(
+      _buildDeck(
+        deckId,
+        remote,
+        local,
+        tags,
+        // A flush that refreshed the counters during the download has
+        // newer ones than the deck fetched before it.
+        countsAt: local?.lastSyncedAt == before?.lastSyncedAt
+            ? fetchedAt
+            : null,
+        mediaComplete: mediaComplete,
+      ),
+    );
+    try {
+      await pruneUnusedMedia(_store);
+    } catch (e) {
+      logger.w('Offline media cleanup of deck=$deckId failed: $e');
+    }
+    _report(deckId, 1);
+    return true;
+  }
+
+  /// Fetches the deck, then takes over the fact pages a paused run of the same
+  /// snapshot saved. Only such a run keeps the paused bar; any other starts it
+  /// over and replaces the saved checkpoint.
+  Future<_Checkpoint> _startCheckpoint(
+    String deckId, {
+    required bool resume,
+  }) async {
+    final fetchedAt = _nowSec();
+    final remote = await _fetchDeck(deckId);
+    _checkHalted(deckId);
+    final cp = _Checkpoint(remote, await _store.getDeck(deckId), fetchedAt);
+    final saved = resume ? await _store.getDownloadCheckpoint(deckId) : null;
+    if (saved == null || !await _restore(deckId, cp, saved)) {
+      _notifier(deckId).value = 0;
+      await _store.putDownloadCheckpoint(deckId, cp.toJson());
+    }
+    _report(deckId, _deckShare);
+    return cp;
+  }
+
+  /// Fills [cp] from [saved] when it read the same snapshot and its facts are
+  /// all still stored.
+  Future<bool> _restore(
+    String deckId,
+    _Checkpoint cp,
+    Map<String, dynamic> saved,
+  ) async {
+    if (saved case {
+      'sourceVersion': final int version,
+      'factTotal': final int? total,
+      'factIds': final List<dynamic> ids,
+      'tags': final List<dynamic> tags,
+      'factsDone': final bool done,
+    } when version == cp.remote.sourceVersion) {
+      final stored = {for (final f in await _store.getFacts(deckId)) f.id: f};
+      final facts = [for (final id in ids) stored[id]];
+      if (facts.contains(null)) return false;
+      cp.facts.addAll(facts.nonNulls);
+      for (final t in tags) {
+        final tag = Tag.fromJson(Map<String, dynamic>.from(t as Map));
+        cp.tags[tag.id] = tag;
+      }
+      cp
+        ..factTotal = total
+        ..factsDone = done;
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> _forgetCheckpoint(String deckId) async {
+    try {
+      await _store.deleteDownloadCheckpoint(deckId);
+    } catch (e) {
+      logger.w('Offline download checkpoint of deck=$deckId kept: $e');
     }
   }
 
@@ -285,38 +492,94 @@ class OfflinePackageDownloader {
     );
   }
 
-  /// Returns the facts and their distinct tags ordered by id, the order of
-  /// `GET /api/tags` used by the online tag filter.
-  Future<(List<OfflineFact>, List<Tag>)> _syncFacts(
-    String deckId,
-    OfflineDeck deck,
-  ) async {
+  /// Fetches the fact pages into [cp], continuing after the pages it already
+  /// holds. Tags are later ordered by id, the order of `GET /api/tags` used by
+  /// the online tag filter.
+  Future<void> _syncFacts(String deckId, _Checkpoint cp) async {
+    final deck = _buildDeck(deckId, cp.remote, cp.before, const []);
     final imported = deck.sourceDeckId.isNotEmpty;
     final stored = imported
         ? await _factsAtSnapshot(deck)
         : <String, OfflineFact>{};
-    final all = <OfflineFact>[];
-    final tags = <String, Tag>{};
     final total = await _factCount(deckId);
+    // Facts added or deleted meanwhile shift the offsets, so start over.
+    if (total == null || total != cp.factTotal) _restartFacts(cp, total);
+    await _fetchFactPages(deckId, cp, stored, imported: imported);
+    var ids = await _liveFactIds(deckId);
+    if (ids != null && _missesAny(cp, ids)) {
+      // A fact added or deleted while paging shifted the offsets past some.
+      logger.w('Offline facts of deck=$deckId incomplete, fetching again');
+      _restartFacts(cp, ids.length);
+      await _fetchFactPages(deckId, cp, stored, imported: imported);
+      // Re-read, or a fact added meanwhile would be dropped as deleted.
+      ids = await _liveFactIds(deckId);
+    }
+    _report(deckId, _deckShare + _factsShare);
+    if (ids != null) await _dropDeletedFacts(deckId, ids);
+    cp.factsDone = true;
+    await _store.putDownloadCheckpoint(deckId, cp.toJson());
+  }
+
+  /// Restored facts of an imported deck whose version lookup failed are looked
+  /// up again, or their media would be fetched unpinned and refused.
+  Future<void> _pinRestoredFacts(String deckId, _Checkpoint cp) async {
+    if (cp.remote.sourceDeckId.isEmpty) return;
+    final pinned = await _pinMediaVersions(deckId, cp.facts, const {});
+    _checkHalted(deckId);
+    final changed = [
+      for (var i = 0; i < pinned.length; i++)
+        if (!identical(pinned[i], cp.facts[i])) pinned[i],
+    ];
+    if (changed.isEmpty) return;
+    await _store.putFacts(changed);
+    cp.facts
+      ..clear()
+      ..addAll(pinned);
+  }
+
+  /// False too when the fact ids cannot be read, so the facts are fetched.
+  Future<bool> _listsSameFacts(String deckId, _Checkpoint cp) async {
+    final ids = await _liveFactIds(deckId);
+    return ids != null && ids.length == cp.facts.length && !_missesAny(cp, ids);
+  }
+
+  void _restartFacts(_Checkpoint cp, int? total) {
+    cp.facts.clear();
+    cp.tags.clear();
+    cp.factTotal = total;
+    cp.factsDone = false;
+  }
+
+  bool _missesAny(_Checkpoint cp, List<String> ids) {
+    final got = {for (final f in cp.facts) f.id};
+    return ids.any((id) => !got.contains(id));
+  }
+
+  Future<void> _fetchFactPages(
+    String deckId,
+    _Checkpoint cp,
+    Map<String, OfflineFact> stored, {
+    required bool imported,
+  }) async {
+    final total = cp.factTotal;
     OfflineFactsPage page;
     do {
-      page = await _fetchFactsPage(deckId, factsPageSize, all.length);
+      // First the pages a restored checkpoint holds, then each page fetched.
+      if (total != null && total > 0) {
+        _report(deckId, _deckShare + _factsShare * cp.facts.length / total);
+      }
+      page = await _fetchFactsPage(deckId, factsPageSize, cp.facts.length);
       final facts = imported
           ? await _pinMediaVersions(deckId, page.facts, stored)
           : page.facts;
       _checkHalted(deckId);
       await _store.putFacts(facts);
-      all.addAll(facts);
+      cp.facts.addAll(facts);
       for (final t in page.tags) {
-        tags[t.id] = t;
+        cp.tags[t.id] = t;
       }
-      if (total != null && total > 0) {
-        _report(deckId, _deckShare + _factsShare * all.length / total);
-      }
+      await _store.putDownloadCheckpoint(deckId, cp.toJson());
     } while (page.hasMore && page.facts.isNotEmpty);
-    _report(deckId, _deckShare + _factsShare);
-    await _dropDeletedFacts(deckId);
-    return (all, tags.values.toList()..sort((a, b) => a.id.compareTo(b.id)));
   }
 
   /// Fact count for the progress only; null when it cannot be read.
@@ -328,17 +591,20 @@ class OfflinePackageDownloader {
     }
   }
 
-  /// Offset paging skips facts when the deck changes meanwhile, so only the
-  /// unpaged id list proves a fact was deleted. Kept when it cannot be read.
-  Future<void> _dropDeletedFacts(String deckId) async {
-    final List<String>? ids;
+  /// The unpaged fact ids, which prove which facts exist; null when they
+  /// cannot be read.
+  Future<List<String>?> _liveFactIds(String deckId) async {
     try {
-      ids = await _fetchFactIds(deckId);
+      return await _fetchFactIds(deckId);
     } catch (e) {
       logger.w('Offline fact ids of deck=$deckId failed: $e');
-      return;
+      return null;
     }
-    if (ids == null) return;
+  }
+
+  /// Offset paging skips facts when the deck changes meanwhile, so only the
+  /// unpaged id list [ids] proves a fact was deleted.
+  Future<void> _dropDeletedFacts(String deckId, List<String> ids) async {
     final live = ids.toSet();
     final gone = [
       for (final f in await _store.getFacts(deckId))
@@ -357,6 +623,8 @@ class OfflinePackageDownloader {
 
   /// Imported decks may only fetch the author's media at a pinned version.
   /// A failed lookup leaves the fact unresolved (retried on the next sync).
+  /// One failing after the app left the foreground pauses the download before
+  /// the page is saved, so it runs again on resume.
   Future<List<OfflineFact>> _pinMediaVersions(
     String deckId,
     List<OfflineFact> facts,
@@ -380,7 +648,8 @@ class OfflinePackageDownloader {
     }
     var next = 0;
     Future<void> worker() async {
-      while (next < pending.length) {
+      // Leaving the app starts no new lookup; those running settle first.
+      while (next < pending.length && !_leftForeground.contains(deckId)) {
         final i = pending[next++];
         final fact = result[i];
         result[i] = fact.withMediaVersions(await _lookupVersions(deckId, fact));
@@ -390,6 +659,7 @@ class OfflinePackageDownloader {
     await Future.wait([
       for (var w = 0; w < versionLookupConcurrency; w++) worker(),
     ]);
+    if (next < pending.length) throw const _DownloadInterrupted();
     return result;
   }
 
@@ -398,8 +668,15 @@ class OfflinePackageDownloader {
     OfflineFact fact,
   ) async {
     try {
-      return await _fetchMediaVersions(deckId, fact.id);
+      final versions = await _fetchMediaVersions(deckId, fact.id);
+      // The lookup reads any failure as null, which one cut off by leaving
+      // the app must not save as an unpinned fact.
+      if (versions == null && _leftForeground.contains(deckId)) {
+        throw const _DownloadInterrupted();
+      }
+      return versions;
     } catch (e, s) {
+      if (_leftForeground.contains(deckId)) rethrow;
       logger.e(
         'Offline media versions of ${fact.id} failed: $e',
         stackTrace: s,
@@ -451,19 +728,30 @@ class OfflinePackageDownloader {
         ],
     }..remove('');
     var complete = true;
+    var interrupted = false;
     final keys = mediaKeys.toList();
     var next = 0;
     var done = 0;
     Future<void> worker() async {
-      while (next < keys.length) {
+      // Leaving the foreground pauses the download: files in flight finish,
+      // no new one starts, and it resumes when the app is back.
+      while (next < keys.length &&
+          !interrupted &&
+          !_leftForeground.contains(deckId)) {
         final key = keys[next++];
         try {
           await _downloadOne(deckId, key);
         } on _DownloadHalted {
           rethrow;
         } catch (e, s) {
-          complete = false;
-          logger.e('Offline media $key failed: $e', stackTrace: s);
+          if (_leftForeground.contains(deckId)) {
+            interrupted = true;
+            logger.w('Offline media $key paused with the app: $e');
+            continue; // Not saved, so not counted in the progress.
+          } else {
+            complete = false;
+            logger.e('Offline media $key failed: $e', stackTrace: s);
+          }
         }
         const started = _deckShare + _factsShare;
         const span = 1 - _cardsShare - started;
@@ -474,6 +762,9 @@ class OfflinePackageDownloader {
     await Future.wait([
       for (var w = 0; w < mediaDownloadConcurrency; w++) worker(),
     ]);
+    if (interrupted || _leftForeground.contains(deckId)) {
+      throw const _DownloadInterrupted();
+    }
     return complete;
   }
 

@@ -110,8 +110,12 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
 
                   if (state.error != null && state.decks.isEmpty) {
                     return _ErrorView(
-                      message: ApiErrorMessages.resolve(state.error, loc),
-                      onRetry: _cubit.onRefresh,
+                      message: ApiErrorMessages.resolve(
+                        state.error,
+                        loc,
+                        offline: (l) => l.discoveryOffline,
+                      ),
+                      onRetry: _cubit.retry,
                       loc: loc,
                       scheme: scheme,
                     );

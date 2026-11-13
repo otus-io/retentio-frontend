@@ -48,6 +48,8 @@ Each download:
 
 Concurrent downloads of the same deck share one run.
 
+Leaving the app, including turning the screen off, does not count as a failure. The download stays in progress and continues when the app is in the foreground again; if the device is offline then, it waits and continues when the network comes back. It keeps the fact pages already fetched and continues from the next page, or with the media, skipping files already saved, and the progress bar does not go back. That progress is saved on the device, so a download cut off by closing the app continues the same way when the deck list resumes it. If the number of facts changed meanwhile, the facts are fetched again from the first page. If an imported deck moved to another published version meanwhile, the facts are fetched again and the progress bar starts over. After the last fact page, every fact id the server lists must have been received; otherwise the fact pages are fetched again once. A failure while the app stays in front still needs a retry.
+
 Removing a deck or clearing the account’s data first stops the running download at its next step (dropping a half-written media file) and waits for it, and no new download starts until the removal is done. Otherwise the download would write the deck back as ready.
 
 ## Deck list

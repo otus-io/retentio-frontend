@@ -13,6 +13,29 @@ void main() {
   });
 
   group('ApiErrorMessages.resolve', () {
+    test('every network error resolves to noNetworkConnection', () {
+      for (final raw in ApiErrorMessages.networkErrors) {
+        expect(ApiErrorMessages.isNetworkError(' $raw '), isTrue);
+        expect(ApiErrorMessages.resolve(raw, en), en.noNetworkConnection);
+        expect(ApiErrorMessages.resolve(raw, zh), zh.noNetworkConnection);
+      }
+    });
+
+    test('offline overrides only network errors', () {
+      String offline(AppLocalizations l) => l.discoveryOffline;
+
+      expect(
+        ApiErrorMessages.resolve('Connect error', zh, offline: offline),
+        zh.discoveryOffline,
+      );
+      expect(
+        ApiErrorMessages.resolve('Deck not found', en, offline: offline),
+        en.apiDeckNotFound,
+      );
+      expect(ApiErrorMessages.isNetworkError('Deck not found'), isFalse);
+      expect(ApiErrorMessages.isNetworkError(null), isFalse);
+    });
+
     test('empty msg returns errorUnknown', () {
       expect(ApiErrorMessages.resolve(null, en), en.errorUnknown);
       expect(ApiErrorMessages.resolve('  ', zh), zh.errorUnknown);

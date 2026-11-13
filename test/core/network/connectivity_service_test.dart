@@ -28,6 +28,20 @@ void main() {
     );
   });
 
+  test('onConnectivityChange emits on every change', () async {
+    final fake = _FakeConnectivity();
+    final events = <void>[];
+    final sub = onConnectivityChange(fake).listen(events.add);
+
+    fake.changes
+      ..add([ConnectivityResult.none])
+      ..add([ConnectivityResult.wifi]);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(events, hasLength(2));
+    await sub.cancel();
+  });
+
   test('onNetworkRestored emits only on offline to online', () async {
     final fake = _FakeConnectivity();
     final events = <void>[];

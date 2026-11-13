@@ -212,6 +212,7 @@
   "discoveryFilterLatest": "最新",
   "discoveryFilterFavorites": "お気に入り",
   "discoveryEmpty": "公開デッキはまだありません",
+  "discoveryOffline": "オフラインです。ダウンロード済みのデッキは引き続き学習できます。",
   "discoveryFavoritesEmpty": "お気に入りのデッキはありません",
   "discoveryImport": "インポート",
   "discoveryImporting": "インポート中…",

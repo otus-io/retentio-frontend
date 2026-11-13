@@ -17,14 +17,17 @@ Future<bool> settleOfflineDataBeforeLogout(
   BuildContext context, {
   Future<OfflineLearningSession?>? session,
 }) async {
-  try {
-    return await _settle(
-      context,
+  final resolved =
       session ??
-          OfflineLearningSessions.instance.current(fetchMissingUsername: false),
-    );
+      OfflineLearningSessions.instance.current(fetchMissingUsername: false);
+  try {
+    return await _settle(context, resolved);
   } catch (e) {
     logger.w('offline logout: $e');
+    // Logout goes ahead, so no download of this account may resume after it.
+    try {
+      await (await resolved)?.stopDownloads();
+    } catch (_) {}
     return true;
   }
 }
@@ -58,13 +61,17 @@ Future<bool> _settle(
       return true;
     }
     // The user already chose to log out; if the screen is gone, keep the data.
-    if (!context.mounted) return true;
+    if (!context.mounted) {
+      await s.stopDownloads();
+      return true;
+    }
     choice = await _ask(context, loc.logoutSyncIncomplete, [
       (_LogoutChoice.keep, loc.logoutKeepAndLogout),
       (_LogoutChoice.discard, loc.logoutDiscardAndLogout),
     ]);
   }
   if (choice == _LogoutChoice.discard) await s.clear();
+  if (choice == _LogoutChoice.keep) await s.stopDownloads();
   return choice != null;
 }
 

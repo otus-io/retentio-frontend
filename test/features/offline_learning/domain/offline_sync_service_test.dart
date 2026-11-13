@@ -86,6 +86,15 @@ class _FakeStore implements OfflineLearningStore {
   @override
   Future<void> removeDeck(String deckId) => throw UnimplementedError();
   @override
+  Future<Map<String, dynamic>?> getDownloadCheckpoint(String deckId) =>
+      throw UnimplementedError();
+  @override
+  Future<void> putDownloadCheckpoint(String deckId, Map<String, dynamic> c) =>
+      throw UnimplementedError();
+  @override
+  Future<void> deleteDownloadCheckpoint(String deckId) =>
+      throw UnimplementedError();
+  @override
   Future<List<OfflineDeck>> getDecks() => throw UnimplementedError();
 }
 

@@ -51,6 +51,7 @@ dependencies:
   package_info_plus: ^10.2.2
   fl_chart: ^0.71.0
   flutter_secure_storage: ^10.3.4
+  dio_http2_adapter: ^2.9.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

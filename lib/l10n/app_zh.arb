@@ -230,6 +230,7 @@
   "discoveryFilterLatest": "最新",
   "discoveryFilterFavorites": "收藏",
   "discoveryEmpty": "暂无公开卡组",
+  "discoveryOffline": "网络未连接，已下载的卡组仍可离线学习",
   "discoveryFavoritesEmpty": "暂无收藏卡组",
   "discoveryImport": "导入",
   "discoveryImporting": "导入中…",
