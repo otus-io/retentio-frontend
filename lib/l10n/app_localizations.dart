@@ -1372,6 +1372,12 @@ abstract class AppLocalizations {
   /// **'No public decks yet'**
   String get discoveryEmpty;
 
+  /// Discover tab error when the catalog cannot be reached over the network
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline. Your downloaded decks are still ready to study.'**
+  String get discoveryOffline;
+
   /// Empty state for favorites
   ///
   /// In en, this message translates to:

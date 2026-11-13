@@ -695,6 +695,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get discoveryEmpty => 'No public decks yet';
 
   @override
+  String get discoveryOffline =>
+      'You\'re offline. Your downloaded decks are still ready to study.';
+
+  @override
   String get discoveryFavoritesEmpty => 'No favorited decks';
 
   @override

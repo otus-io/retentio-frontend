@@ -673,6 +673,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get discoveryEmpty => '暂无公开卡组';
 
   @override
+  String get discoveryOffline => '网络未连接，已下载的卡组仍可离线学习';
+
+  @override
   String get discoveryFavoritesEmpty => '暂无收藏卡组';
 
   @override

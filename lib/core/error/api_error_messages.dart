@@ -18,11 +18,6 @@ class ApiErrorMessages {
     'Authorization token required': (loc) => loc.authTokenRequired,
     'User not found for reset token': (loc) => loc.authResetTokenInvalid,
     'Invalid or expired reset token': (loc) => loc.authResetTokenInvalid,
-    'Connect timeout': (loc) => loc.noNetworkConnection,
-    'Connect error': (loc) => loc.noNetworkConnection,
-    'Send timeout': (loc) => loc.noNetworkConnection,
-    'Receive timeout': (loc) => loc.noNetworkConnection,
-    'Transform timeout': (loc) => loc.noNetworkConnection,
     'cannot import your own deck': (loc) => loc.discoveryImportSelf,
     'source deck is not importable': (loc) => loc.errorSourceDeckNotImportable,
     'cannot import an imported deck': (loc) =>
@@ -297,9 +292,32 @@ class ApiErrorMessages {
 
   static final _serverErrorPrefixes = ['Error ', 'Failed to ', 'Could not '];
 
-  static String resolve(String? rawMsg, AppLocalizations loc) {
+  /// Raw messages meaning the request never reached the server (see
+  /// `mapDioExceptionToApiResponse`). Add new transport failures here.
+  static const networkErrors = {
+    'Connect timeout',
+    'Connect error',
+    'Send timeout',
+    'Receive timeout',
+    'Transform timeout',
+  };
+
+  static bool isNetworkError(String? rawMsg) =>
+      networkErrors.contains(rawMsg?.trim());
+
+  /// Localizes [rawMsg]. Network failures resolve to [offline] when a screen
+  /// has a more helpful context-specific message, else to
+  /// [AppLocalizations.noNetworkConnection].
+  static String resolve(
+    String? rawMsg,
+    AppLocalizations loc, {
+    String Function(AppLocalizations loc)? offline,
+  }) {
     final msg = rawMsg?.trim() ?? '';
     if (msg.isEmpty) return loc.errorUnknown;
+    if (isNetworkError(msg)) {
+      return offline?.call(loc) ?? loc.noNetworkConnection;
+    }
 
     final exact = _exact[msg];
     if (exact != null) return exact(loc);
