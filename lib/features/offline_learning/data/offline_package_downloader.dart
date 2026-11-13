@@ -225,20 +225,20 @@ class OfflinePackageDownloader {
     late final Future<bool> tracked;
     tracked = started.whenComplete(() {
       if (identical(_inFlight[deckId], tracked)) _inFlight.remove(deckId);
-      _kickPaused();
+      unawaited(_kickPaused());
     });
     return _inFlight[deckId] = tracked;
   }
 
   void _onForeground() {
-    if (_foreground?.value == true) _kickPaused();
+    if (_foreground?.value == true) unawaited(_kickPaused());
   }
 
   /// A download cut off by leaving the app waits here instead of failing.
   void _pauseForForeground(String deckId) {
     if (_isHalted(deckId)) return;
     _resumeWhenForeground.add(deckId);
-    _kickPaused();
+    unawaited(_kickPaused());
   }
 
   void _dropPaused(String? deckId) {
@@ -250,8 +250,11 @@ class OfflinePackageDownloader {
     }
   }
 
-  void _kickPaused() {
-    if (_foreground?.value == false) return;
+  /// Offline, the paused downloads stay paused with their checkpoints instead
+  /// of failing at once; the next return to the app resumes them.
+  Future<void> _kickPaused() async {
+    if (_foreground?.value == false || _resumeWhenForeground.isEmpty) return;
+    if (!await _isOnline() || _foreground?.value == false) return;
     for (final id in _resumeWhenForeground.toList()) {
       if (_inFlight.containsKey(id)) continue;
       _resumeWhenForeground.remove(id);

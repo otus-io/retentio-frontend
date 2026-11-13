@@ -225,8 +225,7 @@ class NetworkDioClient {
     final outputFile = File(downloadPath);
     await outputFile.create(recursive: true);
 
-    // Content-Length; -1 when unknown or compressed.
-    var expected = -1;
+    var expected = -1; // Content-Length; -1 when unknown or compressed.
     try {
       await _dio.download(
         downloadUrl,

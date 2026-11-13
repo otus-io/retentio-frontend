@@ -950,6 +950,7 @@ void main() {
       late List<int> offsets;
       late List<String> ids;
       late bool countUnknown;
+      late bool online;
 
       /// Three fact pages; the second fails once with the screen off.
       OfflinePackageDownloader buildPausing() {
@@ -958,6 +959,7 @@ void main() {
         offsets = [];
         ids = List.generate(401, (i) => 'f$i');
         countUnknown = false;
+        online = true;
         var paused = false;
         return OfflinePackageDownloader(
           store: store,
@@ -982,7 +984,7 @@ void main() {
           fetchFactIds: (_) async => countUnknown ? null : ids,
           fetchCards: (_) async => const [],
           nowSec: () => 1000,
-          isOnline: () async => true,
+          isOnline: () async => online,
           foreground: foreground,
         );
       }
@@ -1010,6 +1012,27 @@ void main() {
         expect(store.decks['d1']?.isReady, isTrue);
         expect(store.facts.length, 401);
         expect(values.first, greaterThan(bar));
+      });
+
+      test('stays paused when back in front offline', () async {
+        final downloader = buildPausing();
+
+        expect(await downloader.download('d1'), isFalse);
+        online = false;
+        foreground.value = true;
+        await settle();
+
+        expect(offsets, [0, 200]);
+        expect(downloader.failedOf('d1').value, isFalse);
+        expect(downloader.progressOf('d1').value, isNotNull);
+
+        foreground.value = false;
+        online = true;
+        foreground.value = true;
+        await settle();
+
+        expect(offsets, [0, 200, 200, 400]);
+        expect(store.decks['d1']?.isReady, isTrue);
       });
 
       test('starts over when the fact count changed', () async {
