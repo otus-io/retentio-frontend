@@ -174,7 +174,11 @@ class _DiscoveryDetailScreenState extends State<DiscoveryDetailScreen> {
 
               if (state.error != null || state.deck == null) {
                 return _ErrorView(
-                  message: ApiErrorMessages.resolve(state.error, loc),
+                  message: ApiErrorMessages.resolve(
+                    state.error,
+                    loc,
+                    offline: (l) => l.discoveryOffline,
+                  ),
                   onRetry: () => _cubit.load(widget.sourceDeckId),
                   loc: loc,
                   scheme: scheme,
@@ -443,7 +447,11 @@ class _BottomAction extends StatelessWidget {
   }
 
   String _errorText(String error, AppLocalizations loc) {
-    return ApiErrorMessages.resolve(error, loc);
+    return ApiErrorMessages.resolve(
+      error,
+      loc,
+      offline: (l) => l.discoveryOffline,
+    );
   }
 }
 

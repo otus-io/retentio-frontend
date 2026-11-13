@@ -121,6 +121,12 @@ class DiscoveryListCubit extends Cubit<DiscoveryListState> {
 
   // ── refresh / load more ────────────────────────────────────────────────────
 
+  /// Shows the loading spinner again, then reloads; used by the error view.
+  Future<void> retry() async {
+    emit(state.copyWith(isLoading: true, clearError: true));
+    await onRefresh();
+  }
+
   Future<void> onRefresh() async {
     if (refreshController.isLoading) {
       _safe(refreshController.refreshCompleted);

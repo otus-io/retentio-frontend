@@ -16,10 +16,17 @@ class _CatalogApi extends Interceptor {
   bool qaVerified = false;
   List<String> contributors = const [];
   int contributorCount = 0;
+  bool offline = false;
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     paths.add(options.uri.path);
+    if (offline) {
+      handler.reject(
+        DioException.connectionError(requestOptions: options, reason: 'lookup'),
+      );
+      return;
+    }
     if (options.uri.path != '/api/decks/catalog/src-1') {
       handler.reject(DioException(requestOptions: options));
       return;
@@ -132,6 +139,15 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await pumpRouter(tester);
     expect(find.text('Contributors: @bob, @carol +3 more'), findsOneWidget);
+  });
+
+  testWidgets('offline load says downloaded decks still work', (tester) async {
+    api.offline = true;
+    await pumpRouter(tester);
+
+    final loc = lookupAppLocalizations(const Locale('en'));
+    expect(find.text(loc.discoveryOffline), findsOneWidget);
+    expect(find.text(loc.discoveryNotFound), findsNothing);
   });
 
   testWidgets('guest import shows a not-logged-in dialog', (tester) async {

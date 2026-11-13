@@ -36,7 +36,10 @@ class DeckCatalogService {
       if (query != null && query.isNotEmpty) 'query': query,
     };
     final res = await ApiService.get(Api.deckCatalog, queryParams: params);
-    final data = res?.data;
+    if (res == null || !res.isSuccess) {
+      throw Exception(res?.msg ?? 'Unknown error');
+    }
+    final data = res.data;
     if (data is! Map) {
       return const CatalogPage(
         decks: [],
@@ -68,6 +71,10 @@ class DeckCatalogService {
       Api.deckCatalogById,
       pathParams: {'id': id},
     );
+    final exception = res?.exception;
+    if (exception != null && exception.response == null) {
+      throw Exception(res!.msg);
+    }
     final data = res?.data;
     if (data is! Map) return null;
     return CatalogDeck.fromJson(Map<String, dynamic>.from(data));
