@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:hive_ce/hive.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_card.dart';
 import 'package:retentio/features/offline_learning/domain/entities/offline_deck.dart';
@@ -66,6 +68,8 @@ class HiveOfflineLearningStore implements OfflineLearningStore {
   String get _syncPrefix => '$accountId:sync:';
   String _syncKey(String operationId) => '$_syncPrefix$operationId';
   String _mediaKey(String mediaId) => '$accountId:media:$mediaId';
+  String _checkpointKey(String deckId) =>
+      '$accountId:download_checkpoint:$deckId';
 
   static Map<String, dynamic> _json(dynamic value) =>
       Map<String, dynamic>.from(value as Map);
@@ -149,7 +153,24 @@ class HiveOfflineLearningStore implements OfflineLearningStore {
   Future<void> deleteMedia(String mediaId) => _media.delete(_mediaKey(mediaId));
 
   @override
+  Future<Map<String, dynamic>?> getDownloadCheckpoint(String deckId) async {
+    final value = _meta.get(_checkpointKey(deckId)) as String?;
+    return value == null ? null : _json(jsonDecode(value));
+  }
+
+  @override
+  Future<void> putDownloadCheckpoint(
+    String deckId,
+    Map<String, dynamic> checkpoint,
+  ) => _meta.put(_checkpointKey(deckId), jsonEncode(checkpoint));
+
+  @override
+  Future<void> deleteDownloadCheckpoint(String deckId) =>
+      _meta.delete(_checkpointKey(deckId));
+
+  @override
   Future<void> removeDeck(String deckId) async {
+    await deleteDownloadCheckpoint(deckId);
     await _decks.delete(_deckKey(deckId));
     await _facts.deleteAll(_keys(_facts, _factPrefix(deckId)));
     final ops = [

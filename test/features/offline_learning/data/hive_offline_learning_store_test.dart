@@ -232,6 +232,34 @@ void main() {
     ]);
   });
 
+  test('download checkpoint survives reopen until deleted', () async {
+    const checkpoint = {
+      'factIds': ['f1'],
+      'factsDone': false,
+    };
+    expect(await store.getDownloadCheckpoint('d1'), isNull);
+    await store.putDownloadCheckpoint('d1', checkpoint);
+    await Hive.close();
+    store = await HiveOfflineLearningStore.open(accountId: 'alice');
+
+    expect(await store.getDownloadCheckpoint('d1'), checkpoint);
+    expect(await store.getDownloadCheckpoint('d2'), isNull);
+    await store.deleteDownloadCheckpoint('d1');
+    expect(await store.getDownloadCheckpoint('d1'), isNull);
+  });
+
+  test('removeDeck and clear delete the download checkpoint', () async {
+    await store.putDownloadCheckpoint('d1', const {'factIds': <String>[]});
+    await store.putDownloadCheckpoint('d2', const {'factIds': <String>[]});
+
+    await store.removeDeck('d1');
+    expect(await store.getDownloadCheckpoint('d1'), isNull);
+    expect(await store.getDownloadCheckpoint('d2'), isNotNull);
+
+    await store.clear();
+    expect(await store.getDownloadCheckpoint('d2'), isNull);
+  });
+
   test('media path get and put', () async {
     expect(await store.getMediaPath('m1'), isNull);
     await store.putMediaPath('m1', '/files/m1.mp3');

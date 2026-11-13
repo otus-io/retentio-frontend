@@ -26,8 +26,9 @@ class _DownloadInterrupted implements Exception {
   const _DownloadInterrupted();
 }
 
-/// The deck and the fact pages a download fetched so far. Kept while the
-/// download is paused for the app, so the resumed one continues from there.
+/// The deck and the fact pages a download fetched so far. Saved in the store
+/// after each page, so a run resumed after a pause or an app restart
+/// continues from there.
 class _Checkpoint {
   _Checkpoint(this.remote, this.before, this.fetchedAt);
 
@@ -40,6 +41,15 @@ class _Checkpoint {
   /// Fact count the pages were fetched against; null when unknown.
   int? factTotal;
   bool factsDone = false;
+
+  /// The facts themselves are in the store; only their ids are saved here.
+  Map<String, dynamic> toJson() => {
+    'sourceVersion': remote.sourceVersion,
+    'factTotal': factTotal,
+    'factIds': [for (final f in facts) f.id],
+    'tags': [for (final t in tags.values) t.toJson()],
+    'factsDone': factsDone,
+  };
 }
 
 /// Assembles a deck's offline study package (deck, facts, cards, media) into
@@ -80,10 +90,6 @@ class OfflinePackageDownloader {
   static const int refreshIntervalSec = 3600;
   static const int resumeConcurrency = 2;
 
-  /// A download paused longer than this fetches the deck and facts again
-  /// instead of resuming at the media with a stale fact list.
-  static const int checkpointMaxAgeSec = 1800;
-
   // Share of the progress each stage fills; media takes the rest.
   static const double _deckShare = 0.05;
   static const double _factsShare = 0.30;
@@ -109,7 +115,6 @@ class OfflinePackageDownloader {
   final Set<String> _resumed = {};
   final Set<String> _leftForeground = {};
   final Set<String> _resumeWhenForeground = {};
-  final Map<String, _Checkpoint> _checkpoints = {};
   var _haltsAll = 0;
 
   /// Download progress of [deckId] from 0 to 1, or null when none is running.
@@ -147,7 +152,7 @@ class OfflinePackageDownloader {
     } else {
       _halts.update(deckId, (n) => n + 1, ifAbsent: () => 1);
     }
-    _dropPaused(deckId);
+    await _dropPaused(deckId);
     try {
       while (true) {
         final running = [
@@ -245,12 +250,12 @@ class OfflinePackageDownloader {
     unawaited(_kickPaused());
   }
 
-  void _dropPaused(String? deckId) {
+  Future<void> _dropPaused(String? deckId) async {
     final ids = deckId == null ? _resumeWhenForeground.toList() : [deckId];
     for (final id in ids) {
       if (!_resumeWhenForeground.remove(id)) continue;
-      _checkpoints.remove(id);
       _notifier(id).value = null;
+      await _forgetCheckpoint(id);
     }
   }
 
@@ -281,7 +286,7 @@ class OfflinePackageDownloader {
     });
   }
 
-  /// [resume]: continue where a paused run left a recent checkpoint.
+  /// [resume]: continue from the checkpoint a paused run saved.
   Future<bool> _download(String deckId, {required bool resume}) async {
     final progress = _notifier(deckId)..value ??= 0;
     _failedNotifier(deckId).value = false;
@@ -310,7 +315,7 @@ class OfflinePackageDownloader {
       _leftForeground.remove(deckId);
       if (!_resumeWhenForeground.contains(deckId)) {
         progress.value = null;
-        _checkpoints.remove(deckId);
+        await _forgetCheckpoint(deckId);
       }
     }
   }
@@ -323,14 +328,7 @@ class OfflinePackageDownloader {
 
   Future<bool> _writePackage(String deckId, {required bool resume}) async {
     _checkHalted(deckId);
-    final saved = _checkpoints.remove(deckId);
-    final checkpoint =
-        resume &&
-            saved != null &&
-            _nowSec() - saved.fetchedAt < checkpointMaxAgeSec
-        ? saved
-        : await _fetchDeckCheckpoint(deckId);
-    _checkpoints[deckId] = checkpoint;
+    final checkpoint = await _startCheckpoint(deckId, resume: resume);
     if (!checkpoint.factsDone) await _syncFacts(deckId, checkpoint);
     _report(deckId, _deckShare + _factsShare);
     final _Checkpoint(:remote, :before, :fetchedAt, :facts) = checkpoint;
@@ -366,14 +364,62 @@ class OfflinePackageDownloader {
     return true;
   }
 
-  /// Starts the bar over; only a run resuming a checkpoint keeps the paused one.
-  Future<_Checkpoint> _fetchDeckCheckpoint(String deckId) async {
-    _notifier(deckId).value = 0;
+  /// Fetches the deck, then takes over the fact pages a paused run of the same
+  /// snapshot saved. Only such a run keeps the paused bar; any other starts it
+  /// over and replaces the saved checkpoint.
+  Future<_Checkpoint> _startCheckpoint(
+    String deckId, {
+    required bool resume,
+  }) async {
     final fetchedAt = _nowSec();
     final remote = await _fetchDeck(deckId);
     _checkHalted(deckId);
+    final cp = _Checkpoint(remote, await _store.getDeck(deckId), fetchedAt);
+    final saved = resume ? await _store.getDownloadCheckpoint(deckId) : null;
+    if (saved == null || !await _restore(deckId, cp, saved)) {
+      _notifier(deckId).value = 0;
+      await _store.putDownloadCheckpoint(deckId, cp.toJson());
+    }
     _report(deckId, _deckShare);
-    return _Checkpoint(remote, await _store.getDeck(deckId), fetchedAt);
+    return cp;
+  }
+
+  /// Fills [cp] from [saved] when it read the same snapshot and its facts are
+  /// all still stored.
+  Future<bool> _restore(
+    String deckId,
+    _Checkpoint cp,
+    Map<String, dynamic> saved,
+  ) async {
+    if (saved case {
+      'sourceVersion': final int version,
+      'factTotal': final int? total,
+      'factIds': final List<dynamic> ids,
+      'tags': final List<dynamic> tags,
+      'factsDone': final bool done,
+    } when version == cp.remote.sourceVersion) {
+      final stored = {for (final f in await _store.getFacts(deckId)) f.id: f};
+      final facts = [for (final id in ids) stored[id]];
+      if (facts.contains(null)) return false;
+      cp.facts.addAll(facts.nonNulls);
+      for (final t in tags) {
+        final tag = Tag.fromJson(Map<String, dynamic>.from(t as Map));
+        cp.tags[tag.id] = tag;
+      }
+      cp
+        ..factTotal = total
+        ..factsDone = done;
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> _forgetCheckpoint(String deckId) async {
+    try {
+      await _store.deleteDownloadCheckpoint(deckId);
+    } catch (e) {
+      logger.w('Offline download checkpoint of deck=$deckId kept: $e');
+    }
   }
 
   /// [countsAt]: when the server review counters of [remote] were fetched, to
@@ -436,6 +482,7 @@ class OfflinePackageDownloader {
     _report(deckId, _deckShare + _factsShare);
     if (ids != null) await _dropDeletedFacts(deckId, ids);
     cp.factsDone = true;
+    await _store.putDownloadCheckpoint(deckId, cp.toJson());
   }
 
   void _restartFacts(_Checkpoint cp, int? total) {
@@ -458,6 +505,10 @@ class OfflinePackageDownloader {
     final total = cp.factTotal;
     OfflineFactsPage page;
     do {
+      // First the pages a restored checkpoint holds, then each page fetched.
+      if (total != null && total > 0) {
+        _report(deckId, _deckShare + _factsShare * cp.facts.length / total);
+      }
       page = await _fetchFactsPage(deckId, factsPageSize, cp.facts.length);
       final facts = imported
           ? await _pinMediaVersions(deckId, page.facts, stored)
@@ -468,9 +519,7 @@ class OfflinePackageDownloader {
       for (final t in page.tags) {
         cp.tags[t.id] = t;
       }
-      if (total != null && total > 0) {
-        _report(deckId, _deckShare + _factsShare * cp.facts.length / total);
-      }
+      await _store.putDownloadCheckpoint(deckId, cp.toJson());
     } while (page.hasMore && page.facts.isNotEmpty);
   }
 
