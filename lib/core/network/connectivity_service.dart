@@ -6,6 +6,10 @@ Future<bool> hasNetworkConnection([Connectivity? connectivity]) async {
   return results.any((r) => r != ConnectivityResult.none);
 }
 
+/// Emits on every connectivity change, whether online or not.
+Stream<void> onConnectivityChange([Connectivity? connectivity]) =>
+    (connectivity ?? Connectivity()).onConnectivityChanged;
+
 /// Emits each time the device goes from no network to some network.
 Stream<void> onNetworkRestored([Connectivity? connectivity]) {
   var wasOnline = true;

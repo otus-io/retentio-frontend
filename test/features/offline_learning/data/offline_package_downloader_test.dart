@@ -785,6 +785,7 @@ void main() {
       late int mediaCalls;
       late int cardFetches;
       late bool failCards;
+      late OfflinePackageDownloader built;
 
       /// The first media file fails with the screen off; the cards fail while
       /// [failCards] is set.
@@ -795,7 +796,7 @@ void main() {
         mediaCalls = 0;
         cardFetches = 0;
         failCards = false;
-        return build(
+        return built = build(
           foreground: foreground,
           clock: clock,
           fetchDeck: (_) async {
@@ -827,9 +828,13 @@ void main() {
         );
       }
 
+      /// Waits for the resumed run, which writes a real media file, to end.
       Future<void> settle() async {
         for (var i = 0; i < 50; i++) {
           await Future<void>.delayed(Duration.zero);
+        }
+        for (var i = 0; i < 500 && built.progressOf('d1').value != null; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 1));
         }
       }
 
@@ -853,10 +858,15 @@ void main() {
         final downloader = buildPausing(clock: () => now);
 
         expect(await downloader.download('d1'), isFalse);
+        final values = <double?>[];
+        downloader
+            .progressOf('d1')
+            .addListener(() => values.add(downloader.progressOf('d1').value));
         now += OfflinePackageDownloader.checkpointMaxAgeSec;
         foreground.value = true;
         await settle();
 
+        expect(values.first, 0);
         expect(deckFetches, 2);
         expect(factFetches, 2);
         expect(store.decks['d1']?.isReady, isTrue);
@@ -951,6 +961,7 @@ void main() {
       late List<String> ids;
       late bool countUnknown;
       late bool online;
+      late StreamController<void> restored;
 
       /// Three fact pages; the second fails once with the screen off.
       OfflinePackageDownloader buildPausing() {
@@ -960,6 +971,8 @@ void main() {
         ids = List.generate(401, (i) => 'f$i');
         countUnknown = false;
         online = true;
+        restored = StreamController<void>.broadcast();
+        addTearDown(restored.close);
         var paused = false;
         return OfflinePackageDownloader(
           store: store,
@@ -986,6 +999,7 @@ void main() {
           nowSec: () => 1000,
           isOnline: () async => online,
           foreground: foreground,
+          connectivityChanged: () => restored.stream,
         );
       }
 
@@ -1029,6 +1043,27 @@ void main() {
         foreground.value = false;
         online = true;
         foreground.value = true;
+        await settle();
+
+        expect(offsets, [0, 200, 200, 400]);
+        expect(store.decks['d1']?.isReady, isTrue);
+      });
+
+      test('resumes when the network comes back in front', () async {
+        final downloader = buildPausing();
+
+        expect(await downloader.download('d1'), isFalse);
+        online = false;
+        foreground.value = true;
+        await settle();
+        expect(offsets, [0, 200]);
+
+        restored.add(null);
+        await settle();
+        expect(offsets, [0, 200]);
+
+        online = true;
+        restored.add(null);
         await settle();
 
         expect(offsets, [0, 200, 200, 400]);

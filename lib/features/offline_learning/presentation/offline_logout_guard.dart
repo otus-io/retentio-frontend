@@ -17,14 +17,17 @@ Future<bool> settleOfflineDataBeforeLogout(
   BuildContext context, {
   Future<OfflineLearningSession?>? session,
 }) async {
-  try {
-    return await _settle(
-      context,
+  final resolved =
       session ??
-          OfflineLearningSessions.instance.current(fetchMissingUsername: false),
-    );
+      OfflineLearningSessions.instance.current(fetchMissingUsername: false);
+  try {
+    return await _settle(context, resolved);
   } catch (e) {
     logger.w('offline logout: $e');
+    // Logout goes ahead, so no download of this account may resume after it.
+    try {
+      await (await resolved)?.stopDownloads();
+    } catch (_) {}
     return true;
   }
 }

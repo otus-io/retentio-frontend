@@ -106,7 +106,9 @@ class OfflineLearningSessions {
     Future<OfflineLearningStore> Function(String accountId)? openStore,
     Future<String> Function()? documentsDir,
     Future<bool> Function()? isOnline,
+    Stream<void> Function()? connectivityChanged,
   }) : _isOnline = isOnline ?? hasNetworkConnection,
+       _connectivityChanged = connectivityChanged ?? onConnectivityChange,
        _readUsername = readUsername ?? const LocalAuthDataSource().readUsername,
        _saveUsername = saveUsername ?? const LocalAuthDataSource().saveUsername,
        _fetchUsername = fetchUsername ?? _fetchProfileUsername,
@@ -121,6 +123,7 @@ class OfflineLearningSessions {
   final Future<OfflineLearningStore> Function(String accountId) _openStore;
   final Future<String> Function() _documentsDir;
   final Future<bool> Function() _isOnline;
+  final Stream<void> Function() _connectivityChanged;
   final Map<String, Future<OfflineLearningSession>> _sessions = {};
 
   /// [fetchMissingUsername] false skips the profile request when no username
@@ -187,6 +190,7 @@ class OfflineLearningSessions {
         mediaRootDir: mediaRoot,
         isOnline: _isOnline,
         foreground: AppForeground(),
+        connectivityChanged: _connectivityChanged,
       ),
       sync: OfflineSyncService(
         store: store,

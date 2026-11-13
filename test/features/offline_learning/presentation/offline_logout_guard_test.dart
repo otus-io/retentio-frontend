@@ -331,6 +331,7 @@ void main() {
     store.failReads = true;
 
     expect(await start(tester, Future.value(session)), [true]);
+    expect(session.downloadStops, 1);
   });
 
   testWidgets('a failed discard still logs out', (tester) async {

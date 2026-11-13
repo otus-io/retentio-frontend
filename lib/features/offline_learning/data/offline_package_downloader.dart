@@ -58,6 +58,7 @@ class OfflinePackageDownloader {
     int Function()? nowSec,
     Future<bool> Function()? isOnline,
     ValueListenable<bool>? foreground,
+    Stream<void> Function()? connectivityChanged,
   }) : _store = store,
        _mediaRootDir = mediaRootDir,
        _fetchDeck = fetchDeck ?? DeckService.of.getDeckDetail,
@@ -68,7 +69,8 @@ class OfflinePackageDownloader {
        _fetchMediaVersions = fetchMediaVersions ?? fetchOfflineMediaVersions,
        _nowSec = nowSec ?? _defaultNowSec,
        _isOnline = isOnline ?? hasNetworkConnection,
-       _foreground = foreground {
+       _foreground = foreground,
+       _connectivityChanged = connectivityChanged {
     _foreground?.addListener(_onForeground);
   }
 
@@ -98,6 +100,8 @@ class OfflinePackageDownloader {
   final int Function() _nowSec;
   final Future<bool> Function() _isOnline;
   final ValueListenable<bool>? _foreground;
+  final Stream<void> Function()? _connectivityChanged;
+  StreamSubscription<void>? _offlineWait;
   final Map<String, Future<bool>> _inFlight = {};
   final Map<String, int> _halts = {};
   final Map<String, ValueNotifier<double?>> _progress = {};
@@ -251,10 +255,15 @@ class OfflinePackageDownloader {
   }
 
   /// Offline, the paused downloads stay paused with their checkpoints instead
-  /// of failing at once; the next return to the app resumes them.
+  /// of failing at once; the network coming back or the next return to the
+  /// app resumes them.
   Future<void> _kickPaused() async {
     if (_foreground?.value == false || _resumeWhenForeground.isEmpty) return;
-    if (!await _isOnline() || _foreground?.value == false) return;
+    if (!await _isOnline()) {
+      _waitForNetwork();
+      return;
+    }
+    if (_foreground?.value == false) return;
     for (final id in _resumeWhenForeground.toList()) {
       if (_inFlight.containsKey(id)) continue;
       _resumeWhenForeground.remove(id);
@@ -262,11 +271,19 @@ class OfflinePackageDownloader {
     }
   }
 
+  /// Kicks the paused downloads again on the next connectivity change, which
+  /// waits once more if the device is still offline.
+  void _waitForNetwork() {
+    _offlineWait ??= _connectivityChanged?.call().listen((_) {
+      unawaited(_offlineWait?.cancel());
+      _offlineWait = null;
+      unawaited(_kickPaused());
+    });
+  }
+
   /// [resume]: continue where a paused run left a recent checkpoint.
   Future<bool> _download(String deckId, {required bool resume}) async {
-    final progress = _notifier(deckId);
-    // A resumed run keeps the bar of the paused one instead of dropping to 0.
-    if (!resume || progress.value == null) progress.value = 0;
+    final progress = _notifier(deckId)..value ??= 0;
     _failedNotifier(deckId).value = false;
     // This run replaces a paused one, which must not start again after it.
     _resumeWhenForeground.remove(deckId);
@@ -349,7 +366,9 @@ class OfflinePackageDownloader {
     return true;
   }
 
+  /// Starts the bar over; only a run resuming a checkpoint keeps the paused one.
   Future<_Checkpoint> _fetchDeckCheckpoint(String deckId) async {
+    _notifier(deckId).value = 0;
     final fetchedAt = _nowSec();
     final remote = await _fetchDeck(deckId);
     _checkHalted(deckId);
