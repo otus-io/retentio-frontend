@@ -4,7 +4,6 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
 import 'package:retentio/core/network/api_error_mapper.dart';
-import 'package:retentio/core/network/dio_error_log.dart';
 import 'package:retentio/core/network/download_http2_adapter.dart';
 import 'package:retentio/models/api_response.dart';
 import 'package:retentio/services/index.dart';
@@ -20,7 +19,8 @@ class NetworkDioClient {
   final IOHttpClientAdapter _ioAdapter = IOHttpClientAdapter();
   bool _didConfig = false;
 
-  final Duration _connectTimeout = const Duration(minutes: 1);
+  /// Covers DNS lookup, TCP connect and TLS handshake together.
+  final Duration _connectTimeout = const Duration(seconds: 8);
   final Duration _receiveTimeout = const Duration(minutes: 1);
   final Duration _sendTimeout = const Duration(minutes: 1);
 
@@ -325,10 +325,7 @@ class NetworkDioClient {
     return scheme + rest;
   }
 
-  ApiResponse _handleError(DioException e) {
-    logDioError('NetworkDioClient._handleError', e);
-    return mapDioExceptionToApiResponse(e);
-  }
+  ApiResponse _handleError(DioException e) => mapDioExceptionToApiResponse(e);
 
   static HttpClient _createHttpClient() {
     return HttpClient()

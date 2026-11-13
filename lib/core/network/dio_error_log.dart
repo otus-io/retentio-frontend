@@ -35,6 +35,7 @@ Map<String, Object?> buildDioErrorLog(DioException err) {
     'method': err.requestOptions.method,
     'url': err.requestOptions.uri.toString(),
     'dio_type': err.type.name,
+    'cause': (err.error ?? err.message)?.toString(),
     'status_code': response?.statusCode,
     'server_msg': serverMsg,
     'response_body': loggableResponseData(data),
