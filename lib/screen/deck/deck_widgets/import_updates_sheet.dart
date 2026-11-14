@@ -1,12 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
+import 'package:retentio/features/offline_learning/offline_learning_session.dart';
 import 'package:retentio/l10n/app_localizations.dart';
 import 'package:retentio/models/deck_updates.dart';
 import 'package:retentio/models/fact.dart';
 import 'package:retentio/screen/deck/card_widgets/card_audio.dart';
 import 'package:retentio/services/apis/deck_catalog_service.dart';
+import 'package:retentio/utils/log.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_toast.dart';
 
@@ -15,10 +19,20 @@ class ImportUpdatesSheet extends StatefulWidget {
     super.key,
     required this.deckId,
     required this.onSynced,
+    this.refreshOffline = _refreshOfflineCopy,
   });
 
   final String deckId;
   final Future<void> Function() onSynced;
+
+  /// Re-downloads the offline copy at the version just synced.
+  final Future<void> Function(String deckId) refreshOffline;
+
+  static Future<void> _refreshOfflineCopy(String deckId) async =>
+      (await OfflineLearningSessions.instance.current())?.downloader.download(
+        deckId,
+        fresh: true,
+      );
 
   @override
   State<ImportUpdatesSheet> createState() => _ImportUpdatesSheetState();
@@ -89,6 +103,13 @@ class _ImportUpdatesSheetState extends State<ImportUpdatesSheet> {
         widget.deckId,
         targetVersion: summary.latestVersion,
         decisions: decisions,
+      );
+      unawaited(
+        widget
+            .refreshOffline(widget.deckId)
+            .catchError(
+              (Object e) => logger.w('offline refresh after sync: $e'),
+            ),
       );
       await widget.onSynced();
       if (!mounted) return;
