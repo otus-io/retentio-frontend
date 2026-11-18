@@ -127,10 +127,11 @@ test(auth): add unit tests for token refresh
 | **XS** | 1-10 | Ideal for quick fixes |
 | **S** | 11-50 | Good for small features or bug fixes |
 | **M** | 51-200 | Acceptable for moderate features |
-| **L** | 201-500 | Should be split if possible |
-| **XL** | 500+ | **Must be split** into smaller PRs |
+| **L** | 201-1000 | Acceptable for larger features |
+| **XL** | 1000+ | **Must be split** into smaller PRs |
 
-**Target**: Keep PRs under **200 lines** of actual code changes (excluding tests and generated files).
+**Target**: Keep PRs under **1000 lines** of actual code changes (excluding tests and generated files).
+Tests may add up to **5000 lines**.
 
 #### Why Small PRs?
 
