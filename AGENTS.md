@@ -38,7 +38,6 @@ Retentio Frontend is a Flutter app (Riverpod, go_router, Dio) for vocabulary lea
 ### Documentation
 
 - All user-facing docs must have English and Chinese versions (e.g., `foo.md` + `foo_zh.md`)
-- Keep `docs/api_progress_tracker.md` updated when adding/changing API usage
 
 ### Key Principles
 

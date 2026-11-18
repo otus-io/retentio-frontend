@@ -72,7 +72,6 @@ Extended reference: [docs/flutter_commands.md](docs/flutter_commands.md) ([ä¸­æ–
 | [docs/card-text-markup.md](docs/card-text-markup.md) | Wiki-style ruby markup on cards |
 | [docs/deck-font-ruby-typography.md](docs/deck-font-ruby-typography.md) | Deck font sheet and ruby typography |
 | [docs/plan_add_facts.md](docs/plan_add_facts.md) | Add-facts feature plan |
-| [docs/api_progress_tracker.md](docs/api_progress_tracker.md) | API integration progress tracker |
 | [docs/bug_tracker.md](docs/bug_tracker.md) | Known bugs and fixes |
 | [docs/card_tests.md](docs/card_tests.md) | Card integration test notes |
 | [docs/typography_global_audit_and_migration.md](docs/typography_global_audit_and_migration.md) | Typography audit and migration |
