@@ -108,15 +108,31 @@ void main() {
       totalReviews: 3,
       totalReviewsToday: 4,
       tags: const [Tag(id: 't1', name: 'N5', description: '')],
-      refreshedAt: 5,
     );
     expect(ready.isReady, isTrue);
-    expect(ready.toJson()['refreshed_at'], 5);
     expect(OfflineDeck.fromJson(ready.toJson()).tags.single.name, 'N5');
     expect(OfflineDeck.fromJson(ready.toJson()).toJson(), ready.toJson());
     expect(deck.copyWith().toJson(), deck.toJson());
     expect(OfflineDeck.fromJson({}).fields, isEmpty);
-    expect(OfflineDeck.fromJson({}).refreshedAt, 0);
+    expect(OfflineDeck.fromJson({}).remoteUpdatedAt, '');
+  });
+
+  test('OfflineDeck keeps the remote updated_at through JSON and copyWith', () {
+    const deck = OfflineDeck(
+      id: 'd1',
+      name: 'N5',
+      fields: [],
+      remoteUpdatedAt: '2026-11-14T12:00:00.000Z',
+    );
+    expect(deck.toJson()['remote_updated_at'], '2026-11-14T12:00:00.000Z');
+    expect(
+      OfflineDeck.fromJson(deck.toJson()).remoteUpdatedAt,
+      deck.remoteUpdatedAt,
+    );
+    expect(
+      deck.copyWith(downloadedAt: 1).remoteUpdatedAt,
+      deck.remoteUpdatedAt,
+    );
   });
 
   test('StudySyncOperation builds separate review and hide bodies', () {

@@ -45,6 +45,7 @@ class _Checkpoint {
   /// The facts themselves are in the store; only their ids are saved here.
   Map<String, dynamic> toJson() => {
     'sourceVersion': remote.sourceVersion,
+    'updatedAt': OfflinePackageDownloader._updatedAtOf(remote),
     'factTotal': factTotal,
     'factIds': [for (final f in facts) f.id],
     'tags': [for (final t in tags.values) t.toJson()],
@@ -87,7 +88,6 @@ class OfflinePackageDownloader {
   static const int factsPageSize = 200;
   static const int versionLookupConcurrency = 4;
   static const int mediaDownloadConcurrency = 64;
-  static const int refreshIntervalSec = 3600;
   static const int resumeConcurrency = 2;
 
   // Share of the progress each stage fills; media takes the rest.
@@ -183,16 +183,10 @@ class OfflinePackageDownloader {
     }
   }
 
-  /// Study-page refresh: downloads only when online, and a study-ready deck
-  /// at most once per [refreshIntervalSec].
+  /// Study-page refresh: downloads only when online. A ready deck whose
+  /// snapshot did not change re-reads only its cards.
   Future<void> refreshIfStale(String deckId) async {
     if (!await _isOnline()) return;
-    final deck = await _store.getDeck(deckId);
-    if (deck != null &&
-        deck.isReady &&
-        _nowSec() - deck.refreshedAt < refreshIntervalSec) {
-      return;
-    }
     await download(deckId);
   }
 
@@ -356,37 +350,33 @@ class OfflinePackageDownloader {
   Future<bool> _writePackage(String deckId, {required bool resume}) async {
     _checkHalted(deckId);
     final checkpoint = await _startCheckpoint(deckId, resume: resume);
+    if (resume && _factsUnchanged(checkpoint)) {
+      return _refreshCards(deckId, checkpoint);
+    }
     // Facts finished before a pause are kept only while the deck lists the
     // very same facts.
     if (checkpoint.factsDone && !await _listsSameFacts(deckId, checkpoint)) {
       _restartFacts(checkpoint, null);
     }
+    // Restored facts left done were just checked against the listed ids.
+    var factsComplete = checkpoint.factsDone;
     await _pinRestoredFacts(deckId, checkpoint);
-    if (!checkpoint.factsDone) await _syncFacts(deckId, checkpoint);
+    if (!checkpoint.factsDone) {
+      factsComplete = await _syncFacts(deckId, checkpoint);
+    }
     _report(deckId, _deckShare + _factsShare);
-    final _Checkpoint(:remote, :before, :fetchedAt, :facts) = checkpoint;
+    final facts = checkpoint.facts;
     final tags = checkpoint.tags.values.toList()
       ..sort((a, b) => a.id.compareTo(b.id));
     final mediaComplete = await _downloadFactMedia(deckId, facts);
     // Last, so reviews made online while the deck was downloading (the
     // study screen serves it remotely until it is ready) are not lost.
     await _seedCards(deckId);
-    // Re-read: sync flushes and tag loads may have written the row meanwhile.
-    final local = await _store.getDeck(deckId);
-    _checkHalted(deckId);
-    await _store.putDeck(
-      _buildDeck(
-        deckId,
-        remote,
-        local,
-        tags,
-        // A flush that refreshed the counters during the download has
-        // newer ones than the deck fetched before it.
-        countsAt: local?.lastSyncedAt == before?.lastSyncedAt
-            ? fetchedAt
-            : null,
-        mediaComplete: mediaComplete,
-      ),
+    await _putDeck(
+      deckId,
+      checkpoint,
+      tags,
+      complete: mediaComplete && factsComplete,
     );
     try {
       await pruneUnusedMedia(_store);
@@ -395,6 +385,56 @@ class OfflinePackageDownloader {
     }
     _report(deckId, 1);
     return true;
+  }
+
+  /// A ready deck whose snapshot version and `updated_at` are those its facts
+  /// and media were stored at: no fact, tag or media changed since.
+  bool _factsUnchanged(_Checkpoint cp) {
+    final local = cp.before;
+    return local != null &&
+        local.isReady &&
+        local.remoteUpdatedAt.isNotEmpty &&
+        local.sourceVersion == cp.remote.sourceVersion &&
+        local.remoteUpdatedAt == _updatedAtOf(cp.remote);
+  }
+
+  static String _updatedAtOf(Deck deck) =>
+      deck.updatedAt?.toUtc().toIso8601String() ?? '';
+
+  /// Re-reads only the cards: a first download's card snapshot predates the
+  /// online session it runs beside, so reviews the server took meanwhile are
+  /// picked up.
+  Future<bool> _refreshCards(String deckId, _Checkpoint cp) async {
+    await _seedCards(deckId);
+    await _putDeck(deckId, cp, null, complete: true);
+    _report(deckId, 1);
+    return true;
+  }
+
+  /// Writes the deck row; null [tags] keeps the stored ones.
+  Future<void> _putDeck(
+    String deckId,
+    _Checkpoint cp,
+    List<Tag>? tags, {
+    required bool complete,
+  }) async {
+    // Re-read: sync flushes and tag loads may have written the row meanwhile.
+    final local = await _store.getDeck(deckId);
+    _checkHalted(deckId);
+    await _store.putDeck(
+      _buildDeck(
+        deckId,
+        cp.remote,
+        local,
+        tags ?? local?.tags ?? const [],
+        // A flush that refreshed the counters during the download has
+        // newer ones than the deck fetched before it.
+        countsAt: local?.lastSyncedAt == cp.before?.lastSyncedAt
+            ? cp.fetchedAt
+            : null,
+        complete: complete,
+      ),
+    );
   }
 
   /// Fetches the deck, then takes over the fact pages a paused run of the same
@@ -417,20 +457,25 @@ class OfflinePackageDownloader {
     return cp;
   }
 
-  /// Fills [cp] from [saved] when it read the same snapshot and its facts are
-  /// all still stored.
+  /// Fills [cp] from [saved] when it read the same snapshot and `updated_at`
+  /// and its facts are all still stored. A checkpoint without `updated_at`
+  /// predates it and is not restored.
   Future<bool> _restore(
     String deckId,
     _Checkpoint cp,
     Map<String, dynamic> saved,
   ) async {
-    if (saved case {
-      'sourceVersion': final int version,
-      'factTotal': final int? total,
-      'factIds': final List<dynamic> ids,
-      'tags': final List<dynamic> tags,
-      'factsDone': final bool done,
-    } when version == cp.remote.sourceVersion) {
+    if (saved
+        case {
+          'sourceVersion': final int version,
+          'updatedAt': final String updatedAt,
+          'factTotal': final int? total,
+          'factIds': final List<dynamic> ids,
+          'tags': final List<dynamic> tags,
+          'factsDone': final bool done,
+        }
+        when version == cp.remote.sourceVersion &&
+            updatedAt == _updatedAtOf(cp.remote)) {
       final stored = {for (final f in await _store.getFacts(deckId)) f.id: f};
       final facts = [for (final id in ids) stored[id]];
       if (facts.contains(null)) return false;
@@ -464,7 +509,7 @@ class OfflinePackageDownloader {
     OfflineDeck? local,
     List<Tag> tags, {
     int? countsAt,
-    bool mediaComplete = true,
+    bool complete = true,
   }) {
     final kept = countsAt == null ? local : null;
     final ready = local != null && local.isReady ? local : null;
@@ -481,21 +526,17 @@ class OfflinePackageDownloader {
       downloadedAt: ready?.downloadedAt ?? _nowSec(),
       lastSyncedAt: countsAt ?? local?.lastSyncedAt ?? 0,
       tags: tags,
-      // A first download's card snapshot predates the online session it runs
-      // beside, so it leaves the deck due a refresh on the next open, as does
-      // a refresh that missed media.
-      refreshedAt: ready == null
-          ? 0
-          : mediaComplete
-          ? _nowSec()
-          : ready.refreshedAt,
+      // Left empty after missed facts or media, so the next refresh fetches
+      // them again.
+      remoteUpdatedAt: complete ? _updatedAtOf(remote) : '',
     );
   }
 
   /// Fetches the fact pages into [cp], continuing after the pages it already
   /// holds. Tags are later ordered by id, the order of `GET /api/tags` used by
-  /// the online tag filter.
-  Future<void> _syncFacts(String deckId, _Checkpoint cp) async {
+  /// the online tag filter. Returns false when the fact ids cannot prove
+  /// every listed fact was saved.
+  Future<bool> _syncFacts(String deckId, _Checkpoint cp) async {
     final deck = _buildDeck(deckId, cp.remote, cp.before, const []);
     final imported = deck.sourceDeckId.isNotEmpty;
     final stored = imported
@@ -518,6 +559,7 @@ class OfflinePackageDownloader {
     if (ids != null) await _dropDeletedFacts(deckId, ids);
     cp.factsDone = true;
     await _store.putDownloadCheckpoint(deckId, cp.toJson());
+    return ids != null && !_missesAny(cp, ids);
   }
 
   /// Restored facts of an imported deck whose version lookup failed are looked

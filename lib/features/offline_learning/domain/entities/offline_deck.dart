@@ -14,7 +14,7 @@ class OfflineDeck {
     this.downloadedAt = 0,
     this.lastSyncedAt = 0,
     this.tags = const [],
-    this.refreshedAt = 0,
+    this.remoteUpdatedAt = '',
   });
 
   final String id;
@@ -33,8 +33,9 @@ class OfflineDeck {
   /// Fact tags of this deck, cached for the offline tag filter.
   final List<Tag> tags;
 
-  /// When a study-page refresh of this ready deck last succeeded; 0 = never.
-  final int refreshedAt;
+  /// Server `updated_at` of the deck the stored facts and media match; empty
+  /// when unknown or the media is incomplete.
+  final String remoteUpdatedAt;
 
   bool get isReady => downloadedAt > 0;
 
@@ -44,7 +45,6 @@ class OfflineDeck {
     int? downloadedAt,
     int? lastSyncedAt,
     List<Tag>? tags,
-    int? refreshedAt,
   }) => OfflineDeck(
     id: id,
     name: name,
@@ -57,7 +57,7 @@ class OfflineDeck {
     downloadedAt: downloadedAt ?? this.downloadedAt,
     lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
     tags: tags ?? this.tags,
-    refreshedAt: refreshedAt ?? this.refreshedAt,
+    remoteUpdatedAt: remoteUpdatedAt,
   );
 
   factory OfflineDeck.fromJson(Map<String, dynamic> json) => OfflineDeck(
@@ -75,7 +75,7 @@ class OfflineDeck {
       for (final t in (json['tags'] as List? ?? const []))
         Tag.fromJson(Map<String, dynamic>.from(t as Map)),
     ],
-    refreshedAt: (json['refreshed_at'] as num?)?.toInt() ?? 0,
+    remoteUpdatedAt: '${json['remote_updated_at'] ?? ''}',
   );
 
   Map<String, dynamic> toJson() => {
@@ -90,6 +90,6 @@ class OfflineDeck {
     'downloaded_at': downloadedAt,
     'last_synced_at': lastSyncedAt,
     'tags': [for (final t in tags) t.toJson()],
-    'refreshed_at': refreshedAt,
+    'remote_updated_at': remoteUpdatedAt,
   };
 }

@@ -146,6 +146,20 @@ const _deck = Deck(
   ),
 );
 
+Deck _remoteDeck({int sourceVersion = 3, DateTime? updatedAt}) => Deck(
+  id: _deck.id,
+  name: _deck.name,
+  rate: _deck.rate,
+  fields: _deck.fields,
+  minInterval: 0,
+  defInterval: 0,
+  maxInterval: 0,
+  sourceDeckId: _deck.sourceDeckId,
+  sourceVersion: sourceVersion,
+  stats: _deck.stats,
+  updatedAt: updatedAt,
+);
+
 OfflineFact _fact(String id, {List<FactEntry> entries = const []}) =>
     OfflineFact(deckId: 'd1', id: id, entries: entries);
 
@@ -1105,6 +1119,7 @@ void main() {
       late bool probeFails;
       late Completer<void>? probeGate;
       late StreamController<void> restored;
+      late DateTime? updatedAt;
 
       /// Three fact pages; the second fails once with the screen off unless
       /// [pause] is false.
@@ -1119,13 +1134,14 @@ void main() {
         probeGate = null;
         restored = StreamController<void>.broadcast();
         addTearDown(restored.close);
+        updatedAt = null;
         var paused = !pause;
         return OfflinePackageDownloader(
           store: store,
           mediaRootDir: tmp.path,
           fetchDeck: (_) async {
             deckFetches++;
-            return _deck;
+            return _remoteDeck(updatedAt: updatedAt);
           },
           fetchFactsPage: (_, limit, offset) async {
             offsets.add(offset);
@@ -1203,6 +1219,28 @@ void main() {
 
         expect(offsets, [0, 200, 400]);
         expect(store.facts.length, 401);
+      });
+
+      test('starts over when the deck updated_at moved', () async {
+        final downloader = buildPausing();
+
+        expect(await downloader.download('d1'), isFalse);
+        updatedAt = DateTime.utc(2026, 11, 14);
+        foreground.value = true;
+        await settle();
+
+        expect(offsets, [0, 200, 0, 200, 400]);
+        expect(store.decks['d1']?.isReady, isTrue);
+      });
+
+      test('starts over from a checkpoint without updated_at', () async {
+        expect(await buildPausing().download('d1'), isFalse);
+        final saved = jsonDecode(store.checkpoints['d1']!) as Map;
+        store.checkpoints['d1'] = jsonEncode(saved..remove('updatedAt'));
+
+        expect(await buildPausing(pause: false).download('d1'), isTrue);
+
+        expect(offsets, [0, 200, 400]);
       });
 
       test('stays paused when back in front offline', () async {
@@ -1478,7 +1516,6 @@ void main() {
       downloadedAt: 1,
     );
     const now = 10000;
-    const interval = OfflinePackageDownloader.refreshIntervalSec;
 
     test('does nothing offline', () async {
       await build(online: false).refreshIfStale('d1');
@@ -1487,39 +1524,183 @@ void main() {
       expect(store.decks, isEmpty);
     });
 
-    test('first download runs and leaves the deck due a refresh', () async {
+    test('first download runs', () async {
       await build(now: now).refreshIfStale('d1');
 
       expect(factOffsets, [0]);
-      final deck = store.decks['d1']!;
-      expect(deck.downloadedAt, now);
-      expect(deck.refreshedAt, 0);
+      expect(store.decks['d1']!.downloadedAt, now);
     });
 
-    test('skips a ready deck refreshed within the interval', () async {
-      store.decks['d1'] = ready.copyWith(refreshedAt: now - interval + 1);
+    test('refreshes a ready deck on every open', () async {
+      store.decks['d1'] = ready;
+      final downloader = build(
+        now: now,
+        fetchFactsPage: (_, _, offset) async {
+          factOffsets.add(offset);
+          return const OfflineFactsPage(facts: [], hasMore: false);
+        },
+      );
 
-      await build(now: now).refreshIfStale('d1');
+      await downloader.refreshIfStale('d1');
+      expect(downloader.failedOf('d1').value, isFalse);
+      await downloader.refreshIfStale('d1');
+      expect(downloader.failedOf('d1').value, isFalse);
 
-      expect(factOffsets, isEmpty);
-    });
-
-    test('refreshes a ready deck once the interval has passed', () async {
-      store.decks['d1'] = ready.copyWith(refreshedAt: now - interval);
-
-      await build(now: now).refreshIfStale('d1');
-
-      expect(factOffsets, [0]);
-      expect(store.decks['d1']!.refreshedAt, now);
+      expect(factOffsets, [0, 0]);
       expect(store.decks['d1']!.downloadedAt, 1);
     });
 
-    test('refreshes a ready deck never refreshed before', () async {
-      store.decks['d1'] = ready;
+    group('with an unchanged snapshot', () {
+      final updatedAt = DateTime.utc(2026, 11, 14, 12);
+      final remote = _remoteDeck(updatedAt: updatedAt);
+      final stamp = updatedAt.toIso8601String();
+      final stored = OfflineDeck(
+        id: 'd1',
+        name: 'Deck',
+        fields: const [],
+        sourceDeckId: 'src',
+        sourceVersion: 3,
+        downloadedAt: 1,
+        lastSyncedAt: 7,
+        tags: const [Tag(id: 't1', name: 'N5', description: '')],
+        remoteUpdatedAt: stamp,
+      );
 
-      await build(now: now).refreshIfStale('d1');
+      OfflinePackageDownloader refresher({Deck? deck}) => build(
+        now: now,
+        fetchDeck: (_) async => deck ?? remote,
+        pages: [
+          [
+            _fact('f1', entries: const [FactEntry(audio: 'a1')]),
+          ],
+        ],
+        factIds: ['f1'],
+        remoteCards: [_card('c1', lastReview: 50, dueDate: 90)],
+      );
 
-      expect(store.decks['d1']!.refreshedAt, now);
+      setUp(() => store.decks['d1'] = stored);
+
+      test('re-reads only the cards', () async {
+        await refresher().refreshIfStale('d1');
+
+        expect(factOffsets, isEmpty);
+        expect(downloadedUrls, isEmpty);
+        expect(store.cards['c1']!.lastReview, 50);
+        final deck = store.decks['d1']!;
+        expect(deck.downloadedAt, 1);
+        expect(deck.tags.single.name, 'N5');
+        expect(deck.remoteUpdatedAt, stamp);
+        expect(deck.totalReviews, 9);
+      });
+
+      test('keeps counters a flush wrote during the refresh', () async {
+        final downloader = build(
+          now: now,
+          fetchDeck: (_) async => remote,
+          fetchCards: (_) async {
+            store.decks['d1'] = stored.copyWith(
+              lastSyncedAt: 8,
+              totalReviews: 42,
+            );
+            return const [];
+          },
+        );
+
+        await downloader.download('d1');
+
+        expect(store.decks['d1']!.totalReviews, 42);
+        expect(store.decks['d1']!.lastSyncedAt, 8);
+      });
+
+      test('fetches the facts when updated_at moved', () async {
+        final edited = _remoteDeck(
+          updatedAt: updatedAt.add(const Duration(seconds: 1)),
+        );
+
+        await refresher(deck: edited).download('d1');
+
+        expect(factOffsets, [0]);
+        expect(downloadedUrls, hasLength(1));
+        expect(store.decks['d1']!.remoteUpdatedAt, isNot(stamp));
+      });
+
+      test('fetches the facts when the snapshot version moved', () async {
+        await refresher(
+          deck: _remoteDeck(sourceVersion: 4, updatedAt: updatedAt),
+        ).download('d1');
+
+        expect(factOffsets, [0]);
+      });
+
+      test('fetches the facts when no updated_at was stored', () async {
+        store.decks['d1'] = ready;
+
+        await refresher().download('d1');
+
+        expect(factOffsets, [0]);
+        expect(store.decks['d1']!.remoteUpdatedAt, stamp);
+      });
+
+      test('fetches the facts of a fresh download', () async {
+        await refresher().download('d1', fresh: true);
+
+        expect(factOffsets, [0]);
+      });
+
+      test('a download missing media stores no updated_at', () async {
+        store.decks['d1'] = ready;
+
+        await build(
+          fetchDeck: (_) async => remote,
+          pages: [
+            [
+              _fact('f1', entries: const [FactEntry(audio: 'boom')]),
+            ],
+          ],
+          downloadMedia: (_, _) async => throw Exception('network'),
+        ).download('d1');
+
+        expect(store.decks['d1']!.remoteUpdatedAt, '');
+      });
+
+      test('facts the id list cannot confirm store no updated_at', () async {
+        store.decks['d1'] = ready;
+
+        await build(
+          fetchDeck: (_) async => remote,
+          pages: [
+            [_fact('f1')],
+          ],
+        ).download('d1');
+
+        expect(store.decks['d1']!.remoteUpdatedAt, '');
+      });
+
+      test(
+        'a fact missing after the second fetch stores no updated_at',
+        () async {
+          store.decks['d1'] = ready;
+
+          await build(
+            fetchDeck: (_) async => remote,
+            fetchFactsPage: (_, _, _) async =>
+                OfflineFactsPage(facts: [_fact('a')], hasMore: false),
+            factIds: ['a', 'b'],
+          ).download('d1');
+
+          expect(store.decks['d1']!.remoteUpdatedAt, '');
+        },
+      );
+
+      test('a deck without updated_at is always fetched again', () async {
+        await refresher(deck: _deck).download('d1');
+        expect(store.decks['d1']!.remoteUpdatedAt, '');
+        factOffsets.clear();
+
+        await refresher(deck: _deck).download('d1');
+
+        expect(factOffsets, [0]);
+      });
     });
   });
 
@@ -2381,27 +2562,6 @@ void main() {
     expect(ok, isTrue);
     expect(store.media, isEmpty);
     expect(store.decks['d1']!.isReady, isTrue);
-  });
-
-  test('a refresh that misses media stays due a refresh', () async {
-    store.decks['d1'] = const OfflineDeck(
-      id: 'd1',
-      name: 'Old',
-      fields: [],
-      downloadedAt: 1,
-      refreshedAt: 5,
-    );
-
-    await build(
-      pages: [
-        [
-          _fact('f1', entries: const [FactEntry(audio: 'boom')]),
-        ],
-      ],
-      downloadMedia: (_, _) async => throw Exception('network'),
-    ).download('d1');
-
-    expect(store.decks['d1']!.refreshedAt, 5);
   });
 
   test('store media lookup failure does not fail download', () async {
