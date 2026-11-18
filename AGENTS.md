@@ -27,7 +27,7 @@ Retentio Frontend is a Flutter app (Riverpod, go_router, Dio) for vocabulary lea
 - Commit/PR title: `<type>(<scope>): <subject>` in imperative mood, under 50 chars
 - Types: feat, fix, docs, style, refactor, perf, test, chore
 - Scopes: auth, deck, card, fact, media, api, frontend, ci
-- Keep PRs under 1000 lines of non-test code (tests up to 5000), commits under 100 lines
+- Keep PRs under 1000 lines of non-test code (tests up to 5000); same for commits
 - Squash and merge for feature branches
 
 ### Code Style

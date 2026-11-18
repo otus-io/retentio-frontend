@@ -208,11 +208,11 @@ Each commit should:
 
 | Lines | Guideline |
 |-------|-----------|
-| **1-50** | Ideal - focused, reviewable |
-| **51-100** | Acceptable for larger features |
-| **100+** | Should be split into multiple commits |
+| **1-200** | Ideal - focused, reviewable |
+| **201-1000** | Acceptable for larger features |
+| **1000+** | Should be split into multiple commits |
 
-**Target**: Keep commits under **100 lines** of code changes.
+**Target**: Keep commits under **1000 lines** of code changes (tests up to **5000 lines**).
 
 ### Example Commit Messages
 
@@ -273,8 +273,8 @@ fixed stuff
 | Metric | Target | Maximum |
 |--------|--------|---------|
 | PR title length | 50 chars | 72 chars |
-| Lines per commit | 50 | 100 |
-| Lines per PR | 200 | 500 |
+| Lines per commit | 200 | 1000 (tests 5000) |
+| Lines per PR | 200 | 1000 (tests 5000) |
 | Commits per PR | 3 | 5 |
 | Review turnaround | 24h | 48h |
 
