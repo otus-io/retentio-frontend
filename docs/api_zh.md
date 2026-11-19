@@ -3039,6 +3039,33 @@ Accept: application/json
 
 **已发布媒体：** 任何已认证用户均可通过正整数 **`?v=<version>`** 下载不可变的已发布字节。不提供 `v` 时，仅媒体所有者可下载工作副本。导入卡组的卡片响应会自动在媒体 URL 中包含钉住的 `?v=`。无卡片 URL、仅有词条详情/表格播放时，应从 GetFact 的 `media_versions` 取 `v`，不要用卡组 `source_version`。
 
+### 批量下载媒体
+
+**接口：** `POST /api/media/batch`
+
+一次响应下载最多 500 个文件，供离线下载卡组使用。每一项的访问规则与 **下载媒体** 相同：不带 `v` 时仅所有者可下载工作副本；带正整数
+`v` 时任何已认证用户均可下载对应已发布版本。
+
+**请求：**
+
+```json
+{
+  "items": [
+    { "id": "eloc-44obppwy-2-24285-564681508124", "v": 4 },
+    { "id": "my-own-media-id" }
+  ]
+}
+```
+
+**响应：** `200`，`Content-Type: multipart/mixed; boundary=...`，按请求顺序每项一个 part。每个 part 都带
+`X-Media-Id`、`X-Media-Version`（仅在请求带 `v` 时）和 `X-Media-Status`：
+
+- `200`：part 内容为文件本身，并带 `Content-Type` 和 `Content-Length`。
+- `403` / `404`：空 part（非所有者，或媒体及其文件不存在）。
+
+响应体若没有结束分隔符即结束，表示中途被截断（某文件复制失败）；保留已完整的 part，其余重新请求。请求体不是 JSON、`items`
+为空或超过 500 项、`id` 为空或 `v` 不是正整数时返回 `400`。
+
 ### 删除媒体
 
 **接口：** `DELETE /api/media/{id}`

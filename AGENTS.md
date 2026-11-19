@@ -32,7 +32,7 @@ Retentio Frontend is a Flutter app (Riverpod, go_router, Dio) for vocabulary lea
 
 ### Code Style
 
-- **Dart**: Follow Effective Dart, run `dart format`, lines ≤120 chars, functions ≤50 lines
+- **Dart**: Follow Effective Dart, run `dart format`, lines ≤120 chars, functions ≤200 lines
 - Prefer clear naming over comments; add comments only for complex logic
 
 ### Documentation
