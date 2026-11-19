@@ -139,7 +139,10 @@ class _PendingContributionsOutboxSheetState
         );
         sentCount += 1;
       } catch (e) {
-        failures.add('${_kindLabel(loc, item.kind)}: ${rawApiErrorMessage(e)}');
+        failures.add(
+          '${_kindLabel(loc, item.kind)}: '
+          '${ApiErrorMessages.resolve(rawApiErrorMessage(e), loc)}',
+        );
       }
     }
 

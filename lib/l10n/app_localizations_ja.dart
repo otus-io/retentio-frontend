@@ -934,6 +934,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get apiEmailRequired => 'メールが必要です';
 
   @override
+  String get apiEmailPasswordRequired => 'メールアドレスとパスワードが必要です';
+
+  @override
   String get apiServerGenerateResetToken => 'リセットメールを送信できませんでした。もう一度お試しください。';
 
   @override
@@ -1962,7 +1965,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get registerSuccessCheckEmail => '登録が完了しました。確認メールを開き、アドレスを確認してください。';
 
   @override
-  String get emailNotVerified => 'メールアドレスはまだ確認されていません。アプリは引き続き利用できます。';
+  String get emailNotVerified => 'メールアドレスはまだ確認されていません。確認するとデッキの公開や提案の送信ができます。';
 
   @override
   String get resendVerification => '確認メールを再送信';
@@ -2057,4 +2060,37 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get apiTooManyDeleteAttempts => '試行回数が多すぎます。しばらくしてからもう一度お試しください。';
+
+  @override
+  String get emailVerificationRequired =>
+      '先にメールアドレスを確認してください。プロフィールからリンクの再送信やアドレスの変更ができます。';
+
+  @override
+  String get invalidEmailAddress => 'メールアドレスが無効です';
+
+  @override
+  String get changeEmailSame => 'すでにこのメールアドレスを使用しています';
+
+  @override
+  String get changeEmail => 'メールアドレスを変更';
+
+  @override
+  String changeEmailMessage(String email) {
+    return '現在のメールアドレス：$email。新しいアドレスは再度確認が必要です。';
+  }
+
+  @override
+  String get newEmail => '新しいメールアドレス';
+
+  @override
+  String changeEmailSuccess(String email) {
+    return 'メールアドレスを変更しました。$email に届く確認リンクを開いてください。';
+  }
+
+  @override
+  String get registerEmailInUseHint =>
+      'このメールアドレスは登録済みです。ご自身のものであれば、ログイン画面の「パスワードをお忘れですか？」をご利用ください。';
+
+  @override
+  String get apiTooManyAttempts => '試行回数が多すぎます。しばらくしてからもう一度お試しください。';
 }

@@ -19,6 +19,7 @@ This guide walks you through using the Retentio API via Swagger UI.
   - [Reset Password](#reset-password)
   - [Verify Email](#verify-email)
   - [Resend Verification](#resend-verification)
+  - [Change Email](#change-email)
   - [Delete Account](#delete-account)
 - [2. Decks](#2-decks)
   - [Create a Deck](#create-a-deck)
@@ -113,6 +114,7 @@ This guide walks you through using the Retentio API via Swagger UI.
 | `/auth/resend-verification`                   | POST   | Resend verification email (anti-enumeration)                                                                                                                                                    |
 | `/api/profile`                                | GET    | Get current user profile                                                                                                                                                                        |
 | `/api/profile`                                | DELETE | Delete the authenticated account (body: `password`). Account keys are removed first (gates the JWT), then unpublished source decks and import decks are removed; published source decks are anonymized (owner `deleted`). Failed password attempts: 5 / 15 min. See [Delete Account](#delete-account). |
+| `/api/profile/email`                          | PATCH  | Change email (body: `email`, `password`); new address starts unverified. See [Change Email](#change-email). |
 | `/api/decks`                                  | POST   | Create deck. Body: `name`, **`fields`** (≥1 column name, required), **`rate`** (required, 1–1000), optional **`tags`**.                                                                         |
 | `/api/decks`                                  | GET    | List all decks                                                                                                                                                                                  |
 | `/api/decks/{id}`                             | GET    | Get deck details. Source decks include `visibility`, `published_version`. Import decks include `source_deck_id`, `source_version`, `imported_at`.              |
@@ -298,6 +300,8 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 ```
 
 > After resetting, log in with your new password. The reset token is single-use and cannot be reused.
+> The reset link proves the user owns the inbox, so a successful reset also marks the email verified. A link mailed
+> to an address the account no longer uses returns **400** `Invalid or expired reset token`.
 
 ### Verify Email
 
@@ -320,7 +324,12 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 }
 ```
 
-> Soft verification: login works before verify. Registration sends a verification email when Resend is configured.
+> Soft verification: login and most routes work before verify. Publishing and submitting contributions return
+> **403** with `"code": "email_not_verified"` until the email is verified (see
+> [Email verification required](#email-verification-required)). Registration sends a verification email when Resend
+> is configured; with `ENV=development` and no `RESEND_API_KEY`, new accounts are created already verified.
+> A link mailed to an address the account no longer uses (see [Change Email](#change-email)) returns **400**
+> `Invalid or expired verification token`.
 
 ### Resend Verification
 
@@ -344,6 +353,40 @@ Requires the `Authorization: Bearer <token>` header. Invalidates the token so it
 ```
 
 > Always returns **200** (anti-enumeration). Rate-limited per email (~60s).
+
+### Change Email
+
+**Endpoint:** `PATCH /api/profile/email`
+
+Requires the `Authorization: Bearer <token>` header. Lets a user fix a mistyped address while logged in.
+
+```json
+{
+  "email": "new@example.com",
+  "password": "123456"
+}
+```
+
+**Response:**
+
+```json
+{
+  "data": {
+    "username": "swagger",
+    "email": "new@example.com",
+    "email_verified": false
+  },
+  "meta": null
+}
+```
+
+- The email is trimmed and lowercased. The new address starts **unverified**, so the
+  [verified-email routes](#email-verification-required) return **403** until it is verified.
+- A verification link is mailed to the new address, unless that address is in its ~60s resend cooldown. Verify and
+  reset links mailed to the old address stop working.
+- Failed password confirmations share the [Delete Account](#delete-account) limit: **5 attempts / 15 minutes** per
+  username → **429** `Too many attempts. Try again later.`
+- **400** when the new email equals the current one; **409** when another account uses it.
 
 ### Delete Account
 
@@ -382,7 +425,7 @@ What the server does on success:
 Notes:
 
 - Not idempotent: a second call with the same token returns **401** (token blacklisted / user gone).
-- Failed password confirmations are rate-limited per username: **5 attempts / 15 minutes** → **429** `Too many delete attempts. Try again later.` (correct password is also blocked while the window is open).
+- Failed password confirmations are rate-limited per username: **5 attempts / 15 minutes** → **429** `Too many delete attempts. Try again later.` (correct password is also blocked while the window is open). The counter is shared with [Change Email](#change-email).
 - If content purge fails after account keys are removed (**500**), the account stays gated and the token is blacklisted; the client cannot retry. Orphaned decks/media may remain until an ops reconciliation job (not part of this API) cleans up decks whose `owner` has no `user:{username}` key. Prefer orphaned content over a live account with decks already gone.
 - `deleted` is a reserved username and cannot be registered.
 - The same email or username can be registered again afterward; anonymized published decks are **not** reattached to the new account.
@@ -871,7 +914,7 @@ Example: `GET /api/decks/catalog/a1b2c3d4e5f6`
 }
 ```
 
-**`contributors`** (detail only) lists, sorted, up to 10 importers whose contributions the author **accepted** (any type: edits, new facts, tags, QA reviews); **`contributor_count`** is the full number. The owner and deleted accounts are never listed; both fields are omitted when nobody has been credited yet. Credits are recorded on accept, and accepts made before this field existed are backfilled the first time the detail is read. Field meanings otherwise match the [list catalog](#deck-catalog) table. **`qa_verified`** is `true` when the **author** human-verified every text/audio aspect of the source deck's **current** facts; importers' sign-offs never count. The author's deck is the source of truth, so deleting a fact never turns the badge off while scoreable text/audio aspects remain (deleting the last one leaves none, and the badge needs at least one), and an unverified add turns it off before the next publish (cached up to 10 minutes; the author's writes refresh it immediately). **`description`** comes from the latest published snapshot; if the snapshot has none, the server falls back to the source deck’s stored description.
+**`contributors`** (detail only) lists, sorted, up to 10 importers whose contributions the author **accepted** (any type: edits, new facts, tags, QA reviews); **`contributor_count`** is the full number. The owner and deleted accounts are never listed, and deleting an account removes its credits. On the detail **`contributor_count`** is always present (`0` when nobody has been credited yet) and **`contributors`** is omitted when empty; both are omitted only if the credits could not be read. Credits are recorded on accept, and accepts made before this field existed are backfilled the first time the detail is read. Field meanings otherwise match the [list catalog](#deck-catalog) table. **`qa_verified`** is `true` when the **author** human-verified every text/audio aspect of the source deck's **current** facts; importers' sign-offs never count. The author's deck is the source of truth, so deleting a fact never turns the badge off and an unverified add turns it off before the next publish (cached up to 10 minutes; the author's writes refresh it immediately). **`description`** comes from the latest published snapshot; if the snapshot has none, the server falls back to the source deck’s stored description.
 
 **Inclusion rules:** Same as the list — public, published source deck only. Private, unpublished, or import rows → **404**.
 
@@ -960,7 +1003,10 @@ Example: `GET /api/decks/catalog/a1b2c3d4e5f6`
 }
 ```
 
-`has_unpublished_changes` matches whether `POST /publish` would succeed (false when publish would return **409**). When `published_version == 0`, the response is clean (`has_unpublished_changes: false`, zero counts).
+For a deck that has been published before, `has_unpublished_changes` matches whether `POST /publish` would succeed:
+`false` means a republish would return **409** (no changes). A never-published deck (`published_version == 0`) gets a
+clean preview (`has_unpublished_changes: false`, zero counts) because there is no snapshot to diff, but its first
+`POST /publish` still succeeds.
 
 `meta_changed` is true when the deck **name**, **description**, **fields**, and/or **rate** differ from the last manifest. All deck metadata is in the publish fingerprint, so a metadata-only edit also sets `has_unpublished_changes: true` and `POST /publish` succeeds.
 
@@ -1244,7 +1290,6 @@ Same as a normal owned deck: `GET/POST/PATCH/DELETE` card routes work; schedulin
 - Importers download published author media via `GET /api/media/{id}?v=<version>`.
 - Bytes are served from the **versioned** blob, not the author’s working copy.
 - `v` is required for non-owners and must be a positive integer.
-- Fact list/detail return raw media ids in `entries`. For a single fact, `GET …/facts/{factId}` may include sibling `data.media_versions` (`{ mediaId: pinnedVersion }`) for building `GET /api/media/{id}?v=…`. Do **not** use deck `source_version` as `v` (copy-on-write media may pin an older version). Next-card responses already embed `?v=` in media URLs.
 - Importers may upload **their own** media with `POST /api/media` and `deck_id={importId}` for private overlays / contributions.
 - Importers cannot upload or delete another user’s working-copy media.
 
@@ -1423,9 +1468,6 @@ Snapshot facts soft-hide privately; local-only facts are removed from the import
         { "text": "りんご" }
       ],
       "tags": []
-    },
-    "media_versions": {
-      "impaud0001": 2
     }
   },
   "meta": {
@@ -2200,6 +2242,14 @@ Authorization: Bearer <token>
 
 Each fact always includes **`tags`**: an array of `{ "id", "name", "description" }` objects (empty array when none). A fact can have **many** tags; the list is sorted by **tag name** in list/detail responses. Tags are not stored inside the fact record in Redis; the API resolves them from per-user association keys. **Column labels are not returned on each fact** — use the deck’s **`fields`** from **`GET /api/decks/{id}`** (same order as `entries` indices).
 
+**Imported decks:** `data` also includes **`media_versions`**, mapping each media id on the page's facts to its pinned
+snapshot version (download it as `/api/media/{mediaId}?v={version}`). Ids missing from the map (e.g. local-fact media)
+are fetched without `v`. The key is omitted for owned decks, and for imports whose snapshot manifest is unavailable.
+
+```json
+"media_versions": { "eloc-x9k2m4np-0-16762-1787232390671": 15 }
+```
+
 ### Get one fact
 
 **Endpoint:** `GET /api/decks/{id}/facts/{factId}`
@@ -2222,28 +2272,10 @@ Each fact always includes **`tags`**: an array of `{ "id", "name", "description"
 }
 ```
 
-On **imported** decks, when the pinned snapshot maps this fact’s user media ids to positive published versions, `data` also includes sibling **`media_versions`**: `{ "<mediaId>": <pinnedVersion>, … }`. Omitted when empty or on source decks. `entries` still carry raw media ids (not URLs). Download with `GET /api/media/{id}?v={media_versions[id]}` — do **not** use deck `source_version` as `v` (copy-on-write may pin an older media version). Fact **list** (`GET …/facts`) does not include `media_versions`.
-
-**Imported-deck example** (when pins exist):
-
-```json
-{
-  "data": {
-    "fact": {
-      "id": "fact0001",
-      "entries": [
-        { "text": "Apple", "audio": "impaud0001" },
-        { "text": "りんご" }
-      ],
-      "tags": []
-    },
-    "media_versions": {
-      "impaud0001": 2
-    }
-  },
-  "meta": { "msg": "Fact retrieved successfully" }
-}
-```
+On **imported** decks, when the pinned snapshot maps this fact's media ids to published versions, `data` also includes
+sibling **`media_versions`** (`{ "<mediaId>": <pinnedVersion> }`), same shape as the fact list. Omitted when empty or
+on source decks. Download with `GET /api/media/{id}?v={media_versions[id]}`; do **not** use deck `source_version`
+as `v`.
 
 ### Update a fact
 
@@ -3170,7 +3202,7 @@ Returns metadata only (id, owner, filename, mime, size, checksum, created_at), n
 
 Returns the media file (binary) for user-owned media by ID. Requires `Authorization: Bearer <token>`. Response headers include `Content-Type`, `Content-Length`, and `ETag` (same as `checksum`). Send `If-None-Match: <ETag>` to get `304 Not Modified` when the file is unchanged. The **Get Next Card** response puts full URLs in the `audio`, `image`, and `video` fields of each front/back entry (e.g. `https://api.retentio.app:8443/api/media/{id}`); use that URL with the same auth header to load the file.
 
-**Published media:** Any authenticated user may download immutable published bytes by passing **`?v=<version>`** with a positive version. Without `v`, only the media owner may download the working copy. Import-deck card responses include the pinned `?v=` in media URLs automatically. For fact detail / grid playback without a card URL, take `v` from GetFact `media_versions`, not deck `source_version`.
+**Published media:** Any authenticated user may download immutable published bytes by passing **`?v=<version>`** with a positive version. Without `v`, only the media owner may download the working copy. Import-deck card responses include the pinned `?v=` in media URLs automatically.
 
 ### Delete media
 
@@ -3294,7 +3326,7 @@ This list does **not** include `count` / `total` — use `total_entries` for the
 
 **Who:** Deck owner on a **source** or **imported** deck.
 
-**Purpose:** QA progress header (human-verified aspect/fact counts, `edited_count`) and server-stored resume cursor (`last_fact_id`). Counts are computed from fact entries plus stored quality; on imported decks, entry shapes come from the **pinned snapshot**. Design notes: [`fact-quality.md`](fact-quality.md).
+**Purpose:** QA progress header (human-verified aspect/fact counts) and server-stored resume cursor (`last_fact_id`). Counts are computed from fact entries plus stored quality; on imported decks, entry shapes come from the **pinned snapshot**. Design notes: [`fact-quality.md`](fact-quality.md).
 
 **GET — success (200):**
 
@@ -3305,9 +3337,9 @@ This list does **not** include `count` / `total` — use `total_entries` for the
     "total_aspects": 40,
     "verified_facts": 3,
     "total_facts": 10,
-    "edited_count": 2,
     "last_fact_id": "abc12345",
-    "last_fact_updated_at": "2026-08-28T20:53:00Z"
+    "last_fact_updated_at": "2026-08-28T20:53:00Z",
+    "cursors": { "0": "abc12345", "2": "def67890" }
   },
   "meta": { "msg": "ok" }
 }
@@ -3317,12 +3349,11 @@ This list does **not** include `count` / `total` — use `total_entries` for the
 |-------|---------|
 | `verified_aspects` / `total_aspects` | Human/10 scoreable text/audio aspects vs all non-empty text/audio fields. Only sign-offs by the deck owner count (imports: also the source author); an import's local facts are excluded |
 | `verified_facts` / `total_facts` | Facts fully human-verified vs facts with ≥1 scoreable aspect |
-| `edited_count` | Distinct facts with a new `fact_edit` on this deck; open-row refresh does not bump |
 | `last_fact_id` | Legacy deck-wide QA resume cursor; omitted when unset |
 | `cursors` | Per-column resume map (`"0"` → fact id); omitted when empty |
 | `last_fact_updated_at` | UTC RFC3339 when cursor was last written |
 
-**`PUT …/facts/{factId}/quality`** sets `last_fact_id` to that fact on success (no separate stats write needed). Cursors are kept for older clients; new QA walks use `GET /api/decks/{id}/facts/ids?unverified_columns=0,2` instead, which lists (ascending) only facts with a text/audio aspect in those columns that no trusted signer has verified. Column indexes outside the deck's `fields` → **400** `unverified_columns must be deck field indexes`.
+**`PUT …/facts/{factId}/quality`** sets `last_fact_id` to that fact on success (no separate stats write needed). Optional body `columns` advances those per-column cursors (forward-only). Cursors are kept for older clients; new QA walks use `GET /api/decks/{id}/facts/ids?unverified_columns=0,2` instead, which lists (ascending) only facts with a text/audio aspect in those columns that no trusted signer has verified. Column indexes outside the deck's `fields` → **400** `unverified_columns must be deck field indexes`.
 
 **Sign-offs (`by`):** every `model: human` aspect stores its signer in `by`. On PUT, echoing the stored `by` of an unchanged sign-off keeps it; any other human aspect is stamped with the caller. On imported decks the source author's sign-offs survive an importer's PUT. Each fresh human sign-off also stores a server-assigned `fingerprint` of the content the signer saw (client values are ignored); an echoed sign-off keeps its stored one. Accepting a `fact_add` / `fact_edit` contribution signs off (text and audio) what it changed in the author's name; editing a source fact clears the sign-offs of the text/audio it changed.
 
@@ -3426,7 +3457,8 @@ Importer **submit** routes use the **import** deck id. Author **inbox** routes u
 
 ## Error responses reference
 
-All JSON API errors use the same envelope — there are **no numeric application error codes**, only an HTTP status and a string `msg`:
+All JSON API errors use the same envelope — an HTTP status and a string `msg`. A few errors also carry a stable
+string `code` for clients to branch on (see [Email verification required](#email-verification-required)):
 
 ```json
 { "msg": "Deck not found" }
@@ -3473,6 +3505,16 @@ These appear on many authenticated routes.
 | **500** | `Error retrieving deck` | Redis/read failure loading deck |
 | **500** | `Error parsing deck data` | Corrupt deck JSON in storage |
 
+### Email verification required
+
+These routes need a verified email. Unverified callers get **403**
+`{ "msg": "Email verification required", "code": "email_not_verified" }`; clients should offer
+[Resend Verification](#resend-verification). Accounts created before email verification existed count as verified.
+
+- `POST /api/decks/{id}/publish`
+- `POST /api/decks/{id}/contributions/facts/{factId}/edit`, `/add`, `/tags`, `/templates`, `/report`
+- `POST /api/decks/{id}/contributions/deck-tags`, `/fields/rename`, `/qa-review`
+
 ---
 
 ### Authentication (`/auth/*`)
@@ -3513,6 +3555,12 @@ These appear on many authenticated routes.
 | | **404** | `User not found` |
 | | **429** | `Too many delete attempts. Try again later.` |
 | | **500** | `Error deleting account` |
+| `PATCH /api/profile/email` | **400** | `Invalid request payload`, `Email and password are required`, `Invalid email address`, `New email matches current email` |
+| | **401** | `Invalid credentials` |
+| | **404** | `User not found` |
+| | **409** | `Email already in use` |
+| | **429** | `Too many attempts. Try again later.` |
+| | **500** | `Error changing email` |
 
 Also subject to [JWT middleware errors](#cross-cutting-errors).
 
@@ -3731,16 +3779,14 @@ Also subject to [JWT middleware errors](#cross-cutting-errors). Quality GET/list
 | | **403** | `Not authorized to access this deck` |
 | | **404** | `Deck not found`, `Fact not found` |
 | | **500** | `Error retrieving fact`, `Error parsing fact data`, `Error serializing quality data`, `Error saving quality`, `Error checking fact existence` |
-| `GET /api/decks/{id}/facts/{factId}/quality` | **400** | `fact quality is only available on source decks` |
-| | **403** | `Not authorized to access this deck` |
+| `GET /api/decks/{id}/facts/{factId}/quality` | **403** | `Not authorized to access this deck` |
 | | **404** | `Deck not found`, `Fact not found`, `Quality not found` |
 | | **500** | `Error retrieving quality`, `Error parsing quality data`, `Error checking fact existence` |
 | `DELETE /api/decks/{id}/facts/{factId}/quality` | **400** | `fact quality is only available on source decks` |
 | | **403** | `Not authorized to access this deck` |
 | | **404** | `Deck not found`, `Fact not found` |
 | | **500** | `Error deleting quality`, `Error checking fact existence` |
-| `GET /api/decks/{id}/quality` | **400** | `fact quality is only available on source decks` |
-| | **400** | `max_score must be between 1 and 10` |
+| `GET /api/decks/{id}/quality` | **400** | `max_score must be between 1 and 10` |
 | | **400** | `entry must be a non-negative integer` |
 | | **400** | `aspect must be text or audio` |
 | | **403** | `Not authorized to access this deck` |
@@ -3774,6 +3820,7 @@ Contribution submit/inbox errors: [Deck sharing](#deck-sharing).
 | `/auth/resend-verification`                   | POST        | `{ "data": { "msg" }, "meta": null }` (always 200 when email valid shape)                                                                                  |
 | `/api/profile`                                | GET         | `{ "data": { user profile }, "meta": { "msg" } }`                                                                                                          |
 | `/api/profile`                                | DELETE      | `{ "data": { "msg": "Account deleted successfully", "username", "deleted_decks", "anonymized_published_decks" }, "meta": null }`                           |
+| `/api/profile/email`                          | PATCH       | `{ "data": { "username", "email", "email_verified": false }, "meta": null }` |
 | `/api/decks`                                  | POST        | `{ "data": { "deck_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks`                                  | GET         | `{ "data": { "decks": [ … ] }, "meta": { "total", "msg" } }`                                                                                               |
 | `/api/decks/{id}`                             | GET         | `{ "data": { deck + stats }, "meta": { "msg" } }`                                                                                                          |
@@ -3782,14 +3829,14 @@ Contribution submit/inbox errors: [Deck sharing](#deck-sharing).
 | `/api/decks/{id}/facts/{op}`                  | POST        | Add facts: body `facts[]` with optional `tags` (names) per item; `{ "data": { "fact_length" }, "meta": { "msg" } }` (no tags in response)                  |
 | `/api/decks/{id}/card`                        | POST        | Add card from existing fact: `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                |
 | `/api/decks/{id}/facts`                       | GET         | `{ "data": { "facts": [ … ] }, "meta": { "msg", "count", "has_more", "limit", "offset", "total" } }` — defaults `limit` 50, `offset` 0 |
-| `/api/decks/{id}/facts/{factId}`              | GET         | `{ "data": { "fact": { …, "tags": [ … ] }, "media_versions"?: { … } }, "meta": { "msg" } }`                                                                                          |
+| `/api/decks/{id}/facts/{factId}`              | GET         | `{ "data": { "fact": { …, "tags": [ … ] }, "media_versions"?: { … } }, "meta": { "msg" } }`                                                                                        |
 | `/api/decks/{id}/facts/{factId}`              | PATCH       | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks/{id}/facts/{factId}`              | DELETE      | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks/{id}/facts/{factId}/quality`      | PUT         | `{ "data": { "quality": { "fact_id", "entries", "updated_at" } }, "meta": { "msg": "Quality updated successfully" } }` |
 | `/api/decks/{id}/facts/{factId}/quality`      | GET         | same `data.quality`; `meta.msg` `Quality retrieved successfully`; **404** `Quality not found` if none stored |
 | `/api/decks/{id}/facts/{factId}/quality`      | DELETE      | `{ "data": { "fact_id" }, "meta": { "msg": "Quality deleted successfully" } }` — 200 even when nothing was stored |
 | `/api/decks/{id}/quality`                     | GET         | `{ "data": { "items": [ { "fact_id", "entries", "updated_at" } ] }, "meta": { "msg": "ok", "effective_score"?, "total_entries", "has_more", "limit", "offset" } }` — no `count`/`total`; defaults `limit` 50, `offset` 0 |
-| `/api/decks/{id}/quality/stats`               | GET         | `{ "data": { "verified_aspects", "total_aspects", "verified_facts", "total_facts", "edited_count", "last_fact_id"?, "cursors"?, "last_fact_updated_at"? }, "meta": { "msg": "ok" } }` — see [Quality stats](#quality-stats) |
+| `/api/decks/{id}/quality/stats`               | GET         | `{ "data": { "verified_aspects", "total_aspects", "verified_facts", "total_facts", "last_fact_id"?, "last_fact_updated_at"?, "cursors"? }, "meta": { "msg": "ok" } }` — see [Quality stats](#quality-stats) |
 | `/api/decks/{id}/card`                        | GET         | Optional query `tag_id`. `{ "data": { "card": { id, fact_id, template, …, front[], back[] }, "urgency", "next_card"? }, "meta": { "msg", … } }` — `next_card` is second-most urgent when present (includes its own `urgency`) |
 | `/api/decks/{id}/card`                        | PATCH       | Interval: `{ "data": { "last_review", "due_date", "new_interval" }, "meta": { "msg" } }`; visibility: `{ "data": { "hidden_status" }, "meta": { "msg" } }` |
 | `/api/decks/{id}/cards`                       | GET         | Optional query `tag_id`, `stats_only`. `{ "data": { "stats", "cards"? }, "meta": { "msg" } }` — `stats` same shape as GET /api/decks/{id}; `cards` omitted when `stats_only=true` |

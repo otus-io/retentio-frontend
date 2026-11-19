@@ -8,6 +8,7 @@ import 'package:retentio/providers/locale_provider.dart';
 import 'package:retentio/providers/theme_provider.dart';
 import 'package:retentio/screen/profile/bloc/profile_cubit.dart';
 import 'package:retentio/theme/theme_tokens.dart';
+import 'package:retentio/utils/util.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_input.dart';
 
@@ -242,6 +243,127 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
             variant: AppButtonVariant.danger,
             isLoading: _loading,
             onPressed: _password.text.isEmpty ? null : _submit,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+Future<void> showProfileChangeEmailDialog(
+  BuildContext context,
+  ProfileCubit profileCubit,
+) async {
+  final newEmail = await showDialog<String>(
+    context: context,
+    builder: (_) => _ChangeEmailDialog(profileCubit: profileCubit),
+  );
+  if (newEmail != null && context.mounted) {
+    showSnack(
+      context,
+      AppLocalizations.of(context)!.changeEmailSuccess(newEmail),
+    );
+  }
+}
+
+class _ChangeEmailDialog extends StatefulWidget {
+  const _ChangeEmailDialog({required this.profileCubit});
+
+  final ProfileCubit profileCubit;
+
+  @override
+  State<_ChangeEmailDialog> createState() => _ChangeEmailDialogState();
+}
+
+class _ChangeEmailDialogState extends State<_ChangeEmailDialog> {
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  bool _loading = false;
+  String? _emailError;
+  String? _passwordError;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final email = _email.text.trim();
+    setState(() {
+      _loading = true;
+      _emailError = _passwordError = null;
+    });
+    String? error;
+    try {
+      error = await widget.profileCubit.changeEmail(email, _password.text);
+    } catch (_) {
+      error = 'Unknown error';
+    }
+    if (!mounted) return;
+    if (error == null) {
+      Navigator.of(context).pop(email);
+      return;
+    }
+    final loc = AppLocalizations.of(context)!;
+    setState(() {
+      _loading = false;
+      if (error == 'Invalid credentials') {
+        _passwordError = loc.deleteAccountWrongPassword;
+      } else if (error == 'Too many attempts. Try again later.') {
+        _passwordError = ApiErrorMessages.resolve(error, loc);
+      } else {
+        _emailError = ApiErrorMessages.resolve(error, loc);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final current = widget.profileCubit.state.user.email;
+    final canSubmit =
+        _email.text.trim().isNotEmpty && _password.text.isNotEmpty;
+    return PopScope(
+      canPop: !_loading,
+      child: AlertDialog(
+        title: Text(loc.changeEmail),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(loc.changeEmailMessage(current)),
+            const SizedBox(height: AppThemeTokens.spaceMd),
+            AppInput(
+              controller: _email,
+              label: loc.newEmail,
+              keyboardType: TextInputType.emailAddress,
+              enabled: !_loading,
+              errorText: _emailError,
+              onChanged: (_) => setState(() => _emailError = null),
+            ),
+            const SizedBox(height: AppThemeTokens.spaceSm),
+            AppInput(
+              controller: _password,
+              label: loc.password,
+              obscureText: true,
+              enabled: !_loading,
+              errorText: _passwordError,
+              onChanged: (_) => setState(() => _passwordError = null),
+            ),
+          ],
+        ),
+        actions: [
+          AppButton(
+            label: loc.cancel,
+            variant: AppButtonVariant.ghost,
+            onPressed: _loading ? null : () => Navigator.of(context).pop(),
+          ),
+          AppButton(
+            label: loc.changeEmail,
+            isLoading: _loading,
+            onPressed: canSubmit ? _submit : null,
           ),
         ],
       ),

@@ -972,6 +972,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get apiEmailRequired => 'Email is required';
 
   @override
+  String get apiEmailPasswordRequired => 'Email and password are required';
+
+  @override
   String get apiServerGenerateResetToken =>
       'Could not send reset email. Please try again.';
 
@@ -2099,7 +2102,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get emailNotVerified =>
-      'Your email is not verified yet. You can still use the app.';
+      'Your email is not verified yet. Verify it to publish decks and send contributions.';
 
   @override
   String get resendVerification => 'Resend verification email';
@@ -2201,4 +2204,37 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get apiTooManyDeleteAttempts =>
       'Too many attempts. Please try again later.';
+
+  @override
+  String get emailVerificationRequired =>
+      'Verify your email first. Open Profile to resend the link or change your address.';
+
+  @override
+  String get invalidEmailAddress => 'Invalid email address';
+
+  @override
+  String get changeEmailSame => 'That is already your email';
+
+  @override
+  String get changeEmail => 'Change email';
+
+  @override
+  String changeEmailMessage(String email) {
+    return 'Current email: $email. The new address must be verified again.';
+  }
+
+  @override
+  String get newEmail => 'New email';
+
+  @override
+  String changeEmailSuccess(String email) {
+    return 'Email changed. Check $email for a verification link.';
+  }
+
+  @override
+  String get registerEmailInUseHint =>
+      'This email is already registered. If it is yours, use “Forgot password?” on the login screen.';
+
+  @override
+  String get apiTooManyAttempts => 'Too many attempts. Please try again later.';
 }

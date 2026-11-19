@@ -375,6 +375,10 @@
   "@apiEmailRequired": {
     "description": "API error: apiEmailRequired"
   },
+  "apiEmailPasswordRequired": "请填写邮箱和密码",
+  "@apiEmailPasswordRequired": {
+    "description": "API error: apiEmailPasswordRequired"
+  },
   "apiServerGenerateResetToken": "无法发送重置邮件，请重试",
   "@apiServerGenerateResetToken": {
     "description": "API error: apiServerGenerateResetToken"
@@ -1415,7 +1419,7 @@
   "verifyEmailMissingToken": "验证链接缺失或无效。",
   "verifyEmailInProgress": "正在验证邮箱…",
   "registerSuccessCheckEmail": "注册成功。请查收邮件以验证邮箱。",
-  "emailNotVerified": "邮箱尚未验证，你仍可正常使用应用。",
+  "emailNotVerified": "邮箱尚未验证。验证后即可发布卡组和提交贡献。",
   "resendVerification": "重新发送验证邮件",
   "verificationEmailSent": "若该邮箱未验证，验证链接已发送。",
   "authVerifyTokenInvalid": "验证链接无效或已过期",
@@ -1443,5 +1447,14 @@
   "deleteAccountMessage": "这将永久删除你的账号、私有卡组和学习记录。已发布的卡组仍可供已导入的用户使用，但不再显示你的名字。请输入密码确认。",
   "deleteAccountWrongPassword": "密码错误",
   "apiPasswordRequired": "请输入密码",
-  "apiTooManyDeleteAttempts": "尝试次数过多，请稍后再试。"
+  "apiTooManyDeleteAttempts": "尝试次数过多，请稍后再试。",
+  "emailVerificationRequired": "请先验证邮箱。可在“我的”页面重新发送链接或修改邮箱。",
+  "invalidEmailAddress": "邮箱地址无效",
+  "changeEmailSame": "这已经是你的邮箱",
+  "changeEmail": "修改邮箱",
+  "changeEmailMessage": "当前邮箱：{email}。新邮箱需要重新验证。",
+  "newEmail": "新邮箱",
+  "changeEmailSuccess": "邮箱已修改，请查收发送到 {email} 的验证链接。",
+  "registerEmailInUseHint": "该邮箱已被注册。如果是你的邮箱，请在登录页使用“忘记密码？”。",
+  "apiTooManyAttempts": "尝试次数过多，请稍后再试。"
 }

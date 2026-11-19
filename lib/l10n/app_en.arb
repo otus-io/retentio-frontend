@@ -1226,6 +1226,10 @@
   "@apiEmailRequired": {
     "description": "API error: apiEmailRequired"
   },
+  "apiEmailPasswordRequired": "Email and password are required",
+  "@apiEmailPasswordRequired": {
+    "description": "API error: apiEmailPasswordRequired"
+  },
   "apiServerGenerateResetToken": "Could not send reset email. Please try again.",
   "@apiServerGenerateResetToken": {
     "description": "API error: apiServerGenerateResetToken"
@@ -2349,7 +2353,7 @@
   "@registerSuccessCheckEmail": {
     "description": "Register success with soft verification hint"
   },
-  "emailNotVerified": "Your email is not verified yet. You can still use the app.",
+  "emailNotVerified": "Your email is not verified yet. Verify it to publish decks and send contributions.",
   "@emailNotVerified": {
     "description": "Profile banner when email_verified is false"
   },
@@ -2465,5 +2469,23 @@
   "apiTooManyDeleteAttempts": "Too many attempts. Please try again later.",
   "@apiTooManyDeleteAttempts": {
     "description": "API error: apiTooManyDeleteAttempts"
-  }
+  },
+  "emailVerificationRequired": "Verify your email first. Open Profile to resend the link or change your address.",
+  "@emailVerificationRequired": {"description": "API 403 email_not_verified on publish or contribute"},
+  "invalidEmailAddress": "Invalid email address",
+  "@invalidEmailAddress": {"description": "API error: invalid email format"},
+  "changeEmailSame": "That is already your email",
+  "@changeEmailSame": {"description": "Change email: new address equals the current one"},
+  "changeEmail": "Change email",
+  "@changeEmail": {"description": "Profile button and dialog title to change the account email"},
+  "changeEmailMessage": "Current email: {email}. The new address must be verified again.",
+  "@changeEmailMessage": {"description": "Change email dialog body with the current address", "placeholders": {"email": {"type": "String"}}},
+  "newEmail": "New email",
+  "@newEmail": {"description": "Change email dialog: new address field label"},
+  "changeEmailSuccess": "Email changed. Check {email} for a verification link.",
+  "@changeEmailSuccess": {"description": "Snack after changing the email", "placeholders": {"email": {"type": "String"}}},
+  "registerEmailInUseHint": "This email is already registered. If it is yours, use “Forgot password?” on the login screen.",
+  "@registerEmailInUseHint": {"description": "Register failure: email already registered, point to password reset"},
+  "apiTooManyAttempts": "Too many attempts. Please try again later.",
+  "@apiTooManyAttempts": {"description": "API 429: too many failed password confirmations (change email)"}
 }

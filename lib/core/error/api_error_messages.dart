@@ -13,6 +13,10 @@ class ApiErrorMessages {
     'Invalid credentials': (loc) => loc.authInvalidCredentials,
     'Username already exists': (loc) => loc.authUsernameAlreadyExists,
     'Email already in use': (loc) => loc.authEmailAlreadyInUse,
+    'Email verification required': (loc) => loc.emailVerificationRequired,
+    'Invalid email address': (loc) => loc.invalidEmailAddress,
+    'New email matches current email': (loc) => loc.changeEmailSame,
+    'Too many attempts. Try again later.': (loc) => loc.apiTooManyAttempts,
     'Invalid or expired token': (loc) => loc.authSessionExpired,
     'Token has been revoked': (loc) => loc.authSessionExpired,
     'Authorization token required': (loc) => loc.authTokenRequired,
@@ -83,6 +87,7 @@ class ApiErrorMessages {
     'Could not generate token': (loc) => loc.apiServerGenerateToken,
     'Error logging out': (loc) => loc.apiServerLogout,
     'Email is required': (loc) => loc.apiEmailRequired,
+    'Email and password are required': (loc) => loc.apiEmailPasswordRequired,
     'Password is required': (loc) => loc.apiPasswordRequired,
     'Too many delete attempts. Try again later.': (loc) =>
         loc.apiTooManyDeleteAttempts,

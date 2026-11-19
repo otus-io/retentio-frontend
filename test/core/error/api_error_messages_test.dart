@@ -181,6 +181,29 @@ void main() {
       );
     });
 
+    test('maps email verification and change-email errors', () {
+      expect(
+        ApiErrorMessages.resolve('Email verification required', en),
+        en.emailVerificationRequired,
+      );
+      expect(
+        ApiErrorMessages.resolve('Invalid email address', zh),
+        zh.invalidEmailAddress,
+      );
+      expect(
+        ApiErrorMessages.resolve('New email matches current email', en),
+        en.changeEmailSame,
+      );
+      expect(
+        ApiErrorMessages.resolve('Email and password are required', zh),
+        zh.apiEmailPasswordRequired,
+      );
+      expect(
+        ApiErrorMessages.resolve('Too many attempts. Try again later.', en),
+        en.apiTooManyAttempts,
+      );
+    });
+
     test('maps tag client fallbacks', () {
       expect(
         ApiErrorMessages.resolve('Could not create tag', en),

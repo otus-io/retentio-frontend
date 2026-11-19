@@ -1864,6 +1864,12 @@ abstract class AppLocalizations {
   /// **'Email is required'**
   String get apiEmailRequired;
 
+  /// API error: apiEmailPasswordRequired
+  ///
+  /// In en, this message translates to:
+  /// **'Email and password are required'**
+  String get apiEmailPasswordRequired;
+
   /// API error: apiServerGenerateResetToken
   ///
   /// In en, this message translates to:
@@ -3715,7 +3721,7 @@ abstract class AppLocalizations {
   /// Profile banner when email_verified is false
   ///
   /// In en, this message translates to:
-  /// **'Your email is not verified yet. You can still use the app.'**
+  /// **'Your email is not verified yet. Verify it to publish decks and send contributions.'**
   String get emailNotVerified;
 
   /// Button to resend verification email
@@ -3885,6 +3891,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Too many attempts. Please try again later.'**
   String get apiTooManyDeleteAttempts;
+
+  /// API 403 email_not_verified on publish or contribute
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your email first. Open Profile to resend the link or change your address.'**
+  String get emailVerificationRequired;
+
+  /// API error: invalid email format
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email address'**
+  String get invalidEmailAddress;
+
+  /// Change email: new address equals the current one
+  ///
+  /// In en, this message translates to:
+  /// **'That is already your email'**
+  String get changeEmailSame;
+
+  /// Profile button and dialog title to change the account email
+  ///
+  /// In en, this message translates to:
+  /// **'Change email'**
+  String get changeEmail;
+
+  /// Change email dialog body with the current address
+  ///
+  /// In en, this message translates to:
+  /// **'Current email: {email}. The new address must be verified again.'**
+  String changeEmailMessage(String email);
+
+  /// Change email dialog: new address field label
+  ///
+  /// In en, this message translates to:
+  /// **'New email'**
+  String get newEmail;
+
+  /// Snack after changing the email
+  ///
+  /// In en, this message translates to:
+  /// **'Email changed. Check {email} for a verification link.'**
+  String changeEmailSuccess(String email);
+
+  /// Register failure: email already registered, point to password reset
+  ///
+  /// In en, this message translates to:
+  /// **'This email is already registered. If it is yours, use “Forgot password?” on the login screen.'**
+  String get registerEmailInUseHint;
+
+  /// API 429: too many failed password confirmations (change email)
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Please try again later.'**
+  String get apiTooManyAttempts;
 }
 
 class _AppLocalizationsDelegate

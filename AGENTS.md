@@ -50,7 +50,14 @@ Retentio Frontend is a Flutter app (Riverpod, go_router, Dio) for vocabulary lea
 
 - **Never push directly to `main`** — all changes must go through a pull request
 - GitHub branch protection enforces this remotely
-- If you need to commit, always create a feature branch first
+- Commit only on a feature branch; agents never create one themselves (see below)
+
+### Stay on the Current Branch
+
+- **Agents must never create, switch or check out branches (or worktrees) unless the user names the branch**
+- Commit and push to the feature branch that is checked out; if it looks wrong, ask the user to confirm
+- On `main`, never commit or push, even if the user confirms; ask the user to name a feature branch instead
+- The Workflow steps below are for humans; agents follow them only when the user asks for a new branch
 
 ### Branch Naming
 

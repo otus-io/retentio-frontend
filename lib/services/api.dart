@@ -12,6 +12,7 @@ class Api {
   static const String decks = '/api/decks';
   static const String deck = '/api/decks/{id}';
   static const String profile = '/api/profile';
+  static const String profileEmail = '/api/profile/email';
 
   static const String card = '/api/decks/{id}/card';
   static const String cards = '/api/decks/{id}/cards';
