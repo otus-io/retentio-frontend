@@ -2824,6 +2824,54 @@ void main() {
       expect(downloadedUrls, ['/api/media/a0']);
     });
 
+    test('files saved before count toward progress from the start', () async {
+      final saved = File('${tmp.path}/d1/a0.mp3')
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(mp3);
+      store.media['a0'] = saved.path;
+      double? atBatch;
+      late OfflinePackageDownloader downloader;
+      downloader = batched(2, (keys, onPart) async {
+        atBatch = downloader.progressOf('d1').value;
+        for (final key in keys) {
+          await onPart(key, Stream.value(mp3));
+        }
+      });
+
+      expect(await downloader.download('d1'), isTrue);
+
+      expect(atBatch, closeTo(0.65, 1e-9));
+    });
+
+    test('a recorded file fetched again is not counted twice', () async {
+      store.media['a0'] = '${tmp.path}/gone.mp3';
+      double? atCards;
+      late OfflinePackageDownloader downloader;
+      downloader = build(
+        pages: [
+          [
+            _fact('f0', entries: const [FactEntry(audio: 'a0')]),
+            _fact('f1', entries: const [FactEntry(audio: 'a1')]),
+          ],
+        ],
+        factIds: ['f0', 'f1'],
+        downloadMediaBatch: (keys, onPart) async {
+          for (final key in keys) {
+            await onPart(key, Stream.value(mp3));
+          }
+        },
+        fetchCards: (_) async {
+          atCards = downloader.progressOf('d1').value;
+          return const [];
+        },
+      );
+
+      expect(await downloader.download('d1'), isTrue);
+
+      expect(downloadedUrls, ['/api/media/a0']);
+      expect(atCards, closeTo(0.95, 1e-9));
+    });
+
     test('a file the server refuses leaves the deck incomplete', () async {
       final downloader = batched(2, (keys, onPart) async {
         await onPart('a0', null);

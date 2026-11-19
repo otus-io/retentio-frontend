@@ -777,19 +777,39 @@ class OfflinePackageDownloader {
           f.mediaKey(e.image),
         ],
     }..remove('');
-    var done = 0;
-    void tick() {
+    // Files saved before a pause count from the start, so the bar resumes
+    // where it stopped instead of waiting for the per-file pass at the end.
+    final recorded = {
+      for (final key in mediaKeys)
+        if (!await _needsFetch(key)) key,
+    };
+    var done = recorded.length;
+    void report() {
       const started = _deckShare + _factsShare;
       const span = 1 - _cardsShare - started;
-      _report(deckId, started + span * ++done / mediaKeys.length);
+      _report(deckId, started + span * done / mediaKeys.length);
     }
 
-    final batched = await _downloadMediaBatches(deckId, mediaKeys, tick);
+    void tick() {
+      done++;
+      report();
+    }
+
+    if (done > 0) report();
+    final batched = await _downloadMediaBatches(
+      deckId,
+      mediaKeys.difference(recorded),
+      tick,
+    );
     final rest = [
       for (final key in mediaKeys)
         if (!batched.settled.contains(key)) key,
     ];
-    final filesComplete = await _downloadMediaFiles(deckId, rest, tick);
+    final filesComplete = await _downloadMediaFiles(
+      deckId,
+      rest,
+      (key) => recorded.contains(key) ? null : tick(),
+    );
     return batched.complete && filesComplete;
   }
 
@@ -797,7 +817,7 @@ class OfflinePackageDownloader {
   Future<bool> _downloadMediaFiles(
     String deckId,
     List<String> keys,
-    void Function() tick,
+    void Function(String key) tick,
   ) async {
     var complete = true;
     var interrupted = false;
@@ -823,7 +843,7 @@ class OfflinePackageDownloader {
             logger.e('Offline media $key failed: $e', stackTrace: s);
           }
         }
-        tick();
+        tick(key);
       }
     }
 
@@ -846,7 +866,11 @@ class OfflinePackageDownloader {
     Set<String> keys,
     void Function() tick,
   ) async {
-    final batches = await _uncachedBatches(keys);
+    final pending = keys.toList();
+    final batches = [
+      for (var i = 0; i < pending.length; i += mediaBatchSize)
+        pending.sublist(i, min(i + mediaBatchSize, pending.length)),
+    ];
     final settled = <String>{};
     var complete = true;
     var failed = false;
@@ -886,18 +910,6 @@ class OfflinePackageDownloader {
       for (var w = 0; w < mediaBatchConcurrency; w++) worker(),
     ]);
     return (settled: settled, complete: complete);
-  }
-
-  /// The [keys] with no recorded file, [mediaBatchSize] per batch.
-  Future<List<List<String>>> _uncachedBatches(Set<String> keys) async {
-    final pending = [
-      for (final key in keys)
-        if (await _needsFetch(key)) key,
-    ];
-    return [
-      for (var i = 0; i < pending.length; i += mediaBatchSize)
-        pending.sublist(i, min(i + mediaBatchSize, pending.length)),
-    ];
   }
 
   /// True when no file is recorded for [mediaKey]. A recorded one whose file
