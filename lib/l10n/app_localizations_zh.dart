@@ -2073,4 +2073,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get registerEmailInUseHint => '该邮箱已被注册。如果是你的邮箱，请在登录页使用“忘记密码？”。';
+
+  @override
+  String get apiTooManyAttempts => '尝试次数过多，请稍后再试。';
 }

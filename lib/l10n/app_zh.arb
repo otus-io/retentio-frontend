@@ -1451,5 +1451,6 @@
   "changeEmailMessage": "当前邮箱：{email}。新邮箱需要重新验证。",
   "newEmail": "新邮箱",
   "changeEmailSuccess": "邮箱已修改，请查收发送到 {email} 的验证链接。",
-  "registerEmailInUseHint": "该邮箱已被注册。如果是你的邮箱，请在登录页使用“忘记密码？”。"
+  "registerEmailInUseHint": "该邮箱已被注册。如果是你的邮箱，请在登录页使用“忘记密码？”。",
+  "apiTooManyAttempts": "尝试次数过多，请稍后再试。"
 }

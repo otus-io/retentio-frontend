@@ -127,7 +127,14 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
     final raw = res?.data;
     if (!_disposed && raw is Map) {
-      emit(state.copyWith(user: User.fromJson(Map<String, dynamic>.from(raw))));
+      _requestEpoch++;
+      emit(
+        state.copyWith(
+          user: User.fromJson(Map<String, dynamic>.from(raw)),
+          status: ProfileStatus.loaded,
+          clearError: true,
+        ),
+      );
     }
     return null;
   }

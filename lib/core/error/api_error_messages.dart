@@ -16,8 +16,7 @@ class ApiErrorMessages {
     'Email verification required': (loc) => loc.emailVerificationRequired,
     'Invalid email address': (loc) => loc.invalidEmailAddress,
     'New email matches current email': (loc) => loc.changeEmailSame,
-    'Too many attempts. Try again later.': (loc) =>
-        loc.apiTooManyDeleteAttempts,
+    'Too many attempts. Try again later.': (loc) => loc.apiTooManyAttempts,
     'Invalid or expired token': (loc) => loc.authSessionExpired,
     'Token has been revoked': (loc) => loc.authSessionExpired,
     'Authorization token required': (loc) => loc.authTokenRequired,

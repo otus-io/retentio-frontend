@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/core/network/network.dart';
@@ -6,8 +8,14 @@ import 'package:retentio/screen/profile/bloc/profile_cubit.dart';
 import '../../../helpers/test_wrapper.dart';
 
 class _FakeEmailApi extends Interceptor {
+  /// When set, GET /api/profile waits for it before answering.
+  Completer<void>? profileGate;
+
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+  void onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     if (options.method == 'PATCH' && options.path == '/api/profile/email') {
       final password = (options.data as Map)['password'];
       if (password == 'right') {
@@ -49,6 +57,7 @@ class _FakeEmailApi extends Interceptor {
       );
       return;
     }
+    await profileGate?.future;
     handler.resolve(
       Response(
         requestOptions: options,
@@ -67,10 +76,12 @@ class _FakeEmailApi extends Interceptor {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  late _FakeEmailApi api;
 
   setUp(() async {
     await setupTestEnvironment();
-    networkDioClient.dio.interceptors.add(_FakeEmailApi());
+    api = _FakeEmailApi();
+    networkDioClient.dio.interceptors.add(api);
   });
 
   tearDown(() {
@@ -115,5 +126,18 @@ void main() {
 
     expect(await c.changeEmail('new@example.com', 'no-data'), isNull);
     expect(c.state.user.email, 'old@example.com');
+  });
+
+  test('a profile load started before the change does not undo it', () async {
+    final c = await loadedCubit();
+    api.profileGate = Completer<void>();
+    final staleLoad = c.getProfile();
+
+    expect(await c.changeEmail('new@example.com', 'right'), isNull);
+    api.profileGate!.complete();
+    await staleLoad;
+
+    expect(c.state.user.email, 'new@example.com');
+    expect(c.state.status, ProfileStatus.loaded);
   });
 }

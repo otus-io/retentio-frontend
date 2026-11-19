@@ -311,6 +311,8 @@ class _ChangeEmailDialogState extends State<_ChangeEmailDialog> {
       _loading = false;
       if (error == 'Invalid credentials') {
         _passwordError = loc.deleteAccountWrongPassword;
+      } else if (error == 'Too many attempts. Try again later.') {
+        _passwordError = ApiErrorMessages.resolve(error, loc);
       } else {
         _emailError = ApiErrorMessages.resolve(error, loc);
       }

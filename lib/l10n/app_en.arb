@@ -2481,5 +2481,7 @@
   "changeEmailSuccess": "Email changed. Check {email} for a verification link.",
   "@changeEmailSuccess": {"description": "Snack after changing the email", "placeholders": {"email": {"type": "String"}}},
   "registerEmailInUseHint": "This email is already registered. If it is yours, use “Forgot password?” on the login screen.",
-  "@registerEmailInUseHint": {"description": "Register failure: email already registered, point to password reset"}
+  "@registerEmailInUseHint": {"description": "Register failure: email already registered, point to password reset"},
+  "apiTooManyAttempts": "Too many attempts. Please try again later.",
+  "@apiTooManyAttempts": {"description": "API 429: too many failed password confirmations (change email)"}
 }

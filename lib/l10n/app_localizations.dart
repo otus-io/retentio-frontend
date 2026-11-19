@@ -3933,6 +3933,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This email is already registered. If it is yours, use “Forgot password?” on the login screen.'**
   String get registerEmailInUseHint;
+
+  /// API 429: too many failed password confirmations (change email)
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Please try again later.'**
+  String get apiTooManyAttempts;
 }
 
 class _AppLocalizationsDelegate

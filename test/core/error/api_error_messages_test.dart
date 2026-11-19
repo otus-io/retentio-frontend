@@ -196,7 +196,7 @@ void main() {
       );
       expect(
         ApiErrorMessages.resolve('Too many attempts. Try again later.', en),
-        en.apiTooManyDeleteAttempts,
+        en.apiTooManyAttempts,
       );
     });
 

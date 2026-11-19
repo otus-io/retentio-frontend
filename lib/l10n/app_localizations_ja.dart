@@ -2087,4 +2087,7 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get registerEmailInUseHint =>
       'このメールアドレスは登録済みです。ご自身のものであれば、ログイン画面の「パスワードをお忘れですか？」をご利用ください。';
+
+  @override
+  String get apiTooManyAttempts => '試行回数が多すぎます。しばらくしてからもう一度お試しください。';
 }

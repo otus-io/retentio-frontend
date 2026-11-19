@@ -143,6 +143,24 @@ void main() {
     expect(find.text('Incorrect password'), findsNothing);
   });
 
+  testWidgets('rate limit shows the error under the password field', (
+    tester,
+  ) async {
+    await open(tester);
+    await fill(tester, 'new@example.com', 'wrong');
+
+    await tester.tap(submitButton());
+    cubit.result.complete('Too many attempts. Try again later.');
+    await tester.pumpAndSettle();
+
+    final passwordInput = tester.widget<TextField>(field(1));
+    expect(
+      passwordInput.decoration?.errorText,
+      'Too many attempts. Please try again later.',
+    );
+    expect(tester.widget<TextField>(field(0)).decoration?.errorText, isNull);
+  });
+
   testWidgets('email errors show under the email field and clear on edit', (
     tester,
   ) async {

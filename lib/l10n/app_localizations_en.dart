@@ -2231,4 +2231,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get registerEmailInUseHint =>
       'This email is already registered. If it is yours, use “Forgot password?” on the login screen.';
+
+  @override
+  String get apiTooManyAttempts => 'Too many attempts. Please try again later.';
 }
