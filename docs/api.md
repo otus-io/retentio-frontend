@@ -2272,6 +2272,11 @@ are fetched without `v`. The key is omitted for owned decks, and for imports who
 }
 ```
 
+On **imported** decks, when the pinned snapshot maps this fact's media ids to published versions, `data` also includes
+sibling **`media_versions`** (`{ "<mediaId>": <pinnedVersion> }`), same shape as the fact list. Omitted when empty or
+on source decks. Download with `GET /api/media/{id}?v={media_versions[id]}`; do **not** use deck `source_version`
+as `v`.
+
 ### Update a fact
 
 **Endpoint:** `PATCH /api/decks/{id}/facts/{factId}`
@@ -3824,7 +3829,7 @@ Contribution submit/inbox errors: [Deck sharing](#deck-sharing).
 | `/api/decks/{id}/facts/{op}`                  | POST        | Add facts: body `facts[]` with optional `tags` (names) per item; `{ "data": { "fact_length" }, "meta": { "msg" } }` (no tags in response)                  |
 | `/api/decks/{id}/card`                        | POST        | Add card from existing fact: `{ "data": { "card_id" }, "meta": { "msg" } }`                                                                                |
 | `/api/decks/{id}/facts`                       | GET         | `{ "data": { "facts": [ … ] }, "meta": { "msg", "count", "has_more", "limit", "offset", "total" } }` — defaults `limit` 50, `offset` 0 |
-| `/api/decks/{id}/facts/{factId}`              | GET         | `{ "data": { "fact": { …, "tags": [ … ] } }, "meta": { "msg" } }`                                                                                          |
+| `/api/decks/{id}/facts/{factId}`              | GET         | `{ "data": { "fact": { …, "tags": [ … ] }, "media_versions"?: { … } }, "meta": { "msg" } }`                                                                                        |
 | `/api/decks/{id}/facts/{factId}`              | PATCH       | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks/{id}/facts/{factId}`              | DELETE      | `{ "data": { "fact_id" }, "meta": { "msg" } }`                                                                                                             |
 | `/api/decks/{id}/facts/{factId}/quality`      | PUT         | `{ "data": { "quality": { "fact_id", "entries", "updated_at" } }, "meta": { "msg": "Quality updated successfully" } }` |

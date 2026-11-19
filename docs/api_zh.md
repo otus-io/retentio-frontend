@@ -19,6 +19,7 @@
   - [重置密码](#重置密码)
   - [验证邮箱](#验证邮箱)
   - [重发验证邮件](#重发验证邮件)
+  - [修改邮箱](#修改邮箱)
 - [1.1 用户资料](#11-用户资料)
 - [2. 卡组](#2-卡组)
   - [创建卡组](#创建卡组)
@@ -112,6 +113,7 @@
 | `/auth/verify-email`                          | POST   | 使用验证邮件中的令牌验证邮箱                                                                                                                         |
 | `/auth/resend-verification`                   | POST   | 重发验证邮件（防枚举）                                                                                                                               |
 | `/api/profile`                                | GET    | 获取当前用户资料                                                                                                                                     |
+| `/api/profile/email`                          | PATCH  | 修改邮箱（body：`email`、`password`），新邮箱初始为未验证。见 [修改邮箱](#修改邮箱) |
 | `/api/decks`                                  | POST   | 创建卡组。请求体：`name`、**`fields`**（≥1 列名，必填）、**`rate`**（必填，1–1000）、可选 **`tags`**。                                                    |
 | `/api/decks`                                  | GET    | 获取所有卡组                                                                                                                                         |
 | `/api/decks/{id}`                             | GET    | 获取卡组详情。源卡组含 `visibility`、`published_version`；导入卡组含 `source_deck_id`、`source_version`、`imported_at`。                             |
@@ -318,7 +320,9 @@
 }
 ```
 
-> 软验证：验证前仍可登录。注册成功后会发送验证邮件（已配置 Resend 时）。
+> 软验证：验证前仍可登录并使用大部分接口。发布卡组和提交贡献在验证前返回 **403**，`"code": "email_not_verified"`
+> （见 [需要验证邮箱](#需要验证邮箱)）。注册成功后会发送验证邮件（已配置 Resend 时）。
+> 发往账户已不再使用的旧邮箱的链接（见 [修改邮箱](#修改邮箱)）返回 **400** `Invalid or expired verification token`。
 
 ### 重发验证邮件
 
@@ -342,6 +346,37 @@
 ```
 
 > 始终返回 **200**（防枚举）。同一邮箱约 60 秒内限流。
+
+### 修改邮箱
+
+**接口:** `PATCH /api/profile/email`
+
+需在请求头中携带 `Authorization: Bearer <token>`。登录状态下修正输错的邮箱。
+
+```json
+{
+  "email": "new@example.com",
+  "password": "123456"
+}
+```
+
+**响应:**
+
+```json
+{
+  "data": {
+    "username": "swagger",
+    "email": "new@example.com",
+    "email_verified": false
+  },
+  "meta": null
+}
+```
+
+- 邮箱会去除首尾空格并转为小写。新邮箱初始为**未验证**，[需要验证邮箱](#需要验证邮箱)的接口在验证前返回 **403**。
+- 验证链接发送到新邮箱（若该邮箱处于约 60 秒的重发冷却期则不发送）。发往旧邮箱的验证和重置链接随即失效。
+- 密码确认失败与删除账户共用限流：每个用户名 **15 分钟 5 次** → **429** `Too many attempts. Try again later.`
+- 新邮箱与当前邮箱相同 → **400**；已被其他账户使用 → **409**。
 
 ---
 
@@ -3315,7 +3350,8 @@ p_good = (score + 1) / (score + 1 + 20 * reports + 10)
 
 ## 错误响应参考
 
-所有 JSON API 错误使用同一结构——**没有数字型应用错误码**，只有 HTTP 状态码和字符串 `msg`：
+所有 JSON API 错误使用同一结构——HTTP 状态码和字符串 `msg`。少数错误另带稳定的字符串 `code` 供客户端判断
+（见 [需要验证邮箱](#需要验证邮箱)）：
 
 ```json
 { "msg": "Deck not found" }
@@ -3363,6 +3399,16 @@ p_good = (score + 1) / (score + 1 + 20 * reports + 10)
 | **500** | `Error retrieving deck` | 读取卡组时 Redis/IO 失败 |
 | **500** | `Error parsing deck data` | 存储中卡组 JSON 损坏 |
 
+### 需要验证邮箱
+
+以下接口需要已验证的邮箱。未验证的调用者收到 **403**
+`{ "msg": "Email verification required", "code": "email_not_verified" }`；客户端应提供
+[重发验证邮件](#重发验证邮件)。邮箱验证功能上线前创建的账户视为已验证。
+
+- `POST /api/decks/{id}/publish`
+- `POST /api/decks/{id}/contributions/facts/{factId}/edit`、`/add`、`/tags`、`/templates`、`/report`
+- `POST /api/decks/{id}/contributions/deck-tags`、`/fields/rename`、`/qa-review`
+
 ---
 
 ### 身份验证（`/auth/*`）
@@ -3398,6 +3444,12 @@ p_good = (score + 1) / (score + 1 + 20 * reports + 10)
 | ---- | ---- | ----- |
 | `GET /api/profile` | **404** | `User not found` |
 | | **500** | `Error retrieving user profile`、`Error parsing user data` |
+| `PATCH /api/profile/email` | **400** | `Invalid request payload`、`Email and password are required`、`Invalid email address`、`New email matches current email` |
+| | **401** | `Invalid credentials` |
+| | **404** | `User not found` |
+| | **409** | `Email already in use` |
+| | **429** | `Too many attempts. Try again later.` |
+| | **500** | `Error changing email` |
 
 另受 [JWT 中间件错误](#通用错误) 约束。
 
@@ -3664,6 +3716,7 @@ p_good = (score + 1) / (score + 1 + 20 * reports + 10)
 | `/auth/verify-email`                          | POST        | `{ "data": { "msg": "Email verified successfully" }, "meta": null }`                                                                                 |
 | `/auth/resend-verification`                   | POST        | `{ "data": { "msg" }, "meta": null }`（邮箱格式合法时恒为 200）                                                                                        |
 | `/api/profile`                                | GET         | `{ "data": { 用户资料 }, "meta": { "msg" } }`                                                                                                        |
+| `/api/profile/email`                          | PATCH       | `{ "data": { "username", "email", "email_verified": false }, "meta": null }` |
 | `/api/decks`                                  | POST        | `{ "data": { "deck_id" }, "meta": { "msg" } }`                                                                                                       |
 | `/api/decks`                                  | GET         | `{ "data": { "decks": [ … ] }, "meta": { "total", "msg" } }`                                                                                         |
 | `/api/decks/{id}`                             | GET         | `{ "data": { 卡组 + 统计 }, "meta": { "msg" } }`                                                                                                     |
