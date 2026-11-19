@@ -309,6 +309,9 @@ jobs:
             - Test coverage for behavior changes
 
             Skip lockfiles, generated l10n, and build artifacts.
+            Review `docs/api*.md` only from the diff; never open those files.
+            Check that paths, fields and status codes in their hunks match the
+            Dart code in this PR, and that the `api.md` and `api_zh.md` hunks agree.
             Follow docs/contributing.md, AGENTS.md and .agents/skills when applicable.
             The PR branch is already checked out in the working directory.
 
