@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeHttpClientAdapter implements HttpClientAdapter {
   RequestOptions? lastDelete;
+  RequestOptions? lastPatch;
 
   @override
   Future<ResponseBody> fetch(
@@ -28,6 +29,28 @@ class _FakeHttpClientAdapter implements HttpClientAdapter {
           ok
               ? {
                   'data': {'msg': 'Account deleted successfully'},
+                }
+              : {'msg': 'Invalid credentials'},
+        ),
+        ok ? 200 : 401,
+        headers: {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+        },
+      );
+    }
+
+    if (options.path == '/api/profile/email' && options.method == 'PATCH') {
+      lastPatch = options;
+      final ok = (options.data as Map)['password'] == 'valid-password';
+      return ResponseBody.fromString(
+        jsonEncode(
+          ok
+              ? {
+                  'data': {
+                    'username': 'u',
+                    'email': 'new@example.com',
+                    'email_verified': false,
+                  },
                 }
               : {'msg': 'Invalid credentials'},
         ),
@@ -177,6 +200,32 @@ void main() {
       await ApiService.setToken('live-token');
 
       final res = await AuthService.deleteAccount(password: 'wrong');
+
+      expect(res?.isSuccess, isFalse);
+      expect(res?.msg, 'Invalid credentials');
+      expect(ApiService.authorization, 'live-token');
+    });
+
+    test('changeEmail patches the new email and password', () async {
+      final res = await AuthService.changeEmail(
+        email: 'new@example.com',
+        password: 'valid-password',
+      );
+
+      expect(res?.isSuccess, isTrue);
+      expect(adapter.lastPatch?.data, {
+        'email': 'new@example.com',
+        'password': 'valid-password',
+      });
+    });
+
+    test('changeEmail with a wrong password keeps the session', () async {
+      await ApiService.setToken('live-token');
+
+      final res = await AuthService.changeEmail(
+        email: 'new@example.com',
+        password: 'wrong',
+      );
 
       expect(res?.isSuccess, isFalse);
       expect(res?.msg, 'Invalid credentials');

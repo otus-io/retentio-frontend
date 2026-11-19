@@ -602,7 +602,7 @@
   "verifyEmailMissingToken": "確認リンクがないか、無効です。",
   "verifyEmailInProgress": "メールアドレスを確認しています…",
   "registerSuccessCheckEmail": "登録が完了しました。確認メールを開き、アドレスを確認してください。",
-  "emailNotVerified": "メールアドレスはまだ確認されていません。アプリは引き続き利用できます。",
+  "emailNotVerified": "メールアドレスはまだ確認されていません。確認するとデッキの公開や提案の送信ができます。",
   "resendVerification": "確認メールを再送信",
   "verificationEmailSent": "メールが未確認の場合、確認リンクを送信しました。",
   "authVerifyTokenInvalid": "確認リンクが無効か、期限切れです",
@@ -630,5 +630,13 @@
   "deleteAccountMessage": "アカウント、非公開のデッキ、学習記録が完全に削除されます。公開済みのデッキは、インポートした人が引き続き利用できますが、あなたの名前は表示されません。確認のためパスワードを入力してください。",
   "deleteAccountWrongPassword": "パスワードが正しくありません",
   "apiPasswordRequired": "パスワードを入力してください",
-  "apiTooManyDeleteAttempts": "試行回数が多すぎます。しばらくしてからもう一度お試しください。"
+  "apiTooManyDeleteAttempts": "試行回数が多すぎます。しばらくしてからもう一度お試しください。",
+  "emailVerificationRequired": "先にメールアドレスを確認してください。プロフィールからリンクの再送信やアドレスの変更ができます。",
+  "invalidEmailAddress": "メールアドレスが無効です",
+  "changeEmailSame": "すでにこのメールアドレスを使用しています",
+  "changeEmail": "メールアドレスを変更",
+  "changeEmailMessage": "現在のメールアドレス：{email}。新しいアドレスは再度確認が必要です。",
+  "newEmail": "新しいメールアドレス",
+  "changeEmailSuccess": "メールアドレスを変更しました。{email} に届く確認リンクを開いてください。",
+  "registerEmailInUseHint": "このメールアドレスは登録済みです。ご自身のものであれば、ログイン画面の「パスワードをお忘れですか？」をご利用ください。"
 }

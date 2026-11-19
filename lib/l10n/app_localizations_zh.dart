@@ -1957,7 +1957,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get registerSuccessCheckEmail => '注册成功。请查收邮件以验证邮箱。';
 
   @override
-  String get emailNotVerified => '邮箱尚未验证，你仍可正常使用应用。';
+  String get emailNotVerified => '邮箱尚未验证。验证后即可发布卡组和提交贡献。';
 
   @override
   String get resendVerification => '重新发送验证邮件';
@@ -2045,4 +2045,32 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get apiTooManyDeleteAttempts => '尝试次数过多，请稍后再试。';
+
+  @override
+  String get emailVerificationRequired => '请先验证邮箱。可在“我的”页面重新发送链接或修改邮箱。';
+
+  @override
+  String get invalidEmailAddress => '邮箱地址无效';
+
+  @override
+  String get changeEmailSame => '这已经是你的邮箱';
+
+  @override
+  String get changeEmail => '修改邮箱';
+
+  @override
+  String changeEmailMessage(String email) {
+    return '当前邮箱：$email。新邮箱需要重新验证。';
+  }
+
+  @override
+  String get newEmail => '新邮箱';
+
+  @override
+  String changeEmailSuccess(String email) {
+    return '邮箱已修改，请查收发送到 $email 的验证链接。';
+  }
+
+  @override
+  String get registerEmailInUseHint => '该邮箱已被注册。如果是你的邮箱，请在登录页使用“忘记密码？”。';
 }

@@ -136,6 +136,19 @@ class AuthService {
     );
   }
 
+  /// Changes the account email; the new address starts unverified. A wrong
+  /// password answers 401, which must not end the session.
+  static Future<ApiResponse?> changeEmail({
+    required String email,
+    required String password,
+  }) {
+    return ApiService.patch(
+      Api.profileEmail,
+      params: {'email': email, 'password': password},
+      extra: {ResponseNormalizeInterceptor.keepSessionOn401: true},
+    );
+  }
+
   /// Logout via AuthBloc (DI). AuthRepository handles server/local cleanup.
   static Future<void> logoutByAuthBloc() async {
     await _dispatchAuthEventAndAwait(const AuthLogoutRequested());

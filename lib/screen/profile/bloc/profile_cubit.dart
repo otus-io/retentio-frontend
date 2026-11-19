@@ -118,6 +118,20 @@ class ProfileCubit extends Cubit<ProfileState> {
     await AuthService.logoutByAuthBloc();
   }
 
+  /// Changes the email. Returns null on success (the new, unverified address
+  /// is shown right away), otherwise the raw server message.
+  Future<String?> changeEmail(String email, String password) async {
+    final res = await AuthService.changeEmail(email: email, password: password);
+    if (res?.isSuccess != true) {
+      return res?.msg ?? 'Unknown error';
+    }
+    final raw = res?.data;
+    if (!_disposed && raw is Map) {
+      emit(state.copyWith(user: User.fromJson(Map<String, dynamic>.from(raw))));
+    }
+    return null;
+  }
+
   /// Deletes the account and its offline data. Returns null on success,
   /// otherwise the raw server message. The caller logs out on success; a
   /// failed offline wipe is retried before the account id is opened again.

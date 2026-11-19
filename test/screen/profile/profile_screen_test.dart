@@ -126,6 +126,25 @@ void main() {
       expect(find.text(loc.cancel), findsOneWidget);
     });
 
+    testWidgets('tapping change email opens the change email dialog', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestableWidget(const ProfileScreen()));
+      await tester.pumpAndSettle();
+
+      final loc = AppLocalizations.of(
+        tester.element(find.byType(ProfileScreen)),
+      )!;
+      final tile = find.widgetWithText(ListTile, loc.changeEmail);
+      await tester.ensureVisible(tile);
+      await tester.pumpAndSettle();
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text(loc.newEmail), findsOneWidget);
+    });
+
     testWidgets('shows the running app version, not a hardcoded one', (
       tester,
     ) async {
@@ -145,7 +164,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
-      expect(tiles, hasLength(6));
+      expect(tiles, hasLength(7));
       for (final tile in tiles) {
         expect(
           tile.trailing,

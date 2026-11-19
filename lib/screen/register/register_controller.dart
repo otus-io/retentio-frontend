@@ -47,13 +47,19 @@ class RegisterController {
         showSnack(context, loc.registerSuccessCheckEmail);
         onSuccess();
       } else {
-        showSnack(context, ApiErrorMessages.resolve(result?.msg, loc));
+        showSnack(context, _registerError(result?.msg, loc));
       }
     } catch (e) {
       if (!context.mounted) return;
-      showSnack(context, ApiErrorMessages.resolve(rawApiErrorMessage(e), loc));
+      showSnack(context, _registerError(rawApiErrorMessage(e), loc));
     } finally {
       setLoading(false);
     }
   }
+
+  /// A taken email is usually the user's own: point them at password reset.
+  static String _registerError(String? msg, AppLocalizations loc) =>
+      msg?.trim() == 'Email already in use'
+      ? loc.registerEmailInUseHint
+      : ApiErrorMessages.resolve(msg, loc);
 }
