@@ -294,6 +294,7 @@
   "apiServerGenerateToken": "ログインできませんでした。もう一度お試しください。",
   "apiServerLogout": "ログアウトできませんでした。もう一度お試しください。",
   "apiEmailRequired": "メールが必要です",
+  "apiEmailPasswordRequired": "メールアドレスとパスワードが必要です",
   "apiServerGenerateResetToken": "リセットメールを送信できませんでした。もう一度お試しください。",
   "apiServerStoreResetToken": "リセットリクエストを処理できませんでした。もう一度お試しください。",
   "apiResetFieldsRequired": "リセットトークンと新しいパスワードが必要です",

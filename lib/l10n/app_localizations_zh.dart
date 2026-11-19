@@ -933,6 +933,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get apiEmailRequired => '请填写邮箱';
 
   @override
+  String get apiEmailPasswordRequired => '请填写邮箱和密码';
+
+  @override
   String get apiServerGenerateResetToken => '无法发送重置邮件，请重试';
 
   @override

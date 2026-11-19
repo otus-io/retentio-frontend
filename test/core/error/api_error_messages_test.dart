@@ -195,6 +195,10 @@ void main() {
         en.changeEmailSame,
       );
       expect(
+        ApiErrorMessages.resolve('Email and password are required', zh),
+        zh.apiEmailPasswordRequired,
+      );
+      expect(
         ApiErrorMessages.resolve('Too many attempts. Try again later.', en),
         en.apiTooManyAttempts,
       );

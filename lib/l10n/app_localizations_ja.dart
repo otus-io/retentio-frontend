@@ -934,6 +934,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get apiEmailRequired => 'メールが必要です';
 
   @override
+  String get apiEmailPasswordRequired => 'メールアドレスとパスワードが必要です';
+
+  @override
   String get apiServerGenerateResetToken => 'リセットメールを送信できませんでした。もう一度お試しください。';
 
   @override

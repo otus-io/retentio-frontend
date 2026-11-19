@@ -1864,6 +1864,12 @@ abstract class AppLocalizations {
   /// **'Email is required'**
   String get apiEmailRequired;
 
+  /// API error: apiEmailPasswordRequired
+  ///
+  /// In en, this message translates to:
+  /// **'Email and password are required'**
+  String get apiEmailPasswordRequired;
+
   /// API error: apiServerGenerateResetToken
   ///
   /// In en, this message translates to:

@@ -375,6 +375,10 @@
   "@apiEmailRequired": {
     "description": "API error: apiEmailRequired"
   },
+  "apiEmailPasswordRequired": "请填写邮箱和密码",
+  "@apiEmailPasswordRequired": {
+    "description": "API error: apiEmailPasswordRequired"
+  },
   "apiServerGenerateResetToken": "无法发送重置邮件，请重试",
   "@apiServerGenerateResetToken": {
     "description": "API error: apiServerGenerateResetToken"

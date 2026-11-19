@@ -972,6 +972,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get apiEmailRequired => 'Email is required';
 
   @override
+  String get apiEmailPasswordRequired => 'Email and password are required';
+
+  @override
   String get apiServerGenerateResetToken =>
       'Could not send reset email. Please try again.';
 

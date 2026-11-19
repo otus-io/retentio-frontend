@@ -1226,6 +1226,10 @@
   "@apiEmailRequired": {
     "description": "API error: apiEmailRequired"
   },
+  "apiEmailPasswordRequired": "Email and password are required",
+  "@apiEmailPasswordRequired": {
+    "description": "API error: apiEmailPasswordRequired"
+  },
   "apiServerGenerateResetToken": "Could not send reset email. Please try again.",
   "@apiServerGenerateResetToken": {
     "description": "API error: apiServerGenerateResetToken"
