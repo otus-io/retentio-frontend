@@ -356,7 +356,7 @@ jobs:
             "No issues found." instead of the table.
           claude_args: |
             --model claude-sonnet-4-6
-            --max-turns 50
+            --max-turns 100
             --allowedTools "Read,Write,Grep,Glob,Bash(gh pr diff:*),Bash(gh pr view:*)"
 
       - name: Publish review to the sticky comment
