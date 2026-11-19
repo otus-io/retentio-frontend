@@ -923,9 +923,13 @@ class OfflinePackageDownloader {
     final sink = (await File(tmpPath).create(recursive: true)).openWrite();
     try {
       await sink.addStream(bytes);
-    } finally {
-      await sink.close();
+    } catch (_) {
+      // After a write error close() fails too; the first error is the one.
+      await sink.close().catchError((_) {});
+      await File(tmpPath).delete();
+      rethrow;
     }
+    await sink.close();
     await _dropIfHalted(deckId, tmpPath);
     await _keepMedia(mediaKey, base, tmpPath);
   }

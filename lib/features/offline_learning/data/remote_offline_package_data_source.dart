@@ -118,21 +118,26 @@ Future<void> downloadOfflineMediaBatch(
   ).firstMatch(type)?.group(1);
   if (boundary == null) throw StateError('media batch is not multipart: $type');
   final reader = _MultipartReader(res.data!.stream, boundary);
-  for (
-    var h = await reader.nextHeaders();
-    h != null;
-    h = await reader.nextHeaders()
-  ) {
-    final id = h['x-media-id'] ?? '';
-    final version = h['x-media-version'];
-    final key = version == null ? id : '$id?v=$version';
-    final bytes = reader.body(h);
-    if (h['x-media-status'] == '200') {
-      await onPart(key, bytes);
-    } else {
-      await bytes.drain<void>();
-      await onPart(key, null);
+  try {
+    for (
+      var h = await reader.nextHeaders();
+      h != null;
+      h = await reader.nextHeaders()
+    ) {
+      final id = h['x-media-id'] ?? '';
+      final version = h['x-media-version'];
+      final key = version == null ? id : '$id?v=$version';
+      final bytes = reader.body(h);
+      if (h['x-media-status'] == '200') {
+        await onPart(key, bytes);
+      } else {
+        await bytes.drain<void>();
+        await onPart(key, null);
+      }
     }
+  } finally {
+    // Releases the response however the reading ended.
+    await reader.cancel();
   }
 }
 
@@ -148,6 +153,9 @@ class _MultipartReader {
   final StreamIterator<List<int>> _chunks;
   List<int> _chunk = const [];
   var _offset = 0;
+
+  /// Stops reading the body, releasing the response.
+  Future<void> cancel() async => _chunks.cancel();
 
   /// The next part's headers with lower-case names, or null after the
   /// closing boundary.

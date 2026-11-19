@@ -2861,6 +2861,31 @@ void main() {
       expect(store.decks['d1']!.remoteUpdatedAt, updatedAt.toIso8601String());
     });
 
+    test('a file broken mid-stream leaves no partial file', () async {
+      bool? partLeft;
+      var calls = 0;
+      final downloader = batched(1, (keys, onPart) async {
+        if (calls++ == 0) {
+          await onPart(
+            keys[0],
+            Stream.multi((c) {
+              c.add(mp3);
+              c.addError(StateError('cut off'));
+              c.close();
+            }),
+          );
+        }
+        partLeft = File('${tmp.path}/d1/a0.part').existsSync();
+        await onPart(keys[0], Stream.value(mp3));
+      });
+
+      expect(await downloader.download('d1'), isTrue);
+
+      expect(calls, 2);
+      expect(partLeft, isFalse);
+      expect(File(store.media['a0']!).readAsBytesSync(), mp3);
+    });
+
     test('a batch broken after its last file is not retried', () async {
       var calls = 0;
       final downloader = batched(2, (keys, onPart) async {
@@ -3058,6 +3083,46 @@ void main() {
       ]) {
         test('a body $name throws', () async {
           await expectLater(fetch(_BatchAdapter(text)), throwsA(error));
+        });
+      }
+
+      for (final (name, text, failPart) in [
+        ('a closing boundary with bytes after it', '$file--b--\r\nrest', false),
+        ('a parser error', '--x\r\nrest', false),
+        ('a failing part handler', '$file$refused--b--\r\n', true),
+      ]) {
+        test('$name cancels the response stream', () async {
+          networkDioClient.dio.httpClientAdapter = _BatchAdapter(text);
+          var cancelled = false;
+          Stream<Uint8List> watched(Stream<Uint8List> body) async* {
+            var done = false;
+            try {
+              yield* body;
+              done = true;
+            } finally {
+              if (!done) cancelled = true;
+            }
+          }
+
+          final watch = InterceptorsWrapper(
+            onResponse: (res, handler) {
+              final body = res.data as ResponseBody;
+              res.data = ResponseBody(
+                watched(body.stream),
+                body.statusCode,
+                headers: body.headers,
+              );
+              handler.next(res);
+            },
+          );
+          networkDioClient.dio.interceptors.add(watch);
+          addTearDown(() => networkDioClient.dio.interceptors.remove(watch));
+
+          await downloadOfflineMediaBatch(['m1?v=7'], (key, bytes) async {
+            if (failPart) throw StateError('disk full');
+          }).catchError((_) {});
+
+          expect(cancelled, isTrue);
         });
       }
 
