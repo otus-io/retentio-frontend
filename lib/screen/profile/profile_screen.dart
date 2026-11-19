@@ -164,14 +164,11 @@ class ProfileScreen extends HookConsumerWidget {
                               endIndent: _kDividerHorizontalInset,
                             ),
                             _ProfileTileWidget(
-                              icon: LucideIcons.logOut,
-                              title: loc.logout,
-                              titleColor: scheme.error,
-                              iconColor: scheme.error,
-                              onTap: () => showProfileLogoutDialog(
+                              icon: LucideIcons.mail,
+                              title: loc.changeEmail,
+                              onTap: () => showProfileChangeEmailDialog(
                                 context,
                                 profileCubit,
-                                loc,
                               ),
                             ),
                             Divider(
@@ -180,11 +177,14 @@ class ProfileScreen extends HookConsumerWidget {
                               endIndent: _kDividerHorizontalInset,
                             ),
                             _ProfileTileWidget(
-                              icon: LucideIcons.mail,
-                              title: loc.changeEmail,
-                              onTap: () => showProfileChangeEmailDialog(
+                              icon: LucideIcons.logOut,
+                              title: loc.logout,
+                              titleColor: scheme.error,
+                              iconColor: scheme.error,
+                              onTap: () => showProfileLogoutDialog(
                                 context,
                                 profileCubit,
+                                loc,
                               ),
                             ),
                             Divider(

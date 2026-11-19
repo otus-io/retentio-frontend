@@ -119,6 +119,8 @@ void main() {
       final context = tester.element(find.byType(ProfileScreen));
       final loc = AppLocalizations.of(context)!;
 
+      await tester.ensureVisible(find.text(loc.logout));
+      await tester.pumpAndSettle();
       await tester.tap(find.text(loc.logout));
       await tester.pumpAndSettle();
 
