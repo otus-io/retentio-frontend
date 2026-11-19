@@ -1003,7 +1003,10 @@ Example: `GET /api/decks/catalog/a1b2c3d4e5f6`
 }
 ```
 
-`has_unpublished_changes` matches whether `POST /publish` would succeed (false when publish would return **409**). When `published_version == 0`, the response is clean (`has_unpublished_changes: false`, zero counts).
+For a deck that has been published before, `has_unpublished_changes` matches whether `POST /publish` would succeed:
+`false` means a republish would return **409** (no changes). A never-published deck (`published_version == 0`) gets a
+clean preview (`has_unpublished_changes: false`, zero counts) because there is no snapshot to diff, but its first
+`POST /publish` still succeeds.
 
 `meta_changed` is true when the deck **name**, **description**, **fields**, and/or **rate** differ from the last manifest. All deck metadata is in the publish fingerprint, so a metadata-only edit also sets `has_unpublished_changes: true` and `POST /publish` succeeds.
 
@@ -3771,16 +3774,14 @@ Also subject to [JWT middleware errors](#cross-cutting-errors). Quality GET/list
 | | **403** | `Not authorized to access this deck` |
 | | **404** | `Deck not found`, `Fact not found` |
 | | **500** | `Error retrieving fact`, `Error parsing fact data`, `Error serializing quality data`, `Error saving quality`, `Error checking fact existence` |
-| `GET /api/decks/{id}/facts/{factId}/quality` | **400** | `fact quality is only available on source decks` |
-| | **403** | `Not authorized to access this deck` |
+| `GET /api/decks/{id}/facts/{factId}/quality` | **403** | `Not authorized to access this deck` |
 | | **404** | `Deck not found`, `Fact not found`, `Quality not found` |
 | | **500** | `Error retrieving quality`, `Error parsing quality data`, `Error checking fact existence` |
 | `DELETE /api/decks/{id}/facts/{factId}/quality` | **400** | `fact quality is only available on source decks` |
 | | **403** | `Not authorized to access this deck` |
 | | **404** | `Deck not found`, `Fact not found` |
 | | **500** | `Error deleting quality`, `Error checking fact existence` |
-| `GET /api/decks/{id}/quality` | **400** | `fact quality is only available on source decks` |
-| | **400** | `max_score must be between 1 and 10` |
+| `GET /api/decks/{id}/quality` | **400** | `max_score must be between 1 and 10` |
 | | **400** | `entry must be a non-negative integer` |
 | | **400** | `aspect must be text or audio` |
 | | **403** | `Not authorized to access this deck` |
