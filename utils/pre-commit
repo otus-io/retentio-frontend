@@ -14,6 +14,11 @@ if [ -z "$REPO_ROOT" ]; then
 fi
 cd "$REPO_ROOT"
 
+# In a linked worktree git exports GIT_DIR/GIT_INDEX_FILE to hooks. Flutter
+# runs git inside its SDK to find its version, so hide them from the toolchain.
+flutter() { env -u GIT_DIR -u GIT_INDEX_FILE -u GIT_WORK_TREE flutter "$@"; }
+dart() { env -u GIT_DIR -u GIT_INDEX_FILE -u GIT_WORK_TREE dart "$@"; }
+
 # Flutter app: pubspec at repo root (this repo) or legacy frontend/ subfolder.
 if [ -f "$REPO_ROOT/pubspec.yaml" ]; then
     FLUTTER_ROOT="$REPO_ROOT"
