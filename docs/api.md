@@ -3204,6 +3204,34 @@ Returns the media file (binary) for user-owned media by ID. Requires `Authorizat
 
 **Published media:** Any authenticated user may download immutable published bytes by passing **`?v=<version>`** with a positive version. Without `v`, only the media owner may download the working copy. Import-deck card responses include the pinned `?v=` in media URLs automatically.
 
+### Download media in batch
+
+**Endpoint:** `POST /api/media/batch`
+
+Downloads up to 500 files in one response, for offline deck downloads. Each item gets the same access rule as
+**Download media**: the owner's working copy without `v`, or published version `v` for any authenticated user.
+
+**Request:**
+
+```json
+{
+  "items": [
+    { "id": "eloc-44obppwy-2-24285-564681508124", "v": 4 },
+    { "id": "my-own-media-id" }
+  ]
+}
+```
+
+**Response:** `200` with `Content-Type: multipart/mixed; boundary=...`, one part per item in request order. Every
+part has `X-Media-Id`, `X-Media-Version` (only when `v` was sent) and `X-Media-Status`:
+
+- `200`: the part body is the file, with `Content-Type` and `Content-Length`.
+- `403` / `404`: empty part (not the owner, or the media or its file is missing).
+
+A body that ends without the closing boundary was cut short (a file failed mid-copy); keep the complete parts and
+request the rest again. `400` when the body is not JSON, `items` is empty or holds more than 500 entries, an `id` is
+empty, or a `v` is not positive.
+
 ### Delete media
 
 **Endpoint:** `DELETE /api/media/{id}`

@@ -33,6 +33,7 @@ class Api {
 
   static const String media = '/api/media';
   static const String mediaById = '/api/media/{id}';
+  static const String mediaBatch = '/api/media/batch';
 
   // Tags
   static const String tags = '/api/tags';

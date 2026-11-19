@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:retentio/core/network/connectivity_service.dart';
@@ -65,6 +66,7 @@ class OfflinePackageDownloader {
     FetchFactIdsFn? fetchFactIds,
     FetchCardsFn? fetchCards,
     DownloadMediaFn? downloadMedia,
+    DownloadMediaBatchFn? downloadMediaBatch,
     FetchMediaVersionsFn? fetchMediaVersions,
     int Function()? nowSec,
     Future<bool> Function()? isOnline,
@@ -77,6 +79,7 @@ class OfflinePackageDownloader {
        _fetchFactIds = fetchFactIds ?? fetchOfflineFactIds,
        _fetchCards = fetchCards ?? fetchOfflineCards,
        _downloadMedia = downloadMedia ?? ApiService.downloadFile,
+       _downloadMediaBatch = downloadMediaBatch ?? downloadOfflineMediaBatch,
        _fetchMediaVersions = fetchMediaVersions ?? fetchOfflineMediaVersions,
        _nowSec = nowSec ?? _defaultNowSec,
        _isOnline = isOnline ?? hasNetworkConnection,
@@ -88,6 +91,8 @@ class OfflinePackageDownloader {
   static const int factsPageSize = 200;
   static const int versionLookupConcurrency = 4;
   static const int mediaDownloadConcurrency = 64;
+  static const int mediaBatchSize = 200;
+  static const int mediaBatchConcurrency = 4;
   static const int resumeConcurrency = 2;
 
   // Share of the progress each stage fills; media takes the rest.
@@ -102,6 +107,7 @@ class OfflinePackageDownloader {
   final FetchFactIdsFn _fetchFactIds;
   final FetchCardsFn _fetchCards;
   final DownloadMediaFn _downloadMedia;
+  final DownloadMediaBatchFn _downloadMediaBatch;
   final FetchMediaVersionsFn _fetchMediaVersions;
   final int Function() _nowSec;
   final Future<bool> Function() _isOnline;
@@ -757,7 +763,8 @@ class OfflinePackageDownloader {
     if (gone.isNotEmpty) await _store.deleteCards(deckId, gone);
   }
 
-  /// Returns false when any file failed to download.
+  /// Returns false when any file failed to download. Files come in batches
+  /// first; whatever the batches leave is fetched one file at a time.
   Future<bool> _downloadFactMedia(
     String deckId,
     List<OfflineFact> facts,
@@ -769,11 +776,31 @@ class OfflinePackageDownloader {
           f.mediaKey(e.image),
         ],
     }..remove('');
+    var done = 0;
+    void tick() {
+      const started = _deckShare + _factsShare;
+      const span = 1 - _cardsShare - started;
+      _report(deckId, started + span * ++done / mediaKeys.length);
+    }
+
+    final batched = await _downloadMediaBatches(deckId, mediaKeys, tick);
+    final rest = [
+      for (final key in mediaKeys)
+        if (!batched.settled.contains(key)) key,
+    ];
+    final filesComplete = await _downloadMediaFiles(deckId, rest, tick);
+    return batched.complete && filesComplete;
+  }
+
+  /// Fetches [keys] one file at a time; false when any failed.
+  Future<bool> _downloadMediaFiles(
+    String deckId,
+    List<String> keys,
+    void Function() tick,
+  ) async {
     var complete = true;
     var interrupted = false;
-    final keys = mediaKeys.toList();
     var next = 0;
-    var done = 0;
     Future<void> worker() async {
       // Leaving the foreground pauses the download: files in flight finish,
       // no new one starts, and it resumes when the app is back.
@@ -795,9 +822,7 @@ class OfflinePackageDownloader {
             logger.e('Offline media $key failed: $e', stackTrace: s);
           }
         }
-        const started = _deckShare + _factsShare;
-        const span = 1 - _cardsShare - started;
-        _report(deckId, started + span * ++done / keys.length);
+        tick();
       }
     }
 
@@ -810,21 +835,110 @@ class OfflinePackageDownloader {
     return complete;
   }
 
+  /// Fetches the uncached [keys] [mediaBatchSize] per request. Returns the
+  /// keys it settled: saved, or refused by the server, which clears
+  /// `complete`. After a failed batch (e.g. a server without the batch
+  /// endpoint) no new one starts and the rest is left to the per-file loop.
+  Future<({Set<String> settled, bool complete})> _downloadMediaBatches(
+    String deckId,
+    Set<String> keys,
+    void Function() tick,
+  ) async {
+    final pending = [
+      for (final key in keys)
+        if (await _needsFetch(key)) key,
+    ];
+    final settled = <String>{};
+    var complete = true;
+    var failed = false;
+    var next = 0;
+    Future<void> worker() async {
+      while (next < pending.length &&
+          !failed &&
+          !_leftForeground.contains(deckId)) {
+        final start = next;
+        next = min(next + mediaBatchSize, pending.length);
+        try {
+          await _downloadMediaBatch(pending.sublist(start, next), (
+            key,
+            bytes,
+          ) async {
+            if (bytes == null) {
+              complete = false;
+              logger.e('Offline media $key refused by the server');
+            } else {
+              await _saveMediaStream(deckId, key, bytes);
+            }
+            settled.add(key);
+            tick();
+          });
+        } on _DownloadHalted {
+          rethrow;
+        } catch (e) {
+          failed = true;
+          logger.w('Offline media batch failed, fetching file by file: $e');
+        }
+      }
+    }
+
+    await Future.wait([
+      for (var w = 0; w < mediaBatchConcurrency; w++) worker(),
+    ]);
+    return (settled: settled, complete: complete);
+  }
+
+  /// True when no file is recorded for [mediaKey]. A recorded one whose file
+  /// is gone, or a cache that cannot be read, is left to the per-file download.
+  Future<bool> _needsFetch(String mediaKey) async {
+    try {
+      return await _store.getMediaPath(mediaKey) == null;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  String _mediaBase(String deckId, String mediaKey) =>
+      '$_mediaRootDir/$deckId/${mediaKey.replaceFirst('?', '_')}';
+
+  Future<void> _saveMediaStream(
+    String deckId,
+    String mediaKey,
+    Stream<List<int>> bytes,
+  ) async {
+    final base = _mediaBase(deckId, mediaKey);
+    final tmpPath = '$base.part';
+    final sink = (await File(tmpPath).create(recursive: true)).openWrite();
+    try {
+      await sink.addStream(bytes);
+    } finally {
+      await sink.close();
+    }
+    await _dropIfHalted(deckId, tmpPath);
+    await _keepMedia(mediaKey, base, tmpPath);
+  }
+
   Future<void> _downloadOne(String deckId, String mediaKey) async {
     final cached = await _store.getMediaPath(mediaKey);
     if (cached != null && await File(cached).exists()) return;
-    final base = '$_mediaRootDir/$deckId/${mediaKey.replaceFirst('?', '_')}';
+    final base = _mediaBase(deckId, mediaKey);
     final tmpPath = '$base.part';
     final url = Api.mediaById.replaceFirst('{id}', mediaKey);
     final written = await _downloadMedia(url, tmpPath);
-    if (_isHalted(deckId)) {
-      final tmp = File(tmpPath);
-      if (await tmp.exists()) await tmp.delete();
-      throw _DownloadHalted();
-    }
+    await _dropIfHalted(deckId, tmpPath);
     if (written == null || written.isEmpty) {
       throw StateError('download returned no file');
     }
+    await _keepMedia(mediaKey, base, tmpPath);
+  }
+
+  Future<void> _dropIfHalted(String deckId, String tmpPath) async {
+    if (!_isHalted(deckId)) return;
+    final tmp = File(tmpPath);
+    if (await tmp.exists()) await tmp.delete();
+    throw _DownloadHalted();
+  }
+
+  Future<void> _keepMedia(String mediaKey, String base, String tmpPath) async {
     final path = '$base${await mediaFileExtension(tmpPath)}';
     await File(tmpPath).rename(path);
     await _store.putMediaPath(mediaKey, path);
