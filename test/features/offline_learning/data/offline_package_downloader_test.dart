@@ -247,7 +247,8 @@ void main() {
     downloadMedia: downloadMedia ?? writeMedia,
     // A server without the batch endpoint: every file goes one at a time.
     downloadMediaBatch:
-        downloadMediaBatch ?? (_, _) async => throw UnsupportedError('batch'),
+        downloadMediaBatch ??
+        (_, _) async => throw const MediaBatchUnsupported(),
     fetchMediaVersions:
         fetchMediaVersions ??
         (deckId, factId) async {
@@ -2836,11 +2837,9 @@ void main() {
       expect(store.decks['d1']!.remoteUpdatedAt, '');
     });
 
-    test('a broken batch starts no new one; the rest go per file', () async {
-      const size = OfflinePackageDownloader.mediaBatchSize;
-      const workers = OfflinePackageDownloader.mediaBatchConcurrency;
+    test('a broken batch retries its missing files in a new batch', () async {
       final batches = <List<String>>[];
-      final downloader = batched(size * workers + 1, (keys, onPart) async {
+      final downloader = batched(3, (keys, onPart) async {
         batches.add(keys);
         if (batches.length == 1) {
           await onPart(keys[0], Stream.value(mp3));
@@ -2853,13 +2852,57 @@ void main() {
 
       expect(await downloader.download('d1'), isTrue);
 
-      expect(batches, hasLength(workers));
-      expect(downloadedUrls, hasLength(size - 1 + 1));
-      expect(downloadedUrls, isNot(contains('/api/media/a0')));
-      expect(downloadedUrls, contains('/api/media/a1'));
-      expect(downloadedUrls, contains('/api/media/a${size * workers}'));
-      expect(store.media, hasLength(size * workers + 1));
+      expect(batches, [
+        ['a0', 'a1', 'a2'],
+        ['a1', 'a2'],
+      ]);
+      expect(downloadedUrls, isEmpty);
+      expect(store.media, hasLength(3));
       expect(store.decks['d1']!.remoteUpdatedAt, updatedAt.toIso8601String());
+    });
+
+    test('a batch broken after its last file is not retried', () async {
+      var calls = 0;
+      final downloader = batched(2, (keys, onPart) async {
+        calls++;
+        for (final key in keys) {
+          await onPart(key, Stream.value(mp3));
+        }
+        throw StateError('no closing boundary');
+      });
+
+      expect(await downloader.download('d1'), isTrue);
+
+      expect(calls, 1);
+      expect(downloadedUrls, isEmpty);
+      expect(store.media, hasLength(2));
+    });
+
+    test('after the retries run out the rest go per file', () async {
+      var calls = 0;
+      final downloader = batched(2, (keys, onPart) async {
+        calls++;
+        throw StateError('connection reset');
+      });
+
+      expect(await downloader.download('d1'), isTrue);
+
+      expect(calls, OfflinePackageDownloader.mediaBatchRetries + 1);
+      expect(downloadedUrls, ['/api/media/a0', '/api/media/a1']);
+      expect(store.decks['d1']!.remoteUpdatedAt, updatedAt.toIso8601String());
+    });
+
+    test('a server without the batch endpoint is not retried', () async {
+      var calls = 0;
+      final downloader = batched(2, (keys, onPart) async {
+        calls++;
+        throw const MediaBatchUnsupported();
+      });
+
+      expect(await downloader.download('d1'), isTrue);
+
+      expect(calls, 1);
+      expect(downloadedUrls, ['/api/media/a0', '/api/media/a1']);
     });
 
     test('removing the deck mid-batch drops the file being saved', () async {
@@ -3018,6 +3061,22 @@ void main() {
         });
       }
 
+      for (final status in [404, 405]) {
+        test('a $status answer means no batch endpoint', () async {
+          await expectLater(
+            fetch(_BatchAdapter('', status: status)),
+            throwsA(isA<MediaBatchUnsupported>()),
+          );
+        });
+      }
+
+      test('other failed answers are rethrown', () async {
+        await expectLater(
+          fetch(_BatchAdapter('', status: 500)),
+          throwsA(isA<DioException>()),
+        );
+      });
+
       test('a response that is not multipart throws', () async {
         await expectLater(
           fetch(_BatchAdapter('{}', contentType: 'application/json')),
@@ -3146,7 +3205,10 @@ class _BatchAdapter implements HttpClientAdapter {
     this.text, {
     this.contentType = 'multipart/mixed; boundary=b',
     this.chunk = 1 << 20,
+    this.status = 200,
   });
+
+  final int status;
 
   final String text;
   final String contentType;
@@ -3170,7 +3232,7 @@ class _BatchAdapter implements HttpClientAdapter {
         for (var i = 0; i < bytes.length; i += chunk)
           bytes.sublist(i, min(i + chunk, bytes.length)),
       ]),
-      200,
+      status,
       headers: {
         Headers.contentTypeHeader: [contentType],
       },

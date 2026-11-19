@@ -93,6 +93,7 @@ class OfflinePackageDownloader {
   static const int mediaDownloadConcurrency = 64;
   static const int mediaBatchSize = 200;
   static const int mediaBatchConcurrency = 4;
+  static const int mediaBatchRetries = 2;
   static const int resumeConcurrency = 2;
 
   // Share of the progress each stage fills; media takes the rest.
@@ -837,54 +838,66 @@ class OfflinePackageDownloader {
 
   /// Fetches the uncached [keys] [mediaBatchSize] per request. Returns the
   /// keys it settled: saved, or refused by the server, which clears
-  /// `complete`. After a failed batch (e.g. a server without the batch
-  /// endpoint) no new one starts and the rest is left to the per-file loop.
+  /// `complete`. A failed batch's missing keys go into a new batch, up to
+  /// [mediaBatchRetries] times per download; after that, or on a server
+  /// without the batch endpoint, the rest is left to the per-file loop.
   Future<({Set<String> settled, bool complete})> _downloadMediaBatches(
     String deckId,
     Set<String> keys,
     void Function() tick,
   ) async {
-    final pending = [
-      for (final key in keys)
-        if (await _needsFetch(key)) key,
-    ];
+    final batches = await _uncachedBatches(keys);
     final settled = <String>{};
     var complete = true;
     var failed = false;
+    var retries = 0;
     var next = 0;
+    Future<void> onPart(String key, Stream<List<int>>? bytes) async {
+      if (bytes == null) {
+        complete = false;
+        logger.e('Offline media $key refused by the server');
+      } else {
+        await _saveMediaStream(deckId, key, bytes);
+      }
+      settled.add(key);
+      tick();
+    }
+
+    bool more() =>
+        next < batches.length && !failed && !_leftForeground.contains(deckId);
     Future<void> worker() async {
-      while (next < pending.length &&
-          !failed &&
-          !_leftForeground.contains(deckId)) {
-        final start = next;
-        next = min(next + mediaBatchSize, pending.length);
+      while (more()) {
+        final batch = batches[next++];
         try {
-          await _downloadMediaBatch(pending.sublist(start, next), (
-            key,
-            bytes,
-          ) async {
-            if (bytes == null) {
-              complete = false;
-              logger.e('Offline media $key refused by the server');
-            } else {
-              await _saveMediaStream(deckId, key, bytes);
-            }
-            settled.add(key);
-            tick();
-          });
+          await _downloadMediaBatch(batch, onPart);
         } on _DownloadHalted {
           rethrow;
         } catch (e) {
-          failed = true;
-          logger.w('Offline media batch failed, fetching file by file: $e');
+          final missing = [...batch.where((k) => !settled.contains(k))];
+          failed = e is MediaBatchUnsupported || ++retries > mediaBatchRetries;
+          logger.w('Offline media batch failed (fallback=$failed): $e');
+          if (!failed && missing.isNotEmpty) batches.add(missing);
         }
       }
     }
 
+    // A worker that re-queues a batch is still running, so it picks it up.
     await Future.wait([
       for (var w = 0; w < mediaBatchConcurrency; w++) worker(),
     ]);
     return (settled: settled, complete: complete);
+  }
+
+  /// The [keys] with no recorded file, [mediaBatchSize] per batch.
+  Future<List<List<String>>> _uncachedBatches(Set<String> keys) async {
+    final pending = [
+      for (final key in keys)
+        if (await _needsFetch(key)) key,
+    ];
+    return [
+      for (var i = 0; i < pending.length; i += mediaBatchSize)
+        pending.sublist(i, min(i + mediaBatchSize, pending.length)),
+    ];
   }
 
   /// True when no file is recorded for [mediaKey]. A recorded one whose file

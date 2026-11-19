@@ -34,6 +34,11 @@ typedef DownloadMediaFn = Future<String?> Function(String url, String path);
 typedef MediaBatchPartFn =
     Future<void> Function(String mediaKey, Stream<List<int>>? bytes);
 
+/// Thrown when the server has no `POST /api/media/batch` (404 or 405).
+class MediaBatchUnsupported implements Exception {
+  const MediaBatchUnsupported();
+}
+
 /// Streams the files of [mediaKeys] (`id` or `id?v=N`) through [onPart];
 /// throws when the request fails or the response breaks off, after the parts
 /// handed over so far.
@@ -84,22 +89,29 @@ Future<void> downloadOfflineMediaBatch(
   List<String> mediaKeys,
   MediaBatchPartFn onPart,
 ) async {
-  final res = await networkDioClient.dio.post<ResponseBody>(
-    Api.mediaBatch,
-    data: {
-      'items': [
-        for (final key in mediaKeys)
-          switch (key.split('?v=')) {
-            [final id, final v] => {'id': id, 'v': int.parse(v)},
-            _ => {'id': key},
-          },
-      ],
-    },
-    options: Options(
-      responseType: ResponseType.stream,
-      extra: {DownloadHttp2Adapter.extraKey: true},
-    ),
-  );
+  final Response<ResponseBody> res;
+  try {
+    res = await networkDioClient.dio.post<ResponseBody>(
+      Api.mediaBatch,
+      data: {
+        'items': [
+          for (final key in mediaKeys)
+            switch (key.split('?v=')) {
+              [final id, final v] => {'id': id, 'v': int.parse(v)},
+              _ => {'id': key},
+            },
+        ],
+      },
+      options: Options(
+        responseType: ResponseType.stream,
+        extra: {DownloadHttp2Adapter.extraKey: true},
+      ),
+    );
+  } on DioException catch (e) {
+    final status = e.response?.statusCode;
+    if (status == 404 || status == 405) throw const MediaBatchUnsupported();
+    rethrow;
+  }
   final type = res.headers.value(Headers.contentTypeHeader) ?? '';
   final boundary = RegExp(
     r'^multipart/mixed;\s*boundary="?([^";]+)"?',
