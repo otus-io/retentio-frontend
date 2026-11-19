@@ -72,7 +72,6 @@ flutter build ipa --release --dart-define=API_ENV=release
 | [card-text-markup.md](card-text-markup.md) | 卡片 wiki 式 ruby 标记 |
 | [deck-font-ruby-typography.md](deck-font-ruby-typography.md) | 卡组字体面板与 ruby 排版 |
 | [plan_add_facts.md](plan_add_facts.md) | 添加知识点功能计划 |
-| [api_progress_tracker.md](api_progress_tracker.md) | API 对接进度追踪 |
 | [bug_tracker.md](bug_tracker.md) | 已知问题与修复 |
 | [card_tests.md](card_tests.md) | 卡片集成测试说明 |
 | [typography_global_audit_and_migration.md](typography_global_audit_and_migration.md) | 全局字体审计与迁移 |
