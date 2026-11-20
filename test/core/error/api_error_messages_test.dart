@@ -73,6 +73,24 @@ void main() {
         zh.authUsernameAlreadyExists,
       );
       expect(
+        ApiErrorMessages.resolve('Username must not contain @', en),
+        en.usernameContainsAt,
+      );
+      expect(
+        ApiErrorMessages.resolve(
+          'Username already exists; sign up again with another username',
+          zh,
+        ),
+        zh.verifyEmailUsernameTaken,
+      );
+      expect(
+        ApiErrorMessages.resolve(
+          'An account with this email already exists',
+          en,
+        ),
+        en.verifyEmailAccountExists,
+      );
+      expect(
         ApiErrorMessages.resolve(
           'Username must be between 2 and 32 characters',
           en,

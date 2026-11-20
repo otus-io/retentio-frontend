@@ -26,8 +26,9 @@ class _FakeEmailApi extends Interceptor {
             data: {
               'data': {
                 'username': 'alice',
-                'email': 'new@example.com',
-                'email_verified': false,
+                'email': 'old@example.com',
+                'email_verified': true,
+                'pending_email': 'new@example.com',
               },
             },
           ),
@@ -99,12 +100,12 @@ void main() {
     return c;
   }
 
-  test('success shows the new, unverified email', () async {
+  test('success keeps the current email until the link is opened', () async {
     final c = await loadedCubit();
 
     expect(await c.changeEmail('new@example.com', 'right'), isNull);
-    expect(c.state.user.email, 'new@example.com');
-    expect(c.state.user.emailVerified, isFalse);
+    expect(c.state.user.email, 'old@example.com');
+    expect(c.state.user.emailVerified, isTrue);
   });
 
   test(
@@ -137,7 +138,7 @@ void main() {
     api.profileGate!.complete();
     await staleLoad;
 
-    expect(c.state.user.email, 'new@example.com');
+    expect(c.state.user.email, 'old@example.com');
     expect(c.state.status, ProfileStatus.loaded);
   });
 }

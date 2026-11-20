@@ -48,7 +48,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(TextField), findsNWidgets(2));
-      expect(find.text('Username'), findsOneWidget);
+      expect(find.text('Username or email'), findsOneWidget);
       expect(find.text('Password'), findsOneWidget);
     });
 

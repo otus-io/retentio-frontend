@@ -65,6 +65,20 @@ class AppLocalizationsJa extends AppLocalizations {
   String get usernameContainsSpaces => 'ユーザー名に空白文字は使えません';
 
   @override
+  String get usernameContainsAt => 'ユーザー名に @ は使えません';
+
+  @override
+  String get usernameOrEmail => 'ユーザー名またはメールアドレス';
+
+  @override
+  String get verifyEmailUsernameTaken =>
+      'リンクを開く前に、そのユーザー名は他の人に使われました。別のユーザー名で登録し直してください。';
+
+  @override
+  String get verifyEmailAccountExists =>
+      'このメールアドレスのアカウントは既にあります。ログインするか、ログイン画面の「パスワードをお忘れですか？」をご利用ください。';
+
+  @override
   String get usernameLengthInvalid => 'ユーザー名は2〜32文字にしてください';
 
   @override
@@ -1962,7 +1976,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get verifyEmailInProgress => 'メールアドレスを確認しています…';
 
   @override
-  String get registerSuccessCheckEmail => '登録が完了しました。確認メールを開き、アドレスを確認してください。';
+  String get registerSuccessCheckEmail =>
+      'メールを確認して登録を完了してください。リンクを開くとアカウントが作成されます。';
 
   @override
   String get emailNotVerified => 'メールアドレスはまだ確認されていません。確認するとデッキの公開や提案の送信ができます。';
@@ -2076,7 +2091,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String changeEmailMessage(String email) {
-    return '現在のメールアドレス：$email。新しいアドレスは再度確認が必要です。';
+    return '現在のメールアドレス：$email。新しいアドレスに確認リンクを送ります。リンクを開くまでメールアドレスは変わりません。';
   }
 
   @override
@@ -2084,12 +2099,8 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String changeEmailSuccess(String email) {
-    return 'メールアドレスを変更しました。$email に届く確認リンクを開いてください。';
+    return '$email に届く確認リンクを開いてください。開くとメールアドレスが変更されます。';
   }
-
-  @override
-  String get registerEmailInUseHint =>
-      'このメールアドレスは登録済みです。ご自身のものであれば、ログイン画面の「パスワードをお忘れですか？」をご利用ください。';
 
   @override
   String get apiTooManyAttempts => '試行回数が多すぎます。しばらくしてからもう一度お試しください。';

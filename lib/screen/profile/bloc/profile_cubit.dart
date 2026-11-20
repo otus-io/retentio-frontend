@@ -118,8 +118,9 @@ class ProfileCubit extends Cubit<ProfileState> {
     await AuthService.logoutByAuthBloc();
   }
 
-  /// Changes the email. Returns null on success (the new, unverified address
-  /// is shown right away), otherwise the raw server message.
+  /// Starts an email change. Returns null on success, otherwise the raw server
+  /// message. The server mails a confirmation link to the new address and
+  /// returns the profile unchanged until it is opened.
   Future<String?> changeEmail(String email, String password) async {
     final res = await AuthService.changeEmail(email: email, password: password);
     if (res?.isSuccess != true) {

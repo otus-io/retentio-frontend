@@ -56,6 +56,13 @@ void main() {
     );
   });
 
+  test('rejects @ in a username', () {
+    expect(
+      AccountLimits.limitMessage(en, username: 'a@b.com', secret: 'password'),
+      en.usernameContainsAt,
+    );
+  });
+
   test('rejects a username outside 2 to 32 characters after trim', () {
     expect(
       AccountLimits.limitMessage(en, username: 'a', secret: 'password'),
