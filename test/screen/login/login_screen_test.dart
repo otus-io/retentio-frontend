@@ -87,6 +87,19 @@ void main() {
       expect(passwordField.obscureText, isTrue);
     });
 
+    testWidgets('login field offers username and email autofill', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
+      await tester.pumpAndSettle();
+
+      final loginField = tester.widget<TextField>(find.byType(TextField).first);
+      expect(loginField.autofillHints, [
+        AutofillHints.username,
+        AutofillHints.email,
+      ]);
+    });
+
     testWidgets('can enter username', (tester) async {
       await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
       await tester.pumpAndSettle();
