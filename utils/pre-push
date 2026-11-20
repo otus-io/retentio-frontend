@@ -1,88 +1,92 @@
 #!/bin/bash
 
 # =============================================================================
-# pre-push hook — validate local git workflow conventions before pushing
+# Pre-push hook for Retentio
+# 1. Blocks direct pushes to main.
+# 2. Runs Claude Code /code-review (each pushed commit vs origin/main) and /security-review, and
+#    blocks the push if either reports an important finding (or its result cannot be classified).
+#
+# Env:
+#   SKIP_AI_REVIEW=1        skip both reviews (override after checking the findings)
+#   AI_REVIEW_LEVEL=<level> review effort (default: low)
 # =============================================================================
 
-set -e
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
 
-REMOTE_NAME="$1"
-REMOTE_URL="$2"
+ZERO_SHA=0000000000000000000000000000000000000000
+REVIEW_SHAS=()
 
-# shellcheck disable=SC2034
-REMOTE_NAME="$REMOTE_NAME"
-# shellcheck disable=SC2034
-REMOTE_URL="$REMOTE_URL"
+while read -r _local_ref local_sha remote_ref _remote_sha; do
+    if [ "$remote_ref" = "refs/heads/main" ]; then
+        echo -e "${RED}✗ Direct push to main is blocked. Open a pull request instead.${NC}"
+        exit 1
+    fi
+    # Skip branch deletions and commits already reviewed in a Claude Code session (utils/claude-push-gate.sh).
+    [ "$local_sha" = "$ZERO_SHA" ] && continue
+    [ -f "$(git rev-parse --git-path ai-reviewed)/$local_sha" ] && continue
+    REVIEW_SHAS+=("$local_sha")
+done
 
-REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || REPO_ROOT=""
-if [ -z "$REPO_ROOT" ]; then
-  echo "Error: pre-push must run inside a git repository."
-  exit 1
-fi
-cd "$REPO_ROOT"
+[ -n "$SKIP_AI_REVIEW" ] && exit 0
+[ ${#REVIEW_SHAS[@]} -eq 0 ] && exit 0
 
-CURRENT_BRANCH="$(git branch --show-current)"
-if [ -z "$CURRENT_BRANCH" ]; then
-  echo "✗ Could not determine current branch."
-  exit 1
-fi
-
-if [ "$CURRENT_BRANCH" = "main" ]; then
-  echo "✗ Pushing directly to 'main' is not allowed. Please use a feature branch + PR."
-  exit 1
+if ! command -v claude &> /dev/null || ! command -v python3 &> /dev/null; then
+    echo -e "${YELLOW}⚠ claude CLI or python3 not found; skipping AI review${NC}"
+    exit 0
 fi
 
-# Allow slashes for prefixes (e.g., codex/feature-name) while enforcing lowercase + hyphen chunks.
-if [[ ! "$CURRENT_BRANCH" =~ ^[a-z0-9]+([/-][a-z0-9]+)*$ ]]; then
-  echo "✗ Invalid branch name: '$CURRENT_BRANCH'"
-  echo "  Use lowercase and hyphens (slashes allowed as prefixes), e.g.:"
-  echo "  codex/frontend-auth-flow, deck-card-ui"
-  exit 1
+git fetch --quiet origin main 2> /dev/null
+
+LEVEL="${AI_REVIEW_LEVEL:-low}"
+FINDINGS=0
+
+# Prints the last assistant text of a headless run, then classifies it; sets FINDINGS=1 unless CLEAN.
+# /code-review runs as a subagent, so its findings arrive in the event stream, not in the final result.
+# stdin is redirected because git feeds the ref list on it.
+run_review() {
+    echo ""
+    echo -e "${YELLOW}━━━ Claude $1 ━━━${NC}"
+    local out verdict
+    out="$(claude -p "$1" --output-format stream-json --verbose < /dev/null 2> /dev/null | python3 -c '
+import json, sys
+texts = []
+for line in sys.stdin:
+    try:
+        event = json.loads(line)
+    except ValueError:
+        continue
+    if event.get("type") != "assistant":
+        continue
+    for block in event.get("message", {}).get("content", []):
+        if block.get("type") == "text" and block.get("text", "").strip():
+            texts.append(block["text"].strip())
+print(texts[-1] if texts else "")
+')"
+    echo "${out:-No review output.}"
+    [ -z "$out" ] && FINDINGS=1 && return
+    # Review wording varies, so a cheap model decides whether anything important was reported.
+    verdict="$(printf '%s' "$out" | claude -p --model haiku \
+        "This is a code review report. Reply with exactly FINDINGS if it reports at least one important, \
+high-severity or vulnerability finding. Reply with exactly CLEAN if it reports none, or only nits, minor, \
+pre-existing or unverified notes." 2> /dev/null)"
+    [[ "$verdict" == *CLEAN* && "$verdict" != *FINDINGS* ]] || FINDINGS=1
+}
+
+HEAD_SHA="$(git rev-parse HEAD)"
+for sha in "${REVIEW_SHAS[@]}"; do
+    git diff --quiet origin/main..."$sha" && continue
+    run_review "/code-review $LEVEL origin/main...$sha"
+    # /security-review takes no target and reviews the checked-out branch, so run it only for HEAD.
+    [ "$sha" = "$HEAD_SHA" ] && run_review "/security-review"
+done
+
+echo ""
+if [ "$FINDINGS" = 1 ]; then
+    echo -e "${RED}✗ Push blocked: the review reported important findings.${NC}"
+    echo "  Fix them, e.g.:  claude \"/code-review --fix origin/main...HEAD\"  then commit and push again."
+    echo "  False positive? Override with:  SKIP_AI_REVIEW=1 git push"
+    exit 1
 fi
-
-BASE_REF="origin/main"
-if ! git show-ref --verify --quiet "refs/remotes/$BASE_REF"; then
-  echo "⚠ $BASE_REF not found locally. Fetching from origin..."
-  git fetch origin main --quiet
-fi
-
-if ! git show-ref --verify --quiet "refs/remotes/$BASE_REF"; then
-  echo "✗ Cannot find $BASE_REF after fetch. Aborting push checks."
-  exit 1
-fi
-
-COMMITS_AHEAD="$(git rev-list --count "${BASE_REF}..HEAD")"
-if [ "$COMMITS_AHEAD" -gt 3 ]; then
-  echo "✗ This branch has $COMMITS_AHEAD commits ahead of $BASE_REF (limit: 3)."
-  echo "  Please squash/split before pushing."
-  exit 1
-fi
-
-# Count changed lines excluding tests and common generated/lock files.
-DIFF_STATS="$(
-  git diff --numstat "${BASE_REF}...HEAD" \
-    ':(exclude)test/**' \
-    ':(exclude)**/*.g.dart' \
-    ':(exclude)**/*.freezed.dart' \
-    ':(exclude)**/*.gen.dart' \
-    ':(exclude)pubspec.lock' \
-    ':(exclude)**/*.lock' || true
-)"
-
-TOTAL_LINES=0
-if [ -n "$DIFF_STATS" ]; then
-  while IFS=$'\t' read -r added deleted _path; do
-    [ "$added" = "-" ] && added=0
-    [ "$deleted" = "-" ] && deleted=0
-    TOTAL_LINES=$((TOTAL_LINES + added + deleted))
-  done <<< "$DIFF_STATS"
-fi
-
-if [ "$TOTAL_LINES" -gt 200 ]; then
-  echo "✗ Effective PR size is $TOTAL_LINES lines (limit: 200, excluding tests/generated files)."
-  echo "  Please split this branch into smaller PRs."
-  exit 1
-fi
-
-echo "✓ Pre-push convention checks passed (branch, commits, PR size)."
 exit 0

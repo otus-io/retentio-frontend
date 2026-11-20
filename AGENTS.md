@@ -75,6 +75,10 @@ Retentio Frontend is a Flutter app (Riverpod, go_router, Dio) for vocabulary lea
 ### Hooks
 
 - **pre-commit**: Runs formatting, linting, and tests for changed files
+- **pre-push**: Blocks pushes to `main`; runs Claude `/code-review` and `/security-review` and blocks on
+  important findings (`SKIP_AI_REVIEW=1` to override)
+- **Claude Code**: `.claude/settings.json` gates agent `git push` until HEAD is reviewed and marked with
+  `utils/claude-push-gate.sh --mark`
 - Install hooks: `./utils/setup-hooks.sh`
 
 ## Validate and keep changes minimal
