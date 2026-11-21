@@ -1018,6 +1018,24 @@ abstract class AppLocalizations {
   /// **'Deck tags saved. Couldn\'t send them to the author yet; retry from Unsent contributions.'**
   String get deckTagsSavedUnsent;
 
+  /// No description provided for @deckDescriptionSentToAuthor.
+  ///
+  /// In en, this message translates to:
+  /// **'Description suggestion sent to the author'**
+  String get deckDescriptionSentToAuthor;
+
+  /// No description provided for @deckDescriptionSavedUnsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send your description suggestion to the author yet; retry from Unsent contributions.'**
+  String get deckDescriptionSavedUnsent;
+
+  /// No description provided for @deckDescriptionProposeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest a better description; it\'s sent to the author for review'**
+  String get deckDescriptionProposeHint;
+
   /// Default column label when deck has fewer names than rows
   ///
   /// In en, this message translates to:
@@ -3268,6 +3286,12 @@ abstract class AppLocalizations {
   /// **'Fields'**
   String get contributionsFields;
 
+  /// No description provided for @contributionsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get contributionsDescription;
+
   /// No description provided for @contributionsTags.
   ///
   /// In en, this message translates to:
@@ -3663,6 +3687,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Field rename'**
   String get pendingKindFieldRename;
+
+  /// No description provided for @pendingKindDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Deck description'**
+  String get pendingKindDescription;
 
   /// No description provided for @pendingKindReport.
   ///

@@ -45,6 +45,24 @@ void main() {
       expect(sent.first.kind, PendingContributionKind.add);
     });
 
+    test('description rows are one per deck and keep their text', () async {
+      final store = PendingContributionsStore.of;
+      await store.upsert(
+        deckId: 'imp1',
+        kind: PendingContributionKind.description,
+        proposedDescription: 'First',
+      );
+      await store.upsert(
+        deckId: 'imp1',
+        kind: PendingContributionKind.description,
+        proposedDescription: 'Second',
+      );
+      final pending = await store.listPending('imp1');
+      expect(pending.single.id, 'description');
+      expect(pending.single.kind, PendingContributionKind.description);
+      expect(pending.single.proposedDescription, 'Second');
+    });
+
     test('previewFromEntryTexts truncates long text', () {
       final short = PendingContributionsStore.previewFromEntryTexts(['hi']);
       expect(short, 'hi');

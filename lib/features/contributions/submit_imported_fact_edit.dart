@@ -239,3 +239,37 @@ Future<bool> _sendDeckTags({
     return false;
   }
 }
+
+/// Stages then sends a `description_edit` proposal for an imported deck.
+/// Returns false when sending failed; the row stays in the outbox for retry.
+Future<bool> submitImportedDescriptionContribution({
+  required String importDeckId,
+  required String proposedDescription,
+  PendingContributionsStore? store,
+  DeckCatalogService? catalog,
+}) async {
+  final s = store ?? PendingContributionsStore.of;
+  final c = catalog ?? DeckCatalogService.of;
+  await s.upsert(
+    deckId: importDeckId,
+    kind: PendingContributionKind.description,
+    preview: PendingContributionsStore.previewFromEntryTexts([
+      proposedDescription,
+    ]),
+    proposedDescription: proposedDescription,
+  );
+  try {
+    final contributionId = await c.submitDescriptionContribution(
+      importDeckId: importDeckId,
+      proposedDescription: proposedDescription,
+    );
+    await s.markAsSent(
+      importDeckId,
+      s.itemId(PendingContributionKind.description),
+      contributionId: contributionId,
+    );
+    return true;
+  } catch (_) {
+    return false;
+  }
+}

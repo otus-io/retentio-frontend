@@ -76,6 +76,7 @@ class _PendingContributionsOutboxSheetState
       PendingContributionKind.factTags => loc.pendingKindFactTags,
       PendingContributionKind.template => loc.pendingKindTemplate,
       PendingContributionKind.fieldRename => loc.pendingKindFieldRename,
+      PendingContributionKind.description => loc.pendingKindDescription,
       PendingContributionKind.report => loc.pendingKindReport,
     };
   }
@@ -103,7 +104,8 @@ class _PendingContributionsOutboxSheetState
       PendingContributionKind.edit ||
       PendingContributionKind.add ||
       PendingContributionKind.factTags ||
-      PendingContributionKind.deckTags => true,
+      PendingContributionKind.deckTags ||
+      PendingContributionKind.description => true,
       PendingContributionKind.template ||
       PendingContributionKind.fieldRename ||
       PendingContributionKind.report => false,
@@ -205,6 +207,16 @@ class _PendingContributionsOutboxSheetState
           importDeckId: deckId,
           addTags: item.addTags,
           removeTags: item.removeTags,
+          message: message,
+        );
+      case PendingContributionKind.description:
+        final description = item.proposedDescription;
+        if (description == null || description.isEmpty) {
+          throw Exception('missing description');
+        }
+        return DeckCatalogService.of.submitDescriptionContribution(
+          importDeckId: deckId,
+          proposedDescription: description,
           message: message,
         );
       case PendingContributionKind.report:

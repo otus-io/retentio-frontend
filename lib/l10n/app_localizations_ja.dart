@@ -487,6 +487,15 @@ class AppLocalizationsJa extends AppLocalizations {
       'デッキのタグを保存しましたが、作成者に送れませんでした。未送信の貢献から再送できます。';
 
   @override
+  String get deckDescriptionSentToAuthor => '説明の提案を作成者に送りました';
+
+  @override
+  String get deckDescriptionSavedUnsent => '説明の提案を作成者に送れませんでした。未送信の貢献から再送できます。';
+
+  @override
+  String get deckDescriptionProposeHint => 'より良い説明を提案できます。作成者に送られ、確認されます';
+
+  @override
   String addFactFieldFallback(int number) {
     return 'フィールド $number';
   }
@@ -1678,6 +1687,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get contributionsFields => '列名';
 
   @override
+  String get contributionsDescription => '説明';
+
+  @override
   String get contributionsTags => 'タグ';
 
   @override
@@ -1938,6 +1950,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get pendingKindFieldRename => '列名の変更';
+
+  @override
+  String get pendingKindDescription => 'デッキの説明';
 
   @override
   String get pendingKindReport => '報告';

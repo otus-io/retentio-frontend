@@ -28,6 +28,27 @@ class _UnverifiedApi extends Interceptor {
   }
 }
 
+/// Accepts every `POST …/contributions/description` and records its body.
+class _DescriptionApi extends Interceptor {
+  final List<dynamic> bodies = [];
+
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    bodies.add(options.data);
+    handler.resolve(
+      Response(
+        requestOptions: options,
+        statusCode: 201,
+        data: {
+          'code': 0,
+          'msg': 'contribution submitted',
+          'data': {'contribution_id': 'cont-desc-1'},
+        },
+      ),
+    );
+  }
+}
+
 void main() {
   setUp(() async {
     await setupTestEnvironment();
@@ -72,5 +93,78 @@ void main() {
       find.text('${loc.pendingKindDeckTags}: ${loc.emailVerificationRequired}'),
       findsOneWidget,
     );
+  });
+
+  group('description proposals', () {
+    late _DescriptionApi api;
+
+    setUp(() {
+      networkDioClient.dio.interceptors.clear();
+      api = _DescriptionApi();
+      networkDioClient.dio.interceptors.add(api);
+    });
+
+    Future<AppLocalizations> pumpOutbox(
+      WidgetTester tester, {
+      String? description,
+    }) async {
+      await tester.runAsync(
+        () => PendingContributionsStore.of.upsert(
+          deckId: 'imp-1',
+          kind: PendingContributionKind.description,
+          preview: 'Everyday verbs',
+          proposedDescription: description,
+        ),
+      );
+      await tester.pumpWidget(
+        buildTestableWidget(
+          const Scaffold(
+            body: SingleChildScrollView(
+              child: PendingContributionsOutboxSheet(importDeckId: 'imp-1'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return AppLocalizations.of(
+        tester.element(find.byType(PendingContributionsOutboxSheet)),
+      )!;
+    }
+
+    testWidgets('an unsent description can be sent with a message', (
+      tester,
+    ) async {
+      final loc = await pumpOutbox(tester, description: 'Everyday verbs');
+
+      expect(find.text(loc.pendingKindDescription), findsOneWidget);
+      await tester.tap(find.text('Everyday verbs'));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField).last, 'clearer');
+      await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+      await tester.pumpAndSettle();
+
+      expect(api.bodies.single, {
+        'proposed_description': 'Everyday verbs',
+        'message': 'clearer',
+      });
+      expect(
+        await tester.runAsync(
+          () => PendingContributionsStore.of.listPending('imp-1'),
+        ),
+        isEmpty,
+      );
+    });
+
+    testWidgets('a row without its text is not sent', (tester) async {
+      final loc = await pumpOutbox(tester);
+
+      await tester.tap(find.text('Everyday verbs'));
+      await tester.pump();
+      await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+      await tester.pumpAndSettle();
+
+      expect(api.bodies, isEmpty);
+      expect(find.textContaining(loc.pendingKindDescription), findsNWidgets(2));
+    });
   });
 }

@@ -505,6 +505,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Deck tags saved. Couldn\'t send them to the author yet; retry from Unsent contributions.';
 
   @override
+  String get deckDescriptionSentToAuthor =>
+      'Description suggestion sent to the author';
+
+  @override
+  String get deckDescriptionSavedUnsent =>
+      'Couldn\'t send your description suggestion to the author yet; retry from Unsent contributions.';
+
+  @override
+  String get deckDescriptionProposeHint =>
+      'Suggest a better description; it\'s sent to the author for review';
+
+  @override
   String addFactFieldFallback(int number) {
     return 'Field $number';
   }
@@ -1779,6 +1791,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contributionsFields => 'Fields';
 
   @override
+  String get contributionsDescription => 'Description';
+
+  @override
   String get contributionsTags => 'Tags';
 
   @override
@@ -2070,6 +2085,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pendingKindFieldRename => 'Field rename';
+
+  @override
+  String get pendingKindDescription => 'Deck description';
 
   @override
   String get pendingKindReport => 'Report';

@@ -237,6 +237,26 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
         : AppToast.warning(context, loc.deckTagsSavedUnsent);
   }
 
+  /// Imports can't PATCH the description; a change goes to the author instead.
+  Future<void> _proposeDescription(String deckId) async {
+    final original = widget.deck?.description.trim() ?? '';
+    final proposed = context
+        .read<DeckCreateCubit>()
+        .descriptionController
+        .text
+        .trim();
+    if (proposed.isEmpty || proposed == original) return;
+    final sent = await submitImportedDescriptionContribution(
+      importDeckId: deckId,
+      proposedDescription: proposed,
+    );
+    if (!mounted) return;
+    final loc = AppLocalizations.of(context)!;
+    sent
+        ? AppToast.success(context, loc.deckDescriptionSentToAuthor)
+        : AppToast.warning(context, loc.deckDescriptionSavedUnsent);
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -494,8 +514,9 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
         AppInput(
           controller: createCubit.descriptionController,
           label: loc.createInputDeckDescription,
-          hint: loc.createInputDeckDescriptionHint,
-          enabled: !isImported,
+          hint: isImported
+              ? loc.deckDescriptionProposeHint
+              : loc.createInputDeckDescriptionHint,
           maxLines: 4,
           minLines: 2,
           maxLength: 500,
@@ -544,6 +565,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
             if (deckId.isNotEmpty) {
               try {
                 await _syncTags(deckId);
+                if (isImported) await _proposeDescription(deckId);
               } catch (e) {
                 if (!mounted) {
                   return;
@@ -562,7 +584,13 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
               navigator.pop();
               return;
             }
-            navigator.pop((updatedName, result.updatedDescription!));
+            // An import keeps the author's description until they accept.
+            navigator.pop((
+              updatedName,
+              isImported
+                  ? widget.deck!.description
+                  : result.updatedDescription!,
+            ));
           },
         ),
         if (_submitError != null)
