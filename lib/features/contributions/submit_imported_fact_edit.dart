@@ -148,6 +148,7 @@ Future<bool> submitImportedDeckTagsContribution({
   required String importDeckId,
   required List<String> addTags,
   required List<String> removeTags,
+  String? message,
   PendingContributionsStore? store,
   DeckCatalogService? catalog,
 }) {
@@ -157,6 +158,7 @@ Future<bool> submitImportedDeckTagsContribution({
       importDeckId: importDeckId,
       addTags: addTags,
       removeTags: removeTags,
+      message: message,
       store: store ?? PendingContributionsStore.of,
       catalog: catalog ?? DeckCatalogService.of,
     ),
@@ -199,6 +201,7 @@ Future<bool> _sendDeckTags({
   required String importDeckId,
   required List<String> addTags,
   required List<String> removeTags,
+  required String? message,
   required PendingContributionsStore store,
   required DeckCatalogService catalog,
 }) async {
@@ -217,17 +220,20 @@ Future<bool> _sendDeckTags({
     await store.remove(importDeckId, pendingId);
     return true;
   }
+  final note = message ?? unsent?.message;
   await store.upsert(
     deckId: importDeckId,
     kind: PendingContributionKind.deckTags,
     addTags: delta.add,
     removeTags: delta.remove,
+    message: note,
   );
   try {
     final contributionId = await catalog.submitDeckTagsContribution(
       importDeckId: importDeckId,
       addTags: delta.add,
       removeTags: delta.remove,
+      message: note,
     );
     await store.markAsSent(
       importDeckId,
@@ -238,4 +244,101 @@ Future<bool> _sendDeckTags({
   } catch (_) {
     return false;
   }
+}
+
+/// Stages then sends a `description_edit` proposal for an imported deck.
+/// Returns false when sending failed; the row stays in the outbox for retry.
+Future<bool> submitImportedDescriptionContribution({
+  required String importDeckId,
+  required String proposedDescription,
+  String? message,
+  PendingContributionsStore? store,
+  DeckCatalogService? catalog,
+}) async {
+  final s = store ?? PendingContributionsStore.of;
+  final c = catalog ?? DeckCatalogService.of;
+  final note =
+      message ??
+      await _unsentMessage(
+        s,
+        importDeckId,
+        PendingContributionKind.description,
+      );
+  await s.upsert(
+    deckId: importDeckId,
+    kind: PendingContributionKind.description,
+    preview: PendingContributionsStore.previewFromEntryTexts([
+      proposedDescription,
+    ]),
+    proposedDescription: proposedDescription,
+    message: note,
+  );
+  try {
+    final contributionId = await c.submitDescriptionContribution(
+      importDeckId: importDeckId,
+      proposedDescription: proposedDescription,
+      message: note,
+    );
+    await s.markAsSent(
+      importDeckId,
+      s.itemId(PendingContributionKind.description),
+      contributionId: contributionId,
+    );
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+/// Stages then sends a `field_rename` proposal for an imported deck.
+/// Returns false when sending failed; the row stays in the outbox for retry.
+Future<bool> submitImportedFieldRenameContribution({
+  required String importDeckId,
+  required List<String> proposedFields,
+  String? message,
+  PendingContributionsStore? store,
+  DeckCatalogService? catalog,
+}) async {
+  final s = store ?? PendingContributionsStore.of;
+  final c = catalog ?? DeckCatalogService.of;
+  final note =
+      message ??
+      await _unsentMessage(
+        s,
+        importDeckId,
+        PendingContributionKind.fieldRename,
+      );
+  await s.upsert(
+    deckId: importDeckId,
+    kind: PendingContributionKind.fieldRename,
+    preview: proposedFields.join(' · '),
+    proposedFields: proposedFields,
+    message: note,
+  );
+  try {
+    final contributionId = await c.submitFieldRenameContribution(
+      importDeckId: importDeckId,
+      proposedFields: proposedFields,
+      message: note,
+    );
+    await s.markAsSent(
+      importDeckId,
+      s.itemId(PendingContributionKind.fieldRename),
+      contributionId: contributionId,
+    );
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+/// Note on the deck's unsent row of [kind], kept when a re-suggestion has none.
+Future<String?> _unsentMessage(
+  PendingContributionsStore store,
+  String importDeckId,
+  PendingContributionKind kind,
+) async {
+  final id = store.itemId(kind);
+  final rows = await store.listPending(importDeckId);
+  return rows.where((r) => r.id == id).firstOrNull?.message;
 }

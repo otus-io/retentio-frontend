@@ -10,6 +10,7 @@ enum PendingContributionKind {
   factTags,
   template,
   fieldRename,
+  description,
   report,
 }
 
@@ -21,6 +22,7 @@ extension PendingContributionKindX on PendingContributionKind {
     PendingContributionKind.factTags => 'fact_tags',
     PendingContributionKind.template => 'template',
     PendingContributionKind.fieldRename => 'field_rename',
+    PendingContributionKind.description => 'description',
     PendingContributionKind.report => 'report',
   };
 
@@ -32,6 +34,7 @@ extension PendingContributionKindX on PendingContributionKind {
       'fact_tags' => PendingContributionKind.factTags,
       'template' => PendingContributionKind.template,
       'field_rename' => PendingContributionKind.fieldRename,
+      'description' => PendingContributionKind.description,
       'report' => PendingContributionKind.report,
       _ => null,
     };
@@ -48,6 +51,7 @@ class PendingContributionItem {
     this.addTags,
     this.removeTags,
     this.proposedFields,
+    this.proposedDescription,
     this.message,
   });
 
@@ -59,6 +63,7 @@ class PendingContributionItem {
   final List<String>? addTags;
   final List<String>? removeTags;
   final List<String>? proposedFields;
+  final String? proposedDescription;
   final String? message;
 
   Map<String, dynamic> toJson() => {
@@ -70,6 +75,7 @@ class PendingContributionItem {
     if (addTags != null) 'addTags': addTags,
     if (removeTags != null) 'removeTags': removeTags,
     if (proposedFields != null) 'proposedFields': proposedFields,
+    if (proposedDescription != null) 'proposedDescription': proposedDescription,
     if (message != null) 'message': message,
   };
 
@@ -88,6 +94,7 @@ class PendingContributionItem {
       addTags: _stringList(json['addTags']),
       removeTags: _stringList(json['removeTags']),
       proposedFields: _stringList(json['proposedFields']),
+      proposedDescription: json['proposedDescription']?.toString(),
       message: json['message']?.toString(),
     );
   }
@@ -157,7 +164,8 @@ class PendingContributionsStore {
 
   String itemId(PendingContributionKind kind, {String? factId}) {
     if (kind == PendingContributionKind.deckTags ||
-        kind == PendingContributionKind.fieldRename) {
+        kind == PendingContributionKind.fieldRename ||
+        kind == PendingContributionKind.description) {
       return kind.wireName;
     }
     if (factId != null && factId.isNotEmpty) {
@@ -190,6 +198,7 @@ class PendingContributionsStore {
     List<String>? addTags,
     List<String>? removeTags,
     List<String>? proposedFields,
+    String? proposedDescription,
     String? message,
     String? id,
   }) async {
@@ -202,6 +211,7 @@ class PendingContributionsStore {
       addTags: addTags,
       removeTags: removeTags,
       proposedFields: proposedFields,
+      proposedDescription: proposedDescription,
       message: message,
       savedAt: DateTime.now().toUtc(),
     );
@@ -209,6 +219,35 @@ class PendingContributionsStore {
     final filtered = prev.where((r) => r.id != pendingId).toList();
     await _writePending(deckId, [next, ...filtered]);
     return listPending(deckId);
+  }
+
+  /// Replaces only the note of the stored row [pendingId], keeping its
+  /// current fields and saved time. Returns the updated row, or null (and
+  /// writes nothing) when the row is gone.
+  Future<PendingContributionItem?> updateMessage(
+    String deckId,
+    String pendingId,
+    String message,
+  ) async {
+    final rows = await _readPending(deckId);
+    final r = rows.where((row) => row.id == pendingId).firstOrNull;
+    if (r == null) return null;
+    final updated = PendingContributionItem(
+      id: r.id,
+      kind: r.kind,
+      savedAt: r.savedAt,
+      factId: r.factId,
+      preview: r.preview,
+      addTags: r.addTags,
+      removeTags: r.removeTags,
+      proposedFields: r.proposedFields,
+      proposedDescription: r.proposedDescription,
+      message: message,
+    );
+    await _writePending(deckId, [
+      for (final row in rows) row.id == pendingId ? updated : row,
+    ]);
+    return updated;
   }
 
   Future<List<PendingContributionItem>> remove(

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -62,6 +63,17 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
   List<Tag> _selectedTags = [];
   String? _submitError;
 
+  /// True from a Save tap until its save and import suggestions finish.
+  bool _saving = false;
+
+  /// Optional note sent with an import's suggestions to the author.
+  final _noteController = TextEditingController();
+
+  String? get _note {
+    final note = _noteController.text.trim();
+    return note.isEmpty ? null : note;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -83,6 +95,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
   @override
   void dispose() {
     _deckNameFocusNode.dispose();
+    _noteController.dispose();
     for (final c in _fieldControllers) {
       c.dispose();
     }
@@ -210,7 +223,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
   }
 
   /// After a successful save, syncs selected tags with the deck (diff-based).
-  Future<void> _syncTags(String deckId) async {
+  Future<void> _syncTags(String deckId, {String? note}) async {
     final toAdd = _selectedTagIds.difference(_originalTagIds);
     final toRemove = _originalTagIds.difference(_selectedTagIds);
     final allTags = context.read<TagManagerCubit>().state.tags;
@@ -229,12 +242,74 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
       importDeckId: deckId,
       addTags: toAdd.map(nameFor).toList(),
       removeTags: toRemove.map(nameFor).toList(),
+      message: note,
     );
     if (!mounted) return;
     final loc = AppLocalizations.of(context)!;
     sent
         ? AppToast.success(context, loc.deckTagsSentToAuthor)
         : AppToast.warning(context, loc.deckTagsSavedUnsent);
+  }
+
+  /// Imports can't PATCH the description; a change goes to the author instead.
+  Future<void> _proposeDescription(
+    String deckId,
+    String text, {
+    String? note,
+  }) async {
+    final original = widget.deck?.description.trim() ?? '';
+    final proposed = text.trim();
+    if (proposed == original) return;
+    if (proposed.isEmpty) {
+      if (!mounted) return;
+      AppToast.warning(
+        context,
+        AppLocalizations.of(context)!.deckEditorDescriptionRequired,
+      );
+      return;
+    }
+    final sent = await submitImportedDescriptionContribution(
+      importDeckId: deckId,
+      proposedDescription: proposed,
+      message: note,
+    );
+    if (!mounted) return;
+    final loc = AppLocalizations.of(context)!;
+    sent
+        ? AppToast.success(context, loc.deckDescriptionSentToAuthor)
+        : AppToast.warning(context, loc.deckDescriptionSavedUnsent);
+  }
+
+  /// Imports can't PATCH field names; renamed labels go to the author instead.
+  Future<void> _proposeFieldRename(
+    String deckId,
+    List<String> fieldNames, {
+    String? note,
+  }) async {
+    final original = normalizeDeckFieldNames(widget.deck?.fields ?? const []);
+    final proposed = normalizeDeckFieldNames(fieldNames);
+    if (listEquals(proposed, original)) return;
+    final sent = await submitImportedFieldRenameContribution(
+      importDeckId: deckId,
+      proposedFields: proposed,
+      message: note,
+    );
+    if (!mounted) return;
+    final loc = AppLocalizations.of(context)!;
+    sent
+        ? AppToast.success(context, loc.deckFieldNamesSentToAuthor)
+        : AppToast.warning(context, loc.deckFieldNamesSavedUnsent);
+  }
+
+  /// Blocks further Save taps while [save] runs, so overlapping saves can't
+  /// stage the same suggestion twice.
+  Future<void> _runSave(Future<void> Function() save) async {
+    setState(() => _saving = true);
+    try {
+      await save();
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -350,10 +425,10 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
                       ),
                     ),
                     const SizedBox(height: 4),
+                    // Rename only: an import keeps the author's field count/order.
                     AppInput(
                       controller: _fieldControllers[i],
                       style: DeckTextStyles.fieldInput(theme),
-                      enabled: false,
                     ),
                   ],
                 );
@@ -494,8 +569,9 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
         AppInput(
           controller: createCubit.descriptionController,
           label: loc.createInputDeckDescription,
-          hint: loc.createInputDeckDescriptionHint,
-          enabled: !isImported,
+          hint: isImported
+              ? loc.deckDescriptionProposeHint
+              : loc.createInputDeckDescriptionHint,
           maxLines: 4,
           minLines: 2,
           maxLength: 500,
@@ -507,63 +583,102 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
           },
         ),
         const SizedBox(height: 14),
+        if (isImported) ...[
+          AppInput(
+            controller: _noteController,
+            hint: loc.contributeOptionalMessageHint,
+            maxLines: 3,
+            minLines: 2,
+            maxLength: 2000,
+          ),
+          const SizedBox(height: 14),
+        ],
 
         AppButton(
           label: loc.save,
           variant: AppButtonVariant.primary,
           fullWidth: true,
           leading: const DeckLoadingState(child: Icon(LucideIcons.save)),
-          onPressed: () async {
-            final deckListCubit = context.read<DeckListCubit>();
-            final navigator = Navigator.of(context);
-            setState(() => _submitError = null);
-            final result = await createCubit.submit(
-              fieldNames: _fieldControllers.map((c) => c.text).toList(),
-            );
-            if (!mounted) {
-              return;
-            }
+          onPressed: _saving
+              ? null
+              : () => _runSave(() async {
+                  final deckListCubit = context.read<DeckListCubit>();
+                  final navigator = Navigator.of(context);
+                  // Read inputs now: the editor may close while requests run.
+                  final fieldNames = _fieldControllers
+                      .map((c) => c.text)
+                      .toList();
+                  final descriptionText =
+                      createCubit.descriptionController.text;
+                  final note = _note;
+                  setState(() => _submitError = null);
+                  final result = await createCubit.submit(
+                    fieldNames: fieldNames,
+                  );
+                  if (!mounted) {
+                    return;
+                  }
 
-            if (!result.success) {
-              final msg = switch (result.error) {
-                DeckCreateError.nameEmpty => loc.deckEditorNameRequired,
-                DeckCreateError.descriptionEmpty =>
-                  loc.deckEditorDescriptionRequired,
-                DeckCreateError.blankFieldName =>
-                  loc.deckEditorFieldNamesRequired,
-                // Server failure: resolve() localizes known messages below and
-                // falls back to errorUnknown when the server sent none.
-                null => result.message ?? '',
-              };
-              setState(() => _submitError = msg);
-              return;
-            }
+                  if (!result.success) {
+                    final msg = switch (result.error) {
+                      DeckCreateError.nameEmpty => loc.deckEditorNameRequired,
+                      DeckCreateError.descriptionEmpty =>
+                        loc.deckEditorDescriptionRequired,
+                      DeckCreateError.blankFieldName =>
+                        loc.deckEditorFieldNamesRequired,
+                      // Server failure: resolve() localizes known messages below and
+                      // falls back to errorUnknown when the server sent none.
+                      null => result.message ?? '',
+                    };
+                    setState(() => _submitError = msg);
+                    return;
+                  }
 
-            // Sync tags after successful save (diff-based).
-            final deckId = result.newDeckId ?? createCubit.state.deckId;
-            if (deckId.isNotEmpty) {
-              try {
-                await _syncTags(deckId);
-              } catch (e) {
-                if (!mounted) {
-                  return;
-                }
-                setState(() => _submitError = rawApiErrorMessage(e));
-                return;
-              }
-            }
+                  // Sync tags after successful save (diff-based).
+                  final deckId = result.newDeckId ?? createCubit.state.deckId;
+                  if (deckId.isNotEmpty) {
+                    Object? tagError;
+                    try {
+                      await _syncTags(deckId, note: note);
+                    } catch (e) {
+                      tagError = e;
+                    }
+                    // Suggestions don't depend on the tag sync succeeding.
+                    if (isImported) {
+                      await _proposeDescription(
+                        deckId,
+                        descriptionText,
+                        note: note,
+                      );
+                      await _proposeFieldRename(deckId, fieldNames, note: note);
+                    }
+                    if (tagError != null) {
+                      if (!mounted) {
+                        return;
+                      }
+                      final message = rawApiErrorMessage(tagError);
+                      setState(() => _submitError = message);
+                      return;
+                    }
+                  }
 
-            await deckListCubit.onRefresh();
-            if (!mounted) {
-              return;
-            }
-            final updatedName = result.updatedDeckName;
-            if (updatedName == null) {
-              navigator.pop();
-              return;
-            }
-            navigator.pop((updatedName, result.updatedDescription!));
-          },
+                  await deckListCubit.onRefresh();
+                  if (!mounted) {
+                    return;
+                  }
+                  final updatedName = result.updatedDeckName;
+                  if (updatedName == null) {
+                    navigator.pop();
+                    return;
+                  }
+                  // An import keeps the author's description until they accept.
+                  navigator.pop((
+                    updatedName,
+                    isImported
+                        ? widget.deck!.description
+                        : result.updatedDescription!,
+                  ));
+                }),
         ),
         if (_submitError != null)
           Padding(

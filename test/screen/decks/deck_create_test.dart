@@ -58,13 +58,55 @@ class _MessagelessFailureAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
-/// An imported deck with one tag: answers the tag list, the deck save, the
-/// tag removal and the `deck-tags` contribution.
-class _DeckTagsAdapter implements HttpClientAdapter {
-  _DeckTagsAdapter({required this.sendFails});
+/// An imported deck without tags: answers the deck save and the
+/// `description` and `fields/rename` contributions.
+class _DescriptionAdapter implements HttpClientAdapter {
+  _DescriptionAdapter({required this.sendFails});
 
   final bool sendFails;
   final List<dynamic> contributionBodies = [];
+  final List<dynamic> renameBodies = [];
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    Map<String, dynamic> body = {'code': 0, 'msg': 'ok', 'data': {}};
+    if (options.uri.path.endsWith('/contributions/fields/rename')) {
+      renameBodies.add(options.data);
+      if (sendFails) body = {'code': -1, 'msg': 'Error saving contribution'};
+    } else if (options.uri.path.endsWith('/contributions/description')) {
+      contributionBodies.add(options.data);
+      if (sendFails) body = {'code': -1, 'msg': 'Error saving contribution'};
+    } else if (options.method == 'GET' && options.uri.path.endsWith('/tags')) {
+      body['data'] = {'tags': []};
+    }
+    return ResponseBody.fromString(
+      jsonEncode(body),
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+/// An imported deck with one tag: answers the tag list, the deck save, the
+/// tag removal and the `deck-tags` contribution.
+class _DeckTagsAdapter implements HttpClientAdapter {
+  _DeckTagsAdapter({required this.sendFails, this.removeFails = false});
+
+  final bool sendFails;
+
+  /// When true, removing the tag answers a malformed body, which throws.
+  final bool removeFails;
+  final List<dynamic> contributionBodies = [];
+  final List<dynamic> descriptionBodies = [];
 
   @override
   Future<ResponseBody> fetch(
@@ -77,6 +119,16 @@ class _DeckTagsAdapter implements HttpClientAdapter {
     if (path.endsWith('/contributions/deck-tags')) {
       contributionBodies.add(options.data);
       if (sendFails) body = {'code': -1, 'msg': 'Error saving contribution'};
+    } else if (path.endsWith('/contributions/description')) {
+      descriptionBodies.add(options.data);
+    } else if (options.method == 'DELETE' && removeFails) {
+      return ResponseBody.fromString(
+        jsonEncode(['not', 'a', 'map']),
+        200,
+        headers: {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+        },
+      );
     } else if (options.method == 'GET' && path.endsWith('/tags')) {
       body['data'] = {
         'tags': [
@@ -310,9 +362,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Seeded summary'), findsOneWidget);
+      // Only imports send suggestions, so only they get a note box.
+      expect(find.text('Optional message for the author'), findsNothing);
     });
 
-    testWidgets('imported deck shows the description read-only', (
+    testWidgets('imported deck lets the importer suggest a description', (
       tester,
     ) async {
       final imported = Deck.fromJson({
@@ -354,7 +408,14 @@ void main() {
 
       final field = find.widgetWithText(TextField, 'Author summary');
       expect(field, findsOneWidget);
-      expect(tester.widget<TextField>(field).enabled, isFalse);
+      expect(tester.widget<TextField>(field).enabled, isTrue);
+      expect(
+        find.text(
+          "Suggest a better description; it's sent to the author for review",
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Optional message for the author'), findsOneWidget);
     });
 
     testWidgets('shows validation error when any field name is blank', (
@@ -476,6 +537,8 @@ void main() {
       Future<_DeckTagsAdapter> removeTagAndSave(
         WidgetTester tester, {
         required bool sendFails,
+        bool removeFails = false,
+        String? description,
       }) async {
         // An earlier test may have left its own adapter on the shared client.
         networkDioClient.dio.httpClientAdapter = IOHttpClientAdapter();
@@ -488,7 +551,10 @@ void main() {
           baseUrl: 'http://localhost',
           options: BaseOptions(),
         );
-        final adapter = _DeckTagsAdapter(sendFails: sendFails);
+        final adapter = _DeckTagsAdapter(
+          sendFails: sendFails,
+          removeFails: removeFails,
+        );
         networkDioClient.dio.httpClientAdapter = adapter;
         final imported = Deck.fromJson({
           'id': 'imp-tags-${sendFails ? 'unsent' : 'sent'}',
@@ -512,6 +578,12 @@ void main() {
 
         await tester.tap(find.byIcon(Icons.close_rounded));
         await tester.pump();
+        if (description != null) {
+          await tester.enterText(
+            find.widgetWithText(TextField, 'Author summary'),
+            description,
+          );
+        }
         await tester.ensureVisible(find.byType(FilledButton));
         await tester.pumpAndSettle();
         await tester.tap(find.byType(FilledButton));
@@ -531,6 +603,26 @@ void main() {
         await tester.pumpAndSettle();
       });
 
+      testWidgets('a failed tag sync still sends the description', (
+        tester,
+      ) async {
+        final adapter = await removeTagAndSave(
+          tester,
+          sendFails: false,
+          removeFails: true,
+          description: 'Everyday verbs',
+        );
+
+        expect(adapter.descriptionBodies.single, {
+          'proposed_description': 'Everyday verbs',
+        });
+        expect(adapter.contributionBodies, isEmpty);
+        // The editor stays open on the tag error.
+        expect(find.byType(DeckCreate), findsOneWidget);
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+
       testWidgets('a failed send says the change is saved but unsent', (
         tester,
       ) async {
@@ -540,6 +632,254 @@ void main() {
           find.textContaining("Couldn't send them to the author yet"),
           findsOneWidget,
         );
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+    });
+
+    group('imported deck description', () {
+      /// Opens the editor in a route, types [text] and saves. Returns the
+      /// adapter and the value the editor popped.
+      Future<(_DescriptionAdapter, (String, String)?)> editAndSave(
+        WidgetTester tester, {
+        required String text,
+        bool sendFails = false,
+        bool imported = true,
+        String? firstField,
+        String? note,
+        List<String> fields = const ['Front', 'Back'],
+        bool doubleTap = false,
+      }) async {
+        networkDioClient.dio.httpClientAdapter = IOHttpClientAdapter();
+        await setupTestEnvironment();
+        addTearDown(() {
+          networkDioClient.dio.httpClientAdapter = IOHttpClientAdapter();
+          tearDownTestEnvironment();
+        });
+        networkDioClient.configure(
+          baseUrl: 'http://localhost',
+          options: BaseOptions(),
+        );
+        final adapter = _DescriptionAdapter(sendFails: sendFails);
+        networkDioClient.dio.httpClientAdapter = adapter;
+        final deck = Deck.fromJson({
+          'id': 'imp-desc-${sendFails ? 'unsent' : 'sent'}',
+          'name': 'Imported deck',
+          'description': 'Author summary',
+          'rate': 20,
+          if (imported) 'source_deck_id': 'src-1',
+          'owner': {'username': 'u', 'email': 'u@e.com'},
+          'fields': fields,
+        });
+
+        (String, String)? popped;
+        await tester.pumpWidget(
+          buildDeckCreateHarness(
+            Builder(
+              builder: (context) => TextButton(
+                onPressed: () async {
+                  final cubits = (
+                    context.read<TagManagerCubit>(),
+                    context.read<DeckListCubit>(),
+                  );
+                  popped = await Navigator.of(context).push<(String, String)?>(
+                    MaterialPageRoute(
+                      builder: (_) => MultiBlocProvider(
+                        providers: [
+                          BlocProvider.value(value: cubits.$1),
+                          BlocProvider.value(value: cubits.$2),
+                          BlocProvider(
+                            create: (_) => DeckCreateCubit(
+                              name: deck.name,
+                              rate: deck.rate,
+                              description: deck.description,
+                              deckId: deck.id,
+                              cardType: DeckCardType.edit,
+                              isImported: imported,
+                            ),
+                          ),
+                        ],
+                        child: Scaffold(
+                          body: SingleChildScrollView(
+                            child: DeckCreate(deck: deck),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('open'));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Author summary'),
+          text,
+        );
+        if (firstField != null) {
+          await tester.enterText(
+            find.widgetWithText(TextField, 'Front'),
+            firstField,
+          );
+        }
+        if (note != null) {
+          await tester.enterText(
+            find.widgetWithText(TextField, 'Optional message for the author'),
+            note,
+          );
+        }
+        await tester.ensureVisible(find.byType(FilledButton));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(FilledButton));
+        if (doubleTap) {
+          await tester.pump();
+          await tester.tap(find.byType(FilledButton), warnIfMissed: false);
+        }
+        await tester.pumpAndSettle();
+        return (adapter, popped);
+      }
+
+      testWidgets('a changed description is sent to the author', (
+        tester,
+      ) async {
+        final (adapter, popped) = await editAndSave(
+          tester,
+          text: '  Everyday verbs  ',
+        );
+
+        expect(adapter.contributionBodies.single, {
+          'proposed_description': 'Everyday verbs',
+        });
+        expect(
+          find.text('Description suggestion sent to the author'),
+          findsOneWidget,
+        );
+        // The deck keeps the author's text until they accept.
+        expect(popped, ('Imported deck', 'Author summary'));
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('a second tap during a save sends nothing more', (
+        tester,
+      ) async {
+        final (adapter, _) = await editAndSave(
+          tester,
+          text: 'Everyday verbs',
+          doubleTap: true,
+        );
+
+        expect(adapter.contributionBodies, hasLength(1));
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('a failed send says the suggestion is unsent', (
+        tester,
+      ) async {
+        await editAndSave(tester, text: 'Everyday verbs', sendFails: true);
+
+        expect(
+          find.textContaining("Couldn't send your description suggestion"),
+          findsOneWidget,
+        );
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('a renamed field is sent to the author', (tester) async {
+        final (adapter, _) = await editAndSave(
+          tester,
+          text: 'Author summary',
+          firstField: ' Word ',
+        );
+
+        expect(adapter.contributionBodies, isEmpty);
+        expect(adapter.renameBodies.single, {
+          'proposed_fields': ['Word', 'Back'],
+        });
+        expect(
+          find.text('Field name suggestion sent to the author'),
+          findsOneWidget,
+        );
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('the note goes with each suggestion', (tester) async {
+        final (adapter, _) = await editAndSave(
+          tester,
+          text: 'Everyday verbs',
+          firstField: 'Word',
+          note: '  Clearer for beginners  ',
+        );
+
+        expect(adapter.contributionBodies.single, {
+          'proposed_description': 'Everyday verbs',
+          'message': 'Clearer for beginners',
+        });
+        expect(adapter.renameBodies.single, {
+          'proposed_fields': ['Word', 'Back'],
+          'message': 'Clearer for beginners',
+        });
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('a failed rename says the suggestion is unsent', (
+        tester,
+      ) async {
+        await editAndSave(
+          tester,
+          text: 'Author summary',
+          firstField: 'Word',
+          sendFails: true,
+        );
+
+        expect(
+          find.textContaining("Couldn't send your field name suggestion"),
+          findsOneWidget,
+        );
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('an own deck saves its description directly', (tester) async {
+        final (adapter, popped) = await editAndSave(
+          tester,
+          text: 'Everyday verbs',
+          imported: false,
+        );
+
+        expect(adapter.contributionBodies, isEmpty);
+        expect(popped, ('Imported deck', 'Everyday verbs'));
+      });
+
+      testWidgets('an unchanged or blank description sends nothing', (
+        tester,
+      ) async {
+        final (unchanged, _) = await editAndSave(
+          tester,
+          text: 'Author summary ',
+        );
+        expect(unchanged.contributionBodies, isEmpty);
+        expect(unchanged.renameBodies, isEmpty);
+
+        final (spaced, _) = await editAndSave(
+          tester,
+          text: 'Author summary',
+          fields: const ['Front ', 'Back'],
+        );
+        expect(spaced.renameBodies, isEmpty);
+
+        final (blank, _) = await editAndSave(tester, text: '   ');
+        expect(blank.contributionBodies, isEmpty);
+        // Clearing the description is not a suggestion; say so.
+        expect(find.text('Please enter a deck description'), findsOneWidget);
         AppToast.dismiss();
         await tester.pumpAndSettle();
       });

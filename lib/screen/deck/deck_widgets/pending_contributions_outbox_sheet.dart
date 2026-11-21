@@ -76,6 +76,7 @@ class _PendingContributionsOutboxSheetState
       PendingContributionKind.factTags => loc.pendingKindFactTags,
       PendingContributionKind.template => loc.pendingKindTemplate,
       PendingContributionKind.fieldRename => loc.pendingKindFieldRename,
+      PendingContributionKind.description => loc.pendingKindDescription,
       PendingContributionKind.report => loc.pendingKindReport,
     };
   }
@@ -103,9 +104,10 @@ class _PendingContributionsOutboxSheetState
       PendingContributionKind.edit ||
       PendingContributionKind.add ||
       PendingContributionKind.factTags ||
-      PendingContributionKind.deckTags => true,
-      PendingContributionKind.template ||
+      PendingContributionKind.deckTags ||
       PendingContributionKind.fieldRename ||
+      PendingContributionKind.description => true,
+      PendingContributionKind.template ||
       PendingContributionKind.report => false,
     };
   }
@@ -123,19 +125,35 @@ class _PendingContributionsOutboxSheetState
     });
     final message = _messageController.text.trim();
     var sentCount = 0;
+    var skippedCount = 0;
     final failures = <String>[];
 
     for (final item in items) {
       try {
-        final contributionId = await _submitOne(
-          item,
-          message.isEmpty ? null : message,
-        );
+        // Send the row as stored now, saving a typed note on it first so a
+        // failed send keeps it for the retry. A row removed meanwhile is
+        // skipped.
+        final current = message.isEmpty
+            ? (await PendingContributionsStore.of.listPending(
+                widget.importDeckId,
+              )).where((r) => r.id == item.id).firstOrNull
+            : await PendingContributionsStore.of.updateMessage(
+                widget.importDeckId,
+                item.id,
+                message,
+              );
+        if (current == null) {
+          skippedCount += 1;
+          continue;
+        }
+        // A note typed here wins; otherwise keep the one saved with the row.
+        final note = message.isEmpty ? current.message : message;
+        final contributionId = await _submitOne(current, note);
         await PendingContributionsStore.of.markAsSent(
           widget.importDeckId,
           item.id,
           contributionId: contributionId,
-          message: message.isEmpty ? null : message,
+          message: note,
         );
         sentCount += 1;
       } catch (e) {
@@ -158,6 +176,10 @@ class _PendingContributionsOutboxSheetState
       }
       if (failures.isNotEmpty) {
         _error = failures.take(3).join(' · ');
+      }
+      if (skippedCount > 0) {
+        final skipped = loc.pendingSkippedGone(skippedCount);
+        _notice = _notice == null ? skipped : '$_notice · $skipped';
       }
     });
   }
@@ -207,10 +229,29 @@ class _PendingContributionsOutboxSheetState
           removeTags: item.removeTags,
           message: message,
         );
+      case PendingContributionKind.fieldRename:
+        final fields = item.proposedFields;
+        if (fields == null || fields.isEmpty) {
+          throw Exception('missing fields');
+        }
+        return DeckCatalogService.of.submitFieldRenameContribution(
+          importDeckId: deckId,
+          proposedFields: fields,
+          message: message,
+        );
+      case PendingContributionKind.description:
+        final description = item.proposedDescription;
+        if (description == null || description.isEmpty) {
+          throw Exception('missing description');
+        }
+        return DeckCatalogService.of.submitDescriptionContribution(
+          importDeckId: deckId,
+          proposedDescription: description,
+          message: message,
+        );
       case PendingContributionKind.report:
         throw Exception('reports are sent from card menu');
       case PendingContributionKind.template:
-      case PendingContributionKind.fieldRename:
         throw Exception('unsupported pending kind');
     }
   }

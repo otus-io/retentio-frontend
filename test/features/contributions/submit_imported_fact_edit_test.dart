@@ -269,6 +269,134 @@ void main() {
     });
   });
 
+  group('submitImportedDescriptionContribution', () {
+    test('sends description_edit and moves the row to sent', () async {
+      final ok = await submitImportedDescriptionContribution(
+        importDeckId: 'imp-1',
+        proposedDescription: 'Everyday verbs',
+        message: 'clearer',
+      );
+
+      expect(ok, isTrue);
+      expect(interceptor.contributionDescriptionBodies.single, {
+        'proposed_description': 'Everyday verbs',
+        'message': 'clearer',
+      });
+      expect(await PendingContributionsStore.of.listPending('imp-1'), isEmpty);
+      final sent = await PendingContributionsStore.of.listSent('imp-1');
+      expect(sent.single.kind, PendingContributionKind.description);
+      expect(sent.single.contributionId, 'cont-desc-1');
+    });
+
+    test('keeps the row unsent when sending fails', () async {
+      interceptor.contributionDescriptionFails = true;
+
+      final ok = await submitImportedDescriptionContribution(
+        importDeckId: 'imp-1',
+        proposedDescription: 'Everyday verbs',
+      );
+
+      expect(ok, isFalse);
+      final pending = await PendingContributionsStore.of.listPending('imp-1');
+      expect(pending.single.kind, PendingContributionKind.description);
+      expect(pending.single.proposedDescription, 'Everyday verbs');
+      expect(pending.single.preview, 'Everyday verbs');
+    });
+  });
+
+  group('submitImportedFieldRenameContribution', () {
+    test('sends field_rename and moves the row to sent', () async {
+      final ok = await submitImportedFieldRenameContribution(
+        importDeckId: 'imp-1',
+        proposedFields: const ['Word', 'Meaning'],
+      );
+
+      expect(ok, isTrue);
+      expect(interceptor.contributionFieldRenameBodies.single, {
+        'proposed_fields': ['Word', 'Meaning'],
+      });
+      expect(await PendingContributionsStore.of.listPending('imp-1'), isEmpty);
+      final sent = await PendingContributionsStore.of.listSent('imp-1');
+      expect(sent.single.kind, PendingContributionKind.fieldRename);
+      expect(sent.single.contributionId, 'cont-fields-1');
+    });
+
+    test('keeps the row unsent when sending fails', () async {
+      interceptor.contributionFieldRenameFails = true;
+
+      final ok = await submitImportedFieldRenameContribution(
+        importDeckId: 'imp-1',
+        proposedFields: const ['Word', 'Meaning'],
+        message: 'clearer',
+      );
+
+      expect(ok, isFalse);
+      final pending = await PendingContributionsStore.of.listPending('imp-1');
+      expect(pending.single.kind, PendingContributionKind.fieldRename);
+      expect(pending.single.proposedFields, ['Word', 'Meaning']);
+      expect(pending.single.message, 'clearer');
+      expect(pending.single.preview, 'Word · Meaning');
+    });
+  });
+
+  test('re-suggesting without a note keeps the unsent note', () async {
+    interceptor.contributionDescriptionFails = true;
+    interceptor.contributionFieldRenameFails = true;
+    await submitImportedDescriptionContribution(
+      importDeckId: 'imp-1',
+      proposedDescription: 'First',
+      message: 'typo fixes',
+    );
+    await submitImportedFieldRenameContribution(
+      importDeckId: 'imp-1',
+      proposedFields: const ['Word', 'Meaning'],
+      message: 'clearer labels',
+    );
+    interceptor.contributionDescriptionFails = false;
+    interceptor.contributionFieldRenameFails = false;
+
+    await submitImportedDescriptionContribution(
+      importDeckId: 'imp-1',
+      proposedDescription: 'Second',
+    );
+    await submitImportedFieldRenameContribution(
+      importDeckId: 'imp-1',
+      proposedFields: const ['Term', 'Meaning'],
+    );
+
+    expect(
+      (interceptor.contributionDescriptionBodies.last as Map)['message'],
+      'typo fixes',
+    );
+    expect(
+      (interceptor.contributionFieldRenameBodies.last as Map)['message'],
+      'clearer labels',
+    );
+  });
+
+  test('a deck tag retry keeps the earlier note', () async {
+    interceptor.contributionDeckTagsFails = true;
+    await submitImportedDeckTagsContribution(
+      importDeckId: 'imp-1',
+      addTags: const ['N5'],
+      removeTags: const [],
+      message: 'beginner level',
+    );
+    interceptor.contributionDeckTagsFails = false;
+
+    final ok = await submitImportedDeckTagsContribution(
+      importDeckId: 'imp-1',
+      addTags: const ['verbs'],
+      removeTags: const [],
+    );
+
+    expect(ok, isTrue);
+    expect(
+      (interceptor.contributionDeckTagsBodies.last as Map)['message'],
+      'beginner level',
+    );
+  });
+
   group('mergeTagDeltas', () {
     test('keeps both changes and cancels opposites', () {
       final merged = mergeTagDeltas(

@@ -648,6 +648,11 @@
   "addFactSavedUnsent": "Fact added. Couldn't send it to the author yet; retry from Unsent contributions.",
   "deckTagsSentToAuthor": "Deck tags sent to the author",
   "deckTagsSavedUnsent": "Deck tags saved. Couldn't send them to the author yet; retry from Unsent contributions.",
+  "deckDescriptionSentToAuthor": "Description suggestion sent to the author",
+  "deckDescriptionSavedUnsent": "Couldn't send your description suggestion to the author yet; retry from Unsent contributions.",
+  "deckDescriptionProposeHint": "Suggest a better description; it's sent to the author for review",
+  "deckFieldNamesSentToAuthor": "Field name suggestion sent to the author",
+  "deckFieldNamesSavedUnsent": "Couldn't send your field name suggestion to the author yet; retry from Unsent contributions.",
   "@addFactSuccess": {
     "description": "Snackbar after a fact was saved to the deck"
   },
@@ -2165,6 +2170,7 @@
   "contributionsProposed": "Proposed",
   "contributionsReported": "Reported",
   "contributionsFields": "Fields",
+  "contributionsDescription": "Description",
   "contributionsTags": "Tags",
   "contributionsPlayBefore": "Play original",
   "@contributionsPlayBefore": {
@@ -2317,12 +2323,17 @@
   "@pendingCleared": {
     "placeholders": { "count": { "type": "int" } }
   },
+  "pendingSkippedGone": "{count, plural, =1{1 item was already sent or removed} other{{count} items were already sent or removed}}",
+  "@pendingSkippedGone": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "pendingKindEdit": "Fact edit",
   "pendingKindAdd": "New fact",
   "pendingKindDeckTags": "Deck tags",
   "pendingKindFactTags": "Fact tags",
   "pendingKindTemplate": "Template",
   "pendingKindFieldRename": "Field rename",
+  "pendingKindDescription": "Deck description",
   "pendingKindReport": "Report",
   "pendingNotSubmittable": "Can't send from outbox yet",
   "forgotPasswordHint": "Enter your account email and we will send a reset link.",

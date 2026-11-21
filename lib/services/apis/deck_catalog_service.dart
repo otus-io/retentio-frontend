@@ -247,6 +247,40 @@ class DeckCatalogService {
     );
   }
 
+  /// Proposes same-length field labels to the source author (`field_rename`).
+  Future<String?> submitFieldRenameContribution({
+    required String importDeckId,
+    required List<String> proposedFields,
+    String? message,
+  }) {
+    return _submitContribution(
+      Api.deckFieldRenameContribution,
+      pathParams: {'id': importDeckId},
+      body: {
+        'proposed_fields': proposedFields,
+        if (message != null && message.trim().isNotEmpty)
+          'message': message.trim(),
+      },
+    );
+  }
+
+  /// Proposes a new deck description to the source author (`description_edit`).
+  Future<String?> submitDescriptionContribution({
+    required String importDeckId,
+    required String proposedDescription,
+    String? message,
+  }) {
+    return _submitContribution(
+      Api.deckDescriptionContribution,
+      pathParams: {'id': importDeckId},
+      body: {
+        'proposed_description': proposedDescription,
+        if (message != null && message.trim().isNotEmpty)
+          'message': message.trim(),
+      },
+    );
+  }
+
   /// Asks the author to adopt this importer's QA sign-offs (`qa_review`).
   /// Refreshes the importer's open request when one exists. Throws with the
   /// API `msg` (e.g. `nothing to review`) on failure.

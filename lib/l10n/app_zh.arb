@@ -171,6 +171,11 @@
   "addFactSavedUnsent": "词条已添加，但暂未发送给作者，可在未发送贡献中重试。",
   "deckTagsSentToAuthor": "卡组标签已发送给作者",
   "deckTagsSavedUnsent": "卡组标签已保存，但暂未发送给作者，可在未发送贡献中重试。",
+  "deckDescriptionSentToAuthor": "描述建议已发送给作者",
+  "deckDescriptionSavedUnsent": "描述建议暂未发送给作者，可在未发送贡献中重试。",
+  "deckDescriptionProposeHint": "建议更好的描述，将发送给作者审核",
+  "deckFieldNamesSentToAuthor": "列名建议已发送给作者",
+  "deckFieldNamesSavedUnsent": "列名建议暂未发送给作者，可在未发送贡献中重试。",
   "addFactFieldFallback": "字段 {number}",
   "addFactFieldShortLabel": "字段",
   "addFactPasteFromClipboard": "从剪贴板粘贴",
@@ -1275,6 +1280,7 @@
   "contributionsProposed": "提议内容",
   "contributionsReported": "报告内容",
   "contributionsFields": "列名",
+  "contributionsDescription": "描述",
   "contributionsTags": "标签",
   "contributionsPlayBefore": "播放原文",
   "@contributionsPlayBefore": {
@@ -1404,12 +1410,17 @@
   "@pendingCleared": {
     "placeholders": { "count": { "type": "int" } }
   },
+  "pendingSkippedGone": "{count, plural, =1{1 项已发送或已移除} other{{count} 项已发送或已移除}}",
+  "@pendingSkippedGone": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "pendingKindEdit": "词条修改",
   "pendingKindAdd": "新增词条",
   "pendingKindDeckTags": "卡组标签",
   "pendingKindFactTags": "词条标签",
   "pendingKindTemplate": "模板",
   "pendingKindFieldRename": "列名重命名",
+  "pendingKindDescription": "卡组描述",
   "pendingKindReport": "报告",
   "pendingNotSubmittable": "暂无法从发件箱发送",
   "forgotPasswordHint": "输入账户邮箱，我们将发送重置链接。",

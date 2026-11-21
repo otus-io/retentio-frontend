@@ -71,6 +71,8 @@ class Api {
       '/api/decks/{id}/contributions/deck-tags';
   static const String deckFieldRenameContribution =
       '/api/decks/{id}/contributions/fields/rename';
+  static const String deckDescriptionContribution =
+      '/api/decks/{id}/contributions/description';
   static const String deckFactTemplateContribution =
       '/api/decks/{id}/contributions/facts/{factId}/templates';
   static const String deckQAReviewContribution =

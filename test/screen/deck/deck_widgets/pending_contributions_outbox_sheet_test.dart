@@ -28,6 +28,27 @@ class _UnverifiedApi extends Interceptor {
   }
 }
 
+/// Accepts every `POST …/contributions/description` and records its body.
+class _DescriptionApi extends Interceptor {
+  final List<dynamic> bodies = [];
+
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    bodies.add(options.data);
+    handler.resolve(
+      Response(
+        requestOptions: options,
+        statusCode: 201,
+        data: {
+          'code': 0,
+          'msg': 'contribution submitted',
+          'data': {'contribution_id': 'cont-desc-1'},
+        },
+      ),
+    );
+  }
+}
+
 void main() {
   setUp(() async {
     await setupTestEnvironment();
@@ -72,5 +93,336 @@ void main() {
       find.text('${loc.pendingKindDeckTags}: ${loc.emailVerificationRequired}'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('a typed note stays with a row whose send failed', (
+    tester,
+  ) async {
+    await tester.runAsync(
+      () => PendingContributionsStore.of.upsert(
+        deckId: 'imp-1',
+        kind: PendingContributionKind.deckTags,
+        addTags: ['verbs'],
+        message: 'old note',
+      ),
+    );
+    await tester.pumpWidget(
+      buildTestableWidget(
+        const Scaffold(
+          body: SingleChildScrollView(
+            child: PendingContributionsOutboxSheet(importDeckId: 'imp-1'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final loc = AppLocalizations.of(
+      tester.element(find.byType(PendingContributionsOutboxSheet)),
+    )!;
+
+    await tester.tap(find.text('+verbs'));
+    await tester.pump();
+    await tester.enterText(find.byType(TextField).last, 'new note');
+    await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+    await tester.pumpAndSettle();
+
+    final pending = await tester.runAsync(
+      () => PendingContributionsStore.of.listPending('imp-1'),
+    );
+    expect(pending!.single.message, 'new note');
+    expect(pending.single.addTags, ['verbs']);
+  });
+
+  _descriptionProposalTests();
+  _fieldRenameProposalTests();
+
+  testWidgets('report rows stay visible but cannot be sent', (tester) async {
+    await tester.runAsync(
+      () => PendingContributionsStore.of.upsert(
+        deckId: 'imp-1',
+        kind: PendingContributionKind.report,
+        factId: 'fact-1',
+        preview: 'Wrong reading',
+      ),
+    );
+    await tester.pumpWidget(
+      buildTestableWidget(
+        const Scaffold(
+          body: SingleChildScrollView(
+            child: PendingContributionsOutboxSheet(importDeckId: 'imp-1'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final loc = AppLocalizations.of(
+      tester.element(find.byType(PendingContributionsOutboxSheet)),
+    )!;
+
+    expect(find.textContaining('Wrong reading'), findsOneWidget);
+    expect(find.textContaining(loc.pendingNotSubmittable), findsOneWidget);
+  });
+}
+
+void _descriptionProposalTests() {
+  group('description proposals', () {
+    late _DescriptionApi api;
+
+    setUp(() {
+      networkDioClient.dio.interceptors.clear();
+      api = _DescriptionApi();
+      networkDioClient.dio.interceptors.add(api);
+    });
+
+    Future<AppLocalizations> pumpOutbox(
+      WidgetTester tester, {
+      String? description,
+    }) async {
+      await tester.runAsync(
+        () => PendingContributionsStore.of.upsert(
+          deckId: 'imp-1',
+          kind: PendingContributionKind.description,
+          preview: 'Everyday verbs',
+          proposedDescription: description,
+        ),
+      );
+      await tester.pumpWidget(
+        buildTestableWidget(
+          const Scaffold(
+            body: SingleChildScrollView(
+              child: PendingContributionsOutboxSheet(importDeckId: 'imp-1'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return AppLocalizations.of(
+        tester.element(find.byType(PendingContributionsOutboxSheet)),
+      )!;
+    }
+
+    testWidgets('an unsent description can be sent with a message', (
+      tester,
+    ) async {
+      final loc = await pumpOutbox(tester, description: 'Everyday verbs');
+
+      expect(find.text(loc.pendingKindDescription), findsOneWidget);
+      await tester.tap(find.text('Everyday verbs'));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField).last, 'clearer');
+      await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+      await tester.pumpAndSettle();
+
+      expect(api.bodies.single, {
+        'proposed_description': 'Everyday verbs',
+        'message': 'clearer',
+      });
+      expect(
+        await tester.runAsync(
+          () => PendingContributionsStore.of.listPending('imp-1'),
+        ),
+        isEmpty,
+      );
+    });
+
+    testWidgets('a note saved with the row is sent when none is typed', (
+      tester,
+    ) async {
+      await tester.runAsync(
+        () => PendingContributionsStore.of.upsert(
+          deckId: 'imp-1',
+          kind: PendingContributionKind.description,
+          preview: 'Everyday verbs',
+          proposedDescription: 'Everyday verbs',
+          message: 'saved note',
+        ),
+      );
+      await tester.pumpWidget(
+        buildTestableWidget(
+          const Scaffold(
+            body: SingleChildScrollView(
+              child: PendingContributionsOutboxSheet(importDeckId: 'imp-1'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final loc = AppLocalizations.of(
+        tester.element(find.byType(PendingContributionsOutboxSheet)),
+      )!;
+
+      await tester.tap(find.text('Everyday verbs'));
+      await tester.pump();
+      await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+      await tester.pumpAndSettle();
+
+      expect(api.bodies.single, {
+        'proposed_description': 'Everyday verbs',
+        'message': 'saved note',
+      });
+    });
+
+    testWidgets('a row changed since the sheet opened sends its new text', (
+      tester,
+    ) async {
+      final loc = await pumpOutbox(tester, description: 'Old');
+      await tester.runAsync(
+        () => PendingContributionsStore.of.upsert(
+          deckId: 'imp-1',
+          kind: PendingContributionKind.description,
+          preview: 'New',
+          proposedDescription: 'New',
+        ),
+      );
+
+      await tester.tap(find.text('Everyday verbs'));
+      await tester.pump();
+      await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+      await tester.pumpAndSettle();
+
+      expect(api.bodies.single, {'proposed_description': 'New'});
+    });
+
+    for (final note in ['', 'clearer']) {
+      testWidgets('a row removed since the sheet opened is not sent '
+          '(note: "$note")', (tester) async {
+        final loc = await pumpOutbox(tester, description: 'Everyday verbs');
+        await tester.runAsync(
+          () => PendingContributionsStore.of.clearPending('imp-1'),
+        );
+
+        await tester.tap(find.text('Everyday verbs'));
+        await tester.pump();
+        await tester.enterText(find.byType(TextField).last, note);
+        await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+        await tester.pumpAndSettle();
+
+        expect(api.bodies, isEmpty);
+        expect(find.text(loc.pendingSkippedGone(1)), findsOneWidget);
+        expect(
+          await tester.runAsync(
+            () => PendingContributionsStore.of.listPending('imp-1'),
+          ),
+          isEmpty,
+        );
+      });
+    }
+
+    testWidgets('a skipped row is noted beside the ones that were sent', (
+      tester,
+    ) async {
+      await tester.runAsync(
+        () => PendingContributionsStore.of.upsert(
+          deckId: 'imp-1',
+          kind: PendingContributionKind.fieldRename,
+          preview: 'Word · Meaning',
+          proposedFields: ['Word', 'Meaning'],
+        ),
+      );
+      final loc = await pumpOutbox(tester, description: 'Everyday verbs');
+      await tester.runAsync(
+        () => PendingContributionsStore.of.remove(
+          'imp-1',
+          PendingContributionsStore.of.itemId(
+            PendingContributionKind.description,
+          ),
+        ),
+      );
+
+      await tester.tap(find.text(loc.pendingSelectAll(2)));
+      await tester.pump();
+      await tester.tap(find.text(loc.pendingSendSelectedCount(2)));
+      await tester.pumpAndSettle();
+
+      expect(api.bodies, hasLength(1));
+      await tester.tap(find.text(loc.pendingTabPending(0)));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          '${loc.pendingSendSuccess(1)} · ${loc.pendingSkippedGone(1)}',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a row without its text is not sent', (tester) async {
+      final loc = await pumpOutbox(tester);
+
+      await tester.tap(find.text('Everyday verbs'));
+      await tester.pump();
+      await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+      await tester.pumpAndSettle();
+
+      expect(api.bodies, isEmpty);
+      expect(find.textContaining(loc.pendingKindDescription), findsNWidgets(2));
+    });
+  });
+}
+
+void _fieldRenameProposalTests() {
+  group('field rename proposals', () {
+    late _DescriptionApi api;
+
+    setUp(() {
+      networkDioClient.dio.interceptors.clear();
+      api = _DescriptionApi();
+      networkDioClient.dio.interceptors.add(api);
+    });
+
+    Future<AppLocalizations> pumpOutbox(
+      WidgetTester tester, {
+      List<String>? fields,
+    }) async {
+      await tester.runAsync(
+        () => PendingContributionsStore.of.upsert(
+          deckId: 'imp-1',
+          kind: PendingContributionKind.fieldRename,
+          preview: 'Word · Meaning',
+          proposedFields: fields,
+        ),
+      );
+      await tester.pumpWidget(
+        buildTestableWidget(
+          const Scaffold(
+            body: SingleChildScrollView(
+              child: PendingContributionsOutboxSheet(importDeckId: 'imp-1'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return AppLocalizations.of(
+        tester.element(find.byType(PendingContributionsOutboxSheet)),
+      )!;
+    }
+
+    testWidgets('an unsent field rename can be sent with a message', (
+      tester,
+    ) async {
+      final loc = await pumpOutbox(tester, fields: ['Word', 'Meaning']);
+
+      await tester.tap(find.text('Word · Meaning'));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField).last, 'clearer');
+      await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+      await tester.pumpAndSettle();
+
+      expect(api.bodies.single, {
+        'proposed_fields': ['Word', 'Meaning'],
+        'message': 'clearer',
+      });
+    });
+
+    testWidgets('a row without its fields is not sent', (tester) async {
+      final loc = await pumpOutbox(tester);
+
+      await tester.tap(find.text('Word · Meaning'));
+      await tester.pump();
+      await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+      await tester.pumpAndSettle();
+
+      expect(api.bodies, isEmpty);
+      expect(find.textContaining(loc.pendingKindFieldRename), findsNWidgets(2));
+    });
   });
 }
