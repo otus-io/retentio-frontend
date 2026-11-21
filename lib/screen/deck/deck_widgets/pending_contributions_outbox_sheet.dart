@@ -125,6 +125,7 @@ class _PendingContributionsOutboxSheetState
     });
     final message = _messageController.text.trim();
     var sentCount = 0;
+    var skippedCount = 0;
     final failures = <String>[];
 
     for (final item in items) {
@@ -141,7 +142,10 @@ class _PendingContributionsOutboxSheetState
                 item.id,
                 message,
               );
-        if (current == null) continue;
+        if (current == null) {
+          skippedCount += 1;
+          continue;
+        }
         // A note typed here wins; otherwise keep the one saved with the row.
         final note = message.isEmpty ? current.message : message;
         final contributionId = await _submitOne(current, note);
@@ -172,6 +176,10 @@ class _PendingContributionsOutboxSheetState
       }
       if (failures.isNotEmpty) {
         _error = failures.take(3).join(' · ');
+      }
+      if (skippedCount > 0) {
+        final skipped = loc.pendingSkippedGone(skippedCount);
+        _notice = _notice == null ? skipped : '$_notice · $skipped';
       }
     });
   }

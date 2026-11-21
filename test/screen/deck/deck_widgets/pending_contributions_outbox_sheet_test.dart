@@ -298,6 +298,7 @@ void _descriptionProposalTests() {
         await tester.pumpAndSettle();
 
         expect(api.bodies, isEmpty);
+        expect(find.text(loc.pendingSkippedGone(1)), findsOneWidget);
         expect(
           await tester.runAsync(
             () => PendingContributionsStore.of.listPending('imp-1'),
@@ -306,6 +307,43 @@ void _descriptionProposalTests() {
         );
       });
     }
+
+    testWidgets('a skipped row is noted beside the ones that were sent', (
+      tester,
+    ) async {
+      await tester.runAsync(
+        () => PendingContributionsStore.of.upsert(
+          deckId: 'imp-1',
+          kind: PendingContributionKind.fieldRename,
+          preview: 'Word · Meaning',
+          proposedFields: ['Word', 'Meaning'],
+        ),
+      );
+      final loc = await pumpOutbox(tester, description: 'Everyday verbs');
+      await tester.runAsync(
+        () => PendingContributionsStore.of.remove(
+          'imp-1',
+          PendingContributionsStore.of.itemId(
+            PendingContributionKind.description,
+          ),
+        ),
+      );
+
+      await tester.tap(find.text(loc.pendingSelectAll(2)));
+      await tester.pump();
+      await tester.tap(find.text(loc.pendingSendSelectedCount(2)));
+      await tester.pumpAndSettle();
+
+      expect(api.bodies, hasLength(1));
+      await tester.tap(find.text(loc.pendingTabPending(0)));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          '${loc.pendingSendSuccess(1)} · ${loc.pendingSkippedGone(1)}',
+        ),
+        findsOneWidget,
+      );
+    });
 
     testWidgets('a row without its text is not sent', (tester) async {
       final loc = await pumpOutbox(tester);

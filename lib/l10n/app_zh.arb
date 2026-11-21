@@ -1410,6 +1410,10 @@
   "@pendingCleared": {
     "placeholders": { "count": { "type": "int" } }
   },
+  "pendingSkippedGone": "{count, plural, =1{1 项已发送或已移除} other{{count} 项已发送或已移除}}",
+  "@pendingSkippedGone": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "pendingKindEdit": "词条修改",
   "pendingKindAdd": "新增词条",
   "pendingKindDeckTags": "卡组标签",

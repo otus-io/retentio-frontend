@@ -1933,6 +1933,17 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String pendingSkippedGone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 项已发送或已移除',
+      one: '1 项已发送或已移除',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get pendingKindEdit => '词条修改';
 
   @override

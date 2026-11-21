@@ -1940,6 +1940,17 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String pendingSkippedGone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count件はすでに送信済みか削除されています',
+      one: '1件はすでに送信済みか削除されています',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get pendingKindEdit => '項目編集';
 
   @override

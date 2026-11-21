@@ -3664,6 +3664,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{Cleared 1 pending item} other{Cleared {count} pending items}}'**
   String pendingCleared(int count);
 
+  /// No description provided for @pendingSkippedGone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item was already sent or removed} other{{count} items were already sent or removed}}'**
+  String pendingSkippedGone(int count);
+
   /// No description provided for @pendingKindEdit.
   ///
   /// In en, this message translates to:
