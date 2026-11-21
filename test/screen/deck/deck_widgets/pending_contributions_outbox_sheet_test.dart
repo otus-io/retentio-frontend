@@ -262,6 +262,51 @@ void _descriptionProposalTests() {
       });
     });
 
+    testWidgets('a row changed since the sheet opened sends its new text', (
+      tester,
+    ) async {
+      final loc = await pumpOutbox(tester, description: 'Old');
+      await tester.runAsync(
+        () => PendingContributionsStore.of.upsert(
+          deckId: 'imp-1',
+          kind: PendingContributionKind.description,
+          preview: 'New',
+          proposedDescription: 'New',
+        ),
+      );
+
+      await tester.tap(find.text('Everyday verbs'));
+      await tester.pump();
+      await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+      await tester.pumpAndSettle();
+
+      expect(api.bodies.single, {'proposed_description': 'New'});
+    });
+
+    for (final note in ['', 'clearer']) {
+      testWidgets('a row removed since the sheet opened is not sent '
+          '(note: "$note")', (tester) async {
+        final loc = await pumpOutbox(tester, description: 'Everyday verbs');
+        await tester.runAsync(
+          () => PendingContributionsStore.of.clearPending('imp-1'),
+        );
+
+        await tester.tap(find.text('Everyday verbs'));
+        await tester.pump();
+        await tester.enterText(find.byType(TextField).last, note);
+        await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+        await tester.pumpAndSettle();
+
+        expect(api.bodies, isEmpty);
+        expect(
+          await tester.runAsync(
+            () => PendingContributionsStore.of.listPending('imp-1'),
+          ),
+          isEmpty,
+        );
+      });
+    }
+
     testWidgets('a row without its text is not sent', (tester) async {
       final loc = await pumpOutbox(tester);
 
