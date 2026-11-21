@@ -131,6 +131,21 @@ class _PendingContributionsOutboxSheetState
       // A note typed here wins; otherwise keep the one saved with the row.
       final note = message.isEmpty ? item.message : message;
       try {
+        // Save the typed note first so a failed send keeps it for the retry.
+        if (message.isNotEmpty) {
+          await PendingContributionsStore.of.upsert(
+            deckId: widget.importDeckId,
+            id: item.id,
+            kind: item.kind,
+            factId: item.factId,
+            preview: item.preview,
+            addTags: item.addTags,
+            removeTags: item.removeTags,
+            proposedFields: item.proposedFields,
+            proposedDescription: item.proposedDescription,
+            message: message,
+          );
+        }
         final contributionId = await _submitOne(item, note);
         await PendingContributionsStore.of.markAsSent(
           widget.importDeckId,
