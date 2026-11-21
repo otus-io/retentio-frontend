@@ -348,6 +348,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Seeded summary'), findsOneWidget);
+      // Only imports send suggestions, so only they get a note box.
+      expect(find.text('Optional message for the author'), findsNothing);
     });
 
     testWidgets('imported deck lets the importer suggest a description', (
@@ -399,6 +401,7 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(find.text('Optional message for the author'), findsOneWidget);
     });
 
     testWidgets('shows validation error when any field name is blank', (
@@ -598,6 +601,7 @@ void main() {
         bool sendFails = false,
         bool imported = true,
         String? firstField,
+        String? note,
       }) async {
         networkDioClient.dio.httpClientAdapter = IOHttpClientAdapter();
         await setupTestEnvironment();
@@ -675,6 +679,12 @@ void main() {
             firstField,
           );
         }
+        if (note != null) {
+          await tester.enterText(
+            find.widgetWithText(TextField, 'Optional message for the author'),
+            note,
+          );
+        }
         await tester.ensureVisible(find.byType(FilledButton));
         await tester.pumpAndSettle();
         await tester.tap(find.byType(FilledButton));
@@ -731,6 +741,26 @@ void main() {
           find.text('Field name suggestion sent to the author'),
           findsOneWidget,
         );
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('the note goes with each suggestion', (tester) async {
+        final (adapter, _) = await editAndSave(
+          tester,
+          text: 'Everyday verbs',
+          firstField: 'Word',
+          note: '  Clearer for beginners  ',
+        );
+
+        expect(adapter.contributionBodies.single, {
+          'proposed_description': 'Everyday verbs',
+          'message': 'Clearer for beginners',
+        });
+        expect(adapter.renameBodies.single, {
+          'proposed_fields': ['Word', 'Back'],
+          'message': 'Clearer for beginners',
+        });
         AppToast.dismiss();
         await tester.pumpAndSettle();
       });

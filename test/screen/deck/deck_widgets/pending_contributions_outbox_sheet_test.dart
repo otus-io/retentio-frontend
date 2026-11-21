@@ -155,6 +155,43 @@ void main() {
       );
     });
 
+    testWidgets('a note saved with the row is sent when none is typed', (
+      tester,
+    ) async {
+      await tester.runAsync(
+        () => PendingContributionsStore.of.upsert(
+          deckId: 'imp-1',
+          kind: PendingContributionKind.description,
+          preview: 'Everyday verbs',
+          proposedDescription: 'Everyday verbs',
+          message: 'saved note',
+        ),
+      );
+      await tester.pumpWidget(
+        buildTestableWidget(
+          const Scaffold(
+            body: SingleChildScrollView(
+              child: PendingContributionsOutboxSheet(importDeckId: 'imp-1'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final loc = AppLocalizations.of(
+        tester.element(find.byType(PendingContributionsOutboxSheet)),
+      )!;
+
+      await tester.tap(find.text('Everyday verbs'));
+      await tester.pump();
+      await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+      await tester.pumpAndSettle();
+
+      expect(api.bodies.single, {
+        'proposed_description': 'Everyday verbs',
+        'message': 'saved note',
+      });
+    });
+
     testWidgets('a row without its text is not sent', (tester) async {
       final loc = await pumpOutbox(tester);
 

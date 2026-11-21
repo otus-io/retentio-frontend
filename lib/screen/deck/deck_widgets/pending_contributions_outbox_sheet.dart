@@ -128,16 +128,15 @@ class _PendingContributionsOutboxSheetState
     final failures = <String>[];
 
     for (final item in items) {
+      // A note typed here wins; otherwise keep the one saved with the row.
+      final note = message.isEmpty ? item.message : message;
       try {
-        final contributionId = await _submitOne(
-          item,
-          message.isEmpty ? null : message,
-        );
+        final contributionId = await _submitOne(item, note);
         await PendingContributionsStore.of.markAsSent(
           widget.importDeckId,
           item.id,
           contributionId: contributionId,
-          message: message.isEmpty ? null : message,
+          message: note,
         );
         sentCount += 1;
       } catch (e) {

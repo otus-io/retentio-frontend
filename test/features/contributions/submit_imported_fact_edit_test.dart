@@ -274,11 +274,13 @@ void main() {
       final ok = await submitImportedDescriptionContribution(
         importDeckId: 'imp-1',
         proposedDescription: 'Everyday verbs',
+        message: 'clearer',
       );
 
       expect(ok, isTrue);
       expect(interceptor.contributionDescriptionBodies.single, {
         'proposed_description': 'Everyday verbs',
+        'message': 'clearer',
       });
       expect(await PendingContributionsStore.of.listPending('imp-1'), isEmpty);
       final sent = await PendingContributionsStore.of.listSent('imp-1');
@@ -325,13 +327,38 @@ void main() {
       final ok = await submitImportedFieldRenameContribution(
         importDeckId: 'imp-1',
         proposedFields: const ['Word', 'Meaning'],
+        message: 'clearer',
       );
 
       expect(ok, isFalse);
       final pending = await PendingContributionsStore.of.listPending('imp-1');
       expect(pending.single.kind, PendingContributionKind.fieldRename);
       expect(pending.single.proposedFields, ['Word', 'Meaning']);
+      expect(pending.single.message, 'clearer');
     });
+  });
+
+  test('a deck tag retry keeps the earlier note', () async {
+    interceptor.contributionDeckTagsFails = true;
+    await submitImportedDeckTagsContribution(
+      importDeckId: 'imp-1',
+      addTags: const ['N5'],
+      removeTags: const [],
+      message: 'beginner level',
+    );
+    interceptor.contributionDeckTagsFails = false;
+
+    final ok = await submitImportedDeckTagsContribution(
+      importDeckId: 'imp-1',
+      addTags: const ['verbs'],
+      removeTags: const [],
+    );
+
+    expect(ok, isTrue);
+    expect(
+      (interceptor.contributionDeckTagsBodies.last as Map)['message'],
+      'beginner level',
+    );
   });
 
   group('mergeTagDeltas', () {
