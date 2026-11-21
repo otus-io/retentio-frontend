@@ -128,18 +128,23 @@ class _PendingContributionsOutboxSheetState
     final failures = <String>[];
 
     for (final item in items) {
-      // A note typed here wins; otherwise keep the one saved with the row.
-      final note = message.isEmpty ? item.message : message;
       try {
-        // Save the typed note first so a failed send keeps it for the retry.
-        if (message.isNotEmpty) {
-          await PendingContributionsStore.of.updateMessage(
-            widget.importDeckId,
-            item.id,
-            message,
-          );
-        }
-        final contributionId = await _submitOne(item, note);
+        // Send the row as stored now, saving a typed note on it first so a
+        // failed send keeps it for the retry. A row removed meanwhile is
+        // skipped.
+        final current = message.isEmpty
+            ? (await PendingContributionsStore.of.listPending(
+                widget.importDeckId,
+              )).where((r) => r.id == item.id).firstOrNull
+            : await PendingContributionsStore.of.updateMessage(
+                widget.importDeckId,
+                item.id,
+                message,
+              );
+        if (current == null) continue;
+        // A note typed here wins; otherwise keep the one saved with the row.
+        final note = message.isEmpty ? current.message : message;
+        final contributionId = await _submitOne(current, note);
         await PendingContributionsStore.of.markAsSent(
           widget.importDeckId,
           item.id,
