@@ -148,6 +148,7 @@ Future<bool> submitImportedDeckTagsContribution({
   required String importDeckId,
   required List<String> addTags,
   required List<String> removeTags,
+  String? message,
   PendingContributionsStore? store,
   DeckCatalogService? catalog,
 }) {
@@ -157,6 +158,7 @@ Future<bool> submitImportedDeckTagsContribution({
       importDeckId: importDeckId,
       addTags: addTags,
       removeTags: removeTags,
+      message: message,
       store: store ?? PendingContributionsStore.of,
       catalog: catalog ?? DeckCatalogService.of,
     ),
@@ -199,6 +201,7 @@ Future<bool> _sendDeckTags({
   required String importDeckId,
   required List<String> addTags,
   required List<String> removeTags,
+  required String? message,
   required PendingContributionsStore store,
   required DeckCatalogService catalog,
 }) async {
@@ -217,17 +220,20 @@ Future<bool> _sendDeckTags({
     await store.remove(importDeckId, pendingId);
     return true;
   }
+  final note = message ?? unsent?.message;
   await store.upsert(
     deckId: importDeckId,
     kind: PendingContributionKind.deckTags,
     addTags: delta.add,
     removeTags: delta.remove,
+    message: note,
   );
   try {
     final contributionId = await catalog.submitDeckTagsContribution(
       importDeckId: importDeckId,
       addTags: delta.add,
       removeTags: delta.remove,
+      message: note,
     );
     await store.markAsSent(
       importDeckId,
@@ -245,6 +251,7 @@ Future<bool> _sendDeckTags({
 Future<bool> submitImportedDescriptionContribution({
   required String importDeckId,
   required String proposedDescription,
+  String? message,
   PendingContributionsStore? store,
   DeckCatalogService? catalog,
 }) async {
@@ -257,11 +264,13 @@ Future<bool> submitImportedDescriptionContribution({
       proposedDescription,
     ]),
     proposedDescription: proposedDescription,
+    message: message,
   );
   try {
     final contributionId = await c.submitDescriptionContribution(
       importDeckId: importDeckId,
       proposedDescription: proposedDescription,
+      message: message,
     );
     await s.markAsSent(
       importDeckId,
@@ -279,6 +288,7 @@ Future<bool> submitImportedDescriptionContribution({
 Future<bool> submitImportedFieldRenameContribution({
   required String importDeckId,
   required List<String> proposedFields,
+  String? message,
   PendingContributionsStore? store,
   DeckCatalogService? catalog,
 }) async {
@@ -288,11 +298,13 @@ Future<bool> submitImportedFieldRenameContribution({
     deckId: importDeckId,
     kind: PendingContributionKind.fieldRename,
     proposedFields: proposedFields,
+    message: message,
   );
   try {
     final contributionId = await c.submitFieldRenameContribution(
       importDeckId: importDeckId,
       proposedFields: proposedFields,
+      message: message,
     );
     await s.markAsSent(
       importDeckId,

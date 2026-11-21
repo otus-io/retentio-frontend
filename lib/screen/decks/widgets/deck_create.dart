@@ -63,6 +63,14 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
   List<Tag> _selectedTags = [];
   String? _submitError;
 
+  /// Optional note sent with an import's suggestions to the author.
+  final _noteController = TextEditingController();
+
+  String? get _note {
+    final note = _noteController.text.trim();
+    return note.isEmpty ? null : note;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -84,6 +92,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
   @override
   void dispose() {
     _deckNameFocusNode.dispose();
+    _noteController.dispose();
     for (final c in _fieldControllers) {
       c.dispose();
     }
@@ -230,6 +239,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
       importDeckId: deckId,
       addTags: toAdd.map(nameFor).toList(),
       removeTags: toRemove.map(nameFor).toList(),
+      message: _note,
     );
     if (!mounted) return;
     final loc = AppLocalizations.of(context)!;
@@ -250,6 +260,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
     final sent = await submitImportedDescriptionContribution(
       importDeckId: deckId,
       proposedDescription: proposed,
+      message: _note,
     );
     if (!mounted) return;
     final loc = AppLocalizations.of(context)!;
@@ -268,6 +279,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
     final sent = await submitImportedFieldRenameContribution(
       importDeckId: deckId,
       proposedFields: proposed,
+      message: _note,
     );
     if (!mounted) return;
     final loc = AppLocalizations.of(context)!;
@@ -547,6 +559,16 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
           },
         ),
         const SizedBox(height: 14),
+        if (isImported) ...[
+          AppInput(
+            controller: _noteController,
+            hint: loc.contributeOptionalMessageHint,
+            maxLines: 3,
+            minLines: 2,
+            maxLength: 2000,
+          ),
+          const SizedBox(height: 14),
+        ],
 
         AppButton(
           label: loc.save,
