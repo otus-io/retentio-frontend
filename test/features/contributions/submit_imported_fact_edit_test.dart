@@ -269,6 +269,39 @@ void main() {
     });
   });
 
+  group('submitImportedDescriptionContribution', () {
+    test('sends description_edit and moves the row to sent', () async {
+      final ok = await submitImportedDescriptionContribution(
+        importDeckId: 'imp-1',
+        proposedDescription: 'Everyday verbs',
+      );
+
+      expect(ok, isTrue);
+      expect(interceptor.contributionDescriptionBodies.single, {
+        'proposed_description': 'Everyday verbs',
+      });
+      expect(await PendingContributionsStore.of.listPending('imp-1'), isEmpty);
+      final sent = await PendingContributionsStore.of.listSent('imp-1');
+      expect(sent.single.kind, PendingContributionKind.description);
+      expect(sent.single.contributionId, 'cont-desc-1');
+    });
+
+    test('keeps the row unsent when sending fails', () async {
+      interceptor.contributionDescriptionFails = true;
+
+      final ok = await submitImportedDescriptionContribution(
+        importDeckId: 'imp-1',
+        proposedDescription: 'Everyday verbs',
+      );
+
+      expect(ok, isFalse);
+      final pending = await PendingContributionsStore.of.listPending('imp-1');
+      expect(pending.single.kind, PendingContributionKind.description);
+      expect(pending.single.proposedDescription, 'Everyday verbs');
+      expect(pending.single.preview, 'Everyday verbs');
+    });
+  });
+
   group('mergeTagDeltas', () {
     test('keeps both changes and cancels opposites', () {
       final merged = mergeTagDeltas(

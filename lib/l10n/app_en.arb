@@ -648,6 +648,9 @@
   "addFactSavedUnsent": "Fact added. Couldn't send it to the author yet; retry from Unsent contributions.",
   "deckTagsSentToAuthor": "Deck tags sent to the author",
   "deckTagsSavedUnsent": "Deck tags saved. Couldn't send them to the author yet; retry from Unsent contributions.",
+  "deckDescriptionSentToAuthor": "Description suggestion sent to the author",
+  "deckDescriptionSavedUnsent": "Couldn't send your description suggestion to the author yet; retry from Unsent contributions.",
+  "deckDescriptionProposeHint": "Suggest a better description; it's sent to the author for review",
   "@addFactSuccess": {
     "description": "Snackbar after a fact was saved to the deck"
   },
@@ -2165,6 +2168,7 @@
   "contributionsProposed": "Proposed",
   "contributionsReported": "Reported",
   "contributionsFields": "Fields",
+  "contributionsDescription": "Description",
   "contributionsTags": "Tags",
   "contributionsPlayBefore": "Play original",
   "@contributionsPlayBefore": {
@@ -2323,6 +2327,7 @@
   "pendingKindFactTags": "Fact tags",
   "pendingKindTemplate": "Template",
   "pendingKindFieldRename": "Field rename",
+  "pendingKindDescription": "Deck description",
   "pendingKindReport": "Report",
   "pendingNotSubmittable": "Can't send from outbox yet",
   "forgotPasswordHint": "Enter your account email and we will send a reset link.",
