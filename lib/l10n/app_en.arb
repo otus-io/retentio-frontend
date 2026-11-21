@@ -2323,6 +2323,10 @@
   "@pendingCleared": {
     "placeholders": { "count": { "type": "int" } }
   },
+  "pendingSkippedGone": "{count, plural, =1{1 item was already sent or removed} other{{count} items were already sent or removed}}",
+  "@pendingSkippedGone": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "pendingKindEdit": "Fact edit",
   "pendingKindAdd": "New fact",
   "pendingKindDeckTags": "Deck tags",

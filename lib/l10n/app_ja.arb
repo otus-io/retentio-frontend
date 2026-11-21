@@ -594,6 +594,7 @@
   "pendingSendPartial": "{sent}件を送信しました。{failed}件が失敗しました",
   "pendingDismissed": "{count, plural, =1{1件を却下しました} other{{count}件を却下しました}}",
   "pendingCleared": "{count, plural, =1{送信待ち1件をクリアしました} other{送信待ち{count}件をクリアしました}}",
+  "pendingSkippedGone": "{count, plural, =1{1件はすでに送信済みか削除されています} other{{count}件はすでに送信済みか削除されています}}",
   "pendingKindEdit": "項目編集",
   "pendingKindAdd": "新規項目",
   "pendingKindDeckTags": "デッキタグ",

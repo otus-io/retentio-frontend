@@ -2077,6 +2077,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String pendingSkippedGone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items were already sent or removed',
+      one: '1 item was already sent or removed',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get pendingKindEdit => 'Fact edit';
 
   @override
