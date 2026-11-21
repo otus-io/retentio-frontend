@@ -270,4 +270,31 @@ void main() {
       expect(find.textContaining(loc.pendingKindFieldRename), findsNWidgets(2));
     });
   });
+
+  testWidgets('report rows stay visible but cannot be sent', (tester) async {
+    await tester.runAsync(
+      () => PendingContributionsStore.of.upsert(
+        deckId: 'imp-1',
+        kind: PendingContributionKind.report,
+        factId: 'fact-1',
+        preview: 'Wrong reading',
+      ),
+    );
+    await tester.pumpWidget(
+      buildTestableWidget(
+        const Scaffold(
+          body: SingleChildScrollView(
+            child: PendingContributionsOutboxSheet(importDeckId: 'imp-1'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final loc = AppLocalizations.of(
+      tester.element(find.byType(PendingContributionsOutboxSheet)),
+    )!;
+
+    expect(find.textContaining('Wrong reading'), findsOneWidget);
+    expect(find.textContaining(loc.pendingNotSubmittable), findsOneWidget);
+  });
 }
