@@ -517,6 +517,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Suggest a better description; it\'s sent to the author for review';
 
   @override
+  String get deckFieldNamesSentToAuthor =>
+      'Field name suggestion sent to the author';
+
+  @override
+  String get deckFieldNamesSavedUnsent =>
+      'Couldn\'t send your field name suggestion to the author yet; retry from Unsent contributions.';
+
+  @override
   String addFactFieldFallback(int number) {
     return 'Field $number';
   }

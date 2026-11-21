@@ -1036,6 +1036,18 @@ abstract class AppLocalizations {
   /// **'Suggest a better description; it\'s sent to the author for review'**
   String get deckDescriptionProposeHint;
 
+  /// No description provided for @deckFieldNamesSentToAuthor.
+  ///
+  /// In en, this message translates to:
+  /// **'Field name suggestion sent to the author'**
+  String get deckFieldNamesSentToAuthor;
+
+  /// No description provided for @deckFieldNamesSavedUnsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send your field name suggestion to the author yet; retry from Unsent contributions.'**
+  String get deckFieldNamesSavedUnsent;
+
   /// Default column label when deck has fewer names than rows
   ///
   /// In en, this message translates to:

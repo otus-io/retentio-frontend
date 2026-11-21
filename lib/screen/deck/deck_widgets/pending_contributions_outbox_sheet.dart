@@ -105,9 +105,9 @@ class _PendingContributionsOutboxSheetState
       PendingContributionKind.add ||
       PendingContributionKind.factTags ||
       PendingContributionKind.deckTags ||
+      PendingContributionKind.fieldRename ||
       PendingContributionKind.description => true,
       PendingContributionKind.template ||
-      PendingContributionKind.fieldRename ||
       PendingContributionKind.report => false,
     };
   }
@@ -209,6 +209,16 @@ class _PendingContributionsOutboxSheetState
           removeTags: item.removeTags,
           message: message,
         );
+      case PendingContributionKind.fieldRename:
+        final fields = item.proposedFields;
+        if (fields == null || fields.isEmpty) {
+          throw Exception('missing fields');
+        }
+        return DeckCatalogService.of.submitFieldRenameContribution(
+          importDeckId: deckId,
+          proposedFields: fields,
+          message: message,
+        );
       case PendingContributionKind.description:
         final description = item.proposedDescription;
         if (description == null || description.isEmpty) {
@@ -222,7 +232,6 @@ class _PendingContributionsOutboxSheetState
       case PendingContributionKind.report:
         throw Exception('reports are sent from card menu');
       case PendingContributionKind.template:
-      case PendingContributionKind.fieldRename:
         throw Exception('unsupported pending kind');
     }
   }

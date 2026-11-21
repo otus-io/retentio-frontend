@@ -59,12 +59,13 @@ class _MessagelessFailureAdapter implements HttpClientAdapter {
 }
 
 /// An imported deck without tags: answers the deck save and the
-/// `description` contribution.
+/// `description` and `fields/rename` contributions.
 class _DescriptionAdapter implements HttpClientAdapter {
   _DescriptionAdapter({required this.sendFails});
 
   final bool sendFails;
   final List<dynamic> contributionBodies = [];
+  final List<dynamic> renameBodies = [];
 
   @override
   Future<ResponseBody> fetch(
@@ -73,7 +74,10 @@ class _DescriptionAdapter implements HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     Map<String, dynamic> body = {'code': 0, 'msg': 'ok', 'data': {}};
-    if (options.uri.path.endsWith('/contributions/description')) {
+    if (options.uri.path.endsWith('/contributions/fields/rename')) {
+      renameBodies.add(options.data);
+      if (sendFails) body = {'code': -1, 'msg': 'Error saving contribution'};
+    } else if (options.uri.path.endsWith('/contributions/description')) {
       contributionBodies.add(options.data);
       if (sendFails) body = {'code': -1, 'msg': 'Error saving contribution'};
     } else if (options.method == 'GET' && options.uri.path.endsWith('/tags')) {
@@ -593,6 +597,7 @@ void main() {
         required String text,
         bool sendFails = false,
         bool imported = true,
+        String? firstField,
       }) async {
         networkDioClient.dio.httpClientAdapter = IOHttpClientAdapter();
         await setupTestEnvironment();
@@ -664,6 +669,12 @@ void main() {
           find.widgetWithText(TextField, 'Author summary'),
           text,
         );
+        if (firstField != null) {
+          await tester.enterText(
+            find.widgetWithText(TextField, 'Front'),
+            firstField,
+          );
+        }
         await tester.ensureVisible(find.byType(FilledButton));
         await tester.pumpAndSettle();
         await tester.tap(find.byType(FilledButton));
@@ -705,6 +716,43 @@ void main() {
         await tester.pumpAndSettle();
       });
 
+      testWidgets('a renamed field is sent to the author', (tester) async {
+        final (adapter, _) = await editAndSave(
+          tester,
+          text: 'Author summary',
+          firstField: ' Word ',
+        );
+
+        expect(adapter.contributionBodies, isEmpty);
+        expect(adapter.renameBodies.single, {
+          'proposed_fields': ['Word', 'Back'],
+        });
+        expect(
+          find.text('Field name suggestion sent to the author'),
+          findsOneWidget,
+        );
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('a failed rename says the suggestion is unsent', (
+        tester,
+      ) async {
+        await editAndSave(
+          tester,
+          text: 'Author summary',
+          firstField: 'Word',
+          sendFails: true,
+        );
+
+        expect(
+          find.textContaining("Couldn't send your field name suggestion"),
+          findsOneWidget,
+        );
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+
       testWidgets('an own deck saves its description directly', (tester) async {
         final (adapter, popped) = await editAndSave(
           tester,
@@ -724,6 +772,7 @@ void main() {
           text: 'Author summary ',
         );
         expect(unchanged.contributionBodies, isEmpty);
+        expect(unchanged.renameBodies, isEmpty);
 
         final (blank, _) = await editAndSave(tester, text: '   ');
         expect(blank.contributionBodies, isEmpty);
