@@ -63,6 +63,9 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
   List<Tag> _selectedTags = [];
   String? _submitError;
 
+  /// True from a Save tap until its save and import suggestions finish.
+  bool _saving = false;
+
   /// Optional note sent with an import's suggestions to the author.
   final _noteController = TextEditingController();
 
@@ -296,6 +299,17 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
     sent
         ? AppToast.success(context, loc.deckFieldNamesSentToAuthor)
         : AppToast.warning(context, loc.deckFieldNamesSavedUnsent);
+  }
+
+  /// Blocks further Save taps while [save] runs, so overlapping saves can't
+  /// stage the same suggestion twice.
+  Future<void> _runSave(Future<void> Function() save) async {
+    setState(() => _saving = true);
+    try {
+      await save();
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -585,75 +599,86 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
           variant: AppButtonVariant.primary,
           fullWidth: true,
           leading: const DeckLoadingState(child: Icon(LucideIcons.save)),
-          onPressed: () async {
-            final deckListCubit = context.read<DeckListCubit>();
-            final navigator = Navigator.of(context);
-            // Read inputs now: the editor may close while requests run.
-            final fieldNames = _fieldControllers.map((c) => c.text).toList();
-            final descriptionText = createCubit.descriptionController.text;
-            final note = _note;
-            setState(() => _submitError = null);
-            final result = await createCubit.submit(fieldNames: fieldNames);
-            if (!mounted) {
-              return;
-            }
+          onPressed: _saving
+              ? null
+              : () => _runSave(() async {
+                  final deckListCubit = context.read<DeckListCubit>();
+                  final navigator = Navigator.of(context);
+                  // Read inputs now: the editor may close while requests run.
+                  final fieldNames = _fieldControllers
+                      .map((c) => c.text)
+                      .toList();
+                  final descriptionText =
+                      createCubit.descriptionController.text;
+                  final note = _note;
+                  setState(() => _submitError = null);
+                  final result = await createCubit.submit(
+                    fieldNames: fieldNames,
+                  );
+                  if (!mounted) {
+                    return;
+                  }
 
-            if (!result.success) {
-              final msg = switch (result.error) {
-                DeckCreateError.nameEmpty => loc.deckEditorNameRequired,
-                DeckCreateError.descriptionEmpty =>
-                  loc.deckEditorDescriptionRequired,
-                DeckCreateError.blankFieldName =>
-                  loc.deckEditorFieldNamesRequired,
-                // Server failure: resolve() localizes known messages below and
-                // falls back to errorUnknown when the server sent none.
-                null => result.message ?? '',
-              };
-              setState(() => _submitError = msg);
-              return;
-            }
+                  if (!result.success) {
+                    final msg = switch (result.error) {
+                      DeckCreateError.nameEmpty => loc.deckEditorNameRequired,
+                      DeckCreateError.descriptionEmpty =>
+                        loc.deckEditorDescriptionRequired,
+                      DeckCreateError.blankFieldName =>
+                        loc.deckEditorFieldNamesRequired,
+                      // Server failure: resolve() localizes known messages below and
+                      // falls back to errorUnknown when the server sent none.
+                      null => result.message ?? '',
+                    };
+                    setState(() => _submitError = msg);
+                    return;
+                  }
 
-            // Sync tags after successful save (diff-based).
-            final deckId = result.newDeckId ?? createCubit.state.deckId;
-            if (deckId.isNotEmpty) {
-              Object? tagError;
-              try {
-                await _syncTags(deckId, note: note);
-              } catch (e) {
-                tagError = e;
-              }
-              // Suggestions don't depend on the tag sync succeeding.
-              if (isImported) {
-                await _proposeDescription(deckId, descriptionText, note: note);
-                await _proposeFieldRename(deckId, fieldNames, note: note);
-              }
-              if (tagError != null) {
-                if (!mounted) {
-                  return;
-                }
-                final message = rawApiErrorMessage(tagError);
-                setState(() => _submitError = message);
-                return;
-              }
-            }
+                  // Sync tags after successful save (diff-based).
+                  final deckId = result.newDeckId ?? createCubit.state.deckId;
+                  if (deckId.isNotEmpty) {
+                    Object? tagError;
+                    try {
+                      await _syncTags(deckId, note: note);
+                    } catch (e) {
+                      tagError = e;
+                    }
+                    // Suggestions don't depend on the tag sync succeeding.
+                    if (isImported) {
+                      await _proposeDescription(
+                        deckId,
+                        descriptionText,
+                        note: note,
+                      );
+                      await _proposeFieldRename(deckId, fieldNames, note: note);
+                    }
+                    if (tagError != null) {
+                      if (!mounted) {
+                        return;
+                      }
+                      final message = rawApiErrorMessage(tagError);
+                      setState(() => _submitError = message);
+                      return;
+                    }
+                  }
 
-            await deckListCubit.onRefresh();
-            if (!mounted) {
-              return;
-            }
-            final updatedName = result.updatedDeckName;
-            if (updatedName == null) {
-              navigator.pop();
-              return;
-            }
-            // An import keeps the author's description until they accept.
-            navigator.pop((
-              updatedName,
-              isImported
-                  ? widget.deck!.description
-                  : result.updatedDescription!,
-            ));
-          },
+                  await deckListCubit.onRefresh();
+                  if (!mounted) {
+                    return;
+                  }
+                  final updatedName = result.updatedDeckName;
+                  if (updatedName == null) {
+                    navigator.pop();
+                    return;
+                  }
+                  // An import keeps the author's description until they accept.
+                  navigator.pop((
+                    updatedName,
+                    isImported
+                        ? widget.deck!.description
+                        : result.updatedDescription!,
+                  ));
+                }),
         ),
         if (_submitError != null)
           Padding(

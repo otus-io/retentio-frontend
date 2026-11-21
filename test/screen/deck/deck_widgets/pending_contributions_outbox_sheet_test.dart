@@ -95,6 +95,76 @@ void main() {
     );
   });
 
+  testWidgets('a typed note stays with a row whose send failed', (
+    tester,
+  ) async {
+    await tester.runAsync(
+      () => PendingContributionsStore.of.upsert(
+        deckId: 'imp-1',
+        kind: PendingContributionKind.deckTags,
+        addTags: ['verbs'],
+        message: 'old note',
+      ),
+    );
+    await tester.pumpWidget(
+      buildTestableWidget(
+        const Scaffold(
+          body: SingleChildScrollView(
+            child: PendingContributionsOutboxSheet(importDeckId: 'imp-1'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final loc = AppLocalizations.of(
+      tester.element(find.byType(PendingContributionsOutboxSheet)),
+    )!;
+
+    await tester.tap(find.text('+verbs'));
+    await tester.pump();
+    await tester.enterText(find.byType(TextField).last, 'new note');
+    await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+    await tester.pumpAndSettle();
+
+    final pending = await tester.runAsync(
+      () => PendingContributionsStore.of.listPending('imp-1'),
+    );
+    expect(pending!.single.message, 'new note');
+    expect(pending.single.addTags, ['verbs']);
+  });
+
+  _descriptionProposalTests();
+  _fieldRenameProposalTests();
+
+  testWidgets('report rows stay visible but cannot be sent', (tester) async {
+    await tester.runAsync(
+      () => PendingContributionsStore.of.upsert(
+        deckId: 'imp-1',
+        kind: PendingContributionKind.report,
+        factId: 'fact-1',
+        preview: 'Wrong reading',
+      ),
+    );
+    await tester.pumpWidget(
+      buildTestableWidget(
+        const Scaffold(
+          body: SingleChildScrollView(
+            child: PendingContributionsOutboxSheet(importDeckId: 'imp-1'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final loc = AppLocalizations.of(
+      tester.element(find.byType(PendingContributionsOutboxSheet)),
+    )!;
+
+    expect(find.textContaining('Wrong reading'), findsOneWidget);
+    expect(find.textContaining(loc.pendingNotSubmittable), findsOneWidget);
+  });
+}
+
+void _descriptionProposalTests() {
   group('description proposals', () {
     late _DescriptionApi api;
 
@@ -204,7 +274,9 @@ void main() {
       expect(find.textContaining(loc.pendingKindDescription), findsNWidgets(2));
     });
   });
+}
 
+void _fieldRenameProposalTests() {
   group('field rename proposals', () {
     late _DescriptionApi api;
 
@@ -269,32 +341,5 @@ void main() {
       expect(api.bodies, isEmpty);
       expect(find.textContaining(loc.pendingKindFieldRename), findsNWidgets(2));
     });
-  });
-
-  testWidgets('report rows stay visible but cannot be sent', (tester) async {
-    await tester.runAsync(
-      () => PendingContributionsStore.of.upsert(
-        deckId: 'imp-1',
-        kind: PendingContributionKind.report,
-        factId: 'fact-1',
-        preview: 'Wrong reading',
-      ),
-    );
-    await tester.pumpWidget(
-      buildTestableWidget(
-        const Scaffold(
-          body: SingleChildScrollView(
-            child: PendingContributionsOutboxSheet(importDeckId: 'imp-1'),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    final loc = AppLocalizations.of(
-      tester.element(find.byType(PendingContributionsOutboxSheet)),
-    )!;
-
-    expect(find.textContaining('Wrong reading'), findsOneWidget);
-    expect(find.textContaining(loc.pendingNotSubmittable), findsOneWidget);
   });
 }

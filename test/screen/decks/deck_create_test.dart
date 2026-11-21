@@ -648,6 +648,7 @@ void main() {
         String? firstField,
         String? note,
         List<String> fields = const ['Front', 'Back'],
+        bool doubleTap = false,
       }) async {
         networkDioClient.dio.httpClientAdapter = IOHttpClientAdapter();
         await setupTestEnvironment();
@@ -734,6 +735,10 @@ void main() {
         await tester.ensureVisible(find.byType(FilledButton));
         await tester.pumpAndSettle();
         await tester.tap(find.byType(FilledButton));
+        if (doubleTap) {
+          await tester.pump();
+          await tester.tap(find.byType(FilledButton), warnIfMissed: false);
+        }
         await tester.pumpAndSettle();
         return (adapter, popped);
       }
@@ -755,6 +760,20 @@ void main() {
         );
         // The deck keeps the author's text until they accept.
         expect(popped, ('Imported deck', 'Author summary'));
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('a second tap during a save sends nothing more', (
+        tester,
+      ) async {
+        final (adapter, _) = await editAndSave(
+          tester,
+          text: 'Everyday verbs',
+          doubleTap: true,
+        );
+
+        expect(adapter.contributionBodies, hasLength(1));
         AppToast.dismiss();
         await tester.pumpAndSettle();
       });
