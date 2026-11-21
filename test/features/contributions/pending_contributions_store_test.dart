@@ -28,6 +28,39 @@ void main() {
       expect(await store.countPending('imp1'), 1);
     });
 
+    test('updateMessage changes only the note of the stored row', () async {
+      final store = PendingContributionsStore.of;
+      await store.upsert(
+        deckId: 'imp1',
+        kind: PendingContributionKind.description,
+        proposedDescription: 'Old',
+        message: 'old note',
+      );
+      await store.upsert(
+        deckId: 'imp1',
+        kind: PendingContributionKind.edit,
+        factId: 'f1',
+      );
+      final before = await store.listPending('imp1');
+      final id = store.itemId(PendingContributionKind.description);
+
+      await store.updateMessage('imp1', id, 'new note');
+
+      final after = await store.listPending('imp1');
+      expect(after.map((r) => r.id), before.map((r) => r.id));
+      final row = after.singleWhere((r) => r.id == id);
+      expect(row.message, 'new note');
+      expect(row.proposedDescription, 'Old');
+      expect(row.savedAt, before.singleWhere((r) => r.id == id).savedAt);
+      expect(after.singleWhere((r) => r.id != id).message, isNull);
+    });
+
+    test('updateMessage ignores a row that is gone', () async {
+      final store = PendingContributionsStore.of;
+      await store.updateMessage('imp1', 'missing', 'note');
+      expect(await store.listPending('imp1'), isEmpty);
+    });
+
     test('markAsSent moves pending to sent history', () async {
       final store = PendingContributionsStore.of;
       await store.upsert(
