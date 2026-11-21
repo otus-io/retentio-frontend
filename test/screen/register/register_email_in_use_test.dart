@@ -57,23 +57,11 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('a taken email points the user at password reset', (
-    tester,
-  ) async {
-    await register(tester, 'Email already in use');
-
-    expect(
-      find.textContaining('This email is already registered.'),
-      findsOneWidget,
-    );
-    await tester.pump(const Duration(seconds: 5));
-  });
-
   testWidgets('an unreadable response still shows an error', (tester) async {
     await register(tester, null);
 
     expect(find.textContaining('is not a subtype'), findsOneWidget);
-    expect(find.textContaining('Account created'), findsNothing);
+    expect(find.textContaining('Check your email'), findsNothing);
     await tester.pump(const Duration(seconds: 5));
   });
 

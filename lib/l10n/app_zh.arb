@@ -18,6 +18,10 @@
   "pleaseFillAllFields": "请填写所有字段",
   "passwordNotMatch": "两次密码输入不一致",
   "usernameContainsSpaces": "用户名不能包含空白字符",
+  "usernameContainsAt": "用户名不能包含 @",
+  "usernameOrEmail": "用户名或邮箱",
+  "verifyEmailUsernameTaken": "在你打开链接前，该用户名已被他人使用。请换一个用户名重新注册。",
+  "verifyEmailAccountExists": "该邮箱已有账号。请直接登录，或在登录页使用“忘记密码？”。",
   "@usernameContainsSpaces": {
     "description": "Username contains whitespace after trim"
   },
@@ -1418,7 +1422,7 @@
   "verifyEmailSuccess": "邮箱验证成功。",
   "verifyEmailMissingToken": "验证链接缺失或无效。",
   "verifyEmailInProgress": "正在验证邮箱…",
-  "registerSuccessCheckEmail": "注册成功。请查收邮件以验证邮箱。",
+  "registerSuccessCheckEmail": "请查收邮件完成注册。打开邮件中的链接后才会创建账号。",
   "emailNotVerified": "邮箱尚未验证。验证后即可发布卡组和提交贡献。",
   "resendVerification": "重新发送验证邮件",
   "verificationEmailSent": "若该邮箱未验证，验证链接已发送。",
@@ -1452,9 +1456,8 @@
   "invalidEmailAddress": "邮箱地址无效",
   "changeEmailSame": "这已经是你的邮箱",
   "changeEmail": "修改邮箱",
-  "changeEmailMessage": "当前邮箱：{email}。新邮箱需要重新验证。",
+  "changeEmailMessage": "当前邮箱：{email}。我们会向新邮箱发送确认链接，打开链接前邮箱保持不变。",
   "newEmail": "新邮箱",
-  "changeEmailSuccess": "邮箱已修改，请查收发送到 {email} 的验证链接。",
-  "registerEmailInUseHint": "该邮箱已被注册。如果是你的邮箱，请在登录页使用“忘记密码？”。",
+  "changeEmailSuccess": "请查收发送到 {email} 的确认链接，打开后邮箱才会更改。",
   "apiTooManyAttempts": "尝试次数过多，请稍后再试。"
 }

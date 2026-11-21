@@ -65,6 +65,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get usernameContainsSpaces => '用户名不能包含空白字符';
 
   @override
+  String get usernameContainsAt => '用户名不能包含 @';
+
+  @override
+  String get usernameOrEmail => '用户名或邮箱';
+
+  @override
+  String get verifyEmailUsernameTaken => '在你打开链接前，该用户名已被他人使用。请换一个用户名重新注册。';
+
+  @override
+  String get verifyEmailAccountExists => '该邮箱已有账号。请直接登录，或在登录页使用“忘记密码？”。';
+
+  @override
   String get usernameLengthInvalid => '用户名须为 2 到 32 个字符';
 
   @override
@@ -1957,7 +1969,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get verifyEmailInProgress => '正在验证邮箱…';
 
   @override
-  String get registerSuccessCheckEmail => '注册成功。请查收邮件以验证邮箱。';
+  String get registerSuccessCheckEmail => '请查收邮件完成注册。打开邮件中的链接后才会创建账号。';
 
   @override
   String get emailNotVerified => '邮箱尚未验证。验证后即可发布卡组和提交贡献。';
@@ -2063,7 +2075,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String changeEmailMessage(String email) {
-    return '当前邮箱：$email。新邮箱需要重新验证。';
+    return '当前邮箱：$email。我们会向新邮箱发送确认链接，打开链接前邮箱保持不变。';
   }
 
   @override
@@ -2071,11 +2083,8 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String changeEmailSuccess(String email) {
-    return '邮箱已修改，请查收发送到 $email 的验证链接。';
+    return '请查收发送到 $email 的确认链接，打开后邮箱才会更改。';
   }
-
-  @override
-  String get registerEmailInUseHint => '该邮箱已被注册。如果是你的邮箱，请在登录页使用“忘记密码？”。';
 
   @override
   String get apiTooManyAttempts => '尝试次数过多，请稍后再试。';

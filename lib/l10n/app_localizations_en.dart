@@ -67,6 +67,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get usernameContainsSpaces => 'Username must not contain whitespace';
 
   @override
+  String get usernameContainsAt => 'Username must not contain @';
+
+  @override
+  String get usernameOrEmail => 'Username or email';
+
+  @override
+  String get verifyEmailUsernameTaken =>
+      'Someone took that username before you opened the link. Please sign up again with another username.';
+
+  @override
+  String get verifyEmailAccountExists =>
+      'An account with this email already exists. Log in, or use “Forgot password?” on the login screen.';
+
+  @override
   String get usernameLengthInvalid =>
       'Username must be between 2 and 32 characters';
 
@@ -2098,7 +2112,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get registerSuccessCheckEmail =>
-      'Account created. Check your email to verify your address.';
+      'Check your email to finish signing up. Your account is created when you open the link.';
 
   @override
   String get emailNotVerified =>
@@ -2220,7 +2234,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String changeEmailMessage(String email) {
-    return 'Current email: $email. The new address must be verified again.';
+    return 'Current email: $email. We will send a confirmation link to the new address; your email stays the same until you open it.';
   }
 
   @override
@@ -2228,12 +2242,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String changeEmailSuccess(String email) {
-    return 'Email changed. Check $email for a verification link.';
+    return 'Check $email for a confirmation link. Your email changes when you open it.';
   }
-
-  @override
-  String get registerEmailInUseHint =>
-      'This email is already registered. If it is yours, use “Forgot password?” on the login screen.';
 
   @override
   String get apiTooManyAttempts => 'Too many attempts. Please try again later.';

@@ -82,6 +82,22 @@
   "@usernameContainsSpaces": {
     "description": "Username contains whitespace after trim"
   },
+  "usernameContainsAt": "Username must not contain @",
+  "@usernameContainsAt": {
+    "description": "Username contains @ (reserved for email login)"
+  },
+  "usernameOrEmail": "Username or email",
+  "@usernameOrEmail": {
+    "description": "Login field label: accepts a username or the account email"
+  },
+  "verifyEmailUsernameTaken": "Someone took that username before you opened the link. Please sign up again with another username.",
+  "@verifyEmailUsernameTaken": {
+    "description": "Verify sign-up link: the username was claimed meanwhile"
+  },
+  "verifyEmailAccountExists": "An account with this email already exists. Log in, or use “Forgot password?” on the login screen.",
+  "@verifyEmailAccountExists": {
+    "description": "Verify link: an account already uses this email"
+  },
   "usernameLengthInvalid": "Username must be between 2 and 32 characters",
   "@usernameLengthInvalid": {
     "description": "Username length must be 2 to 32 characters"
@@ -2349,7 +2365,7 @@
   "@verifyEmailInProgress": {
     "description": "Shown while verifying email token"
   },
-  "registerSuccessCheckEmail": "Account created. Check your email to verify your address.",
+  "registerSuccessCheckEmail": "Check your email to finish signing up. Your account is created when you open the link.",
   "@registerSuccessCheckEmail": {
     "description": "Register success with soft verification hint"
   },
@@ -2478,14 +2494,12 @@
   "@changeEmailSame": {"description": "Change email: new address equals the current one"},
   "changeEmail": "Change email",
   "@changeEmail": {"description": "Profile button and dialog title to change the account email"},
-  "changeEmailMessage": "Current email: {email}. The new address must be verified again.",
+  "changeEmailMessage": "Current email: {email}. We will send a confirmation link to the new address; your email stays the same until you open it.",
   "@changeEmailMessage": {"description": "Change email dialog body with the current address", "placeholders": {"email": {"type": "String"}}},
   "newEmail": "New email",
   "@newEmail": {"description": "Change email dialog: new address field label"},
-  "changeEmailSuccess": "Email changed. Check {email} for a verification link.",
+  "changeEmailSuccess": "Check {email} for a confirmation link. Your email changes when you open it.",
   "@changeEmailSuccess": {"description": "Snack after changing the email", "placeholders": {"email": {"type": "String"}}},
-  "registerEmailInUseHint": "This email is already registered. If it is yours, use “Forgot password?” on the login screen.",
-  "@registerEmailInUseHint": {"description": "Register failure: email already registered, point to password reset"},
   "apiTooManyAttempts": "Too many attempts. Please try again later.",
   "@apiTooManyAttempts": {"description": "API 429: too many failed password confirmations (change email)"}
 }

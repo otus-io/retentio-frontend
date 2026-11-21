@@ -208,6 +208,30 @@ abstract class AppLocalizations {
   /// **'Username must not contain whitespace'**
   String get usernameContainsSpaces;
 
+  /// Username contains @ (reserved for email login)
+  ///
+  /// In en, this message translates to:
+  /// **'Username must not contain @'**
+  String get usernameContainsAt;
+
+  /// Login field label: accepts a username or the account email
+  ///
+  /// In en, this message translates to:
+  /// **'Username or email'**
+  String get usernameOrEmail;
+
+  /// Verify sign-up link: the username was claimed meanwhile
+  ///
+  /// In en, this message translates to:
+  /// **'Someone took that username before you opened the link. Please sign up again with another username.'**
+  String get verifyEmailUsernameTaken;
+
+  /// Verify link: an account already uses this email
+  ///
+  /// In en, this message translates to:
+  /// **'An account with this email already exists. Log in, or use “Forgot password?” on the login screen.'**
+  String get verifyEmailAccountExists;
+
   /// Username length must be 2 to 32 characters
   ///
   /// In en, this message translates to:
@@ -3715,7 +3739,7 @@ abstract class AppLocalizations {
   /// Register success with soft verification hint
   ///
   /// In en, this message translates to:
-  /// **'Account created. Check your email to verify your address.'**
+  /// **'Check your email to finish signing up. Your account is created when you open the link.'**
   String get registerSuccessCheckEmail;
 
   /// Profile banner when email_verified is false
@@ -3919,7 +3943,7 @@ abstract class AppLocalizations {
   /// Change email dialog body with the current address
   ///
   /// In en, this message translates to:
-  /// **'Current email: {email}. The new address must be verified again.'**
+  /// **'Current email: {email}. We will send a confirmation link to the new address; your email stays the same until you open it.'**
   String changeEmailMessage(String email);
 
   /// Change email dialog: new address field label
@@ -3931,14 +3955,8 @@ abstract class AppLocalizations {
   /// Snack after changing the email
   ///
   /// In en, this message translates to:
-  /// **'Email changed. Check {email} for a verification link.'**
+  /// **'Check {email} for a confirmation link. Your email changes when you open it.'**
   String changeEmailSuccess(String email);
-
-  /// Register failure: email already registered, point to password reset
-  ///
-  /// In en, this message translates to:
-  /// **'This email is already registered. If it is yours, use “Forgot password?” on the login screen.'**
-  String get registerEmailInUseHint;
 
   /// API 429: too many failed password confirmations (change email)
   ///

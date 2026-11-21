@@ -343,8 +343,8 @@ class _LoginForm extends StatelessWidget {
         children: [
           AppInput(
             controller: usernameController,
-            label: loc.username,
-            autofillHints: const [AutofillHints.username],
+            label: loc.usernameOrEmail,
+            autofillHints: const [AutofillHints.username, AutofillHints.email],
             textInputAction: TextInputAction.next,
             floatingLabelBehavior: FloatingLabelBehavior.never,
             filled: true,

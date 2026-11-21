@@ -118,7 +118,8 @@ void main() {
     expect(find.byType(AlertDialog), findsNothing);
     expect(
       find.text(
-        'Email changed. Check new@example.com for a verification link.',
+        'Check new@example.com for a confirmation link. '
+        'Your email changes when you open it.',
       ),
       findsOneWidget,
     );

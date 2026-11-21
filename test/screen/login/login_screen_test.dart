@@ -48,7 +48,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(TextField), findsNWidgets(2));
-      expect(find.text('Username'), findsOneWidget);
+      expect(find.text('Username or email'), findsOneWidget);
       expect(find.text('Password'), findsOneWidget);
     });
 
@@ -85,6 +85,19 @@ void main() {
         find.byType(TextField).last,
       );
       expect(passwordField.obscureText, isTrue);
+    });
+
+    testWidgets('login field offers username and email autofill', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestableWidget(const LoginScreen()));
+      await tester.pumpAndSettle();
+
+      final loginField = tester.widget<TextField>(find.byType(TextField).first);
+      expect(loginField.autofillHints, [
+        AutofillHints.username,
+        AutofillHints.email,
+      ]);
     });
 
     testWidgets('can enter username', (tester) async {

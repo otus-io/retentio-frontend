@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:retentio/l10n/app_localizations.dart';
 
 /// Username is 2–32 Unicode characters after trim, with no whitespace left
-/// inside. A new password is 8–64 Unicode characters, with no whitespace, and
+/// inside and no @ (login treats input with @ as an email). A new password is 8–64 Unicode characters, with no whitespace, and
 /// at most 72 UTF-8 bytes so bcrypt can hash it. Login checks username
 /// whitespace only, so an older password can still be submitted.
 class AccountLimits {
@@ -39,6 +39,7 @@ class AccountLimits {
     if (username != null) {
       final spaceMessage = usernameSpaceMessage(loc, username);
       if (spaceMessage != null) return spaceMessage;
+      if (username.contains('@')) return loc.usernameContainsAt;
       final chars = username.trim().runes.length;
       if (chars < usernameMin || chars > usernameMax) {
         return loc.usernameLengthInvalid;

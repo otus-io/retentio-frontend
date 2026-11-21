@@ -12,6 +12,11 @@ class ApiErrorMessages {
     // Legacy keys (pre-existing l10n entries)
     'Invalid credentials': (loc) => loc.authInvalidCredentials,
     'Username already exists': (loc) => loc.authUsernameAlreadyExists,
+    'Username must not contain @': (loc) => loc.usernameContainsAt,
+    'Username already exists; sign up again with another username': (loc) =>
+        loc.verifyEmailUsernameTaken,
+    'An account with this email already exists': (loc) =>
+        loc.verifyEmailAccountExists,
     'Email already in use': (loc) => loc.authEmailAlreadyInUse,
     'Email verification required': (loc) => loc.emailVerificationRequired,
     'Invalid email address': (loc) => loc.invalidEmailAddress,

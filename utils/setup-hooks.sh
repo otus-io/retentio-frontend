@@ -4,7 +4,7 @@ set -e
 # =============================================================================
 # Setup script to install git hooks for Retentio Frontend
 # Run this once after cloning the repo: ./utils/setup-hooks.sh
-# Re-run after utils/pre-commit changes to refresh the installed hook.
+# Re-run after adding a hook to refresh the installed hooks.
 # =============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -23,6 +23,14 @@ EOF
 chmod +x "$HOOKS_DIR/pre-commit"
 echo "✓ pre-commit hook installed (delegates to utils/pre-commit)"
 
+cat > "$HOOKS_DIR/pre-push" << 'EOF'
+#!/bin/bash
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+exec "$REPO_ROOT/utils/pre-push" "$@"
+EOF
+chmod +x "$HOOKS_DIR/pre-push"
+echo "✓ pre-push hook installed (delegates to utils/pre-push)"
+
 echo ""
 echo "Done. Hooks are installed in .git/hooks/"
-echo "To skip hooks temporarily: git commit --no-verify"
+echo "To skip hooks temporarily: git commit --no-verify / git push --no-verify"
