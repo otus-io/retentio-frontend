@@ -133,17 +133,10 @@ class _PendingContributionsOutboxSheetState
       try {
         // Save the typed note first so a failed send keeps it for the retry.
         if (message.isNotEmpty) {
-          await PendingContributionsStore.of.upsert(
-            deckId: widget.importDeckId,
-            id: item.id,
-            kind: item.kind,
-            factId: item.factId,
-            preview: item.preview,
-            addTags: item.addTags,
-            removeTags: item.removeTags,
-            proposedFields: item.proposedFields,
-            proposedDescription: item.proposedDescription,
-            message: message,
+          await PendingContributionsStore.of.updateMessage(
+            widget.importDeckId,
+            item.id,
+            message,
           );
         }
         final contributionId = await _submitOne(item, note);

@@ -221,6 +221,33 @@ class PendingContributionsStore {
     return listPending(deckId);
   }
 
+  /// Replaces only the note of the stored row [pendingId], keeping its
+  /// current fields and saved time. Does nothing when the row is gone.
+  Future<void> updateMessage(
+    String deckId,
+    String pendingId,
+    String message,
+  ) async {
+    final rows = await _readPending(deckId);
+    await _writePending(deckId, [
+      for (final r in rows)
+        r.id != pendingId
+            ? r
+            : PendingContributionItem(
+                id: r.id,
+                kind: r.kind,
+                savedAt: r.savedAt,
+                factId: r.factId,
+                preview: r.preview,
+                addTags: r.addTags,
+                removeTags: r.removeTags,
+                proposedFields: r.proposedFields,
+                proposedDescription: r.proposedDescription,
+                message: message,
+              ),
+    ]);
+  }
+
   Future<List<PendingContributionItem>> remove(
     String deckId,
     String pendingId,
