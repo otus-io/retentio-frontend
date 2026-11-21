@@ -273,3 +273,34 @@ Future<bool> submitImportedDescriptionContribution({
     return false;
   }
 }
+
+/// Stages then sends a `field_rename` proposal for an imported deck.
+/// Returns false when sending failed; the row stays in the outbox for retry.
+Future<bool> submitImportedFieldRenameContribution({
+  required String importDeckId,
+  required List<String> proposedFields,
+  PendingContributionsStore? store,
+  DeckCatalogService? catalog,
+}) async {
+  final s = store ?? PendingContributionsStore.of;
+  final c = catalog ?? DeckCatalogService.of;
+  await s.upsert(
+    deckId: importDeckId,
+    kind: PendingContributionKind.fieldRename,
+    proposedFields: proposedFields,
+  );
+  try {
+    final contributionId = await c.submitFieldRenameContribution(
+      importDeckId: importDeckId,
+      proposedFields: proposedFields,
+    );
+    await s.markAsSent(
+      importDeckId,
+      s.itemId(PendingContributionKind.fieldRename),
+      contributionId: contributionId,
+    );
+    return true;
+  } catch (_) {
+    return false;
+  }
+}

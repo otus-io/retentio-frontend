@@ -167,4 +167,70 @@ void main() {
       expect(find.textContaining(loc.pendingKindDescription), findsNWidgets(2));
     });
   });
+
+  group('field rename proposals', () {
+    late _DescriptionApi api;
+
+    setUp(() {
+      networkDioClient.dio.interceptors.clear();
+      api = _DescriptionApi();
+      networkDioClient.dio.interceptors.add(api);
+    });
+
+    Future<AppLocalizations> pumpOutbox(
+      WidgetTester tester, {
+      List<String>? fields,
+    }) async {
+      await tester.runAsync(
+        () => PendingContributionsStore.of.upsert(
+          deckId: 'imp-1',
+          kind: PendingContributionKind.fieldRename,
+          preview: 'Word · Meaning',
+          proposedFields: fields,
+        ),
+      );
+      await tester.pumpWidget(
+        buildTestableWidget(
+          const Scaffold(
+            body: SingleChildScrollView(
+              child: PendingContributionsOutboxSheet(importDeckId: 'imp-1'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return AppLocalizations.of(
+        tester.element(find.byType(PendingContributionsOutboxSheet)),
+      )!;
+    }
+
+    testWidgets('an unsent field rename can be sent with a message', (
+      tester,
+    ) async {
+      final loc = await pumpOutbox(tester, fields: ['Word', 'Meaning']);
+
+      await tester.tap(find.text('Word · Meaning'));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField).last, 'clearer');
+      await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+      await tester.pumpAndSettle();
+
+      expect(api.bodies.single, {
+        'proposed_fields': ['Word', 'Meaning'],
+        'message': 'clearer',
+      });
+    });
+
+    testWidgets('a row without its fields is not sent', (tester) async {
+      final loc = await pumpOutbox(tester);
+
+      await tester.tap(find.text('Word · Meaning'));
+      await tester.pump();
+      await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+      await tester.pumpAndSettle();
+
+      expect(api.bodies, isEmpty);
+      expect(find.textContaining(loc.pendingKindFieldRename), findsNWidgets(2));
+    });
+  });
 }

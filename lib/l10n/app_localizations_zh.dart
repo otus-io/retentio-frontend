@@ -493,6 +493,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deckDescriptionProposeHint => '建议更好的描述，将发送给作者审核';
 
   @override
+  String get deckFieldNamesSentToAuthor => '列名建议已发送给作者';
+
+  @override
+  String get deckFieldNamesSavedUnsent => '列名建议暂未发送给作者，可在未发送贡献中重试。';
+
+  @override
   String addFactFieldFallback(int number) {
     return '字段 $number';
   }

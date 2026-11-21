@@ -651,6 +651,8 @@
   "deckDescriptionSentToAuthor": "Description suggestion sent to the author",
   "deckDescriptionSavedUnsent": "Couldn't send your description suggestion to the author yet; retry from Unsent contributions.",
   "deckDescriptionProposeHint": "Suggest a better description; it's sent to the author for review",
+  "deckFieldNamesSentToAuthor": "Field name suggestion sent to the author",
+  "deckFieldNamesSavedUnsent": "Couldn't send your field name suggestion to the author yet; retry from Unsent contributions.",
   "@addFactSuccess": {
     "description": "Snackbar after a fact was saved to the deck"
   },

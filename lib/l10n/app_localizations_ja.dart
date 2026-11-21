@@ -496,6 +496,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deckDescriptionProposeHint => 'より良い説明を提案できます。作成者に送られ、確認されます';
 
   @override
+  String get deckFieldNamesSentToAuthor => '列名の提案を作成者に送りました';
+
+  @override
+  String get deckFieldNamesSavedUnsent => '列名の提案を作成者に送れませんでした。未送信の貢献から再送できます。';
+
+  @override
   String addFactFieldFallback(int number) {
     return 'フィールド $number';
   }

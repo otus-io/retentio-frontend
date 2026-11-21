@@ -302,6 +302,38 @@ void main() {
     });
   });
 
+  group('submitImportedFieldRenameContribution', () {
+    test('sends field_rename and moves the row to sent', () async {
+      final ok = await submitImportedFieldRenameContribution(
+        importDeckId: 'imp-1',
+        proposedFields: const ['Word', 'Meaning'],
+      );
+
+      expect(ok, isTrue);
+      expect(interceptor.contributionFieldRenameBodies.single, {
+        'proposed_fields': ['Word', 'Meaning'],
+      });
+      expect(await PendingContributionsStore.of.listPending('imp-1'), isEmpty);
+      final sent = await PendingContributionsStore.of.listSent('imp-1');
+      expect(sent.single.kind, PendingContributionKind.fieldRename);
+      expect(sent.single.contributionId, 'cont-fields-1');
+    });
+
+    test('keeps the row unsent when sending fails', () async {
+      interceptor.contributionFieldRenameFails = true;
+
+      final ok = await submitImportedFieldRenameContribution(
+        importDeckId: 'imp-1',
+        proposedFields: const ['Word', 'Meaning'],
+      );
+
+      expect(ok, isFalse);
+      final pending = await PendingContributionsStore.of.listPending('imp-1');
+      expect(pending.single.kind, PendingContributionKind.fieldRename);
+      expect(pending.single.proposedFields, ['Word', 'Meaning']);
+    });
+  });
+
   group('mergeTagDeltas', () {
     test('keeps both changes and cancels opposites', () {
       final merged = mergeTagDeltas(

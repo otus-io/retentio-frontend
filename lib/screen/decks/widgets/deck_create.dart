@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -257,6 +258,24 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
         : AppToast.warning(context, loc.deckDescriptionSavedUnsent);
   }
 
+  /// Imports can't PATCH field names; renamed labels go to the author instead.
+  Future<void> _proposeFieldRename(String deckId) async {
+    final original = widget.deck?.fields ?? const <String>[];
+    final proposed = normalizeDeckFieldNames(
+      _fieldControllers.map((c) => c.text).toList(),
+    );
+    if (listEquals(proposed, original)) return;
+    final sent = await submitImportedFieldRenameContribution(
+      importDeckId: deckId,
+      proposedFields: proposed,
+    );
+    if (!mounted) return;
+    final loc = AppLocalizations.of(context)!;
+    sent
+        ? AppToast.success(context, loc.deckFieldNamesSentToAuthor)
+        : AppToast.warning(context, loc.deckFieldNamesSavedUnsent);
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -370,10 +389,10 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
                       ),
                     ),
                     const SizedBox(height: 4),
+                    // Rename only: an import keeps the author's field count/order.
                     AppInput(
                       controller: _fieldControllers[i],
                       style: DeckTextStyles.fieldInput(theme),
-                      enabled: false,
                     ),
                   ],
                 );
@@ -565,7 +584,10 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
             if (deckId.isNotEmpty) {
               try {
                 await _syncTags(deckId);
-                if (isImported) await _proposeDescription(deckId);
+                if (isImported) {
+                  await _proposeDescription(deckId);
+                  await _proposeFieldRename(deckId);
+                }
               } catch (e) {
                 if (!mounted) {
                   return;
