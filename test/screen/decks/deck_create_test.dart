@@ -99,10 +99,14 @@ class _DescriptionAdapter implements HttpClientAdapter {
 /// An imported deck with one tag: answers the tag list, the deck save, the
 /// tag removal and the `deck-tags` contribution.
 class _DeckTagsAdapter implements HttpClientAdapter {
-  _DeckTagsAdapter({required this.sendFails});
+  _DeckTagsAdapter({required this.sendFails, this.removeFails = false});
 
   final bool sendFails;
+
+  /// When true, removing the tag answers a malformed body, which throws.
+  final bool removeFails;
   final List<dynamic> contributionBodies = [];
+  final List<dynamic> descriptionBodies = [];
 
   @override
   Future<ResponseBody> fetch(
@@ -115,6 +119,16 @@ class _DeckTagsAdapter implements HttpClientAdapter {
     if (path.endsWith('/contributions/deck-tags')) {
       contributionBodies.add(options.data);
       if (sendFails) body = {'code': -1, 'msg': 'Error saving contribution'};
+    } else if (path.endsWith('/contributions/description')) {
+      descriptionBodies.add(options.data);
+    } else if (options.method == 'DELETE' && removeFails) {
+      return ResponseBody.fromString(
+        jsonEncode(['not', 'a', 'map']),
+        200,
+        headers: {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+        },
+      );
     } else if (options.method == 'GET' && path.endsWith('/tags')) {
       body['data'] = {
         'tags': [
@@ -523,6 +537,8 @@ void main() {
       Future<_DeckTagsAdapter> removeTagAndSave(
         WidgetTester tester, {
         required bool sendFails,
+        bool removeFails = false,
+        String? description,
       }) async {
         // An earlier test may have left its own adapter on the shared client.
         networkDioClient.dio.httpClientAdapter = IOHttpClientAdapter();
@@ -535,7 +551,10 @@ void main() {
           baseUrl: 'http://localhost',
           options: BaseOptions(),
         );
-        final adapter = _DeckTagsAdapter(sendFails: sendFails);
+        final adapter = _DeckTagsAdapter(
+          sendFails: sendFails,
+          removeFails: removeFails,
+        );
         networkDioClient.dio.httpClientAdapter = adapter;
         final imported = Deck.fromJson({
           'id': 'imp-tags-${sendFails ? 'unsent' : 'sent'}',
@@ -559,6 +578,12 @@ void main() {
 
         await tester.tap(find.byIcon(Icons.close_rounded));
         await tester.pump();
+        if (description != null) {
+          await tester.enterText(
+            find.widgetWithText(TextField, 'Author summary'),
+            description,
+          );
+        }
         await tester.ensureVisible(find.byType(FilledButton));
         await tester.pumpAndSettle();
         await tester.tap(find.byType(FilledButton));
@@ -574,6 +599,26 @@ void main() {
           'Verbs',
         ]);
         expect(find.text('Deck tags sent to the author'), findsOneWidget);
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
+      });
+
+      testWidgets('a failed tag sync still sends the description', (
+        tester,
+      ) async {
+        final adapter = await removeTagAndSave(
+          tester,
+          sendFails: false,
+          removeFails: true,
+          description: 'Everyday verbs',
+        );
+
+        expect(adapter.descriptionBodies.single, {
+          'proposed_description': 'Everyday verbs',
+        });
+        expect(adapter.contributionBodies, isEmpty);
+        // The editor stays open on the tag error.
+        expect(find.byType(DeckCreate), findsOneWidget);
         AppToast.dismiss();
         await tester.pumpAndSettle();
       });
@@ -602,6 +647,7 @@ void main() {
         bool imported = true,
         String? firstField,
         String? note,
+        List<String> fields = const ['Front', 'Back'],
       }) async {
         networkDioClient.dio.httpClientAdapter = IOHttpClientAdapter();
         await setupTestEnvironment();
@@ -622,7 +668,7 @@ void main() {
           'rate': 20,
           if (imported) 'source_deck_id': 'src-1',
           'owner': {'username': 'u', 'email': 'u@e.com'},
-          'fields': ['Front', 'Back'],
+          'fields': fields,
         });
 
         (String, String)? popped;
@@ -804,8 +850,19 @@ void main() {
         expect(unchanged.contributionBodies, isEmpty);
         expect(unchanged.renameBodies, isEmpty);
 
+        final (spaced, _) = await editAndSave(
+          tester,
+          text: 'Author summary',
+          fields: const ['Front ', 'Back'],
+        );
+        expect(spaced.renameBodies, isEmpty);
+
         final (blank, _) = await editAndSave(tester, text: '   ');
         expect(blank.contributionBodies, isEmpty);
+        // Clearing the description is not a suggestion; say so.
+        expect(find.text('Please enter a deck description'), findsOneWidget);
+        AppToast.dismiss();
+        await tester.pumpAndSettle();
       });
     });
   });

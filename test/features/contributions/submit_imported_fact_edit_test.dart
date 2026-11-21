@@ -335,7 +335,43 @@ void main() {
       expect(pending.single.kind, PendingContributionKind.fieldRename);
       expect(pending.single.proposedFields, ['Word', 'Meaning']);
       expect(pending.single.message, 'clearer');
+      expect(pending.single.preview, 'Word · Meaning');
     });
+  });
+
+  test('re-suggesting without a note keeps the unsent note', () async {
+    interceptor.contributionDescriptionFails = true;
+    interceptor.contributionFieldRenameFails = true;
+    await submitImportedDescriptionContribution(
+      importDeckId: 'imp-1',
+      proposedDescription: 'First',
+      message: 'typo fixes',
+    );
+    await submitImportedFieldRenameContribution(
+      importDeckId: 'imp-1',
+      proposedFields: const ['Word', 'Meaning'],
+      message: 'clearer labels',
+    );
+    interceptor.contributionDescriptionFails = false;
+    interceptor.contributionFieldRenameFails = false;
+
+    await submitImportedDescriptionContribution(
+      importDeckId: 'imp-1',
+      proposedDescription: 'Second',
+    );
+    await submitImportedFieldRenameContribution(
+      importDeckId: 'imp-1',
+      proposedFields: const ['Term', 'Meaning'],
+    );
+
+    expect(
+      (interceptor.contributionDescriptionBodies.last as Map)['message'],
+      'typo fixes',
+    );
+    expect(
+      (interceptor.contributionFieldRenameBodies.last as Map)['message'],
+      'clearer labels',
+    );
   });
 
   test('a deck tag retry keeps the earlier note', () async {

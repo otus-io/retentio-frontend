@@ -257,6 +257,13 @@ Future<bool> submitImportedDescriptionContribution({
 }) async {
   final s = store ?? PendingContributionsStore.of;
   final c = catalog ?? DeckCatalogService.of;
+  final note =
+      message ??
+      await _unsentMessage(
+        s,
+        importDeckId,
+        PendingContributionKind.description,
+      );
   await s.upsert(
     deckId: importDeckId,
     kind: PendingContributionKind.description,
@@ -264,13 +271,13 @@ Future<bool> submitImportedDescriptionContribution({
       proposedDescription,
     ]),
     proposedDescription: proposedDescription,
-    message: message,
+    message: note,
   );
   try {
     final contributionId = await c.submitDescriptionContribution(
       importDeckId: importDeckId,
       proposedDescription: proposedDescription,
-      message: message,
+      message: note,
     );
     await s.markAsSent(
       importDeckId,
@@ -294,17 +301,25 @@ Future<bool> submitImportedFieldRenameContribution({
 }) async {
   final s = store ?? PendingContributionsStore.of;
   final c = catalog ?? DeckCatalogService.of;
+  final note =
+      message ??
+      await _unsentMessage(
+        s,
+        importDeckId,
+        PendingContributionKind.fieldRename,
+      );
   await s.upsert(
     deckId: importDeckId,
     kind: PendingContributionKind.fieldRename,
+    preview: proposedFields.join(' · '),
     proposedFields: proposedFields,
-    message: message,
+    message: note,
   );
   try {
     final contributionId = await c.submitFieldRenameContribution(
       importDeckId: importDeckId,
       proposedFields: proposedFields,
-      message: message,
+      message: note,
     );
     await s.markAsSent(
       importDeckId,
@@ -315,4 +330,15 @@ Future<bool> submitImportedFieldRenameContribution({
   } catch (_) {
     return false;
   }
+}
+
+/// Note on the deck's unsent row of [kind], kept when a re-suggestion has none.
+Future<String?> _unsentMessage(
+  PendingContributionsStore store,
+  String importDeckId,
+  PendingContributionKind kind,
+) async {
+  final id = store.itemId(kind);
+  final rows = await store.listPending(importDeckId);
+  return rows.where((r) => r.id == id).firstOrNull?.message;
 }

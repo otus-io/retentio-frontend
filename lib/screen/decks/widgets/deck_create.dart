@@ -220,7 +220,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
   }
 
   /// After a successful save, syncs selected tags with the deck (diff-based).
-  Future<void> _syncTags(String deckId) async {
+  Future<void> _syncTags(String deckId, {String? note}) async {
     final toAdd = _selectedTagIds.difference(_originalTagIds);
     final toRemove = _originalTagIds.difference(_selectedTagIds);
     final allTags = context.read<TagManagerCubit>().state.tags;
@@ -239,7 +239,7 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
       importDeckId: deckId,
       addTags: toAdd.map(nameFor).toList(),
       removeTags: toRemove.map(nameFor).toList(),
-      message: _note,
+      message: note,
     );
     if (!mounted) return;
     final loc = AppLocalizations.of(context)!;
@@ -249,18 +249,26 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
   }
 
   /// Imports can't PATCH the description; a change goes to the author instead.
-  Future<void> _proposeDescription(String deckId) async {
+  Future<void> _proposeDescription(
+    String deckId,
+    String text, {
+    String? note,
+  }) async {
     final original = widget.deck?.description.trim() ?? '';
-    final proposed = context
-        .read<DeckCreateCubit>()
-        .descriptionController
-        .text
-        .trim();
-    if (proposed.isEmpty || proposed == original) return;
+    final proposed = text.trim();
+    if (proposed == original) return;
+    if (proposed.isEmpty) {
+      if (!mounted) return;
+      AppToast.warning(
+        context,
+        AppLocalizations.of(context)!.deckEditorDescriptionRequired,
+      );
+      return;
+    }
     final sent = await submitImportedDescriptionContribution(
       importDeckId: deckId,
       proposedDescription: proposed,
-      message: _note,
+      message: note,
     );
     if (!mounted) return;
     final loc = AppLocalizations.of(context)!;
@@ -270,16 +278,18 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
   }
 
   /// Imports can't PATCH field names; renamed labels go to the author instead.
-  Future<void> _proposeFieldRename(String deckId) async {
-    final original = widget.deck?.fields ?? const <String>[];
-    final proposed = normalizeDeckFieldNames(
-      _fieldControllers.map((c) => c.text).toList(),
-    );
+  Future<void> _proposeFieldRename(
+    String deckId,
+    List<String> fieldNames, {
+    String? note,
+  }) async {
+    final original = normalizeDeckFieldNames(widget.deck?.fields ?? const []);
+    final proposed = normalizeDeckFieldNames(fieldNames);
     if (listEquals(proposed, original)) return;
     final sent = await submitImportedFieldRenameContribution(
       importDeckId: deckId,
       proposedFields: proposed,
-      message: _note,
+      message: note,
     );
     if (!mounted) return;
     final loc = AppLocalizations.of(context)!;
@@ -578,10 +588,12 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
           onPressed: () async {
             final deckListCubit = context.read<DeckListCubit>();
             final navigator = Navigator.of(context);
+            // Read inputs now: the editor may close while requests run.
+            final fieldNames = _fieldControllers.map((c) => c.text).toList();
+            final descriptionText = createCubit.descriptionController.text;
+            final note = _note;
             setState(() => _submitError = null);
-            final result = await createCubit.submit(
-              fieldNames: _fieldControllers.map((c) => c.text).toList(),
-            );
+            final result = await createCubit.submit(fieldNames: fieldNames);
             if (!mounted) {
               return;
             }
@@ -604,17 +616,23 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
             // Sync tags after successful save (diff-based).
             final deckId = result.newDeckId ?? createCubit.state.deckId;
             if (deckId.isNotEmpty) {
+              Object? tagError;
               try {
-                await _syncTags(deckId);
-                if (isImported) {
-                  await _proposeDescription(deckId);
-                  await _proposeFieldRename(deckId);
-                }
+                await _syncTags(deckId, note: note);
               } catch (e) {
+                tagError = e;
+              }
+              // Suggestions don't depend on the tag sync succeeding.
+              if (isImported) {
+                await _proposeDescription(deckId, descriptionText, note: note);
+                await _proposeFieldRename(deckId, fieldNames, note: note);
+              }
+              if (tagError != null) {
                 if (!mounted) {
                   return;
                 }
-                setState(() => _submitError = rawApiErrorMessage(e));
+                final message = rawApiErrorMessage(tagError);
+                setState(() => _submitError = message);
                 return;
               }
             }
