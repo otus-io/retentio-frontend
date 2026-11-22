@@ -56,12 +56,14 @@ void main() {
     RunDownloadTaskFn run, {
     Future<void>? cancelled,
     CancelDownloadTaskFn? cancel,
+    ResetDownloadGroupFn? reset,
     Future<String> Function()? tempDir,
   }) async {
     final parts = <(String, String?)>[];
     await backgroundMediaBatchDownloader(
       run: run,
       cancel: cancel,
+      reset: reset ?? (_) async => 0,
       tempDir: tempDir ?? () async => tmp.path,
     )(['m1?v=7', 'm2'], (key, bytes) async {
       parts.add((
@@ -95,8 +97,50 @@ void main() {
       ],
     });
     expect(task.baseDirectory, BaseDirectory.root);
+    expect(task.group, mediaBatchGroup);
     expect(savedPath(task), startsWith(p.join(tmp.path, 'media_batches')));
     expect(File(savedPath(task)).existsSync(), isFalse);
+  });
+
+  test('the first batch clears what an earlier run left', () async {
+    final leftover = File(p.join(tmp.path, 'media_batches', 'old'));
+    await leftover.create(recursive: true);
+    final resets = <String>[];
+    final download = backgroundMediaBatchDownloader(
+      run: (task) async {
+        expect(resets, [mediaBatchGroup]);
+        expect(leftover.existsSync(), isFalse);
+        return serve(body)(task);
+      },
+      reset: (group) async {
+        resets.add(group);
+        return 1;
+      },
+      tempDir: () async => tmp.path,
+    );
+
+    await download(
+      ['m1'],
+      (_, b) async => b?.drain<void>(),
+      Completer<void>().future,
+    );
+    await download(
+      ['m1'],
+      (_, b) async => b?.drain<void>(),
+      Completer<void>().future,
+    );
+
+    expect(resets, [mediaBatchGroup]);
+    expect(tasks, hasLength(2));
+  });
+
+  test('a failing reset still downloads', () async {
+    final parts = await fetch(
+      serve(body),
+      reset: (_) async => throw StateError('reset failed'),
+    );
+
+    expect(parts, [('m1?v=7', 'abc'), ('m2', null)]);
   });
 
   for (final (name, status, exception) in [
@@ -214,7 +258,8 @@ void main() {
     });
 
     await expectLater(
-      backgroundMediaBatchDownloader()(
+      // The plugin's reset reads its storage on an isolate tests cannot mock.
+      backgroundMediaBatchDownloader(reset: (_) async => 0)(
         ['m1'],
         (_, _) async {},
         Completer<void>().future,
@@ -245,7 +290,8 @@ void main() {
     });
 
     await expectLater(
-      backgroundMediaBatchDownloader()(
+      // The plugin's reset reads its storage on an isolate tests cannot mock.
+      backgroundMediaBatchDownloader(reset: (_) async => 0)(
         ['m1'],
         (_, _) async {},
         cancelled.future,
