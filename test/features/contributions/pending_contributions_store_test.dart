@@ -79,6 +79,88 @@ void main() {
       expect(sent.first.kind, PendingContributionKind.add);
     });
 
+    test('markAsSent keeps a row re-staged during the send', () async {
+      final store = PendingContributionsStore.of;
+      final submitted = (await store.upsert(
+        deckId: 'imp1',
+        kind: PendingContributionKind.description,
+        preview: 'Old',
+        proposedDescription: 'Old',
+      )).single;
+      await Future<void>.delayed(const Duration(milliseconds: 2));
+      await store.upsert(
+        deckId: 'imp1',
+        kind: PendingContributionKind.description,
+        preview: 'New',
+        proposedDescription: 'New',
+      );
+
+      await store.markAsSent('imp1', submitted.id, submitted: submitted);
+
+      expect((await store.listPending('imp1')).single.preview, 'New');
+      expect((await store.listSent('imp1')).single.preview, 'Old');
+    });
+
+    test('markAsSent removes the submitted version of a row', () async {
+      final store = PendingContributionsStore.of;
+      final submitted = (await store.upsert(
+        deckId: 'imp1',
+        kind: PendingContributionKind.description,
+        preview: 'Old',
+      )).single;
+
+      await store.markAsSent('imp1', submitted.id, submitted: submitted);
+
+      expect(await store.listPending('imp1'), isEmpty);
+      expect((await store.listSent('imp1')).single.preview, 'Old');
+    });
+
+    test('markAsSent records a submitted row removed meanwhile', () async {
+      final store = PendingContributionsStore.of;
+      final submitted = (await store.upsert(
+        deckId: 'imp1',
+        kind: PendingContributionKind.description,
+        preview: 'Old',
+      )).single;
+      await store.clearPending('imp1');
+
+      await store.markAsSent('imp1', submitted.id, submitted: submitted);
+
+      expect((await store.listSent('imp1')).single.preview, 'Old');
+    });
+
+    test('concurrent changes to one deck all persist', () async {
+      final store = PendingContributionsStore.of;
+      await Future.wait([
+        for (final f in ['f1', 'f2', 'f3'])
+          store.upsert(
+            deckId: 'imp1',
+            kind: PendingContributionKind.edit,
+            factId: f,
+          ),
+        store.upsert(
+          deckId: 'imp2',
+          kind: PendingContributionKind.edit,
+          factId: 'f1',
+        ),
+      ]);
+
+      expect(await store.countPending('imp1'), 3);
+      expect(await store.countPending('imp2'), 1);
+    });
+
+    test('a failed change does not block later ones', () async {
+      SharedPreferences.setMockInitialValues({
+        'retentio_pending_contribs_v2:imp1': 1,
+      });
+      final store = PendingContributionsStore.of;
+
+      await expectLater(store.remove('imp1', 'x'), throwsA(isA<TypeError>()));
+      await store.clearPending('imp1');
+
+      expect(await store.listPending('imp1'), isEmpty);
+    });
+
     test('description rows are one per deck and keep their text', () async {
       final store = PendingContributionsStore.of;
       await store.upsert(

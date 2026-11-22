@@ -162,6 +162,24 @@ class PendingContributionsStore {
   String _pendingKey(String deckId) => '$_pendingPrefix$deckId';
   String _sentKey(String deckId) => '$_sentPrefix$deckId';
 
+  /// Tail of each deck's queue of mutations.
+  final Map<String, Future<void>> _queues = {};
+
+  /// Runs [body] after every earlier mutation of [deckId] finishes, so each
+  /// read-modify-write of the deck's rows sees the previous one's result.
+  /// Different decks don't wait on each other.
+  Future<T> _serialized<T>(String deckId, Future<T> Function() body) {
+    final result = (_queues[deckId] ?? Future<void>.value()).then(
+      (_) => body(),
+    );
+    final tail = result.then<void>((_) {}, onError: (_) {});
+    _queues[deckId] = tail;
+    tail.whenComplete(() {
+      if (identical(_queues[deckId], tail)) _queues.remove(deckId);
+    });
+    return result;
+  }
+
   String itemId(PendingContributionKind kind, {String? factId}) {
     if (kind == PendingContributionKind.deckTags ||
         kind == PendingContributionKind.fieldRename ||
@@ -201,7 +219,7 @@ class PendingContributionsStore {
     String? proposedDescription,
     String? message,
     String? id,
-  }) async {
+  }) => _serialized(deckId, () async {
     final pendingId = id ?? itemId(kind, factId: factId);
     final next = PendingContributionItem(
       id: pendingId,
@@ -219,7 +237,7 @@ class PendingContributionsStore {
     final filtered = prev.where((r) => r.id != pendingId).toList();
     await _writePending(deckId, [next, ...filtered]);
     return listPending(deckId);
-  }
+  });
 
   /// Replaces only the note of the stored row [pendingId], keeping its
   /// current fields and saved time. Returns the updated row, or null (and
@@ -228,7 +246,7 @@ class PendingContributionsStore {
     String deckId,
     String pendingId,
     String message,
-  ) async {
+  ) => _serialized(deckId, () async {
     final rows = await _readPending(deckId);
     final r = rows.where((row) => row.id == pendingId).firstOrNull;
     if (r == null) return null;
@@ -248,43 +266,51 @@ class PendingContributionsStore {
       for (final row in rows) row.id == pendingId ? updated : row,
     ]);
     return updated;
-  }
+  });
 
   Future<List<PendingContributionItem>> remove(
     String deckId,
     String pendingId,
-  ) async {
+  ) => _serialized(deckId, () async {
     final next = (await _readPending(
       deckId,
     )).where((r) => r.id != pendingId).toList();
     await _writePending(deckId, next);
     return listPending(deckId);
-  }
+  });
 
-  Future<void> clearPending(String deckId) async {
-    await _writePending(deckId, []);
-  }
+  Future<void> clearPending(String deckId) =>
+      _serialized(deckId, () => _writePending(deckId, []));
 
   /// Moves a pending row into sent history.
   ///
   /// Not atomic across SharedPreferences keys: read pending → remove pending →
   /// write sent are separate writes. If the process dies between remove and
   /// write-sent, the staged item can be lost.
+  ///
+  /// With [submitted], the row is removed only while it is still that
+  /// version (same [PendingContributionItem.savedAt]); a row re-staged during
+  /// the send stays pending, and the history records [submitted].
   Future<void> markAsSent(
     String deckId,
     String pendingId, {
     String? contributionId,
     String? message,
-  }) async {
+    PendingContributionItem? submitted,
+  }) => _serialized(deckId, () async {
     final pendingList = await _readPending(deckId);
-    PendingContributionItem? pending;
-    for (final r in pendingList) {
-      if (r.id == pendingId) {
-        pending = r;
-        break;
-      }
+    final stored = pendingList.where((r) => r.id == pendingId).firstOrNull;
+    final replaced =
+        submitted != null &&
+        stored != null &&
+        !stored.savedAt.isAtSameMomentAs(submitted.savedAt);
+    if (stored != null && !replaced) {
+      await _writePending(deckId, [
+        for (final r in pendingList)
+          if (r.id != pendingId) r,
+      ]);
     }
-    await remove(deckId, pendingId);
+    final pending = submitted ?? stored;
     if (pending == null) return;
     final row = SentContributionItem(
       id: '${pending.kind.wireName}:${pending.factId ?? 'deck'}:${DateTime.now().millisecondsSinceEpoch}',
@@ -297,7 +323,7 @@ class PendingContributionsStore {
     );
     final sent = [row, ...await _readSent(deckId)].take(200).toList();
     await _writeSent(deckId, sent);
-  }
+  });
 
   static String? previewFromEntryTexts(Iterable<String> texts) {
     for (final raw in texts) {

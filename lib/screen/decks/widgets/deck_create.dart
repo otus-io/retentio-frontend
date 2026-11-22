@@ -637,26 +637,34 @@ class _DeckCreateState extends State<DeckCreate> with DelayedInitMixin {
                   // Sync tags after successful save (diff-based).
                   final deckId = result.newDeckId ?? createCubit.state.deckId;
                   if (deckId.isNotEmpty) {
-                    Object? tagError;
+                    Object? followUpError;
                     try {
                       await _syncTags(deckId, note: note);
                     } catch (e) {
-                      tagError = e;
+                      followUpError = e;
                     }
                     // Suggestions don't depend on the tag sync succeeding.
                     if (isImported) {
-                      await _proposeDescription(
-                        deckId,
-                        descriptionText,
-                        note: note,
-                      );
-                      await _proposeFieldRename(deckId, fieldNames, note: note);
+                      try {
+                        await _proposeDescription(
+                          deckId,
+                          descriptionText,
+                          note: note,
+                        );
+                        await _proposeFieldRename(
+                          deckId,
+                          fieldNames,
+                          note: note,
+                        );
+                      } catch (e) {
+                        followUpError ??= e;
+                      }
                     }
-                    if (tagError != null) {
+                    if (followUpError != null) {
                       if (!mounted) {
                         return;
                       }
-                      final message = rawApiErrorMessage(tagError);
+                      final message = rawApiErrorMessage(followUpError);
                       setState(() => _submitError = message);
                       return;
                     }

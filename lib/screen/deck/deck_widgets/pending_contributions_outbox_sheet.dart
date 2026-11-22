@@ -180,6 +180,7 @@ class _PendingContributionsOutboxSheetState
           item.id,
           contributionId: contributionId,
           message: note,
+          submitted: current,
         );
         sentCount += 1;
       } catch (e) {

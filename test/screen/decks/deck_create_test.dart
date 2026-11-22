@@ -649,9 +649,11 @@ void main() {
         String? note,
         List<String> fields = const ['Front', 'Back'],
         bool doubleTap = false,
+        Map<String, Object>? prefs,
       }) async {
         networkDioClient.dio.httpClientAdapter = IOHttpClientAdapter();
         await setupTestEnvironment();
+        if (prefs != null) SharedPreferences.setMockInitialValues(prefs);
         addTearDown(() {
           networkDioClient.dio.httpClientAdapter = IOHttpClientAdapter();
           tearDownTestEnvironment();
@@ -846,6 +848,22 @@ void main() {
         );
         AppToast.dismiss();
         await tester.pumpAndSettle();
+      });
+
+      testWidgets('a suggestion that cannot be staged keeps the editor open', (
+        tester,
+      ) async {
+        final (adapter, popped) = await editAndSave(
+          tester,
+          text: 'Everyday verbs',
+          // A pending outbox entry of the wrong type makes staging throw.
+          prefs: {'retentio_pending_contribs_v2:imp-desc-sent': 1},
+        );
+
+        expect(adapter.contributionBodies, isEmpty);
+        expect(popped, isNull);
+        expect(find.byType(DeckCreate), findsOneWidget);
+        expect(find.textContaining('is not a subtype'), findsOneWidget);
       });
 
       testWidgets('an own deck saves its description directly', (tester) async {
