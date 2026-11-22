@@ -484,6 +484,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deckTagsSavedUnsent => '卡组标签已保存，但暂未发送给作者，可在未发送贡献中重试。';
 
   @override
+  String get deckDescriptionSentToAuthor => '描述建议已发送给作者';
+
+  @override
+  String get deckDescriptionSavedUnsent => '描述建议暂未发送给作者，可在未发送贡献中重试。';
+
+  @override
+  String get deckDescriptionProposeHint => '建议更好的描述，将发送给作者审核';
+
+  @override
+  String get deckFieldNamesSentToAuthor => '列名建议已发送给作者';
+
+  @override
+  String get deckFieldNamesSavedUnsent => '列名建议暂未发送给作者，可在未发送贡献中重试。';
+
+  @override
   String addFactFieldFallback(int number) {
     return '字段 $number';
   }
@@ -1673,6 +1688,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get contributionsFields => '列名';
 
   @override
+  String get contributionsDescription => '描述';
+
+  @override
   String get contributionsTags => '标签';
 
   @override
@@ -1915,6 +1933,17 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String pendingSkippedGone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 项已发送或已移除',
+      one: '1 项已发送或已移除',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get pendingKindEdit => '词条修改';
 
   @override
@@ -1931,6 +1960,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pendingKindFieldRename => '列名重命名';
+
+  @override
+  String get pendingKindDescription => '卡组描述';
 
   @override
   String get pendingKindReport => '报告';

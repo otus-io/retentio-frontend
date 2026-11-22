@@ -371,7 +371,10 @@ class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
                       ),
                     ),
                   ],
-                  if (c.hasEntryDiff || c.hasTagDiff || c.hasFieldRename) ...[
+                  if (c.hasEntryDiff ||
+                      c.hasTagDiff ||
+                      c.hasFieldRename ||
+                      c.hasDescriptionEdit) ...[
                     const SizedBox(height: 10),
                     _ContributionDiffBlock(contribution: c),
                   ],
@@ -584,8 +587,29 @@ class _ContributionDiffBlock extends StatelessWidget {
               style: theme.textTheme.bodySmall,
             ),
           ],
-          if (c.hasTagDiff) ...[
+          if (c.hasDescriptionEdit) ...[
             if (c.hasEntryDiff || c.hasFieldRename) const SizedBox(height: 8),
+            Text(
+              loc.contributionsDescription,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '${loc.contributionsBefore}: '
+              '${c.reportedDescription.isEmpty ? '—' : c.reportedDescription}',
+              style: theme.textTheme.bodySmall,
+            ),
+            Text(
+              '${loc.contributionsAfter}: ${c.proposedDescription}',
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+          if (c.hasTagDiff) ...[
+            if (c.hasEntryDiff || c.hasFieldRename || c.hasDescriptionEdit)
+              const SizedBox(height: 8),
             Text(
               loc.contributionsTags,
               style: theme.textTheme.labelSmall?.copyWith(

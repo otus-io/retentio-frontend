@@ -87,6 +87,27 @@ void main() {
       );
     });
 
+    test('fromJson parses a description_edit proposal', () {
+      final c = DeckContribution.fromJson({
+        'id': 'cont0002',
+        'type': 'description_edit',
+        'status': 'open',
+        'reported_description': 'Old',
+        'proposed_description': 'New',
+      });
+
+      expect(c.reportedDescription, 'Old');
+      expect(c.proposedDescription, 'New');
+      expect(c.hasDescriptionEdit, isTrue);
+      expect(
+        DeckContribution.fromJson({
+          'id': 'x',
+          'type': 'report',
+        }).hasDescriptionEdit,
+        isFalse,
+      );
+    });
+
     test('fromJson tolerates null optional payloads with safe defaults', () {
       final c = DeckContribution.fromJson({
         'id': 'cont0001',

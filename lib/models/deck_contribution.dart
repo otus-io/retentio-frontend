@@ -109,6 +109,8 @@ class DeckContribution {
     this.reportedTags = const [],
     this.reportedFields = const [],
     this.proposedFields = const [],
+    this.reportedDescription = '',
+    this.proposedDescription = '',
     this.reportedFact,
     this.proposedEntries = const [],
     this.mediaAttachments = const [],
@@ -132,6 +134,8 @@ class DeckContribution {
   final List<String> reportedTags;
   final List<String> reportedFields;
   final List<String> proposedFields;
+  final String reportedDescription;
+  final String proposedDescription;
 
   /// Snapshot / author baseline when the contribution was submitted ("before").
   final Fact? reportedFact;
@@ -154,6 +158,8 @@ class DeckContribution {
 
   bool get hasFieldRename =>
       proposedFields.isNotEmpty || reportedFields.isNotEmpty;
+
+  bool get hasDescriptionEdit => proposedDescription.isNotEmpty;
 
   /// Author-owned media download path for a raw id or absolute/relative URL.
   static String ownedMediaUrl(String idOrUrl) {
@@ -266,6 +272,8 @@ class DeckContribution {
       reportedTags: stringList(json['reported_tags']),
       reportedFields: stringList(json['reported_fields']),
       proposedFields: stringList(json['proposed_fields']),
+      reportedDescription: json['reported_description']?.toString() ?? '',
+      proposedDescription: json['proposed_description']?.toString() ?? '',
       reportedFact: parseReportedFact(json['reported_fact']),
       proposedEntries: parseEntries(json['proposed_entries']),
       mediaAttachments: parseAttachments(json['media_attachments']),

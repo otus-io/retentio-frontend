@@ -157,6 +157,36 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('description_edit rows show the before and after text', (
+    tester,
+  ) async {
+    adapter = _InboxAdapter(
+      contributions: [
+        {
+          ..._row(id: 'c1', type: 'description_edit'),
+          'reported_description': 'Old summary',
+          'proposed_description': 'New summary',
+        },
+        {
+          ..._row(id: 'c2', type: 'description_edit'),
+          'proposed_description': 'First summary',
+          'reported_fields': ['Front'],
+          'proposed_fields': ['Word'],
+          'add_tags': ['verbs'],
+        },
+      ],
+    );
+    networkDioClient.dio.httpClientAdapter = adapter;
+
+    await pumpInbox(tester);
+
+    expect(find.text('Description'), findsNWidgets(2));
+    expect(find.text('Before: Old summary'), findsOneWidget);
+    expect(find.text('After: New summary'), findsOneWidget);
+    expect(find.text('Before: —'), findsOneWidget);
+    expect(find.text('After: First summary'), findsOneWidget);
+  });
+
   group('contributionCanAccept', () {
     test('rejects reports only', () {
       expect(

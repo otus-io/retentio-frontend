@@ -40,6 +40,18 @@ class FakeFactApiInterceptor extends Interceptor {
   /// When true, `POST …/contributions/deck-tags` answers 429.
   bool contributionDeckTagsFails = false;
 
+  /// Body of each `POST …/contributions/fields/rename`, in order.
+  final List<dynamic> contributionFieldRenameBodies = [];
+
+  /// When true, `POST …/contributions/fields/rename` answers 429.
+  bool contributionFieldRenameFails = false;
+
+  /// Body of each `POST …/contributions/description`, in order.
+  final List<dynamic> contributionDescriptionBodies = [];
+
+  /// When true, `POST …/contributions/description` answers 429.
+  bool contributionDescriptionFails = false;
+
   /// When true, `POST …/contributions/facts/{id}/add` answers 429.
   bool contributionAddFails = false;
   int contributionTagsCount = 0;
@@ -70,6 +82,52 @@ class FakeFactApiInterceptor extends Interceptor {
             'msg': 'ok',
             'data': {'facts_added': 1},
           },
+        ),
+      );
+      return;
+    }
+
+    if (options.method == 'POST' &&
+        uri.endsWith('/contributions/fields/rename')) {
+      contributionFieldRenameBodies.add(options.data);
+      handler.resolve(
+        Response(
+          requestOptions: options,
+          statusCode: contributionFieldRenameFails ? 429 : 201,
+          data: contributionFieldRenameFails
+              ? {'code': 429, 'msg': 'daily contribution limit exceeded'}
+              : {
+                  'code': 0,
+                  'msg': 'contribution submitted',
+                  'data': {
+                    'contribution_id': 'cont-fields-1',
+                    'type': 'field_rename',
+                    'status': 'open',
+                  },
+                },
+        ),
+      );
+      return;
+    }
+
+    if (options.method == 'POST' &&
+        uri.endsWith('/contributions/description')) {
+      contributionDescriptionBodies.add(options.data);
+      handler.resolve(
+        Response(
+          requestOptions: options,
+          statusCode: contributionDescriptionFails ? 429 : 201,
+          data: contributionDescriptionFails
+              ? {'code': 429, 'msg': 'daily contribution limit exceeded'}
+              : {
+                  'code': 0,
+                  'msg': 'contribution submitted',
+                  'data': {
+                    'contribution_id': 'cont-desc-1',
+                    'type': 'description_edit',
+                    'status': 'open',
+                  },
+                },
         ),
       );
       return;
