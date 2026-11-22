@@ -13,9 +13,13 @@ class PendingContributionsOutboxSheet extends StatefulWidget {
   const PendingContributionsOutboxSheet({
     super.key,
     required this.importDeckId,
+    this.store,
   });
 
   final String importDeckId;
+
+  /// Defaults to [PendingContributionsStore.of].
+  final PendingContributionsStore? store;
 
   @override
   State<PendingContributionsOutboxSheet> createState() =>
@@ -33,7 +37,16 @@ class _PendingContributionsOutboxSheetState
   final _messageController = TextEditingController();
   bool _loading = true;
   bool _submitting = false;
-  bool _dismissing = false;
+
+  PendingContributionsStore get _store =>
+      widget.store ?? PendingContributionsStore.of;
+
+  /// True while a dismiss or clear all runs.
+  bool _removing = false;
+
+  /// One outbox action at a time: send, dismiss and clear all each change the
+  /// pending rows, so overlapping them would garble the rows and notices.
+  bool get _busy => _submitting || _removing;
   String? _error;
   String? _notice;
 
@@ -52,16 +65,11 @@ class _PendingContributionsOutboxSheetState
     super.dispose();
   }
 
+  /// Reloads both lists. The spinner shows only on the first load, so a
+  /// reload after a send or dismiss keeps the sheet and its notices in place.
   Future<void> _refresh() async {
-    // A send or dismiss may finish after the sheet was closed.
-    if (!mounted) return;
-    setState(() => _loading = true);
-    final pending = await PendingContributionsStore.of.listPending(
-      widget.importDeckId,
-    );
-    final sent = await PendingContributionsStore.of.listSent(
-      widget.importDeckId,
-    );
+    final pending = await _store.listPending(widget.importDeckId);
+    final sent = await _store.listSent(widget.importDeckId);
     if (!mounted) return;
     setState(() {
       _pending = pending;
@@ -123,7 +131,7 @@ class _PendingContributionsOutboxSheetState
     final items = _pending
         .where((p) => _selected.contains(p.id) && _isSubmittable(p.kind))
         .toList();
-    if (items.isEmpty) return;
+    if (items.isEmpty || _busy) return;
     setState(() {
       _submitting = true;
       _error = null;
@@ -141,14 +149,10 @@ class _PendingContributionsOutboxSheetState
         // failed send keeps it for the retry. A row removed meanwhile is
         // skipped.
         final current = message.isEmpty
-            ? (await PendingContributionsStore.of.listPending(
+            ? (await _store.listPending(
                 widget.importDeckId,
               )).where((r) => r.id == item.id).firstOrNull
-            : await PendingContributionsStore.of.updateMessage(
-                widget.importDeckId,
-                item.id,
-                message,
-              );
+            : await _store.updateMessage(widget.importDeckId, item.id, message);
         if (current == null) {
           skippedCount += 1;
           continue;
@@ -156,7 +160,7 @@ class _PendingContributionsOutboxSheetState
         // A note typed here wins; otherwise keep the one saved with the row.
         final note = message.isEmpty ? current.message : message;
         final contributionId = await _submitOne(current, note);
-        await PendingContributionsStore.of.markAsSent(
+        await _store.markAsSent(
           widget.importDeckId,
           item.id,
           contributionId: contributionId,
@@ -263,47 +267,63 @@ class _PendingContributionsOutboxSheetState
   Future<void> _dismissSelected() async {
     final loc = AppLocalizations.of(context)!;
     final ids = _selected.toList();
-    if (ids.isEmpty || _dismissing) return;
-    setState(() => _dismissing = true);
-    // Count only rows a removal actually took; others were sent or removed
-    // meanwhile.
-    var remaining = (await PendingContributionsStore.of.listPending(
-      widget.importDeckId,
-    )).length;
-    var dismissed = 0;
-    for (final id in ids) {
-      final left = (await PendingContributionsStore.of.remove(
-        widget.importDeckId,
-        id,
-      )).length;
-      if (left < remaining) dismissed += 1;
-      remaining = left;
-    }
-    await _refresh();
-    if (!mounted) return;
-    setState(() {
-      _dismissing = false;
-      _error = null;
-      _notice = dismissed > 0 ? loc.pendingDismissed(dismissed) : null;
-      _skipped = dismissed < ids.length
-          ? loc.pendingSkippedGone(ids.length - dismissed)
-          : null;
+    if (ids.isEmpty || _busy) return;
+    await _whileRemoving(() async {
+      // Count only selected rows still stored; others were sent or removed
+      // meanwhile.
+      var stored = _ids(await _store.listPending(widget.importDeckId));
+      var dismissed = 0;
+      for (final id in ids) {
+        if (stored.contains(id)) dismissed += 1;
+        stored = _ids(await _store.remove(widget.importDeckId, id));
+      }
+      await _refresh();
+      if (!mounted) return;
+      setState(() {
+        _error = null;
+        _notice = dismissed > 0 ? loc.pendingDismissed(dismissed) : null;
+        _skipped = dismissed < ids.length
+            ? loc.pendingSkippedGone(ids.length - dismissed)
+            : null;
+      });
     });
   }
 
   Future<void> _clearAll() async {
     final loc = AppLocalizations.of(context)!;
-    final n = _pending.length;
-    if (n == 0) return;
-    await PendingContributionsStore.of.clearPending(widget.importDeckId);
-    await _refresh();
-    if (!mounted) return;
-    setState(() {
-      _selected.clear();
-      _notice = loc.pendingCleared(n);
-      _error = null;
-      _skipped = null;
+    if (_pending.isEmpty || _busy) return;
+    await _whileRemoving(() async {
+      // Count rows actually stored; rows shown but gone were sent or removed
+      // meanwhile.
+      final stored = _ids(await _store.listPending(widget.importDeckId));
+      final gone = _pending.where((p) => !stored.contains(p.id)).length;
+      await _store.clearPending(widget.importDeckId);
+      await _refresh();
+      if (!mounted) return;
+      setState(() {
+        _selected.clear();
+        _notice = stored.isEmpty ? null : loc.pendingCleared(stored.length);
+        _error = null;
+        _skipped = gone > 0 ? loc.pendingSkippedGone(gone) : null;
+      });
     });
+  }
+
+  static Set<String> _ids(List<PendingContributionItem> rows) => {
+    for (final r in rows) r.id,
+  };
+
+  /// Runs [remove] with the outbox busy. A storage error is shown instead of
+  /// thrown, and the outbox is freed either way.
+  Future<void> _whileRemoving(Future<void> Function() remove) async {
+    setState(() => _removing = true);
+    try {
+      await remove();
+    } catch (e) {
+      if (mounted) setState(() => _error = rawApiErrorMessage(e));
+    } finally {
+      if (mounted) setState(() => _removing = false);
+    }
   }
 
   @override
@@ -336,7 +356,7 @@ class _PendingContributionsOutboxSheetState
                 variant: _tab == _OutboxTab.pending
                     ? AppButtonVariant.primary
                     : AppButtonVariant.secondary,
-                onPressed: _submitting
+                onPressed: _busy
                     ? null
                     : () => setState(() => _tab = _OutboxTab.pending),
               ),
@@ -349,7 +369,7 @@ class _PendingContributionsOutboxSheetState
                 variant: _tab == _OutboxTab.sent
                     ? AppButtonVariant.primary
                     : AppButtonVariant.secondary,
-                onPressed: _submitting
+                onPressed: _busy
                     ? null
                     : () => setState(() => _tab = _OutboxTab.sent),
               ),
@@ -402,7 +422,7 @@ class _PendingContributionsOutboxSheetState
                 : loc.pendingSendSelectedCount(_selected.length),
             fullWidth: true,
             isLoading: _submitting,
-            onPressed: _submitting || _selected.isEmpty ? null : _sendSelected,
+            onPressed: _busy || _selected.isEmpty ? null : _sendSelected,
             leading: const Icon(LucideIcons.send),
           ),
           const SizedBox(height: 8),
@@ -413,7 +433,7 @@ class _PendingContributionsOutboxSheetState
                   label: loc.pendingDismissSelected,
                   size: AppButtonSize.sm,
                   variant: AppButtonVariant.secondary,
-                  onPressed: _submitting || _dismissing || _selected.isEmpty
+                  onPressed: _busy || _selected.isEmpty
                       ? null
                       : _dismissSelected,
                 ),
@@ -424,7 +444,7 @@ class _PendingContributionsOutboxSheetState
                   label: loc.pendingClearAll,
                   size: AppButtonSize.sm,
                   variant: AppButtonVariant.ghost,
-                  onPressed: _submitting ? null : _clearAll,
+                  onPressed: _busy ? null : _clearAll,
                 ),
               ),
             ],
@@ -465,7 +485,7 @@ class _PendingContributionsOutboxSheetState
             contentPadding: EdgeInsets.zero,
             value: allSelected,
             title: Text(loc.pendingSelectAll(submittable.length)),
-            onChanged: _submitting
+            onChanged: _busy
                 ? null
                 : (_) {
                     setState(() {
@@ -486,7 +506,7 @@ class _PendingContributionsOutboxSheetState
             dense: true,
             contentPadding: EdgeInsets.zero,
             value: checked,
-            onChanged: _submitting || !canSubmit
+            onChanged: _busy || !canSubmit
                 ? null
                 : (_) {
                     setState(() {

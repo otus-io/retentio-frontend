@@ -75,12 +75,66 @@ class _HeldApi extends Interceptor {
   }
 }
 
-Future<AppLocalizations> _pumpSheet(WidgetTester tester) async {
+/// The real store, except that removing a row first runs [beforeRemove] and
+/// listing sent rows first runs [beforeListSent].
+class _HookedStore implements PendingContributionsStore {
+  _HookedStore(this.beforeRemove, {this.beforeListSent});
+
+  final Future<void> Function() beforeRemove;
+  final Future<void> Function()? beforeListSent;
+  final _real = PendingContributionsStore.of;
+
+  @override
+  Future<List<PendingContributionItem>> remove(
+    String deckId,
+    String pendingId,
+  ) async {
+    await beforeRemove();
+    return _real.remove(deckId, pendingId);
+  }
+
+  @override
+  Future<List<PendingContributionItem>> listPending(String deckId) =>
+      _real.listPending(deckId);
+
+  @override
+  Future<List<SentContributionItem>> listSent(String deckId) async {
+    await beforeListSent?.call();
+    return _real.listSent(deckId);
+  }
+
+  @override
+  Future<void> clearPending(String deckId) => _real.clearPending(deckId);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+Future<void> _stageTwoEdits(WidgetTester tester) async {
+  for (final factId in ['f1', 'f2']) {
+    await tester.runAsync(
+      () => PendingContributionsStore.of.upsert(
+        deckId: 'imp-1',
+        kind: PendingContributionKind.edit,
+        factId: factId,
+        preview: 'Fact $factId',
+      ),
+    );
+  }
+}
+
+Future<AppLocalizations> _pumpSheet(
+  WidgetTester tester, {
+  PendingContributionsStore? store,
+}) async {
   await tester.pumpWidget(
     buildTestableWidget(
-      const Scaffold(
+      Scaffold(
         body: SingleChildScrollView(
-          child: PendingContributionsOutboxSheet(importDeckId: 'imp-1'),
+          child: PendingContributionsOutboxSheet(
+            importDeckId: 'imp-1',
+            store: store,
+          ),
         ),
       ),
     ),
@@ -318,6 +372,171 @@ void main() {
 
     expect(find.text(loc.pendingCleared(1)), findsOneWidget);
     expect(find.text(loc.pendingSkippedGone(1)), findsNothing);
+  });
+
+  testWidgets('clear all counts only rows still pending', (tester) async {
+    for (final factId in ['f1', 'f2']) {
+      await tester.runAsync(
+        () => PendingContributionsStore.of.upsert(
+          deckId: 'imp-1',
+          kind: PendingContributionKind.edit,
+          factId: factId,
+          preview: 'Fact $factId',
+        ),
+      );
+    }
+    final loc = await _pumpSheet(tester);
+    await tester.runAsync(
+      () => PendingContributionsStore.of.remove(
+        'imp-1',
+        PendingContributionsStore.of.itemId(
+          PendingContributionKind.edit,
+          factId: 'f1',
+        ),
+      ),
+    );
+
+    await tester.tap(find.text(loc.pendingClearAll));
+    await tester.pumpAndSettle();
+
+    expect(find.text(loc.pendingCleared(1)), findsOneWidget);
+    expect(find.text(loc.pendingSkippedGone(1)), findsOneWidget);
+  });
+
+  testWidgets('clear all with every row already gone says so', (tester) async {
+    await tester.runAsync(
+      () => PendingContributionsStore.of.upsert(
+        deckId: 'imp-1',
+        kind: PendingContributionKind.edit,
+        factId: 'f1',
+        preview: 'Fact f1',
+      ),
+    );
+    final loc = await _pumpSheet(tester);
+    await tester.runAsync(
+      () => PendingContributionsStore.of.clearPending('imp-1'),
+    );
+
+    await tester.tap(find.text(loc.pendingClearAll));
+    await tester.pumpAndSettle();
+
+    expect(find.text(loc.pendingCleared(0)), findsNothing);
+    expect(find.text(loc.pendingCleared(1)), findsNothing);
+    expect(find.text(loc.pendingSkippedGone(1)), findsOneWidget);
+  });
+
+  testWidgets('a reload after dismiss keeps the sheet on screen', (
+    tester,
+  ) async {
+    for (final factId in ['f1', 'f2']) {
+      await tester.runAsync(
+        () => PendingContributionsStore.of.upsert(
+          deckId: 'imp-1',
+          kind: PendingContributionKind.edit,
+          factId: factId,
+          preview: 'Fact $factId',
+        ),
+      );
+    }
+    Completer<void>? reload;
+    final loc = await _pumpSheet(
+      tester,
+      store: _HookedStore(
+        () async {},
+        beforeListSent: () => reload?.future ?? Future.value(),
+      ),
+    );
+
+    reload = Completer<void>();
+    await tester.tap(find.textContaining('Fact f1'));
+    await tester.pump();
+    await tester.tap(find.text(loc.pendingDismissSelected));
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text(loc.pendingDismissSelected), findsOneWidget);
+
+    reload.complete();
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Fact f2'), findsOneWidget);
+  });
+
+  testWidgets('clear all tapped while a dismiss runs is ignored', (
+    tester,
+  ) async {
+    await _stageTwoEdits(tester);
+    final release = Completer<void>();
+    final loc = await _pumpSheet(
+      tester,
+      store: _HookedStore(() => release.future),
+    );
+
+    await tester.tap(find.textContaining('Fact f1'));
+    await tester.pump();
+    await tester.tap(find.text(loc.pendingDismissSelected));
+    await tester.pump();
+    await tester.tap(find.text(loc.pendingClearAll));
+    release.complete();
+    await tester.pumpAndSettle();
+
+    expect(find.text(loc.pendingCleared(1)), findsNothing);
+    expect(find.text(loc.pendingDismissed(1)), findsOneWidget);
+    expect(find.textContaining('Fact f2'), findsOneWidget);
+  });
+
+  testWidgets('a second send tap while one runs is ignored', (tester) async {
+    networkDioClient.dio.interceptors.clear();
+    final api = _HeldApi();
+    networkDioClient.dio.interceptors.add(api);
+    await tester.runAsync(
+      () => PendingContributionsStore.of.upsert(
+        deckId: 'imp-1',
+        kind: PendingContributionKind.deckTags,
+        addTags: ['verbs'],
+      ),
+    );
+    var requests = 0;
+    networkDioClient.dio.interceptors.insert(
+      0,
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          requests += 1;
+          handler.next(options);
+        },
+      ),
+    );
+    final loc = await _pumpSheet(tester);
+
+    await tester.tap(find.text('+verbs'));
+    await tester.pump();
+    await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+    await tester.tap(find.text(loc.pendingSendSelectedCount(1)));
+    api.release.complete();
+    await tester.pumpAndSettle();
+
+    expect(requests, 1);
+  });
+
+  testWidgets('a failed dismiss leaves the outbox usable', (tester) async {
+    await _stageTwoEdits(tester);
+    var failNext = true;
+    final loc = await _pumpSheet(
+      tester,
+      store: _HookedStore(() async {
+        if (!failNext) return;
+        failNext = false;
+        throw StateError('disk full');
+      }),
+    );
+
+    await tester.tap(find.textContaining('Fact f1'));
+    await tester.pump();
+    await tester.tap(find.text(loc.pendingDismissSelected));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('disk full'), findsOneWidget);
+
+    await tester.tap(find.text(loc.pendingDismissSelected));
+    await tester.pumpAndSettle();
+    expect(find.text(loc.pendingDismissed(1)), findsOneWidget);
   });
 
   _descriptionProposalTests();
