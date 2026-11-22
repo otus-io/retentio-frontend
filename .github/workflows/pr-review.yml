@@ -290,7 +290,18 @@ jobs:
               : await github.rest.issues.createComment({ owner, repo, issue_number, body });
             core.setOutput('comment_id', String(data.id));
 
+      # The checkout is shallow, so git cannot find the PR base; hand Claude the diff instead.
+      - name: Save PR diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr diff "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" > .claude-review/pr.diff ||
+            rm -f .claude-review/pr.diff
+
       - name: Claude Code Review
+        # Cancelling the run does not stop this step, so a newer push would wait for it.
+        timeout-minutes: 15
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -314,6 +325,10 @@ jobs:
             Dart code in this PR, and that the `api.md` and `api_zh.md` hunks agree.
             Follow docs/contributing.md, AGENTS.md and .agents/skills when applicable.
             The PR branch is already checked out in the working directory.
+            The full PR diff is in `.claude-review/pr.diff` (if missing, run
+            `gh pr diff`). Do not use git to find the PR base: the clone is shallow.
+            Batch independent reads into one turn. Write `.claude-review/review.md`
+            before you run low on turns, and refine it afterwards if needed.
 
             ## One review, updated in place
             The previous review comment (empty on the first run) is in
@@ -323,13 +338,15 @@ jobs:
             with it.
 
             Rules for the findings table:
-            - Keep every finding from the previous review, with the same ID (F1, F2, …),
-              and re-check it against the current code:
-              - `✅ Fixed` when the current code resolves it (add the short commit SHA if known)
+            - Keep every finding from the previous review, with the same ID (F1, F2, …).
+            - Copy `✅ Fixed` and `➖ Dropped` rows unchanged; do not re-check them.
+            - Re-check each `⏳ Open` finding against the current code:
+              - `✅ Fixed` when the current code resolves it
               - `⏳ Open` when it still applies
               - `➖ Dropped` when it no longer applies (code removed, or it was wrong)
             - Add new findings with the next free IDs. Only real issues; no style nits.
             - Never delete rows. Sort: ⏳ Open first, then ✅ Fixed, then ➖ Dropped.
+            - Keep each Finding cell to what breaks and the fix, in at most two sentences.
 
             Use exactly this layout:
 
@@ -346,18 +363,15 @@ jobs:
 
             ### Summary
             2-4 sentences on the current state of the PR.
-
-            <details><summary>Details</summary>
-
-            Per open finding: why it is a problem and a suggested fix.
-            </details>
             ```
             With no findings at all, keep the header and status line and write
             "No issues found." instead of the table.
+          show_full_output: true
           claude_args: |
             --model claude-sonnet-4-6
             --max-turns 100
             --allowedTools "Read,Write,Grep,Glob,Bash(gh pr diff:*),Bash(gh pr view:*)"
+            --disallowedTools "Skill"
 
       - name: Publish review to the sticky comment
         if: always() && steps.sticky.outputs.comment_id
