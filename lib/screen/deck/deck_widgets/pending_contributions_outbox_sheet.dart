@@ -33,6 +33,7 @@ class _PendingContributionsOutboxSheetState
   final _messageController = TextEditingController();
   bool _loading = true;
   bool _submitting = false;
+  bool _dismissing = false;
   String? _error;
   String? _notice;
 
@@ -262,21 +263,26 @@ class _PendingContributionsOutboxSheetState
   Future<void> _dismissSelected() async {
     final loc = AppLocalizations.of(context)!;
     final ids = _selected.toList();
-    if (ids.isEmpty) return;
-    // Count only rows still stored; others were sent or removed meanwhile.
-    final stored = {
-      for (final r in await PendingContributionsStore.of.listPending(
-        widget.importDeckId,
-      ))
-        r.id,
-    };
-    final dismissed = ids.where(stored.contains).length;
+    if (ids.isEmpty || _dismissing) return;
+    setState(() => _dismissing = true);
+    // Count only rows a removal actually took; others were sent or removed
+    // meanwhile.
+    var remaining = (await PendingContributionsStore.of.listPending(
+      widget.importDeckId,
+    )).length;
+    var dismissed = 0;
     for (final id in ids) {
-      await PendingContributionsStore.of.remove(widget.importDeckId, id);
+      final left = (await PendingContributionsStore.of.remove(
+        widget.importDeckId,
+        id,
+      )).length;
+      if (left < remaining) dismissed += 1;
+      remaining = left;
     }
     await _refresh();
     if (!mounted) return;
     setState(() {
+      _dismissing = false;
       _error = null;
       _notice = dismissed > 0 ? loc.pendingDismissed(dismissed) : null;
       _skipped = dismissed < ids.length
@@ -295,6 +301,7 @@ class _PendingContributionsOutboxSheetState
     setState(() {
       _selected.clear();
       _notice = loc.pendingCleared(n);
+      _error = null;
       _skipped = null;
     });
   }
@@ -406,7 +413,7 @@ class _PendingContributionsOutboxSheetState
                   label: loc.pendingDismissSelected,
                   size: AppButtonSize.sm,
                   variant: AppButtonVariant.secondary,
-                  onPressed: _submitting || _selected.isEmpty
+                  onPressed: _submitting || _dismissing || _selected.isEmpty
                       ? null
                       : _dismissSelected,
                 ),

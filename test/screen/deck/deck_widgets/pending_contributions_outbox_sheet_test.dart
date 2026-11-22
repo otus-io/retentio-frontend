@@ -257,8 +257,33 @@ void main() {
     await tester.tap(find.text(loc.pendingDismissSelected));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Dismissed'), findsNothing);
+    expect(find.text(loc.pendingDismissed(0)), findsNothing);
+    expect(find.text(loc.pendingDismissed(1)), findsNothing);
     expect(find.text(loc.pendingSkippedGone(1)), findsOneWidget);
+  });
+
+  testWidgets('a second dismiss tap while one runs is ignored', (tester) async {
+    for (final factId in ['f1', 'f2']) {
+      await tester.runAsync(
+        () => PendingContributionsStore.of.upsert(
+          deckId: 'imp-1',
+          kind: PendingContributionKind.edit,
+          factId: factId,
+          preview: 'Fact $factId',
+        ),
+      );
+    }
+    final loc = await _pumpSheet(tester);
+
+    await tester.tap(find.text(loc.pendingSelectAll(2)));
+    await tester.pump();
+    // Both taps land before the sheet rebuilds.
+    await tester.tap(find.text(loc.pendingDismissSelected));
+    await tester.tap(find.text(loc.pendingDismissSelected));
+    await tester.pumpAndSettle();
+
+    expect(find.text(loc.pendingDismissed(2)), findsOneWidget);
+    expect(find.text(loc.pendingSkippedGone(2)), findsNothing);
   });
 
   testWidgets('clear all replaces an earlier skipped notice', (tester) async {
