@@ -45,6 +45,14 @@ class MediaBatchUnsupported implements Exception {
 typedef DownloadMediaBatchFn =
     Future<void> Function(List<String> mediaKeys, MediaBatchPartFn onPart);
 
+/// A [DownloadMediaBatchFn] that stops its request once [cancelled] completes.
+typedef CancellableMediaBatchFn =
+    Future<void> Function(
+      List<String> mediaKeys,
+      MediaBatchPartFn onPart,
+      Future<void> cancelled,
+    );
+
 class OfflineFactsPage {
   const OfflineFactsPage({
     required this.facts,
@@ -93,15 +101,7 @@ Future<void> downloadOfflineMediaBatch(
   try {
     res = await networkDioClient.dio.post<ResponseBody>(
       Api.mediaBatch,
-      data: {
-        'items': [
-          for (final key in mediaKeys)
-            switch (key.split('?v=')) {
-              [final id, final v] => {'id': id, 'v': int.parse(v)},
-              _ => {'id': key},
-            },
-        ],
-      },
+      data: mediaBatchRequest(mediaKeys),
       options: Options(
         responseType: ResponseType.stream,
         extra: {DownloadHttp2Adapter.extraKey: true},
@@ -112,12 +112,35 @@ Future<void> downloadOfflineMediaBatch(
     if (status == 404 || status == 405) throw const MediaBatchUnsupported();
     rethrow;
   }
-  final type = res.headers.value(Headers.contentTypeHeader) ?? '';
+  await readMediaBatch(
+    res.data!.stream,
+    res.headers.value(Headers.contentTypeHeader) ?? '',
+    onPart,
+  );
+}
+
+/// Body of `POST /api/media/batch` for [mediaKeys] (`id` or `id?v=N`).
+Map<String, Object> mediaBatchRequest(List<String> mediaKeys) => {
+  'items': [
+    for (final key in mediaKeys)
+      switch (key.split('?v=')) {
+        [final id, final v] => {'id': id, 'v': int.parse(v)},
+        _ => {'id': key},
+      },
+  ],
+};
+
+/// Hands the parts of a media batch [body] of Content-Type [type] to [onPart].
+Future<void> readMediaBatch(
+  Stream<List<int>> body,
+  String type,
+  MediaBatchPartFn onPart,
+) async {
   final boundary = RegExp(
     r'^multipart/mixed;\s*boundary="?([^";]+)"?',
   ).firstMatch(type)?.group(1);
   if (boundary == null) throw StateError('media batch is not multipart: $type');
-  final reader = _MultipartReader(res.data!.stream, boundary);
+  final reader = _MultipartReader(body, boundary);
   try {
     for (
       var h = await reader.nextHeaders();

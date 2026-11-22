@@ -7,6 +7,7 @@ import 'package:retentio/core/network/connectivity_service.dart';
 import 'package:retentio/features/auth/data/datasources/local_auth_data_source.dart';
 import 'package:retentio/features/deck_study/domain/repositories/deck_study_repository.dart';
 import 'package:retentio/features/offline_learning/data/app_foreground.dart';
+import 'package:retentio/features/offline_learning/data/background_media_batch.dart';
 import 'package:retentio/features/offline_learning/data/datasources/hive_offline_learning_store.dart';
 import 'package:retentio/features/offline_learning/data/datasources/offline_store_cipher.dart';
 import 'package:retentio/features/offline_learning/data/datasources/study_sync_remote_data_source.dart';
@@ -236,6 +237,7 @@ class OfflineLearningSessions {
       downloader: OfflinePackageDownloader(
         store: store,
         mediaRootDir: mediaRoot,
+        backgroundMediaBatch: backgroundMediaBatchDownloader(),
         isOnline: _isOnline,
         foreground: foreground,
         connectivityChanged: _connectivityChanged,

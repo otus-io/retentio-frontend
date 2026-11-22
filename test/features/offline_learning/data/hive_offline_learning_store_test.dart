@@ -274,6 +274,20 @@ void main() {
     expect(await store.getCard('d3', 'c1'), isNull);
   });
 
+  test('getAllFacts lists the facts of every deck of this account', () async {
+    final bob = await HiveOfflineLearningStore.open(accountId: 'bob');
+    await store.putFacts([
+      const OfflineFact(deckId: 'd1', id: 'f1', entries: []),
+      const OfflineFact(deckId: 'd2', id: 'f2', entries: []),
+    ]);
+    await bob.putFacts([
+      const OfflineFact(deckId: 'd1', id: 'f9', entries: []),
+    ]);
+
+    expect((await store.getAllFacts()).map((f) => f.id).toSet(), {'f1', 'f2'});
+    expect((await bob.getAllFacts()).map((f) => f.id), ['f9']);
+  });
+
   test('getMediaPaths lists only this account media', () async {
     final bob = await HiveOfflineLearningStore.open(accountId: 'bob');
     await store.putMediaPath('m1', '/a/m1.png');

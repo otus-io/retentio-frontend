@@ -20,6 +20,10 @@ abstract class OfflineLearningStore {
 
   Future<List<OfflineFact>> getFacts(String deckId);
 
+  /// Facts of every deck, also of decks whose first download has not finished
+  /// (no deck row yet).
+  Future<List<OfflineFact>> getAllFacts();
+
   /// Upserts by fact id.
   Future<void> putFacts(List<OfflineFact> facts);
   Future<void> deleteFacts(String deckId, Iterable<String> factIds);

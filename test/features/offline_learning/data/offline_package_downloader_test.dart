@@ -71,6 +71,8 @@ class _FakeStore implements OfflineLearningStore {
   Future<List<OfflineFact>> getFacts(String deckId) async =>
       facts.values.where((f) => f.deckId == deckId).toList();
   @override
+  Future<List<OfflineFact>> getAllFacts() async => facts.values.toList();
+  @override
   Future<void> putFacts(List<OfflineFact> list) async {
     for (final f in list) {
       facts[f.id] = f;
@@ -213,6 +215,7 @@ void main() {
     FetchCardsFn? fetchCards,
     DownloadMediaFn? downloadMedia,
     DownloadMediaBatchFn? downloadMediaBatch,
+    CancellableMediaBatchFn? backgroundMediaBatch,
     FetchMediaVersionsFn? fetchMediaVersions,
     bool online = true,
     int now = 1000,
@@ -249,6 +252,7 @@ void main() {
     downloadMediaBatch:
         downloadMediaBatch ??
         (_, _) async => throw const MediaBatchUnsupported(),
+    backgroundMediaBatch: backgroundMediaBatch,
     fetchMediaVersions:
         fetchMediaVersions ??
         (deckId, factId) async {
@@ -403,6 +407,36 @@ void main() {
       expect(factOffsets, isEmpty);
       expect(await downloader.download('d1'), isTrue);
       expect(store.decks['d1']!.isReady, isTrue);
+    });
+
+    test('cancels a background batch in flight instead of waiting', () async {
+      final started = Completer<void>();
+      var cancelled = false;
+      final downloader = build(
+        pages: [
+          [
+            _fact('f1', entries: [FactEntry(audio: 'a1')]),
+          ],
+        ],
+        backgroundMediaBatch: (keys, onPart, cancel) async {
+          started.complete();
+          // The OS saves the response only once all of it is in.
+          await cancel;
+          cancelled = true;
+          throw StateError('media batch canceled');
+        },
+      );
+
+      final running = downloader.download('d1');
+      await started.future;
+      final halted = await downloader.whileHalted('d1', () async => true);
+
+      expect(halted, isTrue);
+      expect(cancelled, isTrue);
+      expect(await running, isFalse);
+      expect(store.media, isEmpty);
+      expect(downloadedUrls, isEmpty);
+      expect(store.decks, isEmpty);
     });
 
     test('halting one deck leaves other decks downloading', () async {
@@ -2511,6 +2545,22 @@ void main() {
     },
   );
 
+  test('media of a deck still downloading survive the cleanup', () async {
+    // d2 is paused mid-download: facts and media saved, no deck row yet.
+    final saved = File('${tmp.path}/saved.mp3')..writeAsBytesSync([1]);
+    store.facts['x'] = const OfflineFact(
+      deckId: 'd2',
+      id: 'x',
+      entries: [FactEntry(audio: 'pending')],
+    );
+    store.media['pending'] = saved.path;
+
+    await build(pages: const [[]]).download('d1');
+
+    expect(store.media.keys, ['pending']);
+    expect(saved.existsSync(), isTrue);
+  });
+
   test('a failing media cleanup does not fail the download', () async {
     store.failGetMediaPaths = true;
 
@@ -2807,6 +2857,36 @@ void main() {
       expect(store.media['a0'], '${tmp.path}/d1/a0.mp3');
       expect(File(store.media['a0']!).readAsBytesSync(), mp3);
       expect(File('${tmp.path}/d1/a0.part').existsSync(), isFalse);
+    });
+
+    test('batches run by the OS go on after the app leaves', () async {
+      final foreground = ValueNotifier(true);
+      final batches = <List<String>>[];
+      const n = OfflinePackageDownloader.mediaBatchSize + 1;
+      final downloader = build(
+        foreground: foreground,
+        fetchDeck: (_) async => _remoteDeck(updatedAt: updatedAt),
+        pages: [
+          [
+            for (var i = 0; i < n; i++)
+              _fact('f$i', entries: [FactEntry(audio: 'a$i')]),
+          ],
+        ],
+        factIds: [for (var i = 0; i < n; i++) 'f$i'],
+        backgroundMediaBatch: (keys, onPart, _) async {
+          foreground.value = false;
+          batches.add(keys);
+          for (final key in keys) {
+            await onPart(key, Stream.value(mp3));
+          }
+        },
+      );
+
+      expect(await downloader.download('d1'), isTrue);
+
+      expect(batches.map((b) => b.length), [200, 1]);
+      expect(downloadedUrls, isEmpty);
+      expect(store.decks['d1']!.remoteUpdatedAt, updatedAt.toIso8601String());
     });
 
     test('asks only for files that are not recorded yet', () async {
