@@ -36,6 +36,9 @@ class _PendingContributionsOutboxSheetState
   String? _error;
   String? _notice;
 
+  /// Rows that were already sent or removed, shown apart from [_notice].
+  String? _skipped;
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +52,8 @@ class _PendingContributionsOutboxSheetState
   }
 
   Future<void> _refresh() async {
+    // A send or dismiss may finish after the sheet was closed.
+    if (!mounted) return;
     setState(() => _loading = true);
     final pending = await PendingContributionsStore.of.listPending(
       widget.importDeckId,
@@ -122,6 +127,7 @@ class _PendingContributionsOutboxSheetState
       _submitting = true;
       _error = null;
       _notice = null;
+      _skipped = null;
     });
     final message = _messageController.text.trim();
     var sentCount = 0;
@@ -177,10 +183,7 @@ class _PendingContributionsOutboxSheetState
       if (failures.isNotEmpty) {
         _error = failures.take(3).join(' · ');
       }
-      if (skippedCount > 0) {
-        final skipped = loc.pendingSkippedGone(skippedCount);
-        _notice = _notice == null ? skipped : '$_notice · $skipped';
-      }
+      _skipped = skippedCount > 0 ? loc.pendingSkippedGone(skippedCount) : null;
     });
   }
 
@@ -260,12 +263,26 @@ class _PendingContributionsOutboxSheetState
     final loc = AppLocalizations.of(context)!;
     final ids = _selected.toList();
     if (ids.isEmpty) return;
+    // Count only rows still stored; others were sent or removed meanwhile.
+    final stored = {
+      for (final r in await PendingContributionsStore.of.listPending(
+        widget.importDeckId,
+      ))
+        r.id,
+    };
+    final dismissed = ids.where(stored.contains).length;
     for (final id in ids) {
       await PendingContributionsStore.of.remove(widget.importDeckId, id);
     }
     await _refresh();
     if (!mounted) return;
-    setState(() => _notice = loc.pendingDismissed(ids.length));
+    setState(() {
+      _error = null;
+      _notice = dismissed > 0 ? loc.pendingDismissed(dismissed) : null;
+      _skipped = dismissed < ids.length
+          ? loc.pendingSkippedGone(ids.length - dismissed)
+          : null;
+    });
   }
 
   Future<void> _clearAll() async {
@@ -278,6 +295,7 @@ class _PendingContributionsOutboxSheetState
     setState(() {
       _selected.clear();
       _notice = loc.pendingCleared(n);
+      _skipped = null;
     });
   }
 
@@ -343,6 +361,15 @@ class _PendingContributionsOutboxSheetState
           Text(
             _notice!,
             style: theme.textTheme.bodySmall?.copyWith(color: scheme.primary),
+          ),
+        ],
+        if (_skipped != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            _skipped!,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
           ),
         ],
         const SizedBox(height: 12),
