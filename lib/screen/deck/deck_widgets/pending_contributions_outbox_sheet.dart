@@ -138,6 +138,21 @@ class _PendingContributionsOutboxSheetState
       _notice = null;
       _skipped = null;
     });
+    try {
+      await _sendItems(loc, items);
+    } catch (e) {
+      // Only the reload can throw here; each send's errors are caught.
+      if (mounted) setState(() => _error = rawApiErrorMessage(e));
+    } finally {
+      // Free the outbox even if the reload after sending throws.
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  Future<void> _sendItems(
+    AppLocalizations loc,
+    List<PendingContributionItem> items,
+  ) async {
     final message = _messageController.text.trim();
     var sentCount = 0;
     var skippedCount = 0;
@@ -178,7 +193,6 @@ class _PendingContributionsOutboxSheetState
     await _refresh();
     if (!mounted) return;
     setState(() {
-      _submitting = false;
       if (sentCount > 0) {
         _notice = failures.isEmpty
             ? loc.pendingSendSuccess(sentCount)
@@ -266,65 +280,61 @@ class _PendingContributionsOutboxSheetState
 
   Future<void> _dismissSelected() async {
     final loc = AppLocalizations.of(context)!;
-    final ids = _selected.toList();
+    await _removeRows(_selected.toList(), loc.pendingDismissed);
+  }
+
+  /// Clears the rows shown in the list, never rows staged since it loaded.
+  Future<void> _clearAll() async {
+    final loc = AppLocalizations.of(context)!;
+    await _removeRows([for (final p in _pending) p.id], loc.pendingCleared);
+  }
+
+  /// Removes the rows [ids] with the outbox busy and reports how many it took
+  /// with [removedNotice]. Rows already gone are reported apart. A storage
+  /// error is shown instead of thrown, and the list is reloaded either way.
+  Future<void> _removeRows(
+    List<String> ids,
+    String Function(int count) removedNotice,
+  ) async {
     if (ids.isEmpty || _busy) return;
-    await _whileRemoving(() async {
-      // Count only selected rows still stored; others were sent or removed
-      // meanwhile.
+    final loc = AppLocalizations.of(context)!;
+    setState(() => _removing = true);
+    var removed = 0;
+    try {
       var stored = _ids(await _store.listPending(widget.importDeckId));
-      var dismissed = 0;
       for (final id in ids) {
-        if (stored.contains(id)) dismissed += 1;
+        if (stored.contains(id)) removed += 1;
         stored = _ids(await _store.remove(widget.importDeckId, id));
       }
       await _refresh();
       if (!mounted) return;
       setState(() {
         _error = null;
-        _notice = dismissed > 0 ? loc.pendingDismissed(dismissed) : null;
-        _skipped = dismissed < ids.length
-            ? loc.pendingSkippedGone(ids.length - dismissed)
+        _notice = removed > 0 ? removedNotice(removed) : null;
+        _skipped = removed < ids.length
+            ? loc.pendingSkippedGone(ids.length - removed)
             : null;
       });
-    });
-  }
-
-  Future<void> _clearAll() async {
-    final loc = AppLocalizations.of(context)!;
-    if (_pending.isEmpty || _busy) return;
-    await _whileRemoving(() async {
-      // Count rows actually stored; rows shown but gone were sent or removed
-      // meanwhile.
-      final stored = _ids(await _store.listPending(widget.importDeckId));
-      final gone = _pending.where((p) => !stored.contains(p.id)).length;
-      await _store.clearPending(widget.importDeckId);
-      await _refresh();
+    } catch (e) {
+      // Rows removed before the error are gone; show the list as stored.
+      try {
+        await _refresh();
+      } catch (_) {}
       if (!mounted) return;
       setState(() {
-        _selected.clear();
-        _notice = stored.isEmpty ? null : loc.pendingCleared(stored.length);
-        _error = null;
-        _skipped = gone > 0 ? loc.pendingSkippedGone(gone) : null;
+        // Localized by build, like send errors.
+        _error = rawApiErrorMessage(e);
+        _notice = null;
+        _skipped = null;
       });
-    });
+    } finally {
+      if (mounted) setState(() => _removing = false);
+    }
   }
 
   static Set<String> _ids(List<PendingContributionItem> rows) => {
     for (final r in rows) r.id,
   };
-
-  /// Runs [remove] with the outbox busy. A storage error is shown instead of
-  /// thrown, and the outbox is freed either way.
-  Future<void> _whileRemoving(Future<void> Function() remove) async {
-    setState(() => _removing = true);
-    try {
-      await remove();
-    } catch (e) {
-      if (mounted) setState(() => _error = rawApiErrorMessage(e));
-    } finally {
-      if (mounted) setState(() => _removing = false);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
