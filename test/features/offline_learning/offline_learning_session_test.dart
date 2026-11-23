@@ -634,6 +634,34 @@ void main() {
     expect(identical(await sessions.current(), alice), isFalse);
   });
 
+  test('the first session clears leftover batches, once', () async {
+    var name = 'alice';
+    var clears = 0;
+    final sessions = OfflineLearningSessions(
+      readUsername: () async => name,
+      backgroundBatches: true,
+      clearLeftoverBatches: () async => clears++,
+    );
+
+    await sessions.current();
+    name = 'bob';
+    await sessions.current();
+    await pumpEventQueue();
+
+    expect(clears, 1);
+  });
+
+  test('debug builds keep batches on Dio and clear nothing', () async {
+    var clears = 0;
+    final sessions = OfflineLearningSessions(
+      readUsername: () async => 'alice',
+      clearLeftoverBatches: () async => clears++,
+    );
+
+    expect(await sessions.current(), isNotNull);
+    expect(clears, 0);
+  });
+
   test('an earlier account whose open fails is dropped quietly', () async {
     var name = 'alice';
     final gate = Completer<void>();

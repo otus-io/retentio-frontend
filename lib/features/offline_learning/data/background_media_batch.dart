@@ -22,35 +22,45 @@ typedef ResetDownloadGroupFn = Future<int> Function(String group);
 /// The group of the media batch tasks, which no other download uses.
 const mediaBatchGroup = 'media_batch';
 
+/// Cancels the batch tasks and deletes the batch files an earlier run of the
+/// app left behind: a task the OS kept after the app was killed would
+/// otherwise still run, with the token of then, even after a logout. Run it
+/// once per app process, before any batch: the reset also drops the tasks of
+/// this process without settling them.
+Future<void> clearLeftoverMediaBatches({
+  ResetDownloadGroupFn? reset,
+  Future<String> Function()? tempDir,
+}) async {
+  final resetGroup = reset ?? (group) => FileDownloader().reset(group: group);
+  try {
+    await resetGroup(mediaBatchGroup);
+    final leftovers = Directory(
+      p.join(await (tempDir ?? _tempDir)(), _batchDir),
+    );
+    if (await leftovers.exists()) await leftovers.delete(recursive: true);
+  } catch (e) {
+    // Batches still run; their own files are deleted once read.
+    logger.w('Leftover media batches not cleared: $e');
+  }
+}
+
+const _batchDir = 'media_batches';
+
+Future<String> _tempDir() async => (await getTemporaryDirectory()).path;
+
 /// A [CancellableMediaBatchFn] whose requests the OS carries on while the app
 /// is in the background. Each response is saved to a file under [tempDir] and
-/// read once complete.
-///
-/// Before its first batch it cancels the tasks and deletes the files an
-/// earlier run left behind: a task the OS kept after the app was killed would
-/// otherwise still run, with the token of then, even after a logout.
+/// read once complete. Batches start once [ready] (the
+/// [clearLeftoverMediaBatches] of this process) is done.
 CancellableMediaBatchFn backgroundMediaBatchDownloader({
+  required Future<void> ready,
   RunDownloadTaskFn? run,
   CancelDownloadTaskFn? cancel,
-  ResetDownloadGroupFn? reset,
   Future<String> Function()? tempDir,
 }) {
   final runTask = run ?? (task) => FileDownloader().download(task);
   final cancelTask = cancel ?? (id) => FileDownloader().cancelTaskWithId(id);
-  final resetGroup = reset ?? (group) => FileDownloader().reset(group: group);
-  final dirOf = tempDir ?? () async => (await getTemporaryDirectory()).path;
-  Future<void>? leftoversCleared;
-  Future<void> clearLeftovers(String dir) async {
-    try {
-      await resetGroup(mediaBatchGroup);
-      final leftovers = Directory(dir);
-      if (await leftovers.exists()) await leftovers.delete(recursive: true);
-    } catch (e) {
-      // Batches still run; their own files are deleted once read.
-      logger.w('Leftover media batches not cleared: $e');
-    }
-  }
-
+  final dirOf = tempDir ?? _tempDir;
   return (mediaKeys, onPart, cancelled) async {
     String? taskId;
     var isCancelled = false;
@@ -63,8 +73,8 @@ CancellableMediaBatchFn backgroundMediaBatchDownloader({
         }
       }),
     );
-    final dir = p.join(await dirOf(), 'media_batches');
-    await (leftoversCleared ??= clearLeftovers(dir));
+    await ready;
+    final dir = p.join(await dirOf(), _batchDir);
     final task = DownloadTask(
       url: '${networkDioClient.dio.options.baseUrl}${Api.mediaBatch}',
       headers: {

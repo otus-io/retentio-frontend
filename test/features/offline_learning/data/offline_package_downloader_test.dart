@@ -439,6 +439,44 @@ void main() {
       expect(store.decks, isEmpty);
     });
 
+    test('a halt stops batches that had not started yet', () async {
+      // More batches than workers, so a worker goes on to another batch.
+      const n =
+          OfflinePackageDownloader.mediaBatchSize *
+              OfflinePackageDownloader.mediaBatchConcurrency +
+          1;
+      late OfflinePackageDownloader downloader;
+      Future<bool>? halted;
+      var calls = 0;
+      downloader = build(
+        pages: [
+          [
+            _fact(
+              'f1',
+              entries: [for (var i = 0; i < n; i++) FactEntry(audio: 'a$i')],
+            ),
+          ],
+        ],
+        backgroundMediaBatch: (keys, onPart, cancel) async {
+          if (++calls == 1) {
+            // The other workers start their batches meanwhile.
+            await Future<void>.delayed(Duration.zero);
+            // Halted while this batch finishes, so its cancel comes too late.
+            halted = downloader.whileHalted('d1', () async => true);
+            return;
+          }
+          await cancel;
+          throw StateError('media batch canceled');
+        },
+      );
+
+      expect(await downloader.download('d1'), isFalse);
+
+      expect(await halted, isTrue);
+      expect(calls, OfflinePackageDownloader.mediaBatchConcurrency);
+      expect(downloadedUrls, isEmpty);
+    });
+
     test('halting one deck leaves other decks downloading', () async {
       final downloader = build();
 
@@ -2882,9 +2920,15 @@ void main() {
         },
       );
 
+      // Every batch runs, but the deck is not marked ready in the background.
+      expect(await downloader.download('d1'), isFalse);
+      expect(batches.map((b) => b.length), [200, 1]);
+      expect(store.decks, isEmpty);
+
+      foreground.value = true;
       expect(await downloader.download('d1'), isTrue);
 
-      expect(batches.map((b) => b.length), [200, 1]);
+      expect(batches, hasLength(2));
       expect(downloadedUrls, isEmpty);
       expect(store.decks['d1']!.remoteUpdatedAt, updatedAt.toIso8601String());
     });

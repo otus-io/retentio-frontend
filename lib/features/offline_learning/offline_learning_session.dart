@@ -119,13 +119,18 @@ class OfflineLearningSessions {
     Future<String> Function()? documentsDir,
     Future<bool> Function()? isOnline,
     Stream<void> Function()? connectivityChanged,
+    bool? backgroundBatches,
+    Future<void> Function()? clearLeftoverBatches,
   }) : _isOnline = isOnline ?? hasNetworkConnection,
        _connectivityChanged = connectivityChanged ?? onConnectivityChange,
        _readUsername = readUsername ?? const LocalAuthDataSource().readUsername,
        _saveUsername = saveUsername ?? const LocalAuthDataSource().saveUsername,
        _fetchUsername = fetchUsername ?? _fetchProfileUsername,
        _openStore = openStore ?? _openHiveStore,
-       _documentsDir = documentsDir ?? _appDocumentsDir;
+       _documentsDir = documentsDir ?? _appDocumentsDir,
+       _backgroundBatches = backgroundBatches ?? _nativeClientReachesHost,
+       _clearLeftoverBatches =
+           clearLeftoverBatches ?? clearLeftoverMediaBatches;
 
   static final OfflineLearningSessions instance = OfflineLearningSessions();
 
@@ -136,6 +141,18 @@ class OfflineLearningSessions {
   final Future<String> Function() _documentsDir;
   final Future<bool> Function() _isOnline;
   final Stream<void> Function() _connectivityChanged;
+  final bool _backgroundBatches;
+  final Future<void> Function() _clearLeftoverBatches;
+
+  /// Started by the first session of the process, before any of its batches
+  /// and before a logout can happen.
+  Future<void>? _leftoverBatchesCleared;
+
+  /// The OS client has none of Dio's debug settings: it rejects the
+  /// self-signed dev host, bypasses the debug proxy, and iOS refuses
+  /// cleartext. Media batches then stay on Dio.
+  static bool get _nativeClientReachesHost =>
+      Env.host.startsWith('https://') && !Env.useBadCertificate && !Env.isProxy;
   final Map<String, Future<OfflineLearningSession>> _sessions = {};
   final Map<String, Future<void>> _closing = {};
 
@@ -237,7 +254,11 @@ class OfflineLearningSessions {
       downloader: OfflinePackageDownloader(
         store: store,
         mediaRootDir: mediaRoot,
-        backgroundMediaBatch: backgroundMediaBatchDownloader(),
+        backgroundMediaBatch: _backgroundBatches
+            ? backgroundMediaBatchDownloader(
+                ready: _leftoverBatchesCleared ??= _clearLeftoverBatches(),
+              )
+            : null,
         isOnline: _isOnline,
         foreground: foreground,
         connectivityChanged: _connectivityChanged,

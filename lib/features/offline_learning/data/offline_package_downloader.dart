@@ -872,7 +872,7 @@ class OfflinePackageDownloader {
     await Future.wait([
       for (var w = 0; w < mediaDownloadConcurrency; w++) worker(),
     ]);
-    if (interrupted || next < keys.length) {
+    if (interrupted || _leftForeground.contains(deckId)) {
       throw const _DownloadInterrupted();
     }
     return complete;
@@ -915,6 +915,9 @@ class OfflinePackageDownloader {
         (_batchesInBackground || !_leftForeground.contains(deckId));
     Future<void> worker() async {
       while (more()) {
+        // No await until the batch is registered, so a halt either stops it
+        // here or completes its cancel.
+        _checkHalted(deckId);
         final batch = batches[next++];
         final cancel = Completer<void>();
         final cancels = _batchCancels.putIfAbsent(deckId, () => {})
