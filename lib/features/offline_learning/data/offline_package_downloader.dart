@@ -956,9 +956,14 @@ class OfflinePackageDownloader {
     var batch = <String>[];
     var bytes = 0;
     for (final key in keys) {
-      // The key's item as the task escapes it, plus a few bytes to spare.
+      // UTF-8 bytes of the key's item as the task escapes it, plus a few
+      // bytes to spare.
       final size = _batchesInBackground
-          ? jsonEncode(jsonEncode(mediaBatchRequest([key])['items'])).length
+          ? utf8
+                .encode(
+                  jsonEncode(jsonEncode(mediaBatchRequest([key])['items'])),
+                )
+                .length
           : 0;
       if (batch.length == mediaBatchSize ||
           batch.isNotEmpty && bytes + size > backgroundBatchBodyBytes) {

@@ -2972,7 +2972,8 @@ void main() {
 
     group('with long media ids', () {
       const n = OfflinePackageDownloader.mediaBatchSize + 1;
-      String key(int i) => 'fixcut-0001zp7t-2-57722-${1785513000 + i}';
+      // Non-ASCII takes more bytes than UTF-16 units in the OS task.
+      String key(int i) => 'fixcut-音频-0001zp7t-2-57722-${1785513000 + i}';
 
       OfflinePackageDownloader longKeys({
         DownloadMediaBatchFn? downloadMediaBatch,
@@ -3010,7 +3011,7 @@ void main() {
         for (final batch in batches) {
           final escaped = jsonEncode(jsonEncode(mediaBatchRequest(batch)));
           expect(
-            escaped.length,
+            utf8.encode(escaped).length,
             lessThanOrEqualTo(
               OfflinePackageDownloader.backgroundBatchBodyBytes,
             ),
