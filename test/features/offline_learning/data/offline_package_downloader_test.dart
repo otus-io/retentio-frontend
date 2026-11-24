@@ -2970,6 +2970,75 @@ void main() {
       expect(store.decks['d1']!.remoteUpdatedAt, updatedAt.toIso8601String());
     });
 
+    group('with long media ids', () {
+      const n = OfflinePackageDownloader.mediaBatchSize + 1;
+      String key(int i) => 'fixcut-0001zp7t-2-57722-${1785513000 + i}';
+
+      OfflinePackageDownloader longKeys({
+        DownloadMediaBatchFn? downloadMediaBatch,
+        CancellableMediaBatchFn? backgroundMediaBatch,
+      }) => build(
+        fetchDeck: (_) async => _remoteDeck(updatedAt: updatedAt),
+        pages: [
+          [
+            for (var i = 0; i < n; i++)
+              _fact('f$i', entries: [FactEntry(audio: key(i))]),
+          ],
+        ],
+        factIds: [for (var i = 0; i < n; i++) 'f$i'],
+        downloadMediaBatch: downloadMediaBatch,
+        backgroundMediaBatch: backgroundMediaBatch,
+      );
+
+      test('background batches stay small enough for the OS', () async {
+        final batches = <List<String>>[];
+        final downloader = longKeys(
+          backgroundMediaBatch: (keys, onPart, _) async {
+            batches.add(keys);
+            for (final key in keys) {
+              await onPart(key, Stream.value(mp3));
+            }
+          },
+        );
+
+        expect(await downloader.download('d1'), isTrue);
+
+        expect(
+          batches.first.length,
+          lessThan(OfflinePackageDownloader.mediaBatchSize),
+        );
+        for (final batch in batches) {
+          final escaped = jsonEncode(jsonEncode(mediaBatchRequest(batch)));
+          expect(
+            escaped.length,
+            lessThanOrEqualTo(
+              OfflinePackageDownloader.backgroundBatchBodyBytes,
+            ),
+          );
+        }
+        expect(batches.expand((b) => b).toSet(), {
+          for (var i = 0; i < n; i++) key(i),
+        });
+        expect(downloadedUrls, isEmpty);
+      });
+
+      test('foreground batches keep the full size', () async {
+        final batches = <List<String>>[];
+        final downloader = longKeys(
+          downloadMediaBatch: (keys, onPart) async {
+            batches.add(keys);
+            for (final key in keys) {
+              await onPart(key, Stream.value(mp3));
+            }
+          },
+        );
+
+        expect(await downloader.download('d1'), isTrue);
+
+        expect(batches.map((b) => b.length), [200, 1]);
+      });
+    });
+
     test('asks only for files that are not recorded yet', () async {
       store.media['a0'] = '${tmp.path}/gone.mp3';
       final asked = <String>[];

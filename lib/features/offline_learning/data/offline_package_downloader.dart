@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:retentio/core/network/connectivity_service.dart';
@@ -96,6 +95,11 @@ class OfflinePackageDownloader {
   static const int versionLookupConcurrency = 4;
   static const int mediaDownloadConcurrency = 64;
   static const int mediaBatchSize = 200;
+
+  /// Bytes the body of a background batch may take once escaped into the
+  /// task, which Android WorkManager refuses (crashing the app) past 10 KB,
+  /// URL and headers included.
+  static const int backgroundBatchBodyBytes = 6000;
   static const int mediaBatchConcurrency = 4;
   static const int mediaBatchRetries = 2;
   static const int resumeConcurrency = 2;
@@ -878,7 +882,8 @@ class OfflinePackageDownloader {
     return complete;
   }
 
-  /// Fetches the uncached [keys] [mediaBatchSize] per request. Returns the
+  /// Fetches the uncached [keys] [mediaBatchSize] per request, fewer when a
+  /// background body would pass [backgroundBatchBodyBytes]. Returns the
   /// keys it settled: saved, or refused by the server, which clears
   /// `complete`. A failed batch's missing keys go into a new batch, up to
   /// [mediaBatchRetries] times per download; after that, or on a server
@@ -888,11 +893,7 @@ class OfflinePackageDownloader {
     Set<String> keys,
     void Function() tick,
   ) async {
-    final pending = keys.toList();
-    final batches = [
-      for (var i = 0; i < pending.length; i += mediaBatchSize)
-        pending.sublist(i, min(i + mediaBatchSize, pending.length)),
-    ];
+    final batches = _splitMediaBatches(keys);
     final settled = <String>{};
     var complete = true;
     var failed = false;
@@ -948,6 +949,28 @@ class OfflinePackageDownloader {
     // A worker that re-queues a batch is still running, so it picks it up.
     await Future.wait([for (var w = 0; w < workers; w++) worker()]);
     return (settled: settled, complete: complete);
+  }
+
+  List<List<String>> _splitMediaBatches(Iterable<String> keys) {
+    final batches = <List<String>>[];
+    var batch = <String>[];
+    var bytes = 0;
+    for (final key in keys) {
+      // The key's item as the task escapes it, plus a few bytes to spare.
+      final size = _batchesInBackground
+          ? jsonEncode(jsonEncode(mediaBatchRequest([key])['items'])).length
+          : 0;
+      if (batch.length == mediaBatchSize ||
+          batch.isNotEmpty && bytes + size > backgroundBatchBodyBytes) {
+        batches.add(batch);
+        batch = [];
+        bytes = 0;
+      }
+      batch.add(key);
+      bytes += size;
+    }
+    if (batch.isNotEmpty) batches.add(batch);
+    return batches;
   }
 
   /// True when no file is recorded for [mediaKey]. A recorded one whose file
