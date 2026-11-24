@@ -59,6 +59,7 @@ void main() {
     CancelDownloadTaskFn? cancel,
     Future<void>? ready,
     Future<String> Function()? tempDir,
+    Future<void> Function(Duration)? wait,
   }) async {
     final parts = <(String, String?)>[];
     await backgroundMediaBatchDownloader(
@@ -66,6 +67,7 @@ void main() {
       run: run,
       cancel: cancel,
       tempDir: tempDir ?? () async => tmp.path,
+      wait: wait,
     )(['m1?v=7', 'm2'], (key, bytes) async {
       parts.add((
         key,
@@ -234,6 +236,7 @@ void main() {
   test('a cancel that misses is repeated until the task ends', () async {
     final cancelled = Completer<void>();
     final stopped = Completer<void>();
+    final waits = <Duration>[];
     var cancels = 0;
     final result = fetch(
       (task) async {
@@ -247,11 +250,50 @@ void main() {
         if (++cancels == 3) stopped.complete();
         return true;
       },
+      wait: (delay) async {
+        waits.add(delay);
+        await Future<void>.delayed(Duration.zero);
+      },
     );
 
     await expectLater(result, throwsStateError);
-    await Future<void>.delayed(mediaBatchCancelRetryDelay * 8);
+    await pumpEventQueue();
     expect(cancels, 3);
+    expect(waits.take(2), [
+      mediaBatchCancelRetryDelay,
+      mediaBatchCancelRetryDelay * 2,
+    ]);
+  });
+
+  test('cancels back off to the cap and stop after the last try', () async {
+    final cancelled = Completer<void>();
+    final stopped = Completer<void>();
+    final waits = <Duration>[];
+    var cancels = 0;
+    final result = fetch(
+      (task) async {
+        cancelled.complete();
+        await stopped.future;
+        return TaskStatusUpdate(task, TaskStatus.complete);
+      },
+      cancelled: cancelled.future,
+      cancel: (_) async {
+        cancels++;
+        return false;
+      },
+      wait: (delay) async => waits.add(delay),
+    );
+
+    await pumpEventQueue();
+    expect(cancels, mediaBatchCancelTries);
+    expect(waits, [
+      for (var ms = 100; ms < 2000; ms *= 2) Duration(milliseconds: ms),
+      for (var i = 0; i < mediaBatchCancelTries - 6; i++)
+        mediaBatchCancelMaxDelay,
+    ]);
+    stopped.complete();
+    await expectLater(result, throwsStateError);
+    expect(cancels, mediaBatchCancelTries);
   });
 
   test('a finished task is not cancelled again', () async {

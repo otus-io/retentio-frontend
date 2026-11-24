@@ -54,10 +54,12 @@ Future<String> _tempDir() async => (await getTemporaryDirectory()).path;
 /// UI isolate.
 const mediaBatchReadConcurrency = 4;
 
-/// First wait between cancels of a batch task; it doubles up to
-/// [mediaBatchCancelMaxDelay]. A cancel can miss a task still on its way to
-/// the OS, which enqueues and cancels concurrently (Android then answers
-/// false, iOS still true), so cancels repeat until the task is over.
+/// Cancels of a batch task, the first wait between them, which doubles up
+/// to [mediaBatchCancelMaxDelay]: about 11 s in all. A cancel can miss a task
+/// still on its way to the OS, which enqueues and cancels concurrently
+/// (Android then answers false, iOS still true), so cancels repeat until the
+/// task is over or the tries run out.
+const mediaBatchCancelTries = 10;
 const mediaBatchCancelRetryDelay = Duration(milliseconds: 100);
 const mediaBatchCancelMaxDelay = Duration(seconds: 2);
 
@@ -70,10 +72,12 @@ CancellableMediaBatchFn backgroundMediaBatchDownloader({
   RunDownloadTaskFn? run,
   CancelDownloadTaskFn? cancel,
   Future<String> Function()? tempDir,
+  Future<void> Function(Duration delay)? wait,
 }) {
   final runTask = run ?? (task) => FileDownloader().download(task);
   final cancelTask = cancel ?? (id) => FileDownloader().cancelTaskWithId(id);
   final dirOf = tempDir ?? _tempDir;
+  final pause = wait ?? (delay) => Future<void>.delayed(delay);
   var reading = 0;
   final waiting = Queue<Completer<void>>();
   return (mediaKeys, onPart, cancelled) async {
@@ -86,13 +90,16 @@ CancellableMediaBatchFn backgroundMediaBatchDownloader({
         final id = taskId;
         if (id == null) return;
         var delay = mediaBatchCancelRetryDelay;
-        while (!finished) {
+        var logged = false;
+        for (var tries = 1; !finished; tries++) {
           try {
             await cancelTask(id);
           } catch (e) {
-            logger.w('Media batch cancel failed: $e');
+            if (!logged) logger.w('Media batch cancel failed: $e');
+            logged = true;
           }
-          await Future<void>.delayed(delay);
+          if (finished || tries == mediaBatchCancelTries) return;
+          await pause(delay);
           delay = Duration(
             milliseconds: min(
               delay.inMilliseconds * 2,
