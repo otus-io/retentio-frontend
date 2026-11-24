@@ -447,6 +447,7 @@ void main() {
           1;
       late OfflinePackageDownloader downloader;
       Future<bool>? halted;
+      final halting = Completer<void>();
       var calls = 0;
       downloader = build(
         pages: [
@@ -457,16 +458,15 @@ void main() {
             ),
           ],
         ],
-        backgroundMediaBatch: (keys, onPart, cancel) async {
+        downloadMediaBatch: (keys, onPart) async {
           if (++calls == 1) {
             // The other workers start their batches meanwhile.
             await Future<void>.delayed(Duration.zero);
-            // Halted while this batch finishes, so its cancel comes too late.
             halted = downloader.whileHalted('d1', () async => true);
+            halting.complete();
             return;
           }
-          await cancel;
-          throw StateError('media batch canceled');
+          await halting.future;
         },
       );
 
@@ -474,6 +474,43 @@ void main() {
 
       expect(await halted, isTrue);
       expect(calls, OfflinePackageDownloader.mediaBatchConcurrency);
+      expect(downloadedUrls, isEmpty);
+    });
+
+    test('every background batch is handed to the OS at once', () async {
+      const n =
+          OfflinePackageDownloader.mediaBatchSize *
+              OfflinePackageDownloader.mediaBatchConcurrency +
+          1;
+      final started = <List<String>>[];
+      final release = Completer<void>();
+      final downloader = build(
+        pages: [
+          [
+            _fact(
+              'f1',
+              entries: [for (var i = 0; i < n; i++) FactEntry(audio: 'a$i')],
+            ),
+          ],
+        ],
+        backgroundMediaBatch: (keys, onPart, _) async {
+          started.add(keys);
+          await release.future;
+          for (final key in keys) {
+            await onPart(key, Stream.value(const [0x49, 0x44, 0x33]));
+          }
+        },
+      );
+
+      final running = downloader.download('d1');
+      await pumpEventQueue();
+      expect(
+        started,
+        hasLength(OfflinePackageDownloader.mediaBatchConcurrency + 1),
+      );
+
+      release.complete();
+      expect(await running, isTrue);
       expect(downloadedUrls, isEmpty);
     });
 

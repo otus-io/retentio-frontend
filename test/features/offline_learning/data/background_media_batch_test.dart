@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:background_downloader/background_downloader.dart';
 import 'package:dio/dio.dart';
@@ -246,6 +247,54 @@ void main() {
       throwsStateError,
     );
     expect(cancels, 0);
+  });
+
+  test('reads at most $mediaBatchReadConcurrency responses at once', () async {
+    final full = Completer<void>();
+    final served = serve(body);
+    final fetchBatch = backgroundMediaBatchDownloader(
+      ready: Future.value(),
+      // The batch of m3 is in only once every turn to read is taken.
+      run: (task) async {
+        if ((task.post as String).contains('m3')) await full.future;
+        return served(task);
+      },
+      tempDir: () async => tmp.path,
+    );
+    final gate = Completer<void>();
+    var reading = 0;
+    var most = 0;
+    final batches = [
+      for (var i = 0; i < mediaBatchReadConcurrency + 1; i++)
+        fetchBatch(['m1?v=7', 'm2'], (key, bytes) async {
+          if (key != 'm1?v=7') return;
+          most = max(most, ++reading);
+          if (reading == mediaBatchReadConcurrency) full.complete();
+          await gate.future;
+          await bytes!.drain<void>();
+          reading--;
+        }, Completer<void>().future),
+    ];
+    final lateCancel = Completer<void>();
+    var lateRead = false;
+    final refused = expectLater(
+      fetchBatch(['m3'], (_, _) async => lateRead = true, lateCancel.future),
+      throwsStateError,
+    );
+    await full.future;
+
+    // A batch cancelled while waiting for its turn is not read.
+    lateCancel.complete();
+    gate.complete();
+    await Future.wait(batches);
+    await refused;
+
+    expect(most, mediaBatchReadConcurrency);
+    expect(lateRead, isFalse);
+    expect(tasks, hasLength(mediaBatchReadConcurrency + 2));
+    for (final task in tasks) {
+      expect(File(savedPath(task)).existsSync(), isFalse);
+    }
   });
 
   test('by default the OS downloader runs it in the temp directory', () async {

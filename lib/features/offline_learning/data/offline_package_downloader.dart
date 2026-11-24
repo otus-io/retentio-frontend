@@ -940,10 +940,13 @@ class OfflinePackageDownloader {
       }
     }
 
+    // The OS queues background batches itself and runs them while the app is
+    // suspended, so all of them are handed over at once.
+    final workers = _batchesInBackground
+        ? batches.length
+        : mediaBatchConcurrency;
     // A worker that re-queues a batch is still running, so it picks it up.
-    await Future.wait([
-      for (var w = 0; w < mediaBatchConcurrency; w++) worker(),
-    ]);
+    await Future.wait([for (var w = 0; w < workers; w++) worker()]);
     return (settled: settled, complete: complete);
   }
 

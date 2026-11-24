@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
@@ -48,10 +49,14 @@ const _batchDir = 'media_batches';
 
 Future<String> _tempDir() async => (await getTemporaryDirectory()).path;
 
+/// How many saved batch responses are read at once; the reading runs on the
+/// UI isolate.
+const mediaBatchReadConcurrency = 4;
+
 /// A [CancellableMediaBatchFn] whose requests the OS carries on while the app
 /// is in the background. Each response is saved to a file under [tempDir] and
-/// read once complete. Batches start once [ready] (the
-/// [clearLeftoverMediaBatches] of this process) is done.
+/// read once complete, [mediaBatchReadConcurrency] at a time. Batches start
+/// once [ready] (the [clearLeftoverMediaBatches] of this process) is done.
 CancellableMediaBatchFn backgroundMediaBatchDownloader({
   required Future<void> ready,
   RunDownloadTaskFn? run,
@@ -61,6 +66,8 @@ CancellableMediaBatchFn backgroundMediaBatchDownloader({
   final runTask = run ?? (task) => FileDownloader().download(task);
   final cancelTask = cancel ?? (id) => FileDownloader().cancelTaskWithId(id);
   final dirOf = tempDir ?? _tempDir;
+  var reading = 0;
+  final waiting = Queue<Completer<void>>();
   return (mediaKeys, onPart, cancelled) async {
     String? taskId;
     var isCancelled = false;
@@ -105,11 +112,28 @@ CancellableMediaBatchFn backgroundMediaBatchDownloader({
         }
         throw StateError('media batch ${update.status}: ${update.exception}');
       }
-      await readMediaBatch(
-        file.openRead(),
-        update.responseHeaders?['content-type'] ?? '',
-        onPart,
-      );
+      if (reading < mediaBatchReadConcurrency) {
+        reading++;
+      } else {
+        final turn = Completer<void>();
+        waiting.add(turn);
+        await turn.future;
+      }
+      try {
+        if (isCancelled) throw StateError('media batch cancelled');
+        await readMediaBatch(
+          file.openRead(),
+          update.responseHeaders?['content-type'] ?? '',
+          onPart,
+        );
+      } finally {
+        // Hands the turn to the next batch, if any waits.
+        if (waiting.isNotEmpty) {
+          waiting.removeFirst().complete();
+        } else {
+          reading--;
+        }
+      }
     } finally {
       if (await file.exists()) await file.delete();
     }
