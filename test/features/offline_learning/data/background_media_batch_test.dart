@@ -231,7 +231,7 @@ void main() {
     expect(cancels, 2);
   });
 
-  test('a cancel gives up after $mediaBatchCancelAttempts tries', () async {
+  test('a cancel that misses is repeated until the task ends', () async {
     final cancelled = Completer<void>();
     final stopped = Completer<void>();
     var cancels = 0;
@@ -243,14 +243,15 @@ void main() {
       },
       cancelled: cancelled.future,
       cancel: (_) async {
-        if (++cancels == mediaBatchCancelAttempts) stopped.complete();
-        return false;
+        // iOS answers true even when the task has not reached it yet.
+        if (++cancels == 3) stopped.complete();
+        return true;
       },
     );
 
     await expectLater(result, throwsStateError);
-    await Future<void>.delayed(mediaBatchCancelRetryDelay * 2);
-    expect(cancels, mediaBatchCancelAttempts);
+    await Future<void>.delayed(mediaBatchCancelRetryDelay * 8);
+    expect(cancels, 3);
   });
 
   test('a finished task is not cancelled again', () async {
@@ -296,6 +297,28 @@ void main() {
       ),
       throwsStateError,
     );
+  });
+
+  test('a failing cancel is retried', () async {
+    final cancelled = Completer<void>();
+    final stopped = Completer<void>();
+    var cancels = 0;
+    final result = fetch(
+      (task) async {
+        cancelled.complete();
+        await stopped.future;
+        return TaskStatusUpdate(task, TaskStatus.canceled);
+      },
+      cancelled: cancelled.future,
+      cancel: (_) async {
+        if (++cancels == 1) throw StateError('cancel failed');
+        stopped.complete();
+        return true;
+      },
+    );
+
+    await expectLater(result, throwsStateError);
+    expect(cancels, 2);
   });
 
   test('a batch cancelled before its task starts never runs it', () async {

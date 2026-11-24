@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:background_downloader/background_downloader.dart';
 import 'package:path/path.dart' as p;
@@ -53,10 +54,12 @@ Future<String> _tempDir() async => (await getTemporaryDirectory()).path;
 /// UI isolate.
 const mediaBatchReadConcurrency = 4;
 
-/// Tries of a batch cancel the OS answers with "no such task": the task may
-/// still be on its way to the OS, which enqueues and cancels concurrently.
-const mediaBatchCancelAttempts = 5;
+/// First wait between cancels of a batch task; it doubles up to
+/// [mediaBatchCancelMaxDelay]. A cancel can miss a task still on its way to
+/// the OS, which enqueues and cancels concurrently (Android then answers
+/// false, iOS still true), so cancels repeat until the task is over.
 const mediaBatchCancelRetryDelay = Duration(milliseconds: 100);
+const mediaBatchCancelMaxDelay = Duration(seconds: 2);
 
 /// A [CancellableMediaBatchFn] whose requests the OS carries on while the app
 /// is in the background. Each response is saved to a file under [tempDir] and
@@ -82,14 +85,21 @@ CancellableMediaBatchFn backgroundMediaBatchDownloader({
         isCancelled = true;
         final id = taskId;
         if (id == null) return;
-        // A failed cancel leaves the task to finish; nothing waits on it.
-        try {
-          for (var attempt = 1; !await cancelTask(id); attempt++) {
-            if (attempt == mediaBatchCancelAttempts) return;
-            await Future<void>.delayed(mediaBatchCancelRetryDelay);
-            if (finished) return;
+        var delay = mediaBatchCancelRetryDelay;
+        while (!finished) {
+          try {
+            await cancelTask(id);
+          } catch (e) {
+            logger.w('Media batch cancel failed: $e');
           }
-        } catch (_) {}
+          await Future<void>.delayed(delay);
+          delay = Duration(
+            milliseconds: min(
+              delay.inMilliseconds * 2,
+              mediaBatchCancelMaxDelay.inMilliseconds,
+            ),
+          );
+        }
       }),
     );
     await ready;
