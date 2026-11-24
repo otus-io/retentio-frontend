@@ -53,6 +53,11 @@ Future<String> _tempDir() async => (await getTemporaryDirectory()).path;
 /// UI isolate.
 const mediaBatchReadConcurrency = 4;
 
+/// Tries of a batch cancel the OS answers with "no such task": the task may
+/// still be on its way to the OS, which enqueues and cancels concurrently.
+const mediaBatchCancelAttempts = 5;
+const mediaBatchCancelRetryDelay = Duration(milliseconds: 100);
+
 /// A [CancellableMediaBatchFn] whose requests the OS carries on while the app
 /// is in the background. Each response is saved to a file under [tempDir] and
 /// read once complete, [mediaBatchReadConcurrency] at a time. Batches start
@@ -71,13 +76,20 @@ CancellableMediaBatchFn backgroundMediaBatchDownloader({
   return (mediaKeys, onPart, cancelled) async {
     String? taskId;
     var isCancelled = false;
+    var finished = false;
     unawaited(
-      cancelled.then((_) {
+      cancelled.then((_) async {
         isCancelled = true;
-        if (taskId case final id?) {
-          // A failed cancel leaves the task to finish; nothing waits on it.
-          unawaited(cancelTask(id).then<void>((_) {}, onError: (_) {}));
-        }
+        final id = taskId;
+        if (id == null) return;
+        // A failed cancel leaves the task to finish; nothing waits on it.
+        try {
+          for (var attempt = 1; !await cancelTask(id); attempt++) {
+            if (attempt == mediaBatchCancelAttempts) return;
+            await Future<void>.delayed(mediaBatchCancelRetryDelay);
+            if (finished) return;
+          }
+        } catch (_) {}
       }),
     );
     await ready;
@@ -100,7 +112,12 @@ CancellableMediaBatchFn backgroundMediaBatchDownloader({
     // The task keeps the directory relative to the root.
     final file = File(p.join(dir, task.filename));
     try {
-      final update = await runTask(task);
+      final TaskStatusUpdate update;
+      try {
+        update = await runTask(task);
+      } finally {
+        finished = true;
+      }
       if (update.status != TaskStatus.complete) {
         final code = switch (update.exception) {
           TaskHttpException(:final httpResponseCode) => httpResponseCode,

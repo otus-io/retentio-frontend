@@ -208,6 +208,75 @@ void main() {
     expect(cancelledIds, [tasks.single.taskId]);
   });
 
+  test('a cancel the OS does not know yet is retried', () async {
+    final cancelled = Completer<void>();
+    final stopped = Completer<void>();
+    var cancels = 0;
+    final result = fetch(
+      (task) async {
+        cancelled.complete();
+        await stopped.future;
+        return TaskStatusUpdate(task, TaskStatus.canceled);
+      },
+      cancelled: cancelled.future,
+      cancel: (_) async {
+        // The first cancel arrives before the OS has the task.
+        if (++cancels == 1) return false;
+        stopped.complete();
+        return true;
+      },
+    );
+
+    await expectLater(result, throwsStateError);
+    expect(cancels, 2);
+  });
+
+  test('a cancel gives up after $mediaBatchCancelAttempts tries', () async {
+    final cancelled = Completer<void>();
+    final stopped = Completer<void>();
+    var cancels = 0;
+    final result = fetch(
+      (task) async {
+        cancelled.complete();
+        await stopped.future;
+        return TaskStatusUpdate(task, TaskStatus.canceled);
+      },
+      cancelled: cancelled.future,
+      cancel: (_) async {
+        if (++cancels == mediaBatchCancelAttempts) stopped.complete();
+        return false;
+      },
+    );
+
+    await expectLater(result, throwsStateError);
+    await Future<void>.delayed(mediaBatchCancelRetryDelay * 2);
+    expect(cancels, mediaBatchCancelAttempts);
+  });
+
+  test('a finished task is not cancelled again', () async {
+    final cancelled = Completer<void>();
+    final stopped = Completer<void>();
+    var cancels = 0;
+    final result = fetch(
+      (task) async {
+        cancelled.complete();
+        await stopped.future;
+        return TaskStatusUpdate(task, TaskStatus.canceled);
+      },
+      cancelled: cancelled.future,
+      cancel: (_) async {
+        cancels++;
+        // The task ends on its own before the retry.
+        if (!stopped.isCompleted) stopped.complete();
+        return false;
+      },
+    );
+
+    await expectLater(result, throwsStateError);
+    await Future<void>.delayed(mediaBatchCancelRetryDelay * 2);
+    expect(cancels, 1);
+  });
+
   test('a failing cancel is not thrown', () async {
     final cancelled = Completer<void>();
     final stopped = Completer<void>();
