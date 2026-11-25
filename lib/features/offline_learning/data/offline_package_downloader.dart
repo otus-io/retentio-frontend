@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:retentio/core/network/connectivity_service.dart';
@@ -67,6 +66,7 @@ class OfflinePackageDownloader {
     FetchCardsFn? fetchCards,
     DownloadMediaFn? downloadMedia,
     DownloadMediaBatchFn? downloadMediaBatch,
+    CancellableMediaBatchFn? backgroundMediaBatch,
     FetchMediaVersionsFn? fetchMediaVersions,
     int Function()? nowSec,
     Future<bool> Function()? isOnline,
@@ -79,7 +79,10 @@ class OfflinePackageDownloader {
        _fetchFactIds = fetchFactIds ?? fetchOfflineFactIds,
        _fetchCards = fetchCards ?? fetchOfflineCards,
        _downloadMedia = downloadMedia ?? ApiService.downloadFile,
-       _downloadMediaBatch = downloadMediaBatch ?? downloadOfflineMediaBatch,
+       _downloadMediaBatch =
+           backgroundMediaBatch ??
+           _uncancellable(downloadMediaBatch ?? downloadOfflineMediaBatch),
+       _batchesInBackground = backgroundMediaBatch != null,
        _fetchMediaVersions = fetchMediaVersions ?? fetchOfflineMediaVersions,
        _nowSec = nowSec ?? _defaultNowSec,
        _isOnline = isOnline ?? hasNetworkConnection,
@@ -92,6 +95,11 @@ class OfflinePackageDownloader {
   static const int versionLookupConcurrency = 4;
   static const int mediaDownloadConcurrency = 64;
   static const int mediaBatchSize = 200;
+
+  /// Bytes the body of a background batch may take once escaped into the
+  /// task, which Android WorkManager refuses (crashing the app) past 10 KB,
+  /// URL and headers included.
+  static const int backgroundBatchBodyBytes = 6000;
   static const int mediaBatchConcurrency = 4;
   static const int mediaBatchRetries = 2;
   static const int resumeConcurrency = 2;
@@ -108,7 +116,14 @@ class OfflinePackageDownloader {
   final FetchFactIdsFn _fetchFactIds;
   final FetchCardsFn _fetchCards;
   final DownloadMediaFn _downloadMedia;
-  final DownloadMediaBatchFn _downloadMediaBatch;
+  final CancellableMediaBatchFn _downloadMediaBatch;
+
+  static CancellableMediaBatchFn _uncancellable(DownloadMediaBatchFn batch) =>
+      (keys, onPart, _) => batch(keys, onPart);
+
+  /// Batches run by the OS, so they keep starting after the app leaves the
+  /// foreground instead of pausing the download.
+  final bool _batchesInBackground;
   final FetchMediaVersionsFn _fetchMediaVersions;
   final int Function() _nowSec;
   final Future<bool> Function() _isOnline;
@@ -123,6 +138,9 @@ class OfflinePackageDownloader {
   final Set<String> _resumed = {};
   final Set<String> _leftForeground = {};
   final Set<String> _resumeWhenForeground = {};
+
+  /// Per deck, one completer per media batch in flight; completed to cancel it.
+  final Map<String, Set<Completer<void>>> _batchCancels = {};
   var _haltsAll = 0;
 
   /// Stops listening to the app and the network. Used once the account logs
@@ -169,6 +187,14 @@ class OfflinePackageDownloader {
       _haltsAll++;
     } else {
       _halts.update(deckId, (n) => n + 1, ifAbsent: () => 1);
+    }
+    // A batch the OS downloads is saved only once all of it is in, so it is
+    // cancelled instead of waited for.
+    for (final MapEntry(:key, :value) in _batchCancels.entries) {
+      if (deckId != null && key != deckId) continue;
+      for (final cancel in value) {
+        if (!cancel.isCompleted) cancel.complete();
+      }
     }
     await _dropPaused(deckId);
     try {
@@ -856,7 +882,8 @@ class OfflinePackageDownloader {
     return complete;
   }
 
-  /// Fetches the uncached [keys] [mediaBatchSize] per request. Returns the
+  /// Fetches the uncached [keys] [mediaBatchSize] per request, fewer when a
+  /// background body would pass [backgroundBatchBodyBytes]. Returns the
   /// keys it settled: saved, or refused by the server, which clears
   /// `complete`. A failed batch's missing keys go into a new batch, up to
   /// [mediaBatchRetries] times per download; after that, or on a server
@@ -866,11 +893,7 @@ class OfflinePackageDownloader {
     Set<String> keys,
     void Function() tick,
   ) async {
-    final pending = keys.toList();
-    final batches = [
-      for (var i = 0; i < pending.length; i += mediaBatchSize)
-        pending.sublist(i, min(i + mediaBatchSize, pending.length)),
-    ];
+    final batches = _splitMediaBatches(keys);
     final settled = <String>{};
     var complete = true;
     var failed = false;
@@ -888,28 +911,71 @@ class OfflinePackageDownloader {
     }
 
     bool more() =>
-        next < batches.length && !failed && !_leftForeground.contains(deckId);
+        next < batches.length &&
+        !failed &&
+        (_batchesInBackground || !_leftForeground.contains(deckId));
     Future<void> worker() async {
       while (more()) {
+        // No await until the batch is registered, so a halt either stops it
+        // here or completes its cancel.
+        _checkHalted(deckId);
         final batch = batches[next++];
+        final cancel = Completer<void>();
+        final cancels = _batchCancels.putIfAbsent(deckId, () => {})
+          ..add(cancel);
         try {
-          await _downloadMediaBatch(batch, onPart);
+          await _downloadMediaBatch(batch, onPart, cancel.future);
         } on _DownloadHalted {
           rethrow;
         } catch (e) {
+          // A batch cancelled by the halt fails; the halt is the reason.
+          _checkHalted(deckId);
           final missing = [...batch.where((k) => !settled.contains(k))];
           failed = e is MediaBatchUnsupported || ++retries > mediaBatchRetries;
           logger.w('Offline media batch failed (fallback=$failed): $e');
           if (!failed && missing.isNotEmpty) batches.add(missing);
+        } finally {
+          cancels.remove(cancel);
+          if (cancels.isEmpty) _batchCancels.remove(deckId);
         }
       }
     }
 
+    // The OS queues background batches itself and runs them while the app is
+    // suspended, so all of them are handed over at once.
+    final workers = _batchesInBackground
+        ? batches.length
+        : mediaBatchConcurrency;
     // A worker that re-queues a batch is still running, so it picks it up.
-    await Future.wait([
-      for (var w = 0; w < mediaBatchConcurrency; w++) worker(),
-    ]);
+    await Future.wait([for (var w = 0; w < workers; w++) worker()]);
     return (settled: settled, complete: complete);
+  }
+
+  List<List<String>> _splitMediaBatches(Iterable<String> keys) {
+    final batches = <List<String>>[];
+    var batch = <String>[];
+    var bytes = 0;
+    for (final key in keys) {
+      // UTF-8 bytes of the key's item as the task escapes it, plus a few
+      // bytes to spare.
+      final size = _batchesInBackground
+          ? utf8
+                .encode(
+                  jsonEncode(jsonEncode(mediaBatchRequest([key])['items'])),
+                )
+                .length
+          : 0;
+      if (batch.length == mediaBatchSize ||
+          batch.isNotEmpty && bytes + size > backgroundBatchBodyBytes) {
+        batches.add(batch);
+        batch = [];
+        bytes = 0;
+      }
+      batch.add(key);
+      bytes += size;
+    }
+    if (batch.isNotEmpty) batches.add(batch);
+    return batches;
   }
 
   /// True when no file is recorded for [mediaKey]. A recorded one whose file
@@ -975,12 +1041,12 @@ class OfflinePackageDownloader {
 }
 
 /// Deletes cached media files no stored fact references any more (facts
-/// deleted or edited, decks removed).
+/// deleted or edited, decks removed). Facts of a deck still downloading count
+/// too, though its deck row is written only at the end.
 Future<void> pruneUnusedMedia(OfflineLearningStore store) async {
   final used = <String>{
-    for (final deck in await store.getDecks())
-      for (final fact in await store.getFacts(deck.id))
-        for (final id in fact.mediaIds) fact.mediaKey(id),
+    for (final fact in await store.getAllFacts())
+      for (final id in fact.mediaIds) fact.mediaKey(id),
   };
   for (final MapEntry(:key, :value) in (await store.getMediaPaths()).entries) {
     if (used.contains(key)) continue;

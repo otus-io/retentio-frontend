@@ -124,6 +124,10 @@ class HiveOfflineLearningStore implements OfflineLearningStore {
       _rows(_facts, _factPrefix(deckId)).map(OfflineFact.fromJson).toList();
 
   @override
+  Future<List<OfflineFact>> getAllFacts() async =>
+      _rows(_facts, '$accountId:fact:').map(OfflineFact.fromJson).toList();
+
+  @override
   Future<void> putFacts(List<OfflineFact> facts) => _facts.putAll({
     for (final f in facts) '${_factPrefix(f.deckId)}${f.id}': f.toJson(),
   });

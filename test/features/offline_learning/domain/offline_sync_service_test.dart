@@ -34,6 +34,9 @@ class _FakeStore implements OfflineLearningStore {
   Future<Map<String, String>> getMediaPaths() => throw UnimplementedError();
 
   @override
+  Future<List<OfflineFact>> getAllFacts() => throw UnimplementedError();
+
+  @override
   Future<void> putCards(List<OfflineCard> list) async {
     for (final c in list) {
       cards[c.id] = c;
