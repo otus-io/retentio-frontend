@@ -1,0 +1,115 @@
+---
+name: Android Release
+
+on:
+  push:
+    branches: [main]
+    paths: ['pubspec.yaml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.check.outputs.tag }}
+      released: ${{ steps.check.outputs.released }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check whether pubspec version is released
+        id: check
+        run: |
+          version=$(sed -nE 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/p' pubspec.yaml)
+          tag="v$version"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" > /dev/null; then
+            echo "released=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$tag is already released"
+          else
+            echo "released=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-apk:
+    needs: version
+    if: needs.version.outputs.released == 'false' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.47.0'
+          cache: true
+
+      - name: Restore signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::ANDROID_$name secret is missing; refusing to build a release APK"
+              exit 1
+            fi
+          done
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.jks
+          # key.properties is read with java.util.Properties, where a backslash is an escape character
+          {
+            echo "storeFile=release.jks"
+            printf 'storePassword=%s\n' "${KEYSTORE_PASSWORD//\\/\\\\}"
+            printf 'keyAlias=%s\n' "${KEY_ALIAS//\\/\\\\}"
+            printf 'keyPassword=%s\n' "${KEY_PASSWORD//\\/\\\\}"
+          } > android/key.properties
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze code
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Build release APK
+        run: flutter build apk --release --dart-define=API_ENV=release
+
+      - name: Prepare artifacts
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk retentio.apk
+          sha256sum retentio.apk > retentio.apk.sha256
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: retentio-apk
+          path: |
+            retentio.apk
+            retentio.apk.sha256
+
+      - name: Publish GitHub Release
+        if: needs.version.outputs.released == 'false' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          files: |
+            retentio.apk
+            retentio.apk.sha256
+          generate_release_notes: true
