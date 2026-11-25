@@ -11,6 +11,7 @@ description: CI/CD workflow conventions for GitHub Actions in retentio-frontend.
 |------|---------|---------|
 | `frontend.yml` | Push/PR to main, app paths (`lib/**`, `test/**`, platforms, `pubspec.*`) | Flutter format, analyze, test |
 | `pr-review.yml` | PR opened/sync | PR description auto-fill, Claude Code review |
+| `android-release.yml` | Tag `v*` / manual | Signed release APK → GitHub Release asset `retentio.apk` |
 
 ## Frontend CI Requirements
 
