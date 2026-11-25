@@ -385,13 +385,17 @@ void main() {
 
   test('reads at most $mediaBatchReadConcurrency responses at once', () async {
     final full = Completer<void>();
+    final lateDownloaded = Completer<void>();
     final served = serve(body);
     final fetchBatch = backgroundMediaBatchDownloader(
       ready: Future.value(),
       // The batch of m3 is in only once every turn to read is taken.
       run: (task) async {
-        if ((task.post as String).contains('m3')) await full.future;
-        return served(task);
+        if (!(task.post as String).contains('m3')) return served(task);
+        await full.future;
+        final update = await served(task);
+        lateDownloaded.complete();
+        return update;
       },
       tempDir: () async => tmp.path,
     );
@@ -415,7 +419,9 @@ void main() {
       fetchBatch(['m3'], (_, _) async => lateRead = true, lateCancel.future),
       throwsStateError,
     );
-    await full.future;
+    await lateDownloaded.future;
+    // The readers hold every turn, so m3 can only join the wait queue.
+    await pumpEventQueue();
 
     // A batch cancelled while waiting for its turn is not read.
     lateCancel.complete();
