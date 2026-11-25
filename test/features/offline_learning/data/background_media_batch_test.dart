@@ -285,15 +285,14 @@ void main() {
     );
 
     await pumpEventQueue();
-    expect(cancels, mediaBatchCancelTries);
+    expect(cancels, 10);
     expect(waits, [
-      for (var ms = 100; ms < 2000; ms *= 2) Duration(milliseconds: ms),
-      for (var i = 0; i < mediaBatchCancelTries - 6; i++)
-        mediaBatchCancelMaxDelay,
+      for (final ms in [100, 200, 400, 800, 1600, 2000, 2000, 2000, 2000])
+        Duration(milliseconds: ms),
     ]);
     stopped.complete();
     await expectLater(result, throwsStateError);
-    expect(cancels, mediaBatchCancelTries);
+    expect(cancels, 10);
   });
 
   test('a finished task is not cancelled again', () async {
@@ -423,11 +422,12 @@ void main() {
     // The readers hold every turn, so m3 can only join the wait queue.
     await pumpEventQueue();
 
-    // A batch cancelled while waiting for its turn is not read.
+    // A batch cancelled while waiting for its turn ends without one.
     lateCancel.complete();
+    await refused;
+    expect(File(savedPath(tasks.last)).existsSync(), isFalse);
     gate.complete();
     await Future.wait(batches);
-    await refused;
 
     expect(most, mediaBatchReadConcurrency);
     expect(lateRead, isFalse);

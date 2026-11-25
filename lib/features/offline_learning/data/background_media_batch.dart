@@ -151,7 +151,12 @@ CancellableMediaBatchFn backgroundMediaBatchDownloader({
       } else {
         final turn = Completer<void>();
         waiting.add(turn);
-        await turn.future;
+        await Future.any([turn.future, cancelled]);
+        // Cancelled before its turn came: leaves the queue, holding no turn.
+        if (!turn.isCompleted) {
+          waiting.remove(turn);
+          throw StateError('media batch cancelled');
+        }
       }
       try {
         if (isCancelled) throw StateError('media batch cancelled');
