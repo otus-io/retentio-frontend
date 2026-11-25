@@ -3,14 +3,40 @@ name: Android Release
 
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+    paths: ['pubspec.yaml']
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.check.outputs.tag }}
+      released: ${{ steps.check.outputs.released }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check whether pubspec version is released
+        id: check
+        run: |
+          version=$(sed -nE 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/p' pubspec.yaml)
+          tag="v$version"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" > /dev/null; then
+            echo "released=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$tag is already released"
+          else
+            echo "released=false" >> "$GITHUB_OUTPUT"
+          fi
+
   build-apk:
+    needs: version
+    if: needs.version.outputs.released == 'false' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
@@ -78,9 +104,11 @@ jobs:
             retentio.apk.sha256
 
       - name: Publish GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: needs.version.outputs.released == 'false' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           files: |
             retentio.apk
             retentio.apk.sha256
