@@ -619,6 +619,8 @@
   "resendVerification": "確認メールを再送信",
   "verificationEmailSent": "メールが未確認の場合、確認リンクを送信しました。",
   "authVerifyTokenInvalid": "確認リンクが無効か、期限切れです",
+  "verifyEmailLinkUsed": "このリンクは使用済みか、期限切れです。確認済みの場合は、そのままログインしてください。",
+  "emailVerifiedBadge": "メール確認済み",
   "apiTokenRequired": "トークンが必要です",
   "apiServerValidateVerifyToken": "確認トークンを検証できませんでした。もう一度お試しください。",
   "apiServerVerifyEmail": "メールを確認できませんでした。もう一度お試しください。",

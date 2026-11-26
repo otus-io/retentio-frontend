@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -2165,6 +2166,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get authVerifyTokenInvalid =>
       'Verification link is invalid or expired';
+
+  @override
+  String get verifyEmailLinkUsed =>
+      'This link has already been used or has expired. If you already verified your email, just log in.';
+
+  @override
+  String get emailVerifiedBadge => 'Email verified';
 
   @override
   String get apiTokenRequired => 'Token is required';

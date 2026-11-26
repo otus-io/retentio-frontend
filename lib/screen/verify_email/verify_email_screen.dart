@@ -14,6 +14,9 @@ const _kContentPadding = AppThemeTokens.spaceLg;
 const _kCardMaxWidth = 460.0;
 const _kCardPadding = AppThemeTokens.spaceXl;
 
+/// The backend deletes the token once used, so a second tap gets this and retrying cannot succeed.
+const _kLinkUsedMsg = 'Invalid or expired verification token';
+
 enum _VerifyStatus { idle, loading, success, error }
 
 class VerifyEmailScreen extends HookWidget {
@@ -33,6 +36,15 @@ class VerifyEmailScreen extends HookWidget {
     final errorMessage = useState(
       verifyToken.isEmpty ? loc.verifyEmailMissingToken : '',
     );
+    final linkUsed = useState(false);
+
+    void fail(String? rawMsg) {
+      status.value = _VerifyStatus.error;
+      linkUsed.value = rawMsg == _kLinkUsedMsg;
+      errorMessage.value = linkUsed.value
+          ? loc.verifyEmailLinkUsed
+          : ApiErrorMessages.resolve(rawMsg, loc);
+    }
 
     Future<void> verify() async {
       if (verifyToken.isEmpty) {
@@ -48,16 +60,11 @@ class VerifyEmailScreen extends HookWidget {
           status.value = _VerifyStatus.success;
           showSnack(context, loc.verifyEmailSuccess);
         } else {
-          status.value = _VerifyStatus.error;
-          errorMessage.value = ApiErrorMessages.resolve(result?.msg, loc);
+          fail(result?.msg);
         }
       } catch (e) {
         if (!context.mounted) return;
-        status.value = _VerifyStatus.error;
-        errorMessage.value = ApiErrorMessages.resolve(
-          rawApiErrorMessage(e),
-          loc,
-        );
+        fail(rawApiErrorMessage(e));
       }
     }
 
@@ -120,7 +127,8 @@ class VerifyEmailScreen extends HookWidget {
                         ),
                       const SizedBox(height: AppThemeTokens.spaceLg),
                       if (status.value == _VerifyStatus.error &&
-                          verifyToken.isNotEmpty)
+                          verifyToken.isNotEmpty &&
+                          !linkUsed.value)
                         AppButton(
                           label: loc.retry,
                           variant: AppButtonVariant.secondary,
@@ -128,7 +136,8 @@ class VerifyEmailScreen extends HookWidget {
                           onPressed: verify,
                         ),
                       if (status.value == _VerifyStatus.error &&
-                          verifyToken.isNotEmpty)
+                          verifyToken.isNotEmpty &&
+                          !linkUsed.value)
                         const SizedBox(height: AppThemeTokens.spaceSm),
                       AppButton(
                         label: loc.backToLogin,

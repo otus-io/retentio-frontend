@@ -3814,6 +3814,18 @@ abstract class AppLocalizations {
   /// **'Verification link is invalid or expired'**
   String get authVerifyTokenInvalid;
 
+  /// Verify-email screen when the link was already used or expired; retrying cannot help
+  ///
+  /// In en, this message translates to:
+  /// **'This link has already been used or has expired. If you already verified your email, just log in.'**
+  String get verifyEmailLinkUsed;
+
+  /// Tooltip on the check icon next to the profile email when email_verified is true
+  ///
+  /// In en, this message translates to:
+  /// **'Email verified'**
+  String get emailVerifiedBadge;
+
   /// API error: Token is required
   ///
   /// In en, this message translates to:
