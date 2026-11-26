@@ -8,6 +8,9 @@ import 'package:retentio/l10n/app_localizations.dart';
 class ApiErrorMessages {
   const ApiErrorMessages._();
 
+  /// Backend `msg` for a verify-email token that is gone: already used (deleted on success) or expired.
+  static const verifyTokenInvalid = 'Invalid or expired verification token';
+
   static final _exact = <String, String Function(AppLocalizations)>{
     // Legacy keys (pre-existing l10n entries)
     'Invalid credentials': (loc) => loc.authInvalidCredentials,
@@ -102,8 +105,7 @@ class ApiErrorMessages {
     'Error validating reset token': (loc) => loc.apiServerValidateResetToken,
     'Error resetting password': (loc) => loc.apiServerResetPassword,
     'Token is required': (loc) => loc.apiTokenRequired,
-    'Invalid or expired verification token': (loc) =>
-        loc.authVerifyTokenInvalid,
+    verifyTokenInvalid: (loc) => loc.authVerifyTokenInvalid,
     'User not found for verification token': (loc) =>
         loc.authVerifyTokenInvalid,
     'Error validating verification token': (loc) =>

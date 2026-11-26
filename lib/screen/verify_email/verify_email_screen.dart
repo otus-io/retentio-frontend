@@ -14,9 +14,6 @@ const _kContentPadding = AppThemeTokens.spaceLg;
 const _kCardMaxWidth = 460.0;
 const _kCardPadding = AppThemeTokens.spaceXl;
 
-/// The backend deletes the token once used, so a second tap gets this and retrying cannot succeed.
-const _kLinkUsedMsg = 'Invalid or expired verification token';
-
 enum _VerifyStatus { idle, loading, success, error }
 
 class VerifyEmailScreen extends HookWidget {
@@ -40,7 +37,7 @@ class VerifyEmailScreen extends HookWidget {
 
     void fail(String? rawMsg) {
       status.value = _VerifyStatus.error;
-      linkUsed.value = rawMsg == _kLinkUsedMsg;
+      linkUsed.value = rawMsg == ApiErrorMessages.verifyTokenInvalid;
       errorMessage.value = linkUsed.value
           ? loc.verifyEmailLinkUsed
           : ApiErrorMessages.resolve(rawMsg, loc);
