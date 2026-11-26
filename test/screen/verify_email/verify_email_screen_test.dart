@@ -25,18 +25,19 @@ class _VerifyInterceptor extends Interceptor {
   }
 }
 
-void _reject400(
+void _reject(
   RequestOptions options,
   RequestInterceptorHandler handler,
-  String msg,
-) {
+  String msg, {
+  int statusCode = 400,
+}) {
   handler.reject(
     DioException(
       requestOptions: options,
       type: DioExceptionType.badResponse,
       response: Response(
         requestOptions: options,
-        statusCode: 400,
+        statusCode: statusCode,
         data: {'msg': msg},
       ),
     ),
@@ -87,21 +88,33 @@ void main() {
 
     expect(find.text(en.verifyEmailSuccess), findsWidgets);
     expect(find.text(en.retry), findsNothing);
-    await tester.pump(
-      const Duration(seconds: 3),
-    ); // let the success snack's timer finish
+    // let the success snack's timer finish
+    await tester.pump(const Duration(seconds: 3));
   });
 
   testWidgets('a used link explains itself and hides retry', (tester) async {
     await pumpWith(
       tester,
       (options, handler) =>
-          _reject400(options, handler, 'Invalid or expired verification token'),
+          _reject(options, handler, 'Invalid or expired verification token'),
     );
 
     expect(find.text(en.verifyEmailLinkUsed), findsOneWidget);
     expect(find.text(en.retry), findsNothing);
     expect(find.text(en.backToLogin), findsOneWidget);
+  });
+
+  testWidgets('a link for a deleted account explains itself and hides retry', (
+    tester,
+  ) async {
+    await pumpWith(
+      tester,
+      (options, handler) =>
+          _reject(options, handler, 'User not found for verification token'),
+    );
+
+    expect(find.text(en.verifyEmailLinkUsed), findsOneWidget);
+    expect(find.text(en.retry), findsNothing);
   });
 
   testWidgets('other API errors keep retry, which calls the API again', (
@@ -110,7 +123,7 @@ void main() {
     await pumpWith(
       tester,
       (options, handler) =>
-          _reject400(options, handler, 'User not found for verification token'),
+          _reject(options, handler, 'Error verifying email', statusCode: 500),
     );
 
     expect(find.text(en.verifyEmailLinkUsed), findsNothing);

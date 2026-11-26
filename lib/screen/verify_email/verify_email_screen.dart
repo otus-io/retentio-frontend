@@ -37,7 +37,9 @@ class VerifyEmailScreen extends HookWidget {
 
     void fail(String? rawMsg) {
       status.value = _VerifyStatus.error;
-      linkUsed.value = rawMsg == ApiErrorMessages.verifyTokenInvalid;
+      linkUsed.value =
+          rawMsg == ApiErrorMessages.verifyTokenInvalid ||
+          rawMsg == ApiErrorMessages.verifyUserNotFound;
       errorMessage.value = linkUsed.value
           ? loc.verifyEmailLinkUsed
           : ApiErrorMessages.resolve(rawMsg, loc);
@@ -78,6 +80,10 @@ class VerifyEmailScreen extends HookWidget {
       _VerifyStatus.success => loc.verifyEmailSuccess,
       _VerifyStatus.error => errorMessage.value,
     };
+    final canRetry =
+        status.value == _VerifyStatus.error &&
+        verifyToken.isNotEmpty &&
+        !linkUsed.value;
 
     return Scaffold(
       appBar: AppBar(title: Text(loc.verifyEmailTitle)),
@@ -123,18 +129,14 @@ class VerifyEmailScreen extends HookWidget {
                           ),
                         ),
                       const SizedBox(height: AppThemeTokens.spaceLg),
-                      if (status.value == _VerifyStatus.error &&
-                          verifyToken.isNotEmpty &&
-                          !linkUsed.value)
+                      if (canRetry)
                         AppButton(
                           label: loc.retry,
                           variant: AppButtonVariant.secondary,
                           fullWidth: true,
                           onPressed: verify,
                         ),
-                      if (status.value == _VerifyStatus.error &&
-                          verifyToken.isNotEmpty &&
-                          !linkUsed.value)
+                      if (canRetry)
                         const SizedBox(height: AppThemeTokens.spaceSm),
                       AppButton(
                         label: loc.backToLogin,

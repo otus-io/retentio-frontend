@@ -11,6 +11,9 @@ class ApiErrorMessages {
   /// Backend `msg` for a verify-email token that is gone: already used (deleted on success) or expired.
   static const verifyTokenInvalid = 'Invalid or expired verification token';
 
+  /// Backend `msg` for a verify-email token whose account was deleted after the link was sent.
+  static const verifyUserNotFound = 'User not found for verification token';
+
   static final _exact = <String, String Function(AppLocalizations)>{
     // Legacy keys (pre-existing l10n entries)
     'Invalid credentials': (loc) => loc.authInvalidCredentials,
@@ -106,8 +109,7 @@ class ApiErrorMessages {
     'Error resetting password': (loc) => loc.apiServerResetPassword,
     'Token is required': (loc) => loc.apiTokenRequired,
     verifyTokenInvalid: (loc) => loc.authVerifyTokenInvalid,
-    'User not found for verification token': (loc) =>
-        loc.authVerifyTokenInvalid,
+    verifyUserNotFound: (loc) => loc.authVerifyTokenInvalid,
     'Error validating verification token': (loc) =>
         loc.apiServerValidateVerifyToken,
     'Error verifying email': (loc) => loc.apiServerVerifyEmail,
