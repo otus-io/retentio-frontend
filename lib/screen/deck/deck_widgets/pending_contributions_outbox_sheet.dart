@@ -281,7 +281,7 @@ class _PendingContributionsOutboxSheetState
 
   Future<void> _dismissSelected() async {
     final loc = AppLocalizations.of(context)!;
-    await _removeRows(_selected.toList(), loc.pendingDismissed);
+    await _removeRows(_selected.toList(), loc.pendingDiscarded);
   }
 
   /// Clears the rows shown in the list, never rows staged since it loaded.
@@ -441,7 +441,7 @@ class _PendingContributionsOutboxSheetState
             children: [
               Expanded(
                 child: AppButton(
-                  label: loc.pendingDismissSelected,
+                  label: loc.pendingDiscardSelected,
                   size: AppButtonSize.sm,
                   variant: AppButtonVariant.secondary,
                   onPressed: _busy || _selected.isEmpty

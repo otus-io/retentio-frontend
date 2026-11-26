@@ -396,10 +396,10 @@ void _dismissTests() {
 
     await tester.tap(find.text(loc.pendingSelectAll(2)));
     await tester.pump();
-    await tester.tap(find.text(loc.pendingDismissSelected));
+    await tester.tap(find.text(loc.pendingDiscardSelected));
     await tester.pumpAndSettle();
 
-    expect(find.text(loc.pendingDismissed(1)), findsOneWidget);
+    expect(find.text(loc.pendingDiscarded(1)), findsOneWidget);
     expect(find.text(loc.pendingSkippedGone(1)), findsOneWidget);
   });
 
@@ -419,11 +419,11 @@ void _dismissTests() {
 
     await tester.tap(find.text(loc.pendingSelectAll(1)));
     await tester.pump();
-    await tester.tap(find.text(loc.pendingDismissSelected));
+    await tester.tap(find.text(loc.pendingDiscardSelected));
     await tester.pumpAndSettle();
 
-    expect(find.text(loc.pendingDismissed(0)), findsNothing);
-    expect(find.text(loc.pendingDismissed(1)), findsNothing);
+    expect(find.text(loc.pendingDiscarded(0)), findsNothing);
+    expect(find.text(loc.pendingDiscarded(1)), findsNothing);
     expect(find.text(loc.pendingSkippedGone(1)), findsOneWidget);
   });
 
@@ -434,11 +434,11 @@ void _dismissTests() {
     await tester.tap(find.text(loc.pendingSelectAll(2)));
     await tester.pump();
     // Both taps land before the sheet rebuilds.
-    await tester.tap(find.text(loc.pendingDismissSelected));
-    await tester.tap(find.text(loc.pendingDismissSelected));
+    await tester.tap(find.text(loc.pendingDiscardSelected));
+    await tester.tap(find.text(loc.pendingDiscardSelected));
     await tester.pumpAndSettle();
 
-    expect(find.text(loc.pendingDismissed(2)), findsOneWidget);
+    expect(find.text(loc.pendingDiscarded(2)), findsOneWidget);
     expect(find.text(loc.pendingSkippedGone(2)), findsNothing);
   });
 
@@ -456,7 +456,7 @@ void _dismissTests() {
     );
     await tester.tap(find.textContaining('Fact f1'));
     await tester.pump();
-    await tester.tap(find.text(loc.pendingDismissSelected));
+    await tester.tap(find.text(loc.pendingDiscardSelected));
     await tester.pumpAndSettle();
     expect(find.text(loc.pendingSkippedGone(1)), findsOneWidget);
 
@@ -521,14 +521,14 @@ void _dismissTests() {
 
     await tester.tap(find.textContaining('Fact f1'));
     await tester.pump();
-    await tester.tap(find.text(loc.pendingDismissSelected));
+    await tester.tap(find.text(loc.pendingDiscardSelected));
     await tester.pump();
     await tester.tap(find.text(loc.pendingClearAll));
     release.complete();
     await tester.pumpAndSettle();
 
     expect(find.text(loc.pendingCleared(1)), findsNothing);
-    expect(find.text(loc.pendingDismissed(1)), findsOneWidget);
+    expect(find.text(loc.pendingDiscarded(1)), findsOneWidget);
     expect(find.textContaining('Fact f2'), findsOneWidget);
   });
 
@@ -581,10 +581,10 @@ void _recoveryTests() {
     reload = Completer<void>();
     await tester.tap(find.textContaining('Fact f1'));
     await tester.pump();
-    await tester.tap(find.text(loc.pendingDismissSelected));
+    await tester.tap(find.text(loc.pendingDiscardSelected));
     await tester.pump();
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(find.text(loc.pendingDismissSelected), findsOneWidget);
+    expect(find.text(loc.pendingDiscardSelected), findsOneWidget);
 
     reload.complete();
     await tester.pumpAndSettle();
@@ -605,13 +605,13 @@ void _recoveryTests() {
 
     await tester.tap(find.textContaining('Fact f1'));
     await tester.pump();
-    await tester.tap(find.text(loc.pendingDismissSelected));
+    await tester.tap(find.text(loc.pendingDiscardSelected));
     await tester.pumpAndSettle();
     expect(find.textContaining('disk full'), findsOneWidget);
 
-    await tester.tap(find.text(loc.pendingDismissSelected));
+    await tester.tap(find.text(loc.pendingDiscardSelected));
     await tester.pumpAndSettle();
-    expect(find.text(loc.pendingDismissed(1)), findsOneWidget);
+    expect(find.text(loc.pendingDiscarded(1)), findsOneWidget);
   });
 
   testWidgets('a dismiss failing partway shows the rows as stored', (
@@ -629,7 +629,7 @@ void _recoveryTests() {
 
     await tester.tap(find.text(loc.pendingSelectAll(2)));
     await tester.pump();
-    await tester.tap(find.text(loc.pendingDismissSelected));
+    await tester.tap(find.text(loc.pendingDiscardSelected));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('disk full'), findsOneWidget);
@@ -652,7 +652,7 @@ void _recoveryTests() {
 
       await tester.tap(find.textContaining('Fact f1'));
       await tester.pump();
-      await tester.tap(find.text(loc.pendingDismissSelected));
+      await tester.tap(find.text(loc.pendingDiscardSelected));
       await tester.pump();
       await tester.pumpWidget(buildTestableWidget(const SizedBox()));
       release.complete();

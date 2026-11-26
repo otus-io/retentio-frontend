@@ -3388,11 +3388,11 @@ abstract class AppLocalizations {
   /// **'Send selected ({count})'**
   String pendingSendSelectedCount(int count);
 
-  /// No description provided for @pendingDismissSelected.
+  /// No description provided for @pendingDiscardSelected.
   ///
   /// In en, this message translates to:
-  /// **'Dismiss selected'**
-  String get pendingDismissSelected;
+  /// **'Discard selected'**
+  String get pendingDiscardSelected;
 
   /// No description provided for @pendingClearAll.
   ///
@@ -3652,11 +3652,11 @@ abstract class AppLocalizations {
   /// **'Sent {sent}; {failed} failed'**
   String pendingSendPartial(int sent, int failed);
 
-  /// No description provided for @pendingDismissed.
+  /// No description provided for @pendingDiscarded.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{Dismissed 1 item} other{Dismissed {count} items}}'**
-  String pendingDismissed(int count);
+  /// **'{count, plural, =1{Discarded 1 item} other{Discarded {count} items}}'**
+  String pendingDiscarded(int count);
 
   /// No description provided for @pendingCleared.
   ///

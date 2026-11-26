@@ -1745,7 +1745,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get pendingDismissSelected => '忽略所选';
+  String get pendingDiscardSelected => '丢弃所选';
 
   @override
   String get pendingClearAll => '清空全部';
@@ -1911,12 +1911,12 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String pendingDismissed(int count) {
+  String pendingDiscarded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '已忽略 $count 项',
-      one: '已忽略 1 项',
+      other: '已丢弃 $count 项',
+      one: '已丢弃 1 项',
     );
     return '$_temp0';
   }
