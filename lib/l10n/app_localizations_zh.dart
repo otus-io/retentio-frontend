@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -2017,7 +2016,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get authVerifyTokenInvalid => '验证链接无效或已过期';
 
   @override
-  String get verifyEmailLinkUsed => '此链接已使用或已过期。如果你已完成验证，直接登录即可。';
+  String get verifyEmailLinkUsed => '此链接已使用或已过期。如果你已完成验证，请直接登录；否则请重新注册。';
 
   @override
   String get emailVerifiedBadge => '邮箱已验证';

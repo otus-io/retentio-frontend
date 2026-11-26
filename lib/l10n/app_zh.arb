@@ -1438,7 +1438,7 @@
   "resendVerification": "重新发送验证邮件",
   "verificationEmailSent": "若该邮箱未验证，验证链接已发送。",
   "authVerifyTokenInvalid": "验证链接无效或已过期",
-  "verifyEmailLinkUsed": "此链接已使用或已过期。如果你已完成验证，直接登录即可。",
+  "verifyEmailLinkUsed": "此链接已使用或已过期。如果你已完成验证，请直接登录；否则请重新注册。",
   "emailVerifiedBadge": "邮箱已验证",
   "apiTokenRequired": "需要令牌",
   "apiServerValidateVerifyToken": "无法验证令牌，请重试",

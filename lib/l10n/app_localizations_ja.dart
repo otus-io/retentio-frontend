@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -2026,7 +2025,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get verifyEmailLinkUsed =>
-      'このリンクは使用済みか、期限切れです。確認済みの場合は、そのままログインしてください。';
+      'このリンクは使用済みか、期限切れです。確認済みの場合はログインしてください。まだの場合は、もう一度登録してください。';
 
   @override
   String get emailVerifiedBadge => 'メール確認済み';
