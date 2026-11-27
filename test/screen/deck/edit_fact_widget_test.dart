@@ -519,6 +519,7 @@ void main() {
                   child: FactEdit(
                     deck: imported,
                     factId: 'fact-test-1',
+                    contributionMessage: 'QA edit',
                     onSaved: () async {},
                   ),
                 ),
@@ -566,6 +567,7 @@ void main() {
 
         expect(interceptor.patchFactCount, 1);
         expect(interceptor.contributionAddCount, 1);
+        expect(interceptor.lastContributionAddBody, {'message': 'QA edit'});
         expect(interceptor.contributionEditCount, 0);
         expect(
           await PendingContributionsStore.of.listPending(imported.id),

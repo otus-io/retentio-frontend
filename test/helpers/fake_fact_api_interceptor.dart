@@ -55,6 +55,9 @@ class FakeFactApiInterceptor extends Interceptor {
   /// When true, `POST …/contributions/facts/{id}/add` answers 429.
   bool contributionAddFails = false;
 
+  /// Body of the last `POST …/contributions/facts/{id}/add`.
+  dynamic lastContributionAddBody;
+
   /// When true, the GET fact response marks the fact `local` (importer-added).
   bool factLocal = false;
   int contributionTagsCount = 0;
@@ -163,6 +166,7 @@ class FakeFactApiInterceptor extends Interceptor {
         uri.contains('/contributions/facts/') &&
         uri.endsWith('/add')) {
       contributionAddCount++;
+      lastContributionAddBody = options.data;
       handler.resolve(
         Response(
           requestOptions: options,

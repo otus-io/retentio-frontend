@@ -107,6 +107,7 @@ Future<bool> submitImportedFactAddContribution({
   required String importDeckId,
   required String factId,
   String? preview,
+  String? message,
   PendingContributionsStore? store,
   DeckCatalogService? catalog,
 }) async {
@@ -122,11 +123,13 @@ Future<bool> submitImportedFactAddContribution({
     final contributionId = await c.submitFactAddContribution(
       importDeckId: importDeckId,
       factId: factId,
+      message: message,
     );
     await s.markAsSent(
       importDeckId,
       s.itemId(PendingContributionKind.add, factId: factId),
       contributionId: contributionId,
+      message: message,
     );
     return true;
   } catch (_) {

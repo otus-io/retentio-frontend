@@ -392,6 +392,7 @@ class _FactEditState extends ConsumerState<FactEdit>
         importDeckId: widget.deck.id,
         factId: widget.factId,
         preview: preview,
+        message: widget.contributionMessage,
       );
       if (!mounted) return;
       ok
