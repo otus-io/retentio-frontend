@@ -182,6 +182,9 @@ void main() {
 
       await tester.pumpWidget(_wrapCard(deck(verified: true)));
       expect(find.byType(QaVerifiedBadge), findsOneWidget);
+      final nameLeft = tester.getTopLeft(find.text('QA Deck')).dx;
+      final badgeLeft = tester.getTopLeft(find.byType(QaVerifiedBadge)).dx;
+      expect(badgeLeft - nameLeft, lessThan(120));
 
       await tester.pumpWidget(const SizedBox());
       await tester.pumpWidget(_wrapCard(deck(verified: false)));

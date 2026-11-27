@@ -2162,4 +2162,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get reportIssueFixYourselfHint => '正しい内容がわかりますか？自分で修正すると、作者が確認します。';
+
+  @override
+  String get qaVerifiedBadgeExplain => 'すべてのカードは人の手で確認済みです。';
 }

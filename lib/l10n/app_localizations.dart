@@ -4059,6 +4059,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Know the right answer? Fix it yourself and the author will review your edit.'**
   String get reportIssueFixYourselfHint;
+
+  /// Tooltip shown when tapping the verified badge
+  ///
+  /// In en, this message translates to:
+  /// **'All cards have been checked by a human.'**
+  String get qaVerifiedBadgeExplain;
 }
 
 class _AppLocalizationsDelegate

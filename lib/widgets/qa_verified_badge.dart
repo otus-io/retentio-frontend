@@ -7,6 +7,8 @@ import 'package:retentio/l10n/app_localizations.dart';
 /// Painted rather than a `LucideIcons` glyph on purpose: Lucide has no icon
 /// with this shape (the check breaking out of a translucent ring), and the
 /// design asks for it. Other icons in `lib/` stay on `LucideIcons`.
+///
+/// Tapping it explains what verified means.
 class QaVerifiedBadge extends StatelessWidget {
   const QaVerifiedBadge({super.key, this.size = 16});
 
@@ -14,10 +16,21 @@ class QaVerifiedBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = AppLocalizations.of(context)!.qaVerifiedBadge;
+    final loc = AppLocalizations.of(context)!;
+    final label = loc.qaVerifiedBadge;
     final scheme = Theme.of(context).colorScheme;
     return Tooltip(
-      message: label,
+      richMessage: TextSpan(
+        children: [
+          TextSpan(
+            text: label,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          TextSpan(text: '\n${loc.qaVerifiedBadgeExplain}'),
+        ],
+      ),
+      triggerMode: TooltipTriggerMode.tap,
+      showDuration: const Duration(seconds: 4),
       child: Semantics(
         label: label,
         excludeSemantics: true,

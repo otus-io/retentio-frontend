@@ -2312,4 +2312,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get reportIssueFixYourselfHint =>
       'Know the right answer? Fix it yourself and the author will review your edit.';
+
+  @override
+  String get qaVerifiedBadgeExplain =>
+      'All cards have been checked by a human.';
 }

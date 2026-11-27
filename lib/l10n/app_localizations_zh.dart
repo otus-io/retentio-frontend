@@ -2145,4 +2145,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get reportIssueFixYourselfHint => '知道正确答案？自己修正吧，作者会审核你的修改。';
+
+  @override
+  String get qaVerifiedBadgeExplain => '所有卡片都经过人工核对。';
 }

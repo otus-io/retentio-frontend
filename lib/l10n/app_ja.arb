@@ -659,5 +659,6 @@
   "contributeHelpGotIt": "OK",
   "reportIssueFixYourself": "自分で修正する",
   "factEditContributeNotice": "編集内容は確認のため作者に送信されます。",
-  "reportIssueFixYourselfHint": "正しい内容がわかりますか？自分で修正すると、作者が確認します。"
+  "reportIssueFixYourselfHint": "正しい内容がわかりますか？自分で修正すると、作者が確認します。",
+  "qaVerifiedBadgeExplain": "すべてのカードは人の手で確認済みです。"
 }

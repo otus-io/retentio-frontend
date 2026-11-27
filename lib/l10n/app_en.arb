@@ -2544,5 +2544,9 @@
   "reportIssueFixYourselfHint": "Know the right answer? Fix it yourself and the author will review your edit.",
   "@reportIssueFixYourselfHint": {
     "description": "Report sheet callout promoting Fix it yourself"
+  },
+  "qaVerifiedBadgeExplain": "All cards have been checked by a human.",
+  "@qaVerifiedBadgeExplain": {
+    "description": "Tooltip shown when tapping the verified badge"
   }
 }

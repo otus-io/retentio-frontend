@@ -1478,5 +1478,6 @@
   "contributeHelpGotIt": "知道了",
   "reportIssueFixYourself": "自己修正",
   "factEditContributeNotice": "你的修改会发送给作者审核。",
-  "reportIssueFixYourselfHint": "知道正确答案？自己修正吧，作者会审核你的修改。"
+  "reportIssueFixYourselfHint": "知道正确答案？自己修正吧，作者会审核你的修改。",
+  "qaVerifiedBadgeExplain": "所有卡片都经过人工核对。"
 }

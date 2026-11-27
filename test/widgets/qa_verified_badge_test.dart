@@ -22,8 +22,23 @@ void main() {
       ),
     );
     expect(paint.painter, isA<QaVerifiedBadgePainter>());
-    expect(find.byTooltip('Fully QA-verified'), findsOneWidget);
     expect(find.bySemanticsLabel('Fully QA-verified'), findsOneWidget);
+  });
+
+  testWidgets('tapping explains what verified means', (tester) async {
+    await tester.pumpWidget(
+      buildTestableWidgetWithoutProvider(
+        const Scaffold(body: Center(child: QaVerifiedBadge())),
+      ),
+    );
+
+    await tester.tap(find.byType(QaVerifiedBadge));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(
+      find.textContaining('checked by a human', findRichText: true),
+      findsOneWidget,
+    );
+    await tester.pump(const Duration(seconds: 5));
   });
 
   test('repaints only when a color changes', () {
