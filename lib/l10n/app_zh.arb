@@ -1328,7 +1328,7 @@
   "@pendingSendSelectedCount": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "pendingDismissSelected": "忽略所选",
+  "pendingDiscardSelected": "丢弃所选",
   "pendingClearAll": "清空全部",
   "qaMode": "QA 模式",
   "qaModeEmpty": "该卡组没有可校验的词条。",
@@ -1402,8 +1402,8 @@
       "failed": { "type": "int" }
     }
   },
-  "pendingDismissed": "{count, plural, =1{已忽略 1 项} other{已忽略 {count} 项}}",
-  "@pendingDismissed": {
+  "pendingDiscarded": "{count, plural, =1{已丢弃 1 项} other{已丢弃 {count} 项}}",
+  "@pendingDiscarded": {
     "placeholders": { "count": { "type": "int" } }
   },
   "pendingCleared": "{count, plural, =1{已清空 1 项待发送} other{已清空 {count} 项待发送}}",

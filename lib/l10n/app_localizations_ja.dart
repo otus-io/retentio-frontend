@@ -1750,7 +1750,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get pendingDismissSelected => '選択したものを却下';
+  String get pendingDiscardSelected => '選択したものを破棄';
 
   @override
   String get pendingClearAll => 'すべてクリア';
@@ -1918,12 +1918,12 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String pendingDismissed(int count) {
+  String pendingDiscarded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count件を却下しました',
-      one: '1件を却下しました',
+      other: '$count件を破棄しました',
+      one: '1件を破棄しました',
     );
     return '$_temp0';
   }
