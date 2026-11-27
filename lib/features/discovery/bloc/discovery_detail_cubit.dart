@@ -137,9 +137,14 @@ class DiscoveryDetailCubit extends Cubit<DiscoveryDetailState> {
       try {
         final fresh = await DeckCatalogService.of.getCatalogDeck(deck.id);
         if (fresh != null && !isClosed) {
-          // Only the count: a republish since load must not change the shown version.
-          final json = {...deck.toJson(), 'import_count': fresh.importCount};
-          emit(state.copyWith(deck: CatalogDeck.fromJson(json)));
+          // A newer republish keeps the imported version's details; only the count moves.
+          final shown = fresh.publishedVersion == result.sourceVersion
+              ? fresh
+              : CatalogDeck.fromJson({
+                  ...deck.toJson(),
+                  'import_count': fresh.importCount,
+                });
+          emit(state.copyWith(deck: shown));
         }
       } catch (e) {
         logger.w('refresh catalog deck after import: $e');

@@ -7,7 +7,7 @@ import 'package:retentio/features/discovery/bloc/discovery_detail_cubit.dart';
 
 import '../../helpers/test_wrapper.dart';
 
-enum _Refresh { ok, fails, empty, republished }
+enum _Refresh { ok, fails, empty, republished, republishedBeforeImport }
 
 class _CatalogApi extends Interceptor {
   _CatalogApi([this.refresh = _Refresh.ok, this.refreshGate]);
@@ -45,16 +45,14 @@ class _CatalogApi extends Interceptor {
         'id': 'src-1',
         'name': 'N5',
         'owner': 'o',
-        'published_version': _imported && refresh == _Refresh.republished
-            ? 2
-            : 1,
+        'published_version': _imported && refresh != _Refresh.ok ? 2 : 1,
         'fact_count': 1,
         'import_count': _imported ? 1 : 0,
       },
       '/api/decks/import' => {
         'id': 'deck-9',
         'source_deck_id': 'src-1',
-        'source_version': 1,
+        'source_version': refresh == _Refresh.republishedBeforeImport ? 2 : 1,
         'imported_at': '2026-01-01T00:00:00Z',
       },
       _ => null,
@@ -168,6 +166,8 @@ void main() {
 
     await cubit.importDeck();
 
+    expect(cubit.state.importStatus, ImportStatus.imported);
+    expect(cubit.state.importResult!.sourceVersion, 1);
     expect(cubit.state.deck!.importCount, 1);
     expect(cubit.state.deck!.publishedVersion, 1);
     expect(cubit.state.deck!.name, 'N5');
@@ -189,5 +189,18 @@ void main() {
 
     await expectLater(importing, completes);
     expect(cubit.state.deck!.importCount, 0);
+  });
+
+  test('a republish before import shows the imported version', () async {
+    useApi(_Refresh.republishedBeforeImport);
+    final cubit = DiscoveryDetailCubit(downloadOffline: (_) async {});
+    await cubit.load('src-1');
+
+    await cubit.importDeck();
+
+    expect(cubit.state.importStatus, ImportStatus.imported);
+    expect(cubit.state.deck!.publishedVersion, 2);
+    expect(cubit.state.deck!.importCount, 1);
+    await cubit.close();
   });
 }
