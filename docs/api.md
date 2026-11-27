@@ -198,10 +198,11 @@ This guide is the Retentio REST API contract: endpoints, request bodies, and res
 `username` must not contain whitespace or `@` (**400**). A taken username returns **409**.
 
 Register does not create the account. It emails a verification link, and the account is created when that
-link is opened (`POST /auth/verify-email`). A taken email gets the same **201** response, and the address
-owner gets a "You already have a Rete account" email instead. Register sends at most one email per address
-per 60 s. This keeps register from revealing which emails have accounts. Clients should not log in right after
-register: show "check your email", then log in after verifying. See
+link is opened (`POST /auth/verify-email`). In development without `RESEND_API_KEY` (no mailer can deliver the
+link), register creates the account right away, already verified. A taken email gets the same **201**
+response, and the address owner gets a "You already have a Rete account" email instead. Register sends at most
+one email per address per 60 s. This keeps register from revealing which emails have accounts. Clients should
+not log in right after register: show "check your email", then log in after verifying. See
 [signup-verify-before-create.md](signup-verify-before-create.md).
 
 ### Login
@@ -234,7 +235,8 @@ same **401** `Invalid credentials`, after the same bcrypt work.
 
 ### Authorize
 
-Send the token from the login response on every `/api/*` request:
+Send the token from the login response on every `/api/*` request, except the public catalog list and detail
+(`GET /api/decks/catalog`, `GET /api/decks/catalog/{id}`), which work without a token:
 
 ```http
 Authorization: Bearer <token>
@@ -2282,6 +2284,11 @@ Authorization: Bearer <token>
   "data": {
     "facts": [
       {
+        "id": "b00k1ab2",
+        "entries": [{ "text": "Book" }, { "text": "本" }],
+        "tags": []
+      },
+      {
         "id": "x9k2m4np",
         "entries": [{ "text": "Apple" }, { "text": "りんご" }],
         "created_at": 1763846400000000,
@@ -2289,11 +2296,6 @@ Authorization: Bearer <token>
           { "id": "a1b2c3d4", "name": "food", "description": "" },
           { "id": "f6e5d4c3", "name": "noun", "description": "Parts of speech" }
         ]
-      },
-      {
-        "id": "b00k1ab2",
-        "entries": [{ "text": "Book" }, { "text": "本" }],
-        "tags": []
       }
     ]
   },
@@ -3620,7 +3622,6 @@ These routes need a verified email. Unverified callers get **403**
 | `POST /auth/register` | **400** | `Invalid request payload` |
 | | **400** | `Username, password, and email are required`, `Username must be between 2 and 32 characters`, `Username must not contain whitespace`, `Invalid email address`, `Password must be at least 8 characters`, `Password must not contain whitespace`, `Password must be at most 64 characters`, `Password is too long when encoded (contains too many multi-byte characters)` |
 | | **409** | `Username already exists` |
-| | **409** | `Email already in use` |
 | | **500** | `Error checking username`, `Error checking email`, `Could not hash password`, `Error serializing user data`, `Error creating user` |
 | `POST /auth/login` | **400** | `Invalid request payload` |
 | | **400** | `Username and password are required`, `Username must not contain whitespace` |
