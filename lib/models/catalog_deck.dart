@@ -17,6 +17,7 @@ class CatalogDeck {
     this.qaVerified = false,
     this.contributors = const [],
     this.contributorCount = 0,
+    this.importCount = 0,
   });
 
   final String id;
@@ -43,6 +44,10 @@ class CatalogDeck {
   /// Everyone credited, which can exceed [contributors].
   @JsonKey(defaultValue: 0)
   final int contributorCount;
+
+  /// Total imports ever; deleting an import does not lower it.
+  @JsonKey(defaultValue: 0)
+  final int importCount;
 
   factory CatalogDeck.fromJson(Map<String, dynamic> json) =>
       _$CatalogDeckFromJson(json);

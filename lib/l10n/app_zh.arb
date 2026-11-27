@@ -295,6 +295,7 @@
   "discoveryDetailFields": "字段",
   "discoveryDetailDescription": "简介",
   "discoveryDetailFactCount": "{count}词",
+  "discoveryDetailImportCount": "{count}次导入",
   "imageLoadFailed": "加载失败",
   "homeDailyGoal": "每日目标",
   "homeLearningPath": "学习路径",

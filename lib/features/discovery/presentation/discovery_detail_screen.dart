@@ -285,6 +285,12 @@ class _DetailBody extends StatelessWidget {
                       theme: theme,
                     ),
                     _MetaChip(
+                      icon: LucideIcons.download,
+                      label: loc.discoveryDetailImportCount(deck.importCount),
+                      scheme: scheme,
+                      theme: theme,
+                    ),
+                    _MetaChip(
                       icon: LucideIcons.clock,
                       label: deck.publishedAt != null
                           ? _formatDate(deck.publishedAt!)

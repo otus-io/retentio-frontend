@@ -885,6 +885,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String discoveryDetailImportCount(int count) {
+    return '$count回インポート';
+  }
+
+  @override
   String get imageLoadFailed => '画像を読み込めませんでした';
 
   @override

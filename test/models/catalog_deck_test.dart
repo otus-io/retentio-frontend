@@ -27,6 +27,13 @@ void main() {
     expect(none.contributorCount, 0);
   });
 
+  test('reads import_count and defaults it to zero', () {
+    final imported = CatalogDeck.fromJson({...row(), 'import_count': 42});
+    expect(imported.importCount, 42);
+    expect(imported.toJson()['import_count'], 42);
+    expect(CatalogDeck.fromJson(row()).importCount, 0);
+  });
+
   test('reads qa_verified and defaults it to false', () {
     expect(CatalogDeck.fromJson(row(qaVerified: true)).qaVerified, isTrue);
     expect(CatalogDeck.fromJson(row()).qaVerified, isFalse);

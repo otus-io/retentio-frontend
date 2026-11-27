@@ -16,6 +16,7 @@ class _CatalogApi extends Interceptor {
   bool qaVerified = false;
   List<String> contributors = const [];
   int contributorCount = 0;
+  int? importCount;
   bool offline = false;
 
   @override
@@ -47,6 +48,7 @@ class _CatalogApi extends Interceptor {
             'qa_verified': qaVerified,
             if (contributors.isNotEmpty) 'contributors': contributors,
             if (contributorCount > 0) 'contributor_count': contributorCount,
+            'import_count': ?importCount,
           },
         },
       ),
@@ -122,6 +124,21 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await pumpRouter(tester);
     expect(find.byType(QaVerifiedBadge), findsOneWidget);
+  });
+
+  testWidgets('shows the total import count', (tester) async {
+    await pumpRouter(tester);
+    expect(find.text('0 imports'), findsOneWidget);
+
+    api.importCount = 1;
+    await tester.pumpWidget(const SizedBox());
+    await pumpRouter(tester);
+    expect(find.text('1 import'), findsOneWidget);
+
+    api.importCount = 42;
+    await tester.pumpWidget(const SizedBox());
+    await pumpRouter(tester);
+    expect(find.text('42 imports'), findsOneWidget);
   });
 
   testWidgets('credits contributors under the author', (tester) async {

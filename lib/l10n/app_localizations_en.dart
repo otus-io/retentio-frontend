@@ -919,6 +919,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String discoveryDetailImportCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count imports',
+      one: '1 import',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get imageLoadFailed => 'Load failed';
 
   @override

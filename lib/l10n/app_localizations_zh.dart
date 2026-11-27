@@ -882,6 +882,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String discoveryDetailImportCount(int count) {
+    return '$count次导入';
+  }
+
+  @override
   String get imageLoadFailed => '加载失败';
 
   @override
