@@ -3023,6 +3023,10 @@ Accept: application/json
 | `file`      | 是   | 媒体文件（图片、音频或视频）。                                                 |
 | `client_id` | 否   | 客户端生成的 ID，用于幂等上传；若该用户下该媒体已存在，则返回 201 及已有记录。 |
 
+**类型识别：** 服务端按文件字节嗅探类型，不单独信任分段的 `Content-Type`。Ogg 存为 `audio/ogg`，WAV 存为 `audio/wav`。
+MP4 与 WebM 文件在 ftyp 品牌为 `M4A`/`M4B` 或分段 `Content-Type` 为 `audio/*` 时（录音请携带）存为 `audio/mp4` / `audio/webm`，
+否则存为 `video/mp4` / `video/webm`。
+
 **响应：**
 
 ```json

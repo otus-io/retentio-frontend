@@ -3213,6 +3213,10 @@ You can attach audio, images, and video to facts. Each **entry** object uses str
 | `file`      | Yes      | The media file (image, audio, or video).                                                                                               |
 | `client_id` | No       | Client-generated ID for idempotent upload; if the media already exists for this user, the server returns 201 with the existing record. |
 
+**Type detection:** the server sniffs the file bytes; the part `Content-Type` is not trusted on its own. Ogg is stored as
+`audio/ogg` and WAV as `audio/wav`. MP4 and WebM files are stored as `audio/mp4` / `audio/webm` when the ftyp brand is
+`M4A`/`M4B` or the part `Content-Type` is `audio/*` (send it for recordings); otherwise as `video/mp4` / `video/webm`.
+
 **Response:**
 
 ```json
