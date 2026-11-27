@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
+import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/l10n/app_localizations.dart';
+import 'package:retentio/models/deck.dart';
 import 'package:retentio/models/deck_contribution.dart';
 import 'package:retentio/models/fact.dart';
 import 'package:retentio/screen/deck/card_widgets/card_audio.dart';
 import 'package:retentio/screen/deck/deck_widgets/qa_review_preview_sheet.dart';
+import 'package:retentio/screen/deck/fact_widgets/fact_edit.dart';
 import 'package:retentio/services/apis/deck_catalog_service.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_toast.dart';
@@ -31,6 +35,10 @@ class ContributionsInboxSheet extends StatefulWidget {
 }
 
 bool contributionCanAccept(DeckContribution c) => c.type != 'report';
+
+/// Reports cannot be accepted; the author fixes the fact directly instead.
+bool contributionCanEditFact(DeckContribution c) =>
+    c.type == 'report' && c.factId.isNotEmpty;
 
 class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
   List<DeckContribution>? _items;
@@ -217,6 +225,34 @@ class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
     }
   }
 
+  void _editFact(DeckContribution c) {
+    final loc = AppLocalizations.of(context)!;
+    // FactEdit reloads the deck detail; this stub is only its fallback.
+    final deck = Deck(
+      id: widget.sourceDeckId,
+      name: '',
+      rate: 0,
+      fields: widget.fields,
+      minInterval: 0,
+      defInterval: 0,
+      maxInterval: 0,
+    );
+    showCommonBottomSheet<void>(
+      context: context,
+      fullScreen: true,
+      title: loc.editFact,
+      child: BlocProvider<TagManagerCubit>(
+        create: (_) =>
+            TagManagerCubit(usedOn: 'fact', deckId: deck.id)..loadTags(),
+        child: FactEdit(
+          deck: deck,
+          factId: c.factId,
+          onSaved: () => _setStatus(c, 'resolved'),
+        ),
+      ),
+    );
+  }
+
   String _fieldLabel(int entry) =>
       entry < widget.fields.length ? widget.fields[entry] : '#${entry + 1}';
 
@@ -322,6 +358,7 @@ class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
             final c = items[i];
             final busy = _busyId == c.id;
             final canAccept = contributionCanAccept(c);
+            final canEditFact = contributionCanEditFact(c);
             return Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -391,6 +428,16 @@ class _ContributionsInboxSheetState extends State<ContributionsInboxSheet> {
                           ),
                         ),
                       if (canAccept) const SizedBox(width: 8),
+                      if (canEditFact) ...[
+                        Expanded(
+                          child: AppButton(
+                            label: loc.editFact,
+                            size: AppButtonSize.sm,
+                            onPressed: rowBusy ? null : () => _editFact(c),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
                       Expanded(
                         child: AppButton(
                           label: loc.contributionsDismiss,
