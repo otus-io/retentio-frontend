@@ -7,20 +7,25 @@ import 'package:retentio/features/discovery/bloc/discovery_detail_cubit.dart';
 
 import '../../helpers/test_wrapper.dart';
 
-enum _Refresh { ok, fails, empty }
+enum _Refresh { ok, fails, empty, republished }
 
 class _CatalogApi extends Interceptor {
-  _CatalogApi([this.refresh = _Refresh.ok]);
+  _CatalogApi([this.refresh = _Refresh.ok, this.refreshGate]);
 
   final _Refresh refresh;
+  final Future<void>? refreshGate;
   var _imported = false;
 
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+  Future<void> onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     final path = options.uri.path;
+    if (_imported && path == '/api/decks/catalog/src-1') await refreshGate;
     if (_imported &&
         path == '/api/decks/catalog/src-1' &&
-        refresh != _Refresh.ok) {
+        (refresh == _Refresh.fails || refresh == _Refresh.empty)) {
       if (refresh == _Refresh.fails) {
         handler.reject(DioException(requestOptions: options));
       } else {
@@ -40,7 +45,9 @@ class _CatalogApi extends Interceptor {
         'id': 'src-1',
         'name': 'N5',
         'owner': 'o',
-        'published_version': 1,
+        'published_version': _imported && refresh == _Refresh.republished
+            ? 2
+            : 1,
         'fact_count': 1,
         'import_count': _imported ? 1 : 0,
       },
@@ -73,8 +80,8 @@ void main() {
     await setupTestEnvironment();
   });
 
-  void useApi([_Refresh refresh = _Refresh.ok]) =>
-      networkDioClient.dio.interceptors.add(_CatalogApi(refresh));
+  void useApi([_Refresh refresh = _Refresh.ok, Future<void>? refreshGate]) =>
+      networkDioClient.dio.interceptors.add(_CatalogApi(refresh, refreshGate));
 
   tearDown(() {
     networkDioClient.dio.interceptors.clear();
@@ -135,7 +142,11 @@ void main() {
     await cubit.close();
   });
 
-  for (final refresh in [_Refresh.fails, _Refresh.empty]) {
+  for (final refresh in [
+    _Refresh.fails,
+    _Refresh.empty,
+    _Refresh.republished,
+  ]) {
     test(
       'keeps the import when refreshing the deck gives ${refresh.name}',
       () async {
@@ -148,8 +159,26 @@ void main() {
         expect(cubit.state.importStatus, ImportStatus.imported);
         expect(cubit.state.importError, isNull);
         expect(cubit.state.deck!.importCount, 0);
+        expect(cubit.state.deck!.publishedVersion, 1);
         await cubit.close();
       },
     );
   }
+
+  test('closing during the refresh drops the refreshed deck', () async {
+    final gate = Completer<void>();
+    useApi(_Refresh.ok, gate.future);
+    final cubit = DiscoveryDetailCubit(downloadOffline: (_) async {});
+    await cubit.load('src-1');
+
+    final importing = cubit.importDeck();
+    await cubit.stream.firstWhere(
+      (s) => s.importStatus == ImportStatus.imported,
+    );
+    await cubit.close();
+    gate.complete();
+
+    await expectLater(importing, completes);
+    expect(cubit.state.deck!.importCount, 0);
+  });
 }
