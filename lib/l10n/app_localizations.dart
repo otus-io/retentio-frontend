@@ -1762,6 +1762,12 @@ abstract class AppLocalizations {
   /// **'{count} cards'**
   String discoveryDetailFactCount(int count);
 
+  /// Total number of times a catalog deck was imported, in discovery detail
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 import} other{{count} imports}}'**
+  String discoveryDetailImportCount(int count);
+
   /// Error text shown when a network image fails to load
   ///
   /// In en, this message translates to:

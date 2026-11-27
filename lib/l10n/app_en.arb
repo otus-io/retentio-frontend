@@ -1140,6 +1140,16 @@
       }
     }
   },
+  "discoveryDetailImportCount": "{count, plural, =1{1 import} other{{count} imports}}",
+  "@discoveryDetailImportCount": {
+    "description": "Total number of times a catalog deck was imported, in discovery detail",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "42"
+      }
+    }
+  },
   "imageLoadFailed": "Load failed",
   "@imageLoadFailed": {
     "description": "Error text shown when a network image fails to load"

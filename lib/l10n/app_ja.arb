@@ -277,6 +277,7 @@
   "discoveryDetailFields": "フィールド",
   "discoveryDetailDescription": "説明",
   "discoveryDetailFactCount": "{count}枚",
+  "discoveryDetailImportCount": "{count}回インポート",
   "imageLoadFailed": "画像を読み込めませんでした",
   "homeDailyGoal": "毎日の目標",
   "homeLearningPath": "学習パス",

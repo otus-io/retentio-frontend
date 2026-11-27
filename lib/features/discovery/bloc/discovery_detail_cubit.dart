@@ -134,6 +134,21 @@ class DiscoveryDetailCubit extends Cubit<DiscoveryDetailState> {
           clearImportError: true,
         ),
       );
+      try {
+        final fresh = await DeckCatalogService.of.getCatalogDeck(deck.id);
+        if (fresh != null && !isClosed) {
+          // A newer republish keeps the imported version's details; only the count moves.
+          final shown = fresh.publishedVersion == result.sourceVersion
+              ? fresh
+              : CatalogDeck.fromJson({
+                  ...deck.toJson(),
+                  'import_count': fresh.importCount,
+                });
+          emit(state.copyWith(deck: shown));
+        }
+      } catch (e) {
+        logger.w('refresh catalog deck after import: $e');
+      }
     } catch (e) {
       if (isClosed) return;
       emit(

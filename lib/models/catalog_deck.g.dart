@@ -33,6 +33,7 @@ CatalogDeck _$CatalogDeckFromJson(Map<String, dynamic> json) => CatalogDeck(
           .toList() ??
       [],
   contributorCount: (json['contributor_count'] as num?)?.toInt() ?? 0,
+  importCount: (json['import_count'] as num?)?.toInt() ?? 0,
 );
 
 Map<String, dynamic> _$CatalogDeckToJson(CatalogDeck instance) =>
@@ -49,4 +50,5 @@ Map<String, dynamic> _$CatalogDeckToJson(CatalogDeck instance) =>
       'qa_verified': instance.qaVerified,
       'contributors': instance.contributors,
       'contributor_count': instance.contributorCount,
+      'import_count': instance.importCount,
     };
