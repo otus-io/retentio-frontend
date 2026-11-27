@@ -4,10 +4,13 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retentio/core/network/network.dart';
+import 'package:retentio/features/tags/tag_manager_cubit.dart';
 import 'package:retentio/models/deck_contribution.dart';
 import 'package:retentio/screen/deck/deck_widgets/contributions_inbox_sheet.dart';
+import 'package:retentio/screen/deck/fact_widgets/fact_edit.dart';
 import 'package:retentio/services/apis/api_service.dart';
 import 'package:retentio/widgets/app_toast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,6 +34,9 @@ class _InboxAdapter implements HttpClientAdapter {
   /// `data` for `GET …/qa-review`; null answers 500.
   Map<String, dynamic>? preview;
   final List<String> acceptedIds = [];
+
+  /// Bodies of `PATCH …/contributions/{id}` requests.
+  final List<Object?> patchBodies = [];
 
   /// Awaited before each accept is answered, to observe progress.
   Future<void>? acceptHold;
@@ -76,6 +82,7 @@ class _InboxAdapter implements HttpClientAdapter {
     }
 
     if (method == 'PATCH' && path.contains('/contributions/')) {
+      patchBodies.add(options.data);
       return _ok({
         'contribution': {
           'contribution_id': 'patched',
@@ -247,6 +254,78 @@ void main() {
       expect(find.textContaining('Accept all'), findsNothing);
       expect(find.text('Accept'), findsNothing);
       expect(find.text('Dismiss'), findsOneWidget);
+    });
+
+    testWidgets('report rows offer Edit Fact; other rows do not', (
+      tester,
+    ) async {
+      adapter = _InboxAdapter(
+        contributions: [
+          _row(id: 'c1', type: 'fact_edit'),
+          _row(id: 'c2', type: 'report'),
+        ],
+      );
+      networkDioClient.dio.httpClientAdapter = adapter;
+
+      await pumpInbox(tester);
+
+      expect(find.text('Edit Fact'), findsOneWidget);
+    });
+
+    testWidgets('Edit Fact opens the fact editor sheet', (tester) async {
+      adapter = _InboxAdapter(
+        contributions: [_row(id: 'c2', type: 'report')],
+      );
+      networkDioClient.dio.httpClientAdapter = adapter;
+
+      await pumpInbox(tester);
+      await tester.tap(find.text('Edit Fact'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(FactEdit), findsOneWidget);
+      final tags = tester
+          .element(find.byType(FactEdit))
+          .read<TagManagerCubit>();
+      expect(tags.usedOn, 'fact');
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('saving the fact edit resolves the report', (tester) async {
+      adapter = _InboxAdapter(
+        contributions: [_row(id: 'c2', type: 'report')],
+      );
+      networkDioClient.dio.httpClientAdapter = adapter;
+
+      await pumpInbox(tester);
+      await tester.tap(find.text('Edit Fact'));
+      await tester.pumpAndSettle();
+      final saved = tester.widget<FactEdit>(find.byType(FactEdit)).onSaved();
+      await tester.pumpAndSettle();
+      await saved;
+
+      expect(adapter.patchBodies, hasLength(1));
+      expect(jsonEncode(adapter.patchBodies.single), contains('resolved'));
+      AppToast.dismiss();
+    });
+
+    test('contributionCanEditFact needs a report with a fact id', () {
+      DeckContribution parse(Map<String, dynamic> json) =>
+          DeckContribution.fromJson(json);
+
+      expect(
+        contributionCanEditFact(parse(_row(id: 'r', type: 'report'))),
+        isTrue,
+      );
+      expect(
+        contributionCanEditFact(
+          parse({..._row(id: 'r', type: 'report'), 'fact_id': ''}),
+        ),
+        isFalse,
+      );
+      expect(
+        contributionCanEditFact(parse(_row(id: 'e', type: 'fact_edit'))),
+        isFalse,
+      );
     });
 
     testWidgets('Accept all confirm cancel leaves rows unchanged', (

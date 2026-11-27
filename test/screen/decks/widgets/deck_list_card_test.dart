@@ -10,6 +10,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/network/network.dart';
 import 'package:retentio/features/offline_learning/data/offline_package_downloader.dart';
 import 'package:retentio/models/deck.dart';
+import 'package:retentio/screen/deck/deck_widgets/contributions_inbox_sheet.dart';
 import 'package:retentio/screen/decks/bloc/deck_list_cubit.dart';
 import 'package:retentio/screen/decks/bloc/deck_sharing_status_cubit.dart';
 import 'package:retentio/screen/decks/widgets/badged_app_icon_button.dart';
@@ -182,6 +183,9 @@ void main() {
 
       await tester.pumpWidget(_wrapCard(deck(verified: true)));
       expect(find.byType(QaVerifiedBadge), findsOneWidget);
+      final nameLeft = tester.getTopLeft(find.text('QA Deck')).dx;
+      final badgeLeft = tester.getTopLeft(find.byType(QaVerifiedBadge)).dx;
+      expect(badgeLeft - nameLeft, lessThan(120));
 
       await tester.pumpWidget(const SizedBox());
       await tester.pumpWidget(_wrapCard(deck(verified: false)));
@@ -468,6 +472,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No open contributions'), findsOneWidget);
+      final inbox = tester.widget<ContributionsInboxSheet>(
+        find.byType(ContributionsInboxSheet),
+      );
+      expect(inbox.fields, ['Front', 'Back']);
 
       // Dismiss sheet (barrier tap) so onPressed awaits refresh.
       await tester.tapAt(const Offset(8, 8));

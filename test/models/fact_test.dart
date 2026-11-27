@@ -57,6 +57,21 @@ void main() {
       expect(f.fields, ['A', 'B']);
     });
 
+    test('fromJson reads local and defaults it to false', () {
+      expect(Fact.fromJson({'id': 'a', 'local': true}).local, isTrue);
+      expect(Fact.fromJson({'id': 'b'}).local, isFalse);
+    });
+
+    test('withMergedTexts keeps local', () {
+      final fact = Fact(
+        id: 'id',
+        entries: [FactEntry(text: 'a')],
+        fields: const [],
+        local: true,
+      );
+      expect(fact.withMergedTexts(['b']).local, isTrue);
+    });
+
     test('fromJson uses empty lists when entries or fields are not lists', () {
       final f = Fact.fromJson({'id': 'x', 'entries': 'bad', 'fields': 1});
       expect(f.entries, isEmpty);

@@ -25,6 +25,7 @@ import 'package:retentio/services/apis/media_service.dart';
 import 'package:retentio/services/apis/tag_service.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_toast.dart';
+import 'package:retentio/widgets/contribute_help_button.dart';
 
 import '../../../models/deck.dart';
 import '../../../models/fact.dart';
@@ -366,8 +367,14 @@ class _FactEditState extends ConsumerState<FactEdit>
         _snack(ApiErrorMessages.resolve(res?.msg ?? loc.addFactFailed, loc));
         return;
       }
-      // Sync tags (fire-and-forget, non-blocking on UI).
-      unawaited(_syncTags());
+      final tagsSaved = _syncTags();
+      if (loaded.local == true) {
+        // Its fact_add carries the fact's saved tags: save them before sending it. A failed save still sends it.
+        await tagsSaved.catchError((Object _) {});
+      } else {
+        // Sync tags (fire-and-forget, non-blocking on UI).
+        unawaited(tagsSaved);
+      }
       if (widget.deck.isImported) {
         await _submitImportedContributions(entries);
       }
@@ -385,6 +392,20 @@ class _FactEditState extends ConsumerState<FactEdit>
     final preview = PendingContributionsStore.previewFromEntryTexts(
       entries.map((e) => e.text),
     );
+    if (_loaded?.local == true) {
+      // The author never had this fact, so the edit refreshes its fact_add.
+      final ok = await submitImportedFactAddContribution(
+        importDeckId: widget.deck.id,
+        factId: widget.factId,
+        preview: preview,
+        message: widget.contributionMessage,
+      );
+      if (!mounted) return;
+      ok
+          ? AppToast.success(context, loc.qaEditSubmitted)
+          : AppToast.error(context, loc.factEditSavedUnsent);
+      return;
+    }
     final toAdd = _selectedTagIds.difference(_originalTagIds);
     final toRemove = _originalTagIds.difference(_selectedTagIds);
     List<String> addTagNames = const [];
@@ -513,6 +534,20 @@ class _FactEditState extends ConsumerState<FactEdit>
           child: Column(
             spacing: 12,
             children: [
+              if (widget.deck.isImported)
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        loc.factEditContributeNotice,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    const ContributeHelpButton(),
+                  ],
+                ),
               AddFactMediaToolbar(
                 loc: loc,
                 theme: theme,

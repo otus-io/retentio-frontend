@@ -484,6 +484,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deckTagsSavedUnsent => '卡组标签已保存，但暂未发送给作者，可在未发送贡献中重试。';
 
   @override
+  String get factEditSavedUnsent => '修改已保存，但暂未发送给作者，可在未发送贡献中重试。';
+
+  @override
   String get deckDescriptionSentToAuthor => '描述建议已发送给作者';
 
   @override
@@ -2126,4 +2129,26 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get apiTooManyAttempts => '尝试次数过多，请稍后再试。';
+
+  @override
+  String get contributeHelpTitle => '一起完善这个卡组';
+
+  @override
+  String get contributeHelpMessage =>
+      '使用这个卡组的人都可以修正卡片。你的修改会立即应用到你的副本，并发送给作者审核。作者采纳后，所有使用这个卡组的人都会获得这项修正。';
+
+  @override
+  String get contributeHelpGotIt => '知道了';
+
+  @override
+  String get reportIssueFixYourself => '自己修正';
+
+  @override
+  String get factEditContributeNotice => '你的修改会发送给作者审核。';
+
+  @override
+  String get reportIssueFixYourselfHint => '知道正确答案？自己修正吧，作者会审核你的修改。';
+
+  @override
+  String get qaVerifiedBadgeExplain => '所有卡片都经过人工核对。';
 }

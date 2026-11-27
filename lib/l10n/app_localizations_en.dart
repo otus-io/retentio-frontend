@@ -505,6 +505,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Deck tags saved. Couldn\'t send them to the author yet; retry from Unsent contributions.';
 
   @override
+  String get factEditSavedUnsent =>
+      'Edit saved. Couldn\'t send it to the author yet; retry from Unsent contributions.';
+
+  @override
   String get deckDescriptionSentToAuthor =>
       'Description suggestion sent to the author';
 
@@ -2291,4 +2295,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get apiTooManyAttempts => 'Too many attempts. Please try again later.';
+
+  @override
+  String get contributeHelpTitle => 'Improve this deck together';
+
+  @override
+  String get contributeHelpMessage =>
+      'Anyone using this deck can fix its cards. Your edit applies to your copy right away and is sent to the author to review. If they accept it, everyone who uses this deck gets the fix.';
+
+  @override
+  String get contributeHelpGotIt => 'Got it';
+
+  @override
+  String get reportIssueFixYourself => 'Fix it yourself';
+
+  @override
+  String get factEditContributeNotice =>
+      'Your edit will be sent to the author for review.';
+
+  @override
+  String get reportIssueFixYourselfHint =>
+      'Know the right answer? Fix it yourself and the author will review your edit.';
+
+  @override
+  String get qaVerifiedBadgeExplain =>
+      'All cards have been checked by a human.';
 }

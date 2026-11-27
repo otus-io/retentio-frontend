@@ -108,6 +108,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Front'), findsOneWidget);
+      expect(
+        find.text('Your edit will be sent to the author for review.'),
+        findsNothing,
+      );
       expect(find.text('Back'), findsOneWidget);
       expect(find.text('Alpha'), findsOneWidget);
       expect(find.text('Beta'), findsOneWidget);
@@ -445,6 +449,10 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
       await tester.pumpAndSettle();
+      expect(
+        find.text('Your edit will be sent to the author for review.'),
+        findsOneWidget,
+      );
 
       final alphaField = find.byWidgetPredicate(
         (w) => w is TextField && w.controller?.text == 'Alpha',
@@ -474,6 +482,200 @@ void main() {
       expect(find.text('Edit sent to the author'), findsOneWidget);
       AppToast.dismiss();
     });
+
+    for (final addFails in [false, true]) {
+      testWidgets('editing a local fact sends fact_add (fails: $addFails)', (
+        tester,
+      ) async {
+        await setupTestEnvironment();
+        final interceptor = attachFakeFactApiInterceptor()
+          ..factLocal = true
+          ..contributionAddFails = addFails;
+        final imported = sampleDeck(sourceDeckId: 'src-deck-1');
+        final harness = FakeDeckStudyBlocHarness(
+          deckId: imported.id,
+          loadResults: [DeckStudyLoadResult(cardDetail: sampleCardDetail())],
+        );
+        addTearDown(() async {
+          AppToast.dismiss();
+          detachFakeFactApiInterceptor(interceptor);
+          await harness.dispose();
+          tearDownTestEnvironment();
+        });
+
+        final router = GoRouter(
+          initialLocation: '/base',
+          routes: [
+            GoRoute(
+              path: '/base',
+              builder: (_, _) => const Scaffold(body: Text('base')),
+            ),
+            GoRoute(
+              path: '/edit',
+              builder: (_, _) => Scaffold(
+                body: BlocProvider(
+                  create: (_) =>
+                      TagManagerCubit(usedOn: 'fact', deckId: imported.id),
+                  child: FactEdit(
+                    deck: imported,
+                    factId: 'fact-test-1',
+                    contributionMessage: 'QA edit',
+                    onSaved: () async {},
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              currentDeckProvider.overrideWithValue(imported),
+              deckStudyBlocProvider.overrideWithValue(harness.bloc),
+            ],
+            child: MaterialApp.router(
+              locale: const Locale('en'),
+              supportedLocales: const [Locale('en')],
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              routerConfig: router,
+            ),
+          ),
+        );
+
+        router.push('/edit');
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 200));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.byWidgetPredicate(
+            (w) => w is TextField && w.controller?.text == 'Alpha',
+          ),
+          'Alpha fixed',
+        );
+        await tester.pump();
+        await tester.tap(find.byType(AppButton));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.pumpAndSettle();
+
+        expect(interceptor.patchFactCount, 1);
+        expect(interceptor.contributionAddCount, 1);
+        expect(interceptor.lastContributionAddBody, {'message': 'QA edit'});
+        expect(interceptor.contributionEditCount, 0);
+        final pending = await PendingContributionsStore.of.listPending(
+          imported.id,
+        );
+        expect(pending, addFails ? hasLength(1) : isEmpty);
+        if (addFails) expect(pending.single.message, 'QA edit');
+        expect(
+          find.text(
+            addFails
+                ? "Edit saved. Couldn't send it to the author yet; "
+                      'retry from Unsent contributions.'
+                : 'Edit sent to the author',
+          ),
+          findsOneWidget,
+        );
+        AppToast.dismiss();
+      });
+    }
+
+    for (final tagFails in [false, true]) {
+      testWidgets(
+        'a local fact saves its tags before its fact_add (tag fails: $tagFails)',
+        (tester) async {
+          await setupTestEnvironment();
+          final interceptor =
+              attachFakeFactApiInterceptor(
+                  factTags: const [
+                    {'id': 'tag-1', 'name': 'vocab', 'description': ''},
+                  ],
+                )
+                ..factLocal = true
+                ..tagRemoveDelay = const Duration(milliseconds: 100)
+                ..tagRemoveFails = tagFails;
+          final imported = sampleDeck(sourceDeckId: 'src-deck-1');
+          final harness = FakeDeckStudyBlocHarness(
+            deckId: imported.id,
+            loadResults: [DeckStudyLoadResult(cardDetail: sampleCardDetail())],
+          );
+          addTearDown(() async {
+            AppToast.dismiss();
+            detachFakeFactApiInterceptor(interceptor);
+            await harness.dispose();
+            tearDownTestEnvironment();
+          });
+
+          final router = GoRouter(
+            initialLocation: '/base',
+            routes: [
+              GoRoute(
+                path: '/base',
+                builder: (_, _) => const Scaffold(body: Text('base')),
+              ),
+              GoRoute(
+                path: '/edit',
+                builder: (_, _) => Scaffold(
+                  body: BlocProvider(
+                    create: (_) =>
+                        TagManagerCubit(usedOn: 'fact', deckId: imported.id),
+                    child: FactEdit(
+                      deck: imported,
+                      factId: 'fact-test-1',
+                      onSaved: () async {},
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                currentDeckProvider.overrideWithValue(imported),
+                deckStudyBlocProvider.overrideWithValue(harness.bloc),
+              ],
+              child: MaterialApp.router(
+                locale: const Locale('en'),
+                supportedLocales: const [Locale('en')],
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                routerConfig: router,
+              ),
+            ),
+          );
+
+          router.push('/edit');
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 200));
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.byIcon(Icons.close_rounded));
+          await tester.pump();
+          await tester.tap(find.byType(AppButton));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 400));
+          await tester.pumpAndSettle();
+
+          // The fact_add snapshots the saved tags, so it goes only once the tag change is answered.
+          expect(interceptor.events, ['tag-removed', 'contribution-add']);
+          expect(interceptor.contributionTagsCount, 0);
+          AppToast.dismiss();
+        },
+      );
+    }
 
     testWidgets('imported deck auto-submits tag removal with the fact edit', (
       tester,

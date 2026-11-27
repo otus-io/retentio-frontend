@@ -648,6 +648,7 @@
   "addFactSavedUnsent": "Fact added. Couldn't send it to the author yet; retry from Unsent contributions.",
   "deckTagsSentToAuthor": "Deck tags sent to the author",
   "deckTagsSavedUnsent": "Deck tags saved. Couldn't send them to the author yet; retry from Unsent contributions.",
+  "factEditSavedUnsent": "Edit saved. Couldn't send it to the author yet; retry from Unsent contributions.",
   "deckDescriptionSentToAuthor": "Description suggestion sent to the author",
   "deckDescriptionSavedUnsent": "Couldn't send your description suggestion to the author yet; retry from Unsent contributions.",
   "deckDescriptionProposeHint": "Suggest a better description; it's sent to the author for review",
@@ -2520,5 +2521,33 @@
   "changeEmailSuccess": "Check {email} for a confirmation link. Your email changes when you open it.",
   "@changeEmailSuccess": {"description": "Snack after changing the email", "placeholders": {"email": {"type": "String"}}},
   "apiTooManyAttempts": "Too many attempts. Please try again later.",
-  "@apiTooManyAttempts": {"description": "API 429: too many failed password confirmations (change email)"}
+  "@apiTooManyAttempts": {"description": "API 429: too many failed password confirmations (change email)"},
+  "contributeHelpTitle": "Improve this deck together",
+  "@contributeHelpTitle": {
+    "description": "Title and tooltip of the help explaining importer edits go to the author"
+  },
+  "contributeHelpMessage": "Anyone using this deck can fix its cards. Your edit applies to your copy right away and is sent to the author to review. If they accept it, everyone who uses this deck gets the fix.",
+  "@contributeHelpMessage": {
+    "description": "Help text explaining importer edits are sent to the deck author"
+  },
+  "contributeHelpGotIt": "Got it",
+  "@contributeHelpGotIt": {
+    "description": "Button closing the contribute help dialog"
+  },
+  "reportIssueFixYourself": "Fix it yourself",
+  "@reportIssueFixYourself": {
+    "description": "Report sheet button that opens Edit Fact instead of reporting"
+  },
+  "factEditContributeNotice": "Your edit will be sent to the author for review.",
+  "@factEditContributeNotice": {
+    "description": "Notice in Edit Fact on imported decks"
+  },
+  "reportIssueFixYourselfHint": "Know the right answer? Fix it yourself and the author will review your edit.",
+  "@reportIssueFixYourselfHint": {
+    "description": "Report sheet callout promoting Fix it yourself"
+  },
+  "qaVerifiedBadgeExplain": "All cards have been checked by a human.",
+  "@qaVerifiedBadgeExplain": {
+    "description": "Tooltip shown when tapping the verified badge"
+  }
 }

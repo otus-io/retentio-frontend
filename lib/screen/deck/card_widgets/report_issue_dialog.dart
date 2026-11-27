@@ -9,14 +9,19 @@ import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_input.dart';
 import 'package:retentio/widgets/app_toast.dart';
 import 'package:retentio/widgets/common_bottom_sheet.dart';
+import 'package:retentio/widgets/contribute_help_button.dart';
 
 enum ReportIssueKind { audio, content, other }
 
 /// Importer report for a fact on an imported deck (message-only contribution).
+///
+/// [onFixYourself] runs after the sheet closes when the user picks
+/// "Fix it yourself" instead of reporting.
 Future<void> showReportIssueDialog({
   required BuildContext context,
   required String importDeckId,
   required String factId,
+  required VoidCallback onFixYourself,
 }) {
   return showCommonBottomSheet<void>(
     context: context,
@@ -27,6 +32,7 @@ Future<void> showReportIssueDialog({
       importDeckId: importDeckId,
       factId: factId,
       pageContext: context,
+      onFixYourself: onFixYourself,
     ),
   );
 }
@@ -36,11 +42,13 @@ class _ReportIssueForm extends StatefulWidget {
     required this.importDeckId,
     required this.factId,
     required this.pageContext,
+    required this.onFixYourself,
   });
 
   final String importDeckId;
   final String factId;
   final BuildContext pageContext;
+  final VoidCallback onFixYourself;
 
   @override
   State<_ReportIssueForm> createState() => _ReportIssueFormState();
@@ -125,6 +133,45 @@ class _ReportIssueFormState extends State<_ReportIssueForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: scheme.primaryContainer,
+            borderRadius: AppThemeTokens.borderRadiusMd,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      loc.reportIssueFixYourselfHint,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ),
+                  const ContributeHelpButton(),
+                ],
+              ),
+              const SizedBox(height: 8),
+              AppButton(
+                label: loc.reportIssueFixYourself,
+                variant: AppButtonVariant.primary,
+                fullWidth: true,
+                onPressed: _submitting
+                    ? null
+                    : () {
+                        Navigator.of(context).pop();
+                        widget.onFixYourself();
+                      },
+                leading: const Icon(LucideIcons.pencil, size: 16),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
         Row(
           children: [
             Container(
@@ -134,7 +181,7 @@ class _ReportIssueFormState extends State<_ReportIssueForm> {
                 borderRadius: AppThemeTokens.borderRadiusMd,
               ),
               child: Icon(
-                LucideIcons.flag,
+                LucideIcons.messageSquareWarning,
                 size: 20,
                 color: scheme.onPrimaryContainer,
               ),
@@ -183,7 +230,7 @@ class _ReportIssueFormState extends State<_ReportIssueForm> {
         const SizedBox(height: 20),
         AppButton(
           label: loc.reportIssueSubmit,
-          variant: AppButtonVariant.primary,
+          variant: AppButtonVariant.secondary,
           fullWidth: true,
           isLoading: _submitting,
           onPressed: _submitting ? null : _onSubmit,

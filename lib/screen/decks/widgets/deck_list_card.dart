@@ -85,17 +85,23 @@ class DeckListCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    deck.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: DeckTextStyles.deckTitle(theme),
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          deck.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: DeckTextStyles.deckTitle(theme),
+                        ),
+                      ),
+                      if (deck.qaVerified) ...[
+                        const SizedBox(width: 4),
+                        const QaVerifiedBadge(),
+                      ],
+                    ],
                   ),
                 ),
-                if (deck.qaVerified) ...[
-                  const QaVerifiedBadge(),
-                  const SizedBox(width: 4),
-                ],
                 DeckOfflineStatus(deckId: deck.id, downloader: downloader),
                 const SizedBox(width: 4),
                 // Own decks: each icon only appears when it has something to
@@ -113,7 +119,10 @@ class DeckListCard extends StatelessWidget {
                           initialChildSize: 0.7,
                           minChildSize: 0.4,
                           maxChildSize: 0.95,
-                          child: ContributionsInboxSheet(sourceDeckId: deck.id),
+                          child: ContributionsInboxSheet(
+                            sourceDeckId: deck.id,
+                            fields: deck.fields,
+                          ),
                         );
                         if (!context.mounted) return;
                         await context.read<DeckSharingStatusCubit>().refresh();

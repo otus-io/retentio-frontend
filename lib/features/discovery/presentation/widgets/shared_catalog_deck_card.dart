@@ -116,18 +116,27 @@ class SharedCatalogDeckCard extends StatelessWidget {
                     const SizedBox(width: 6),
                   ],
                   Expanded(
-                    child: Text(
-                      deck.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: DeckTextStyles.deckTitle(theme)?.copyWith(
-                        color: isUnavailable
-                            ? scheme.onSurface.withValues(alpha: 0.4)
-                            : null,
-                      ),
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            deck.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: DeckTextStyles.deckTitle(theme)?.copyWith(
+                              color: isUnavailable
+                                  ? scheme.onSurface.withValues(alpha: 0.4)
+                                  : null,
+                            ),
+                          ),
+                        ),
+                        if (deck.qaVerified) ...[
+                          const SizedBox(width: 4),
+                          const QaVerifiedBadge(size: 22),
+                        ],
+                      ],
                     ),
                   ),
-                  if (deck.qaVerified) const QaVerifiedBadge(size: 22),
                   AppIconButton(
                     variant: AppIconButtonVariant.subtle,
                     icon: LucideIcons.heart,
