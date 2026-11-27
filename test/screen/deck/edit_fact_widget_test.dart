@@ -108,6 +108,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Front'), findsOneWidget);
+      expect(
+        find.text('Your edit will be sent to the author for review.'),
+        findsNothing,
+      );
       expect(find.text('Back'), findsOneWidget);
       expect(find.text('Alpha'), findsOneWidget);
       expect(find.text('Beta'), findsOneWidget);
@@ -445,6 +449,10 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
       await tester.pumpAndSettle();
+      expect(
+        find.text('Your edit will be sent to the author for review.'),
+        findsOneWidget,
+      );
 
       final alphaField = find.byWidgetPredicate(
         (w) => w is TextField && w.controller?.text == 'Alpha',

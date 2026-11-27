@@ -1472,5 +1472,11 @@
   "changeEmailMessage": "当前邮箱：{email}。我们会向新邮箱发送确认链接，打开链接前邮箱保持不变。",
   "newEmail": "新邮箱",
   "changeEmailSuccess": "请查收发送到 {email} 的确认链接，打开后邮箱才会更改。",
-  "apiTooManyAttempts": "尝试次数过多，请稍后再试。"
+  "apiTooManyAttempts": "尝试次数过多，请稍后再试。",
+  "contributeHelpTitle": "一起完善这个卡组",
+  "contributeHelpMessage": "你可以通过“编辑词条”自己修正这张卡片。修改会立即应用到你的副本，并发送给作者审核。作者采纳后，所有使用这个卡组的人都会获得这项修正。",
+  "contributeHelpGotIt": "知道了",
+  "reportIssueFixYourself": "自己修正",
+  "factEditContributeNotice": "你的修改会发送给作者审核。",
+  "reportIssueFixYourselfHint": "知道正确答案？自己修正吧，作者会审核你的修改。"
 }

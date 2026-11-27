@@ -2291,4 +2291,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get apiTooManyAttempts => 'Too many attempts. Please try again later.';
+
+  @override
+  String get contributeHelpTitle => 'Improve this deck together';
+
+  @override
+  String get contributeHelpMessage =>
+      'You can fix this card yourself with Edit Fact. Your change applies to your copy right away and is sent to the author to review. If they accept it, everyone who uses this deck gets the fix.';
+
+  @override
+  String get contributeHelpGotIt => 'Got it';
+
+  @override
+  String get reportIssueFixYourself => 'Fix it yourself';
+
+  @override
+  String get factEditContributeNotice =>
+      'Your edit will be sent to the author for review.';
+
+  @override
+  String get reportIssueFixYourselfHint =>
+      'Know the right answer? Fix it yourself and the author will review your edit.';
 }

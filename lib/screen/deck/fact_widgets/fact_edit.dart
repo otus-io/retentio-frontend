@@ -25,6 +25,7 @@ import 'package:retentio/services/apis/media_service.dart';
 import 'package:retentio/services/apis/tag_service.dart';
 import 'package:retentio/widgets/app_button.dart';
 import 'package:retentio/widgets/app_toast.dart';
+import 'package:retentio/widgets/contribute_help_button.dart';
 
 import '../../../models/deck.dart';
 import '../../../models/fact.dart';
@@ -513,6 +514,20 @@ class _FactEditState extends ConsumerState<FactEdit>
           child: Column(
             spacing: 12,
             children: [
+              if (widget.deck.isImported)
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        loc.factEditContributeNotice,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    const ContributeHelpButton(),
+                  ],
+                ),
               AddFactMediaToolbar(
                 loc: loc,
                 theme: theme,

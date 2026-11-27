@@ -4023,6 +4023,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Too many attempts. Please try again later.'**
   String get apiTooManyAttempts;
+
+  /// Title and tooltip of the help explaining importer edits go to the author
+  ///
+  /// In en, this message translates to:
+  /// **'Improve this deck together'**
+  String get contributeHelpTitle;
+
+  /// Help text explaining importer edits are sent to the deck author
+  ///
+  /// In en, this message translates to:
+  /// **'You can fix this card yourself with Edit Fact. Your change applies to your copy right away and is sent to the author to review. If they accept it, everyone who uses this deck gets the fix.'**
+  String get contributeHelpMessage;
+
+  /// Button closing the contribute help dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get contributeHelpGotIt;
+
+  /// Report sheet button that opens Edit Fact instead of reporting
+  ///
+  /// In en, this message translates to:
+  /// **'Fix it yourself'**
+  String get reportIssueFixYourself;
+
+  /// Notice in Edit Fact on imported decks
+  ///
+  /// In en, this message translates to:
+  /// **'Your edit will be sent to the author for review.'**
+  String get factEditContributeNotice;
+
+  /// Report sheet callout promoting Fix it yourself
+  ///
+  /// In en, this message translates to:
+  /// **'Know the right answer? Fix it yourself and the author will review your edit.'**
+  String get reportIssueFixYourselfHint;
 }
 
 class _AppLocalizationsDelegate

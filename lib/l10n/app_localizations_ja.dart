@@ -2143,4 +2143,23 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get apiTooManyAttempts => '試行回数が多すぎます。しばらくしてからもう一度お試しください。';
+
+  @override
+  String get contributeHelpTitle => 'みんなでデッキを改善';
+
+  @override
+  String get contributeHelpMessage =>
+      '「項目を編集」でこのカードを自分で修正できます。変更はすぐに自分のコピーに反映され、確認のため作者に送信されます。作者が採用すると、このデッキを使う全員に修正が届きます。';
+
+  @override
+  String get contributeHelpGotIt => 'OK';
+
+  @override
+  String get reportIssueFixYourself => '自分で修正する';
+
+  @override
+  String get factEditContributeNotice => '編集内容は確認のため作者に送信されます。';
+
+  @override
+  String get reportIssueFixYourselfHint => '正しい内容がわかりますか？自分で修正すると、作者が確認します。';
 }

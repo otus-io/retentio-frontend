@@ -25,6 +25,23 @@ class CardMenu extends StatelessWidget {
   final Color color;
   final Deck deck;
 
+  void _showFactEdit(BuildContext context, String factId) {
+    showCommonBottomSheet(
+      context: context,
+      fullScreen: true,
+      title: AppLocalizations.of(context)!.editFact,
+      child: BlocProvider<TagManagerCubit>(
+        create: (_) =>
+            TagManagerCubit(usedOn: 'fact', deckId: deck.id)..loadTags(),
+        child: FactEdit(
+          deck: deck,
+          factId: factId,
+          onSaved: () async => requestDeckStudyReloadCurrentCard(context),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -73,22 +90,7 @@ class CardMenu extends StatelessWidget {
                     .cardDetail
                     ?.card;
                 if (card == null) return;
-                showCommonBottomSheet(
-                  context: context,
-                  fullScreen: true,
-                  title: loc.editFact,
-                  child: BlocProvider<TagManagerCubit>(
-                    create: (_) =>
-                        TagManagerCubit(usedOn: 'fact', deckId: deck.id)
-                          ..loadTags(),
-                    child: FactEdit(
-                      deck: deck,
-                      factId: card.factId,
-                      onSaved: () async =>
-                          requestDeckStudyReloadCurrentCard(context),
-                    ),
-                  ),
-                );
+                _showFactEdit(context, card.factId);
               },
               icon: LucideIcons.pencil,
               itemTheme: PullDownMenuItemTheme(
@@ -111,9 +113,10 @@ class CardMenu extends StatelessWidget {
                     context: context,
                     importDeckId: deck.id,
                     factId: card.factId,
+                    onFixYourself: () => _showFactEdit(context, card.factId),
                   );
                 },
-                icon: LucideIcons.flag,
+                icon: LucideIcons.messageSquareWarning,
                 itemTheme: PullDownMenuItemTheme(
                   textStyle: menuItemStyle(scheme.onSurface),
                 ),

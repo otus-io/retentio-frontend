@@ -2126,4 +2126,23 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get apiTooManyAttempts => '尝试次数过多，请稍后再试。';
+
+  @override
+  String get contributeHelpTitle => '一起完善这个卡组';
+
+  @override
+  String get contributeHelpMessage =>
+      '你可以通过“编辑词条”自己修正这张卡片。修改会立即应用到你的副本，并发送给作者审核。作者采纳后，所有使用这个卡组的人都会获得这项修正。';
+
+  @override
+  String get contributeHelpGotIt => '知道了';
+
+  @override
+  String get reportIssueFixYourself => '自己修正';
+
+  @override
+  String get factEditContributeNotice => '你的修改会发送给作者审核。';
+
+  @override
+  String get reportIssueFixYourselfHint => '知道正确答案？自己修正吧，作者会审核你的修改。';
 }
