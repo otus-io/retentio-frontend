@@ -60,6 +60,15 @@ class FakeFactApiInterceptor extends Interceptor {
 
   /// When true, the GET fact response marks the fact `local` (importer-added).
   bool factLocal = false;
+
+  /// In order: `tag-removed` once a fact tag DELETE is answered, `contribution-add` when a fact_add is posted.
+  final List<String> events = [];
+
+  /// How long a fact tag DELETE takes to answer.
+  Duration tagRemoveDelay = Duration.zero;
+
+  /// When true, a fact tag DELETE answers 500.
+  bool tagRemoveFails = false;
   int contributionTagsCount = 0;
   dynamic lastPatchData;
   dynamic lastContributionEditBody;
@@ -166,6 +175,7 @@ class FakeFactApiInterceptor extends Interceptor {
         uri.contains('/contributions/facts/') &&
         uri.endsWith('/add')) {
       contributionAddCount++;
+      events.add('contribution-add');
       lastContributionAddBody = options.data;
       handler.resolve(
         Response(
@@ -249,6 +259,27 @@ class FakeFactApiInterceptor extends Interceptor {
           },
         ),
       );
+      return;
+    }
+
+    if (options.method == 'DELETE' &&
+        uri.contains('/facts/') &&
+        uri.contains('/tags/')) {
+      Future.delayed(tagRemoveDelay, () {
+        events.add('tag-removed');
+        handler.resolve(
+          Response(
+            requestOptions: options,
+            statusCode: tagRemoveFails ? 500 : 200,
+            data: tagRemoveFails
+                ? {'code': 500, 'msg': 'Error removing tag'}
+                : {
+                    'code': 0,
+                    'data': {'tags': <dynamic>[]},
+                  },
+          ),
+        );
+      });
       return;
     }
 

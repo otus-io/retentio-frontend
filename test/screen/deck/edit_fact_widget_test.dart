@@ -587,6 +587,96 @@ void main() {
       });
     }
 
+    for (final tagFails in [false, true]) {
+      testWidgets(
+        'a local fact saves its tags before its fact_add (tag fails: $tagFails)',
+        (tester) async {
+          await setupTestEnvironment();
+          final interceptor =
+              attachFakeFactApiInterceptor(
+                  factTags: const [
+                    {'id': 'tag-1', 'name': 'vocab', 'description': ''},
+                  ],
+                )
+                ..factLocal = true
+                ..tagRemoveDelay = const Duration(milliseconds: 100)
+                ..tagRemoveFails = tagFails;
+          final imported = sampleDeck(sourceDeckId: 'src-deck-1');
+          final harness = FakeDeckStudyBlocHarness(
+            deckId: imported.id,
+            loadResults: [DeckStudyLoadResult(cardDetail: sampleCardDetail())],
+          );
+          addTearDown(() async {
+            AppToast.dismiss();
+            detachFakeFactApiInterceptor(interceptor);
+            await harness.dispose();
+            tearDownTestEnvironment();
+          });
+
+          final router = GoRouter(
+            initialLocation: '/base',
+            routes: [
+              GoRoute(
+                path: '/base',
+                builder: (_, _) => const Scaffold(body: Text('base')),
+              ),
+              GoRoute(
+                path: '/edit',
+                builder: (_, _) => Scaffold(
+                  body: BlocProvider(
+                    create: (_) =>
+                        TagManagerCubit(usedOn: 'fact', deckId: imported.id),
+                    child: FactEdit(
+                      deck: imported,
+                      factId: 'fact-test-1',
+                      onSaved: () async {},
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                currentDeckProvider.overrideWithValue(imported),
+                deckStudyBlocProvider.overrideWithValue(harness.bloc),
+              ],
+              child: MaterialApp.router(
+                locale: const Locale('en'),
+                supportedLocales: const [Locale('en')],
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                routerConfig: router,
+              ),
+            ),
+          );
+
+          router.push('/edit');
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 200));
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.byIcon(Icons.close_rounded));
+          await tester.pump();
+          await tester.tap(find.byType(AppButton));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 400));
+          await tester.pumpAndSettle();
+
+          // The fact_add snapshots the saved tags, so it goes only once the tag change is answered.
+          expect(interceptor.events, ['tag-removed', 'contribution-add']);
+          expect(interceptor.contributionTagsCount, 0);
+          AppToast.dismiss();
+        },
+      );
+    }
+
     testWidgets('imported deck auto-submits tag removal with the fact edit', (
       tester,
     ) async {

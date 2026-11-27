@@ -367,8 +367,14 @@ class _FactEditState extends ConsumerState<FactEdit>
         _snack(ApiErrorMessages.resolve(res?.msg ?? loc.addFactFailed, loc));
         return;
       }
-      // Sync tags (fire-and-forget, non-blocking on UI).
-      unawaited(_syncTags());
+      final tagsSaved = _syncTags();
+      if (loaded.local == true) {
+        // Its fact_add carries the fact's saved tags: save them before sending it. A failed save still sends it.
+        await tagsSaved.catchError((Object _) {});
+      } else {
+        // Sync tags (fire-and-forget, non-blocking on UI).
+        unawaited(tagsSaved);
+      }
       if (widget.deck.isImported) {
         await _submitImportedContributions(entries);
       }
