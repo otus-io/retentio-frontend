@@ -142,11 +142,7 @@ void main() {
     await cubit.close();
   });
 
-  for (final refresh in [
-    _Refresh.fails,
-    _Refresh.empty,
-    _Refresh.republished,
-  ]) {
+  for (final refresh in [_Refresh.fails, _Refresh.empty]) {
     test(
       'keeps the import when refreshing the deck gives ${refresh.name}',
       () async {
@@ -164,6 +160,19 @@ void main() {
       },
     );
   }
+
+  test('a republish since load only updates the import count', () async {
+    useApi(_Refresh.republished);
+    final cubit = DiscoveryDetailCubit(downloadOffline: (_) async {});
+    await cubit.load('src-1');
+
+    await cubit.importDeck();
+
+    expect(cubit.state.deck!.importCount, 1);
+    expect(cubit.state.deck!.publishedVersion, 1);
+    expect(cubit.state.deck!.name, 'N5');
+    await cubit.close();
+  });
 
   test('closing during the refresh drops the refreshed deck', () async {
     final gate = Completer<void>();
