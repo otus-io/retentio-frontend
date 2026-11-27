@@ -32,10 +32,12 @@ Fact _$FactFromJson(Map<String, dynamic> json) => Fact(
   fields:
       (json['fields'] as List<dynamic>?)?.map((e) => e as String).toList() ??
       [],
+  local: json['local'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$FactToJson(Fact instance) => <String, dynamic>{
   'id': instance.id,
   'entries': instance.entries.map((e) => e.toJson()).toList(),
   'fields': instance.fields,
+  'local': instance.local,
 };

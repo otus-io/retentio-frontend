@@ -483,6 +483,107 @@ void main() {
       AppToast.dismiss();
     });
 
+    for (final addFails in [false, true]) {
+      testWidgets('editing a local fact sends fact_add (fails: $addFails)', (
+        tester,
+      ) async {
+        await setupTestEnvironment();
+        final interceptor = attachFakeFactApiInterceptor()
+          ..factLocal = true
+          ..contributionAddFails = addFails;
+        final imported = sampleDeck(sourceDeckId: 'src-deck-1');
+        final harness = FakeDeckStudyBlocHarness(
+          deckId: imported.id,
+          loadResults: [DeckStudyLoadResult(cardDetail: sampleCardDetail())],
+        );
+        addTearDown(() async {
+          AppToast.dismiss();
+          detachFakeFactApiInterceptor(interceptor);
+          await harness.dispose();
+          tearDownTestEnvironment();
+        });
+
+        final router = GoRouter(
+          initialLocation: '/base',
+          routes: [
+            GoRoute(
+              path: '/base',
+              builder: (_, _) => const Scaffold(body: Text('base')),
+            ),
+            GoRoute(
+              path: '/edit',
+              builder: (_, _) => Scaffold(
+                body: BlocProvider(
+                  create: (_) =>
+                      TagManagerCubit(usedOn: 'fact', deckId: imported.id),
+                  child: FactEdit(
+                    deck: imported,
+                    factId: 'fact-test-1',
+                    onSaved: () async {},
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              currentDeckProvider.overrideWithValue(imported),
+              deckStudyBlocProvider.overrideWithValue(harness.bloc),
+            ],
+            child: MaterialApp.router(
+              locale: const Locale('en'),
+              supportedLocales: const [Locale('en')],
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              routerConfig: router,
+            ),
+          ),
+        );
+
+        router.push('/edit');
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 200));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.byWidgetPredicate(
+            (w) => w is TextField && w.controller?.text == 'Alpha',
+          ),
+          'Alpha fixed',
+        );
+        await tester.pump();
+        await tester.tap(find.byType(AppButton));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.pumpAndSettle();
+
+        expect(interceptor.patchFactCount, 1);
+        expect(interceptor.contributionAddCount, 1);
+        expect(interceptor.contributionEditCount, 0);
+        expect(
+          await PendingContributionsStore.of.listPending(imported.id),
+          addFails ? hasLength(1) : isEmpty,
+        );
+        expect(
+          find.text(
+            addFails
+                ? "Edit saved. Couldn't send it to the author yet; "
+                      'retry from Unsent contributions.'
+                : 'Edit sent to the author',
+          ),
+          findsOneWidget,
+        );
+        AppToast.dismiss();
+      });
+    }
+
     testWidgets('imported deck auto-submits tag removal with the fact edit', (
       tester,
     ) async {

@@ -171,6 +171,7 @@
   "addFactSavedUnsent": "词条已添加，但暂未发送给作者，可在未发送贡献中重试。",
   "deckTagsSentToAuthor": "卡组标签已发送给作者",
   "deckTagsSavedUnsent": "卡组标签已保存，但暂未发送给作者，可在未发送贡献中重试。",
+  "factEditSavedUnsent": "修改已保存，但暂未发送给作者，可在未发送贡献中重试。",
   "deckDescriptionSentToAuthor": "描述建议已发送给作者",
   "deckDescriptionSavedUnsent": "描述建议暂未发送给作者，可在未发送贡献中重试。",
   "deckDescriptionProposeHint": "建议更好的描述，将发送给作者审核",

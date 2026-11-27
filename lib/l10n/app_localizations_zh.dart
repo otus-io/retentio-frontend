@@ -484,6 +484,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deckTagsSavedUnsent => '卡组标签已保存，但暂未发送给作者，可在未发送贡献中重试。';
 
   @override
+  String get factEditSavedUnsent => '修改已保存，但暂未发送给作者，可在未发送贡献中重试。';
+
+  @override
   String get deckDescriptionSentToAuthor => '描述建议已发送给作者';
 
   @override

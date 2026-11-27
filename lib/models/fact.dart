@@ -46,11 +46,15 @@ class Fact {
     @JsonKey(defaultValue: '') required this.id,
     @JsonKey(defaultValue: <FactEntry>[]) required this.entries,
     @JsonKey(defaultValue: <String>[]) required this.fields,
+    @JsonKey(defaultValue: false) this.local = false,
   });
 
   final String id;
   final List<FactEntry> entries;
   final List<String> fields;
+
+  /// True for a fact the importer added to an import deck (`local_facts`).
+  final bool local;
 
   factory Fact.fromJson(Map<String, dynamic> json) =>
       _$FactFromJson(_normalizeFactJson(json));
@@ -79,7 +83,7 @@ class Fact {
       entries.length,
       (i) => entries[i].copyWithText(texts[i]),
     );
-    return Fact(id: id, entries: merged, fields: fields);
+    return Fact(id: id, entries: merged, fields: fields, local: local);
   }
 }
 

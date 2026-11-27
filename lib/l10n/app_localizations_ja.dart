@@ -487,6 +487,9 @@ class AppLocalizationsJa extends AppLocalizations {
       'デッキのタグを保存しましたが、作成者に送れませんでした。未送信の貢献から再送できます。';
 
   @override
+  String get factEditSavedUnsent => '編集を保存しましたが、作成者に送れませんでした。未送信の貢献から再送できます。';
+
+  @override
   String get deckDescriptionSentToAuthor => '説明の提案を作成者に送りました';
 
   @override

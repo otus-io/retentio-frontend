@@ -648,6 +648,7 @@
   "addFactSavedUnsent": "Fact added. Couldn't send it to the author yet; retry from Unsent contributions.",
   "deckTagsSentToAuthor": "Deck tags sent to the author",
   "deckTagsSavedUnsent": "Deck tags saved. Couldn't send them to the author yet; retry from Unsent contributions.",
+  "factEditSavedUnsent": "Edit saved. Couldn't send it to the author yet; retry from Unsent contributions.",
   "deckDescriptionSentToAuthor": "Description suggestion sent to the author",
   "deckDescriptionSavedUnsent": "Couldn't send your description suggestion to the author yet; retry from Unsent contributions.",
   "deckDescriptionProposeHint": "Suggest a better description; it's sent to the author for review",

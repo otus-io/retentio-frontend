@@ -54,6 +54,9 @@ class FakeFactApiInterceptor extends Interceptor {
 
   /// When true, `POST …/contributions/facts/{id}/add` answers 429.
   bool contributionAddFails = false;
+
+  /// When true, the GET fact response marks the fact `local` (importer-added).
+  bool factLocal = false;
   int contributionTagsCount = 0;
   dynamic lastPatchData;
   dynamic lastContributionEditBody;
@@ -301,7 +304,11 @@ class FakeFactApiInterceptor extends Interceptor {
           data: {
             'code': 0,
             'data': {
-              'fact': {'id': 'fact-test-1', 'entries': factEntries},
+              'fact': {
+                'id': 'fact-test-1',
+                'entries': factEntries,
+                if (factLocal) 'local': true,
+              },
               'media_versions': ?mediaVersions,
             },
           },

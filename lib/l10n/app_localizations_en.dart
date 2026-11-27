@@ -505,6 +505,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Deck tags saved. Couldn\'t send them to the author yet; retry from Unsent contributions.';
 
   @override
+  String get factEditSavedUnsent =>
+      'Edit saved. Couldn\'t send it to the author yet; retry from Unsent contributions.';
+
+  @override
   String get deckDescriptionSentToAuthor =>
       'Description suggestion sent to the author';
 

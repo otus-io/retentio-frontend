@@ -386,6 +386,19 @@ class _FactEditState extends ConsumerState<FactEdit>
     final preview = PendingContributionsStore.previewFromEntryTexts(
       entries.map((e) => e.text),
     );
+    if (_loaded?.local == true) {
+      // The author never had this fact, so the edit refreshes its fact_add.
+      final ok = await submitImportedFactAddContribution(
+        importDeckId: widget.deck.id,
+        factId: widget.factId,
+        preview: preview,
+      );
+      if (!mounted) return;
+      ok
+          ? AppToast.success(context, loc.qaEditSubmitted)
+          : AppToast.error(context, loc.factEditSavedUnsent);
+      return;
+    }
     final toAdd = _selectedTagIds.difference(_originalTagIds);
     final toRemove = _originalTagIds.difference(_selectedTagIds);
     List<String> addTagNames = const [];

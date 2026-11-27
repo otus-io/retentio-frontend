@@ -1018,6 +1018,12 @@ abstract class AppLocalizations {
   /// **'Deck tags saved. Couldn\'t send them to the author yet; retry from Unsent contributions.'**
   String get deckTagsSavedUnsent;
 
+  /// No description provided for @factEditSavedUnsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit saved. Couldn\'t send it to the author yet; retry from Unsent contributions.'**
+  String get factEditSavedUnsent;
+
   /// No description provided for @deckDescriptionSentToAuthor.
   ///
   /// In en, this message translates to:
