@@ -23,6 +23,10 @@ void main() {
     );
     expect(paint.painter, isA<QaVerifiedBadgePainter>());
     expect(find.bySemanticsLabel('Fully QA-verified'), findsOneWidget);
+    expect(
+      tester.getSemantics(find.bySemanticsLabel('Fully QA-verified')).hint,
+      'All cards have been checked by a human.',
+    );
   });
 
   testWidgets('tapping explains what verified means', (tester) async {

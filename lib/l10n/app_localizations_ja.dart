@@ -2149,7 +2149,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get contributeHelpMessage =>
-      '「項目を編集」でこのカードを自分で修正できます。変更はすぐに自分のコピーに反映され、確認のため作者に送信されます。作者が採用すると、このデッキを使う全員に修正が届きます。';
+      'このデッキを使う人は誰でもカードを修正できます。変更はすぐに自分のコピーに反映され、確認のため作者に送信されます。作者が採用すると、このデッキを使う全員に修正が届きます。';
 
   @override
   String get contributeHelpGotIt => 'OK';

@@ -2525,7 +2525,7 @@
   "@contributeHelpTitle": {
     "description": "Title and tooltip of the help explaining importer edits go to the author"
   },
-  "contributeHelpMessage": "You can fix this card yourself with Edit Fact. Your change applies to your copy right away and is sent to the author to review. If they accept it, everyone who uses this deck gets the fix.",
+  "contributeHelpMessage": "Anyone using this deck can fix its cards. Your edit applies to your copy right away and is sent to the author to review. If they accept it, everyone who uses this deck gets the fix.",
   "@contributeHelpMessage": {
     "description": "Help text explaining importer edits are sent to the deck author"
   },

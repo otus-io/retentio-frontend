@@ -4033,7 +4033,7 @@ abstract class AppLocalizations {
   /// Help text explaining importer edits are sent to the deck author
   ///
   /// In en, this message translates to:
-  /// **'You can fix this card yourself with Edit Fact. Your change applies to your copy right away and is sent to the author to review. If they accept it, everyone who uses this deck gets the fix.'**
+  /// **'Anyone using this deck can fix its cards. Your edit applies to your copy right away and is sent to the author to review. If they accept it, everyone who uses this deck gets the fix.'**
   String get contributeHelpMessage;
 
   /// Button closing the contribute help dialog

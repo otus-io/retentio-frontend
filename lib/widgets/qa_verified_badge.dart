@@ -33,6 +33,7 @@ class QaVerifiedBadge extends StatelessWidget {
       showDuration: const Duration(seconds: 4),
       child: Semantics(
         label: label,
+        hint: loc.qaVerifiedBadgeExplain,
         excludeSemantics: true,
         child: CustomPaint(
           size: Size.square(size),

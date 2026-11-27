@@ -655,7 +655,7 @@
   "changeEmailSuccess": "{email} に届く確認リンクを開いてください。開くとメールアドレスが変更されます。",
   "apiTooManyAttempts": "試行回数が多すぎます。しばらくしてからもう一度お試しください。",
   "contributeHelpTitle": "みんなでデッキを改善",
-  "contributeHelpMessage": "「項目を編集」でこのカードを自分で修正できます。変更はすぐに自分のコピーに反映され、確認のため作者に送信されます。作者が採用すると、このデッキを使う全員に修正が届きます。",
+  "contributeHelpMessage": "このデッキを使う人は誰でもカードを修正できます。変更はすぐに自分のコピーに反映され、確認のため作者に送信されます。作者が採用すると、このデッキを使う全員に修正が届きます。",
   "contributeHelpGotIt": "OK",
   "reportIssueFixYourself": "自分で修正する",
   "factEditContributeNotice": "編集内容は確認のため作者に送信されます。",
