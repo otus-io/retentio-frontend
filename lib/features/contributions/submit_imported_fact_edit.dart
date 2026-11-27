@@ -118,6 +118,7 @@ Future<bool> submitImportedFactAddContribution({
     kind: PendingContributionKind.add,
     factId: factId,
     preview: preview,
+    message: message,
   );
   try {
     final contributionId = await c.submitFactAddContribution(

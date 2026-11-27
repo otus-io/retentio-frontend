@@ -569,10 +569,11 @@ void main() {
         expect(interceptor.contributionAddCount, 1);
         expect(interceptor.lastContributionAddBody, {'message': 'QA edit'});
         expect(interceptor.contributionEditCount, 0);
-        expect(
-          await PendingContributionsStore.of.listPending(imported.id),
-          addFails ? hasLength(1) : isEmpty,
+        final pending = await PendingContributionsStore.of.listPending(
+          imported.id,
         );
+        expect(pending, addFails ? hasLength(1) : isEmpty);
+        if (addFails) expect(pending.single.message, 'QA edit');
         expect(
           find.text(
             addFails
