@@ -2167,6 +2167,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Verification link is invalid or expired';
 
   @override
+  String get verifyEmailLinkUsed =>
+      'This link has already been used or has expired. If you already verified your email, log in. Otherwise, sign up again.';
+
+  @override
+  String get emailVerifiedBadge => 'Email verified';
+
+  @override
   String get apiTokenRequired => 'Token is required';
 
   @override

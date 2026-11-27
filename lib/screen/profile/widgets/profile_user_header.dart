@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:retentio/core/error/api_error_messages.dart';
 import 'package:retentio/core/error/raw_api_error_message.dart';
 import 'package:retentio/l10n/app_localizations.dart';
@@ -18,6 +19,7 @@ const _kAvatarBorderAlpha = 0.25;
 const _kAvatarToTextSpacing = 12.0;
 const _kNameToEmailSpacing = 2.0;
 const _kEmailAlpha = 0.76;
+const _kVerifiedIconSize = 16.0;
 
 class ProfileUserHeader extends StatefulWidget {
   const ProfileUserHeader({super.key});
@@ -115,11 +117,30 @@ class _ProfileUserHeaderState extends State<ProfileUserHeader> {
                       ),
                     ),
                     const SizedBox(height: _kNameToEmailSpacing),
-                    Text(
-                      user.email,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurface.withValues(alpha: _kEmailAlpha),
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            user.email,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: scheme.onSurface.withValues(
+                                alpha: _kEmailAlpha,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (user.emailVerified && user.email.isNotEmpty) ...[
+                          const SizedBox(width: AppThemeTokens.spaceXs),
+                          Tooltip(
+                            message: loc.emailVerifiedBadge,
+                            child: Icon(
+                              LucideIcons.badgeCheck,
+                              size: _kVerifiedIconSize,
+                              color: scheme.primary,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),

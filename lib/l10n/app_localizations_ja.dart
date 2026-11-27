@@ -2024,6 +2024,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get authVerifyTokenInvalid => '確認リンクが無効か、期限切れです';
 
   @override
+  String get verifyEmailLinkUsed =>
+      'このリンクは使用済みか、期限切れです。確認済みの場合はログインしてください。まだの場合は、もう一度登録してください。';
+
+  @override
+  String get emailVerifiedBadge => 'メール確認済み';
+
+  @override
   String get apiTokenRequired => 'トークンが必要です';
 
   @override

@@ -2396,6 +2396,14 @@
   "@authVerifyTokenInvalid": {
     "description": "Invalid or expired email verification token"
   },
+  "verifyEmailLinkUsed": "This link has already been used or has expired. If you already verified your email, log in. Otherwise, sign up again.",
+  "@verifyEmailLinkUsed": {
+    "description": "Verify-email screen when the link was already used or expired; retrying cannot help"
+  },
+  "emailVerifiedBadge": "Email verified",
+  "@emailVerifiedBadge": {
+    "description": "Tooltip on the check icon next to the profile email when email_verified is true"
+  },
   "apiTokenRequired": "Token is required",
   "@apiTokenRequired": {
     "description": "API error: Token is required"
