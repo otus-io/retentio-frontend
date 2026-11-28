@@ -18,7 +18,9 @@ class _FakeRecorder extends Fake implements AudioRecorder {
   final String outputPath;
   final VoidCallback? onPermission;
   Future<void>? permissionGate;
+  Future<void>? startGate;
   final startedPaths = <String>[];
+  var cancelCount = 0;
 
   @override
   Future<bool> hasPermission({bool request = true}) async {
@@ -31,13 +33,14 @@ class _FakeRecorder extends Fake implements AudioRecorder {
   Future<void> start(RecordConfig config, {required String path}) async {
     startedPaths.add(path);
     File(path).writeAsBytesSync(const [1]);
+    await startGate;
   }
 
   @override
   Future<String?> stop() async => outputPath;
 
   @override
-  Future<void> cancel() async {}
+  Future<void> cancel() async => cancelCount++;
 
   @override
   Future<void> dispose() async {}
@@ -144,6 +147,13 @@ Future<void> _focusAndSync(
   state.focusRow(row);
   await tester.pump();
   state.refreshMediaTargetFromFocus();
+}
+
+/// Deletion is fire-and-forget real I/O: poll (bounded) instead of one yield.
+Future<void> _waitUntilDeleted(String path) async {
+  for (var i = 0; i < 100 && File(path).existsSync(); i++) {
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+  }
 }
 
 void main() {
@@ -253,10 +263,41 @@ void main() {
     expect(File(recorded).existsSync(), isTrue);
 
     await tester.pumpWidget(const SizedBox());
-    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.runAsync(() => _waitUntilDeleted(recorded));
 
     expect(File(recorded).existsSync(), isFalse);
     // The attached file did not come from this recorder: left untouched.
     expect(File(clipPath).existsSync(), isTrue);
+  });
+
+  testWidgets('a start that finishes after dispose is cancelled and deleted', (
+    tester,
+  ) async {
+    final recorder = _FakeRecorder(clipPath);
+    final state = await _pump(tester, recorder);
+    late Completer<void> gate;
+    late Future<void> pending;
+
+    await tester.runAsync(() async {
+      gate = Completer<void>();
+      recorder.startGate = gate.future;
+      pending = state.toggleVoiceRecording();
+      for (var i = 0; i < 100 && recorder.startedPaths.isEmpty; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+    });
+    final recorded = recorder.startedPaths.single;
+
+    // Screen closes while start() is still in flight.
+    await tester.pumpWidget(const SizedBox());
+    await tester.runAsync(() async {
+      gate.complete();
+      await pending;
+      await _waitUntilDeleted(recorded);
+    });
+
+    expect(recorder.cancelCount, 1);
+    expect(File(recorded).existsSync(), isFalse);
+    expect(state.isRecordingVoice, isFalse);
   });
 }

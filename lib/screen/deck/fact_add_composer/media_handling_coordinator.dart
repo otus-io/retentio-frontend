@@ -198,9 +198,17 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
         ),
         path: filePath,
       );
+      if (!mounted) {
+        // Disposed mid-start: dispose() already ran, so clean up here.
+        try {
+          await voiceRecorder.cancel();
+        } catch (_) {}
+        File(filePath).delete().ignore();
+        return;
+      }
       _recordingTargetRow = target;
       _voiceClipPaths.add(filePath);
-      if (mounted) setState(() => isRecordingVoice = true);
+      setState(() => isRecordingVoice = true);
     } catch (_) {
       if (mounted) showComposerSnack(loc.addFactRecordingFailed);
     }
