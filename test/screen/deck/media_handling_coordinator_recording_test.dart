@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -16,15 +17,21 @@ class _FakeRecorder extends Fake implements AudioRecorder {
 
   final String outputPath;
   final VoidCallback? onPermission;
+  Future<void>? permissionGate;
+  final startedPaths = <String>[];
 
   @override
   Future<bool> hasPermission({bool request = true}) async {
     onPermission?.call();
+    await permissionGate;
     return true;
   }
 
   @override
-  Future<void> start(RecordConfig config, {required String path}) async {}
+  Future<void> start(RecordConfig config, {required String path}) async {
+    startedPaths.add(path);
+    File(path).writeAsBytesSync(const [1]);
+  }
 
   @override
   Future<String?> stop() async => outputPath;
@@ -145,6 +152,8 @@ void main() {
 
   setUp(() {
     PathProviderMock.setup();
+    // Recordings land in the mocked getTemporaryDirectory.
+    Directory('/tmp/mock_temp').createSync(recursive: true);
     tempDir = Directory.systemTemp.createTempSync('coordinator_recording');
     clipPath = '${tempDir.path}/clip.m4a';
     File(clipPath).writeAsBytesSync(List<int>.filled(16, 1));
@@ -209,5 +218,45 @@ void main() {
     expect(state.isRecordingVoice, isFalse);
     expect(state.attachedRows, isEmpty);
     expect(state.targetRowIndexForMedia(), 2);
+  });
+
+  testWidgets('a second tap while starting does not start twice', (
+    tester,
+  ) async {
+    final recorder = _FakeRecorder(clipPath);
+    final state = await _pump(tester, recorder);
+
+    await tester.runAsync(() async {
+      // Created inside runAsync so its callbacks run on the real event loop.
+      final gate = Completer<void>();
+      recorder.permissionGate = gate.future;
+      final first = state.toggleVoiceRecording();
+      final second = state.toggleVoiceRecording();
+      gate.complete();
+      await Future.wait([first, second]);
+    });
+
+    expect(recorder.startedPaths, hasLength(1));
+    expect(state.isRecordingVoice, isTrue);
+  });
+
+  testWidgets('recorded clips are named .m4a and deleted on dispose', (
+    tester,
+  ) async {
+    final recorder = _FakeRecorder(clipPath);
+    final state = await _pump(tester, recorder);
+
+    await tester.runAsync(state.toggleVoiceRecording);
+    await tester.runAsync(state.toggleVoiceRecording);
+    final recorded = recorder.startedPaths.single;
+    expect(recorded, endsWith('.m4a'));
+    expect(File(recorded).existsSync(), isTrue);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+
+    expect(File(recorded).existsSync(), isFalse);
+    // The attached file did not come from this recorder: left untouched.
+    expect(File(clipPath).existsSync(), isTrue);
   });
 }
