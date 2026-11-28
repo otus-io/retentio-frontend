@@ -37,6 +37,13 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
   /// neither moves the recording hint nor redirects the finished clip.
   int? _recordingTargetRow;
 
+  /// True while a start is in flight, so a second tap cannot start twice.
+  bool _startingVoice = false;
+
+  /// Clips recorded by this screen; deleted on dispose (uploaded or discarded
+  /// by then). User-picked files are never added here.
+  final Set<String> _voiceClipPaths = {};
+
   bool get voiceRecordingAvailable =>
       !kIsWeb && (Platform.isIOS || Platform.isAndroid);
 
@@ -142,12 +149,30 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
     }
   }
 
+  @override
+  void dispose() {
+    for (final path in _voiceClipPaths) {
+      File(path).delete().ignore();
+    }
+    super.dispose();
+  }
+
   Future<void> toggleVoiceRecording() async {
-    final loc = AppLocalizations.of(context)!;
     if (isRecordingVoice) {
       await finishVoiceRecording();
       return;
     }
+    if (_startingVoice) return;
+    _startingVoice = true;
+    try {
+      await _startVoiceRecording();
+    } finally {
+      _startingVoice = false;
+    }
+  }
+
+  Future<void> _startVoiceRecording() async {
+    final loc = AppLocalizations.of(context)!;
     // Captured before the awaits below so focus changes during the permission
     // prompt or prepare step cannot redirect the clip.
     final target = targetRowIndexForMedia();
@@ -158,10 +183,10 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
       return;
     }
     final dir = await getTemporaryDirectory();
-    final ext = Platform.isAndroid ? 'aac' : 'm4a';
+    // AAC-LC in an MP4 container on both platforms.
     final filePath = p.join(
       dir.path,
-      'fact_voice_${DateTime.now().millisecondsSinceEpoch}.$ext',
+      'fact_voice_${DateTime.now().millisecondsSinceEpoch}.m4a',
     );
     try {
       await voiceRecorder.start(
@@ -173,8 +198,17 @@ mixin MediaHandlingCoordinator<T extends StatefulWidget> on State<T> {
         ),
         path: filePath,
       );
+      if (!mounted) {
+        // Disposed mid-start: dispose() already ran, so clean up here.
+        try {
+          await voiceRecorder.cancel();
+        } catch (_) {}
+        File(filePath).delete().ignore();
+        return;
+      }
       _recordingTargetRow = target;
-      if (mounted) setState(() => isRecordingVoice = true);
+      _voiceClipPaths.add(filePath);
+      setState(() => isRecordingVoice = true);
     } catch (_) {
       if (mounted) showComposerSnack(loc.addFactRecordingFailed);
     }

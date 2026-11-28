@@ -66,6 +66,13 @@ print(texts[-1] if texts else "")
 ')"
     echo "${out:-No review output.}"
     [ -z "$out" ] && FINDINGS=1 && return
+    # /code-review has a fixed format: `(none)` or `file:line — important|pre_existing|nit — …` lines.
+    # Classify it directly; the model only handles free-form output (e.g. /security-review).
+    if [[ "$1" == /code-review* ]]; then
+        printf '%s\n' "$out" | grep -qE ' (—|-) important (—|-) ' && FINDINGS=1 && return
+        [ "$(printf '%s\n' "$out" | head -n 1)" = "(none)" ] && return
+        printf '%s\n' "$out" | grep -qE ' (—|-) (pre_existing|nit) (—|-) ' && return
+    fi
     # Review wording varies, so a cheap model decides whether anything important was reported.
     verdict="$(printf '%s' "$out" | claude -p --model haiku \
         "This is a code review report. Reply with exactly FINDINGS if it reports at least one important, \

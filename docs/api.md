@@ -3200,7 +3200,7 @@ Example: `GET /api/decks/{id}/reviews/by-day?days=7`
 
 You can attach audio, images, and video to facts. Each **entry** object uses string values for media IDs on keys `audio`, `image`, `video`, and `json` (not bracket markers in JSON).
 
-**Size limits:** Images max **5 MB**; audio and video max **200 MB** each. Env overrides: `MEDIA_MAX_SIZE_IMAGE`, `MEDIA_MAX_SIZE_VIDEO`, `MEDIA_MAX_SIZE_AUDIO`.
+**Size limits:** Images max **5 MB**; audio and video max **20 MB** each. Env overrides: `MEDIA_MAX_SIZE_IMAGE`, `MEDIA_MAX_SIZE_VIDEO`, `MEDIA_MAX_SIZE_AUDIO`.
 
 **Formats:** Supported input: image (JPEG, PNG, GIF, HEIC, HEIF, WebP), audio (MPEG/MP3, WAV, OGG, MP4/AAC), video (MP4, QuickTime, WebM), and JSON (`application/json`). Files are stored as uploaded without transcoding. Download returns the stored file (binary).
 

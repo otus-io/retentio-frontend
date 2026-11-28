@@ -85,8 +85,8 @@ void main() {
       expect(MediaService.maxBytesFor(MediaSlotKind.image), 5 * 1024 * 1024);
     });
 
-    test('audio and video cap is 200 MB', () {
-      final n = 200 * 1024 * 1024;
+    test('audio and video cap is 20 MB', () {
+      final n = 20 * 1024 * 1024;
       expect(MediaService.maxBytesFor(MediaSlotKind.audio), n);
       expect(MediaService.maxBytesFor(MediaSlotKind.video), n);
     });

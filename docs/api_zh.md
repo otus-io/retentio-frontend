@@ -3010,7 +3010,7 @@ Accept: application/json
 
 可为词条附加音频、图片和视频。每条 entry 为对象，含可选 `text`、`audio`、`image`、`video`；可单独用一项媒体（如 `{ "audio": "abc123" }`），或与文本合在同一 entry（如 `{ "text": "例文。", "audio": "ex1id" }`）以明确该音频对应该句。
 
-**大小限制：** 图片最大 **5 MB**；音频与视频各最大 **200 MB**。可通过环境变量覆盖：`MEDIA_MAX_SIZE_IMAGE`、`MEDIA_MAX_SIZE_VIDEO`、`MEDIA_MAX_SIZE_AUDIO`。
+**大小限制：** 图片最大 **5 MB**；音频与视频各最大 **20 MB**。可通过环境变量覆盖：`MEDIA_MAX_SIZE_IMAGE`、`MEDIA_MAX_SIZE_VIDEO`、`MEDIA_MAX_SIZE_AUDIO`。
 
 **格式：** 支持的输入：图片（JPEG、PNG、GIF、HEIC、HEIF、WebP），音频（MPEG/MP3、WAV、OGG、MP4/AAC），视频（MP4、QuickTime、WebM），以及 JSON（`application/json`）。文件按上传原样存储，不做转码。下载时返回存储后的文件（二进制）。
 
