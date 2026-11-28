@@ -4,7 +4,7 @@ import 'package:path/path.dart' as p;
 import 'package:retentio/core/network/network.dart';
 import 'package:retentio/services/index.dart';
 
-/// Matches API: image 5 MB; audio/video 200 MB.
+/// Matches API: image 5 MB; audio/video 20 MB.
 enum MediaSlotKind { image, video, audio }
 
 enum MediaPrecheck { ok, fileNotFound, unknownType, wrongType, fileTooLarge }
@@ -13,7 +13,7 @@ class MediaService {
   MediaService._();
 
   static const int maxImageBytes = 5 * 1024 * 1024;
-  static const int maxAudioVideoBytes = 200 * 1024 * 1024;
+  static const int maxAudioVideoBytes = 20 * 1024 * 1024;
 
   static int maxBytesFor(MediaSlotKind kind) => switch (kind) {
     MediaSlotKind.image => maxImageBytes,
